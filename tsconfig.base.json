@@ -1,0 +1,37 @@
+{
+  "$schema": "https://json.schemastore.org/tsconfig",
+  "compilerOptions": {
+    "target": "ES2022",
+    "lib": ["ES2022"],
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "esModuleInterop": true,
+    "forceConsistentCasingInFileNames": true,
+    "strict": true,
+    "noUncheckedIndexedAccess": true,
+    "noImplicitOverride": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "skipLibCheck": true,
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "declaration": true,
+    "declarationMap": true,
+    "sourceMap": true,
+    "baseUrl": ".",
+    "paths": {
+      "@supotsu/core": ["packages/core/src/index.ts"],
+      "@supotsu/core/*": ["packages/core/src/*"],
+      "@supotsu/engines": ["packages/engines/src/index.ts"],
+      "@supotsu/engines/*": ["packages/engines/src/*"],
+      "@supotsu/shared": ["packages/shared/src/index.ts"],
+      "@supotsu/shared/*": ["packages/shared/src/*"],
+      "@supotsu/design-system": ["packages/design-system/src/index.ts"],
+      "@supotsu/design-system/*": ["packages/design-system/src/*"],
+      "@supotsu/ui": ["packages/ui/src/index.ts"],
+      "@supotsu/ui/*": ["packages/ui/src/*"],
+      "@supotsu/database": ["packages/database/src/index.ts"],
+      "@supotsu/database/*": ["packages/database/src/*"]
+    }
+  }
+}

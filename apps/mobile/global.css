@@ -1,0 +1,48 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/*
+ * Theme variables (RGB triplets so Tailwind opacity modifiers work).
+ * Generated from @supotsu/design-system themes — keep in sync via buildThemeCss().
+ * `.dark` is toggled by NativeWind from the active color scheme.
+ */
+:root {
+  --color-background: 246 247 249;
+  --color-surface: 255 255 255;
+  --color-surface-elevated: 236 238 242;
+  --color-border: 213 217 224;
+  --color-text: 20 24 32;
+  --color-text-muted: 73 81 95;
+  --color-text-subtle: 138 147 163;
+  --color-primary: 0 179 127;
+  --color-on-primary: 255 255 255;
+  --color-accent-strength: 255 122 69;
+  --color-accent-endurance: 59 157 255;
+  --color-accent-mobility: 167 139 250;
+  --color-accent-recovery: 34 211 238;
+  --color-success: 34 197 94;
+  --color-warning: 245 158 11;
+  --color-error: 239 68 68;
+  --color-info: 59 130 246;
+}
+
+.dark {
+  --color-background: 11 14 19;
+  --color-surface: 20 24 32;
+  --color-surface-elevated: 30 35 43;
+  --color-border: 51 58 69;
+  --color-text: 246 247 249;
+  --color-text-muted: 176 183 195;
+  --color-text-subtle: 101 110 126;
+  --color-primary: 0 217 155;
+  --color-on-primary: 11 14 19;
+  --color-accent-strength: 255 122 69;
+  --color-accent-endurance: 59 157 255;
+  --color-accent-mobility: 167 139 250;
+  --color-accent-recovery: 34 211 238;
+  --color-success: 34 197 94;
+  --color-warning: 245 158 11;
+  --color-error: 239 68 68;
+  --color-info: 59 130 246;
+}

@@ -1,0 +1,8 @@
+node_modules
+dist
+build
+.turbo
+.expo
+coverage
+packages/database/src/generated
+pnpm-lock.yaml
