@@ -4,7 +4,7 @@ import { Badge, Button, Card, Input, Screen, Text, useTheme, type BadgeTone } fr
 import { radii, spacing } from '@supotsu/design-system';
 import { askCoach, SUGGESTED_QUESTIONS, type CoachReply } from '@supotsu/engines';
 import type { Confidence } from '@supotsu/core';
-import { useActivities } from '@/lib/data/queries';
+import { useActivities, useHealthMetrics } from '@/lib/data/queries';
 import { randomId } from '@/lib/id';
 
 interface Message {
@@ -29,6 +29,7 @@ const CONF_LABEL: Record<Confidence, string> = {
 export function CoachScreen(): React.JSX.Element {
   const { colors } = useTheme();
   const { data: activities = [] } = useActivities();
+  const { data: health = [] } = useHealthMetrics();
   const scrollRef = useRef<ScrollViewType>(null);
 
   // Greeting is built once; live data is used on each ask().
@@ -44,7 +45,11 @@ export function CoachScreen(): React.JSX.Element {
   const ask = (question: string): void => {
     const q = question.trim();
     if (!q) return;
-    const reply = askCoach(q, { activities, asOf: new Date().toISOString() });
+    const reply = askCoach(q, {
+      activities,
+      healthMetrics: health,
+      asOf: new Date().toISOString(),
+    });
     setMessages((prev) => [
       ...prev,
       { id: randomId(), role: 'user', text: q },

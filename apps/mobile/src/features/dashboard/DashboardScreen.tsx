@@ -3,9 +3,9 @@ import { View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Badge, Button, Card, KPICard, Screen, Text, useTheme, type BadgeTone } from '@supotsu/ui';
 import { spacing } from '@supotsu/design-system';
-import { buildDailySnapshot } from '@supotsu/engines';
+import { buildDailySnapshot, recoveryBand } from '@supotsu/engines';
 import type { Confidence } from '@supotsu/core';
-import { useActivities } from '@/lib/data/queries';
+import { useActivities, useHealthMetrics } from '@/lib/data/queries';
 
 const CONFIDENCE_LABEL: Record<Confidence, { label: string; tone: BadgeTone }> = {
   high: { label: 'Confiance élevée', tone: 'success' },
@@ -21,10 +21,11 @@ export function DashboardScreen(): React.JSX.Element {
   const { name, toggle } = useTheme();
   const router = useRouter();
   const { data: activities = [], isLoading } = useActivities();
+  const { data: health = [] } = useHealthMetrics();
 
   const snapshot = useMemo(
-    () => buildDailySnapshot(activities, [], new Date().toISOString()),
-    [activities],
+    () => buildDailySnapshot(activities, [], new Date().toISOString(), health),
+    [activities, health],
   );
   const s = snapshot.value;
   const hasData = activities.length > 0;
@@ -56,10 +57,15 @@ export function DashboardScreen(): React.JSX.Element {
 
       <View style={{ flexDirection: 'row', gap: spacing[4] }}>
         <View style={{ flex: 1 }}>
-          <KPICard label="Régularité" value={hasData ? String(s.consistency) : '—'} unit="/100" />
+          <KPICard
+            label="Récupération"
+            value={s.recovery !== null ? String(s.recovery) : '—'}
+            unit="/100"
+            caption={s.recovery !== null ? recoveryBand(s.recovery) : 'Connecte un appareil'}
+          />
         </View>
         <View style={{ flex: 1 }}>
-          <KPICard label="Charge" value={hasData ? String(s.trainingLoad) : '—'} unit="/100" />
+          <KPICard label="Régularité" value={hasData ? String(s.consistency) : '—'} unit="/100" />
         </View>
       </View>
 

@@ -177,6 +177,30 @@ export interface Database {
         Update: Partial<Database['public']['Tables']['workout_sets']['Insert']>;
         Relationships: [];
       };
+      health_metrics: {
+        Row: {
+          id: string;
+          user_id: string;
+          type: string;
+          value: number;
+          unit: string;
+          source: string;
+          reliability: 'high' | 'medium' | 'low' | null;
+          measured_at: string;
+          created_at: string;
+        };
+        Insert: {
+          user_id: string;
+          type: string;
+          value: number;
+          unit: string;
+          source?: string;
+          reliability?: 'high' | 'medium' | 'low' | null;
+          measured_at: string;
+        };
+        Update: Partial<Database['public']['Tables']['health_metrics']['Insert']>;
+        Relationships: [];
+      };
       exercises: {
         Row: {
           id: string;

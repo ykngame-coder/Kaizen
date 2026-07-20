@@ -1,4 +1,4 @@
-import type { Activity, Confidence, ISODateString } from '@supotsu/core';
+import type { Activity, Confidence, HealthMetric, ISODateString } from '@supotsu/core';
 import type { Explanation } from './result';
 import { buildDailySnapshot, computeWorkload } from './scoring';
 
@@ -22,6 +22,7 @@ export interface CoachReply {
 export interface CoachContext {
   activities: Activity[];
   asOf: ISODateString;
+  healthMetrics?: HealthMetric[];
 }
 
 const DAY_MS = 86_400_000;
@@ -76,7 +77,7 @@ function confidenceFromSample(count: number): Confidence {
 }
 
 function answerToday(ctx: CoachContext): CoachReply {
-  const snap = buildDailySnapshot(ctx.activities, [], ctx.asOf);
+  const snap = buildDailySnapshot(ctx.activities, [], ctx.asOf, ctx.healthMetrics ?? []);
   return {
     intent: 'today',
     text: snap.value.recommendation.explanation.action,

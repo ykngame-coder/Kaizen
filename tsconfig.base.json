@@ -31,7 +31,9 @@
       "@supotsu/ui": ["packages/ui/src/index.ts"],
       "@supotsu/ui/*": ["packages/ui/src/*"],
       "@supotsu/database": ["packages/database/src/index.ts"],
-      "@supotsu/database/*": ["packages/database/src/*"]
+      "@supotsu/database/*": ["packages/database/src/*"],
+      "@supotsu/connectors": ["packages/connectors/src/index.ts"],
+      "@supotsu/connectors/*": ["packages/connectors/src/*"]
     }
   }
 }

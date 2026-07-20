@@ -47,6 +47,9 @@ importers:
       '@opentelemetry/api':
         specifier: ^1.9.0
         version: 1.9.1
+      '@supotsu/connectors':
+        specifier: workspace:*
+        version: link:../../packages/connectors
       '@supotsu/core':
         specifier: workspace:*
         version: link:../../packages/core
@@ -123,6 +126,19 @@ importers:
       tailwindcss:
         specifier: ^3.4.17
         version: 3.4.19(yaml@2.9.0)
+      typescript:
+        specifier: ^5.7.2
+        version: 5.9.3
+      vitest:
+        specifier: ^2.1.8
+        version: 2.1.9(@types/node@26.1.1)(lightningcss@1.27.0)(terser@5.49.0)
+
+  packages/connectors:
+    dependencies:
+      '@supotsu/core':
+        specifier: workspace:*
+        version: link:../core
+    devDependencies:
       typescript:
         specifier: ^5.7.2
         version: 5.9.3

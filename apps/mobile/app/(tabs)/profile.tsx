@@ -1,12 +1,14 @@
 import React from 'react';
 import { View } from 'react-native';
+import { useRouter } from 'expo-router';
 import { Badge, Button, Card, Screen, Text, useTheme } from '@supotsu/ui';
 import { useAuth } from '@/features/auth/AuthProvider';
 
-/** Profile: account, appearance and sign-out. */
+/** Profile: account, appearance, devices and sign-out. */
 export default function ProfileTab(): React.JSX.Element {
   const { name, preference, toggle, setPreference } = useTheme();
   const { user, mode, signOut } = useAuth();
+  const router = useRouter();
 
   return (
     <Screen scroll>
@@ -42,12 +44,22 @@ export default function ProfileTab(): React.JSX.Element {
       </Card>
 
       <Card>
+        <Text variant="heading">Appareils connectés</Text>
+        <Text variant="body" color="textMuted">
+          Importe tes activités et données de santé (sommeil, HRV, FC).
+        </Text>
+        <View style={{ alignItems: 'flex-start' }}>
+          <Button label="Mes appareils" onPress={() => router.push('/connectors')} />
+        </View>
+      </Card>
+
+      <Card>
         <Text variant="label" color="textMuted">
           À VENIR
         </Text>
         <Text variant="body">
-          Authentification (email, Apple, Google, biométrie) et onboarding — Étape 2. Export /
-          suppression RGPD — Étape 2+.
+          Export / suppression RGPD, abonnement Premium, et connecteurs natifs (Apple Santé, Garmin,
+          Strava).
         </Text>
       </Card>
     </Screen>

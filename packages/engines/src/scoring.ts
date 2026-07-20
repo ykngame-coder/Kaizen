@@ -1,6 +1,7 @@
-import type { Activity, Confidence, Goal, ISODateString } from '@supotsu/core';
+import type { Activity, Confidence, Goal, HealthMetric, ISODateString } from '@supotsu/core';
 import { OVERALL_SCORE_WEIGHTS } from '@supotsu/core';
 import type { EngineResult, Explanation, Recommendation } from './result';
+import { computeRecoveryScore, recoveryBand } from './recovery';
 
 /**
  * Pure scoring functions. They take domain data in and return provenance-aware
@@ -128,20 +129,33 @@ export interface DailySnapshot {
   performance: number;
   consistency: number;
   trainingLoad: number;
+  /** 0-100, or null when no health data is available yet. */
+  recovery: number | null;
   acwr: number;
   recommendation: Recommendation;
 }
 
-/** Recommendation derived from workload + consistency (explainable, P18.9). */
+/** Recommendation derived from recovery + workload + consistency (explainable, P18.9). */
 function buildRecommendation(
   activities: Activity[],
   asOf: ISODateString,
   workload: WorkloadResult,
   consistency: number,
+  recovery: number | null,
 ): Recommendation {
   const days = activeDays(activities, asOf, 7);
   let explanation: Explanation;
   let confidence: Confidence = 'medium';
+
+  // Low recovery takes priority — health before performance (Master Prompt P1).
+  if (recovery !== null && recoveryBand(recovery) === 'faible') {
+    explanation = {
+      observation: `Ta récupération est faible (${recovery}/100).`,
+      analysis: 'S’entraîner dur sur une récupération basse freine la progression.',
+      action: 'Priorité aujourd’hui : repos ou mobilité légère.',
+    };
+    return { pillar: 'recovery', title: explanation.action, explanation, confidence: 'high' };
+  }
 
   if (days === 0) {
     explanation = {
@@ -183,30 +197,42 @@ export function buildDailySnapshot(
   activities: Activity[],
   _goals: Goal[],
   asOf: ISODateString,
+  healthMetrics: HealthMetric[] = [],
 ): EngineResult<DailySnapshot> {
   const performance = computePerformanceScore(activities, asOf).value;
   const consistency = computeConsistencyScore(activities, asOf).value;
   const trainingLoad = computeTrainingLoadScore(activities, asOf).value;
   const workload = computeWorkload(activities, asOf);
 
-  // Recovery + progression not yet available → renormalize present weights.
-  const present = {
-    performance: OVERALL_SCORE_WEIGHTS.performance,
-    consistency: OVERALL_SCORE_WEIGHTS.consistency,
-  };
-  const totalWeight = present.performance + present.consistency;
+  const recoveryResult = computeRecoveryScore(healthMetrics, asOf);
+  const hasRecovery = recoveryResult.confidence !== 'to_confirm';
+  const recovery = hasRecovery ? recoveryResult.value : null;
+
+  // Weighted overall over the components actually available (renormalized).
+  const parts: { value: number; weight: number }[] = [
+    { value: performance, weight: OVERALL_SCORE_WEIGHTS.performance },
+    { value: consistency, weight: OVERALL_SCORE_WEIGHTS.consistency },
+  ];
+  if (recovery !== null) parts.push({ value: recovery, weight: OVERALL_SCORE_WEIGHTS.recovery });
+  const totalWeight = parts.reduce((s, p) => s + p.weight, 0);
   const overall = clamp(
-    Math.round(
-      (performance * present.performance + consistency * present.consistency) / totalWeight,
-    ),
+    Math.round(parts.reduce((s, p) => s + p.value * p.weight, 0) / totalWeight),
   );
 
-  const recommendation = buildRecommendation(activities, asOf, workload, consistency);
+  const recommendation = buildRecommendation(activities, asOf, workload, consistency, recovery);
   const sample = activities.filter((a) => within(a, asOf, 28)).length;
 
   return {
-    value: { overall, performance, consistency, trainingLoad, acwr: workload.acwr, recommendation },
-    confidence: sample >= 4 ? 'medium' : 'to_confirm',
+    value: {
+      overall,
+      performance,
+      consistency,
+      trainingLoad,
+      recovery,
+      acwr: workload.acwr,
+      recommendation,
+    },
+    confidence: hasRecovery || sample >= 4 ? 'medium' : 'to_confirm',
     explanation: recommendation.explanation,
     sourcesUsed: ['supotsu'],
     generatedAt: asOf,
