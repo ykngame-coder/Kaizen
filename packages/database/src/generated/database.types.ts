@@ -94,6 +94,113 @@ export interface Database {
         Update: Partial<Database['public']['Tables']['goals']['Insert']>;
         Relationships: [];
       };
+      activities: {
+        Row: {
+          id: string;
+          user_id: string;
+          type: string;
+          source: string;
+          started_at: string;
+          duration_sec: number;
+          distance_m: number | null;
+          calories: number | null;
+          intensity: 'low' | 'moderate' | 'high' | 'max' | null;
+          avg_heart_rate: number | null;
+          max_heart_rate: number | null;
+          elevation_gain_m: number | null;
+          raw: Json | null;
+          notes: string | null;
+        } & Timestamps;
+        Insert: {
+          user_id: string;
+          type: string;
+          source?: string;
+          started_at: string;
+          duration_sec: number;
+          distance_m?: number | null;
+          calories?: number | null;
+          intensity?: 'low' | 'moderate' | 'high' | 'max' | null;
+          avg_heart_rate?: number | null;
+          notes?: string | null;
+        };
+        Update: Partial<Database['public']['Tables']['activities']['Insert']>;
+        Relationships: [];
+      };
+      workouts: {
+        Row: {
+          id: string;
+          user_id: string;
+          program_id: string | null;
+          name: string;
+          status: 'planned' | 'in_progress' | 'completed' | 'skipped';
+          planned_for: string | null;
+          completed_at: string | null;
+          duration_sec: number | null;
+          rpe: number | null;
+          notes: string | null;
+        } & Timestamps;
+        Insert: {
+          user_id: string;
+          name: string;
+          status?: 'planned' | 'in_progress' | 'completed' | 'skipped';
+          planned_for?: string | null;
+          completed_at?: string | null;
+          duration_sec?: number | null;
+          rpe?: number | null;
+          notes?: string | null;
+        };
+        Update: Partial<Database['public']['Tables']['workouts']['Insert']>;
+        Relationships: [];
+      };
+      workout_sets: {
+        Row: {
+          id: string;
+          workout_id: string;
+          exercise_id: string;
+          order: number;
+          reps: number | null;
+          weight_kg: number | null;
+          duration_sec: number | null;
+          rest_sec: number | null;
+          rpe: number | null;
+        };
+        Insert: {
+          workout_id: string;
+          exercise_id: string;
+          order?: number;
+          reps?: number | null;
+          weight_kg?: number | null;
+          duration_sec?: number | null;
+          rest_sec?: number | null;
+          rpe?: number | null;
+        };
+        Update: Partial<Database['public']['Tables']['workout_sets']['Insert']>;
+        Relationships: [];
+      };
+      exercises: {
+        Row: {
+          id: string;
+          name: string;
+          category: string;
+          primary_muscles: string[];
+          secondary_muscles: string[];
+          equipment: string[];
+          level: 'beginner' | 'intermediate' | 'advanced';
+          instructions: string | null;
+          common_mistakes: string[];
+          variants: string[];
+          media_url: string | null;
+          created_at: string;
+        };
+        Insert: {
+          name: string;
+          category: string;
+          primary_muscles?: string[];
+          level?: 'beginner' | 'intermediate' | 'advanced';
+        };
+        Update: Partial<Database['public']['Tables']['exercises']['Insert']>;
+        Relationships: [];
+      };
     };
     Views: Record<string, never>;
     Functions: Record<string, never>;

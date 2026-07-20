@@ -4,3 +4,5 @@ export type { Database, Json } from './generated/database.types';
 
 export * from './repositories/profiles';
 export * from './repositories/goals';
+export * from './repositories/activities';
+export * from './repositories/workouts';
