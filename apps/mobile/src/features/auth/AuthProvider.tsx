@@ -4,6 +4,7 @@ import {
   type AuthBackend,
   type AuthUser,
   type OAuthProvider,
+  type SignUpResult,
 } from './authClient';
 
 type AuthStatus = 'loading' | 'authenticated' | 'unauthenticated';
@@ -12,7 +13,7 @@ interface AuthContextValue {
   status: AuthStatus;
   user: AuthUser | null;
   mode: AuthBackend['mode'];
-  signUp: (email: string, password: string) => Promise<void>;
+  signUp: (email: string, password: string) => Promise<SignUpResult>;
   signIn: (email: string, password: string) => Promise<void>;
   signInWithOAuth: (provider: OAuthProvider) => Promise<void>;
   signOut: () => Promise<void>;

@@ -14,11 +14,16 @@ export type OAuthProvider = 'apple' | 'google';
  * credentials are present; otherwise a local demo backend keeps the full
  * sign-in → onboarding → app flow usable without a server (dev/preview).
  */
+export interface SignUpResult {
+  /** True when the provider requires e-mail confirmation before first sign-in. */
+  needsConfirmation: boolean;
+}
+
 export interface AuthBackend {
   mode: AuthMode;
   getUser(): Promise<AuthUser | null>;
   onChange(cb: (user: AuthUser | null) => void): () => void;
-  signUp(email: string, password: string): Promise<void>;
+  signUp(email: string, password: string): Promise<SignUpResult>;
   signIn(email: string, password: string): Promise<void>;
   signInWithOAuth(provider: OAuthProvider): Promise<void>;
   signOut(): Promise<void>;
@@ -59,6 +64,7 @@ function createDemoBackend(): AuthBackend {
       const user = { id: randomId(), email };
       await persist(user);
       emit(user);
+      return { needsConfirmation: false };
     },
     async signIn(email) {
       const user = { id: randomId(), email };
@@ -95,8 +101,10 @@ function createSupabaseBackend(client: NonNullable<ReturnType<typeof getSupabase
       return () => data.subscription.unsubscribe();
     },
     async signUp(email, password) {
-      const { error } = await client.auth.signUp({ email, password });
+      const { data, error } = await client.auth.signUp({ email, password });
       if (error) throw error;
+      // No session returned ⇒ the project requires e-mail confirmation.
+      return { needsConfirmation: !data.session };
     },
     async signIn(email, password) {
       const { error } = await client.auth.signInWithPassword({ email, password });

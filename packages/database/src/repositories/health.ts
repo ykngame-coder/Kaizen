@@ -10,7 +10,11 @@ export async function insertHealthMetrics(
   rows: HealthMetricInsertRow[],
 ): Promise<void> {
   if (rows.length === 0) return;
-  const { error } = await client.from('health_metrics').insert(rows);
+  // Idempotent: relies on the (user_id, type, measured_at, source) unique index
+  // so a repeated connector sync never duplicates rows.
+  const { error } = await client
+    .from('health_metrics')
+    .upsert(rows, { onConflict: 'user_id,type,measured_at,source', ignoreDuplicates: true });
   if (error) throw error;
 }
 

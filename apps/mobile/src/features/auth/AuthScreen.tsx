@@ -36,6 +36,7 @@ export function AuthScreen({ mode }: { mode: Mode }): React.JSX.Element {
   const { colors } = useTheme();
   const copy = COPY[mode];
   const [submitError, setSubmitError] = useState<string | null>(null);
+  const [info, setInfo] = useState<string | null>(null);
 
   const { control, handleSubmit, formState } = useForm<Credentials>({
     resolver: zodResolver(credentialsSchema),
@@ -44,8 +45,16 @@ export function AuthScreen({ mode }: { mode: Mode }): React.JSX.Element {
 
   const onSubmit = handleSubmit(async ({ email, password }) => {
     setSubmitError(null);
+    setInfo(null);
     try {
-      await (mode === 'signIn' ? signIn(email, password) : signUp(email, password));
+      if (mode === 'signIn') {
+        await signIn(email, password);
+      } else {
+        const { needsConfirmation } = await signUp(email, password);
+        if (needsConfirmation) {
+          setInfo('Compte créé — confirme ton adresse e-mail, puis connecte-toi.');
+        }
+      }
     } catch (err) {
       setSubmitError(err instanceof Error ? err.message : 'Une erreur est survenue');
     }
@@ -100,6 +109,8 @@ export function AuthScreen({ mode }: { mode: Mode }): React.JSX.Element {
           {submitError}
         </Text>
       ) : null}
+
+      {info ? <Badge label={info} tone="success" /> : null}
 
       <Button
         label={formState.isSubmitting ? '…' : copy.cta}

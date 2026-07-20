@@ -104,7 +104,7 @@ create trigger goals_updated_at
 -- exercises (shared library — read-only to users)
 -- ---------------------------------------------------------------------------
 create table public.exercises (
-  id uuid primary key default gen_random_uuid(),
+  id text primary key, -- human-readable slug (e.g. "ex-back-squat"), stable across clients
   name text not null,
   category text not null
     check (category in ('strength', 'hypertrophy', 'endurance', 'mobility', 'functional', 'sport_specific')),
@@ -181,7 +181,7 @@ create trigger workouts_updated_at
 create table public.workout_sets (
   id uuid primary key default gen_random_uuid(),
   workout_id uuid not null references public.workouts (id) on delete cascade,
-  exercise_id uuid not null references public.exercises (id),
+  exercise_id text not null references public.exercises (id),
   "order" smallint not null default 0,
   reps smallint,
   weight_kg numeric(6, 2),
