@@ -1,10 +1,12 @@
 import React from 'react';
 import { View } from 'react-native';
-import { Button, Card, Screen, Text, useTheme } from '@supotsu/ui';
+import { Badge, Button, Card, Screen, Text, useTheme } from '@supotsu/ui';
+import { useAuth } from '@/features/auth/AuthProvider';
 
-/** Profile stub with a working theme toggle to prove dark/light theming. */
+/** Profile: account, appearance and sign-out. */
 export default function ProfileTab(): React.JSX.Element {
   const { name, preference, toggle, setPreference } = useTheme();
+  const { user, mode, signOut } = useAuth();
 
   return (
     <Screen scroll>
@@ -12,6 +14,21 @@ export default function ProfileTab(): React.JSX.Element {
       <Text variant="body" color="textMuted">
         Informations, objectifs, appareils connectés, confidentialité et abonnement.
       </Text>
+
+      <Card>
+        <View
+          style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}
+        >
+          <Text variant="heading">Compte</Text>
+          {mode === 'demo' ? <Badge label="Démo" tone="warning" /> : null}
+        </View>
+        <Text variant="body" color="textMuted">
+          {user?.email ?? 'Non connecté'}
+        </Text>
+        <View style={{ alignItems: 'flex-start' }}>
+          <Button label="Se déconnecter" variant="danger" onPress={signOut} />
+        </View>
+      </Card>
 
       <Card>
         <Text variant="heading">Apparence</Text>

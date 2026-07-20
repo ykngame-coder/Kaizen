@@ -1,15 +1,8 @@
-import * as SecureStore from 'expo-secure-store';
-import { createSupotsuClient, type AuthStorage, type SupotsuClient } from '@supotsu/database';
+import { createSupotsuClient, type SupotsuClient } from '@supotsu/database';
+import { secureStorage } from '@/lib/secure-storage';
 
-/**
- * SecureStore-backed auth storage for the mobile client (Master Prompt P15/P29:
- * tokens kept in the platform secure store, never in plain storage).
- */
-const secureStorage: AuthStorage = {
-  getItem: (key) => SecureStore.getItemAsync(key),
-  setItem: (key, value) => SecureStore.setItemAsync(key, value),
-  removeItem: (key) => SecureStore.deleteItemAsync(key),
-};
+// Tokens live in the platform secure store on native, localStorage on web
+// (Master Prompt P15/P29). See lib/secure-storage.ts.
 
 let client: SupotsuClient | null = null;
 

@@ -1,0 +1,120 @@
+import { secureStorage } from '@/lib/secure-storage';
+import { getSupabase } from '@/lib/supabase';
+
+export interface AuthUser {
+  id: string;
+  email: string;
+}
+
+export type AuthMode = 'supabase' | 'demo';
+export type OAuthProvider = 'apple' | 'google';
+
+/**
+ * Backend-agnostic auth surface. A real Supabase implementation is used when
+ * credentials are present; otherwise a local demo backend keeps the full
+ * sign-in → onboarding → app flow usable without a server (dev/preview).
+ */
+export interface AuthBackend {
+  mode: AuthMode;
+  getUser(): Promise<AuthUser | null>;
+  onChange(cb: (user: AuthUser | null) => void): () => void;
+  signUp(email: string, password: string): Promise<void>;
+  signIn(email: string, password: string): Promise<void>;
+  signInWithOAuth(provider: OAuthProvider): Promise<void>;
+  signOut(): Promise<void>;
+}
+
+function randomId(): string {
+  const c = (globalThis as { crypto?: Crypto }).crypto;
+  if (c?.randomUUID) return c.randomUUID();
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (ch) => {
+    const r = (Math.random() * 16) | 0;
+    return (ch === 'x' ? r : (r & 0x3) | 0x8).toString(16);
+  });
+}
+
+const DEMO_KEY = 'supotsu.demo.user';
+
+/** In-memory + SecureStore demo backend. Accepts any credentials. */
+function createDemoBackend(): AuthBackend {
+  const listeners = new Set<(user: AuthUser | null) => void>();
+  const emit = (user: AuthUser | null) => listeners.forEach((cb) => cb(user));
+
+  const persist = async (user: AuthUser | null) => {
+    if (user) await secureStorage.setItem(DEMO_KEY, JSON.stringify(user));
+    else await secureStorage.removeItem(DEMO_KEY);
+  };
+
+  return {
+    mode: 'demo',
+    async getUser() {
+      const raw = await secureStorage.getItem(DEMO_KEY);
+      return raw ? (JSON.parse(raw) as AuthUser) : null;
+    },
+    onChange(cb) {
+      listeners.add(cb);
+      return () => listeners.delete(cb);
+    },
+    async signUp(email) {
+      const user = { id: randomId(), email };
+      await persist(user);
+      emit(user);
+    },
+    async signIn(email) {
+      const user = { id: randomId(), email };
+      await persist(user);
+      emit(user);
+    },
+    async signInWithOAuth(provider) {
+      const user = { id: randomId(), email: `demo@${provider}.supotsu` };
+      await persist(user);
+      emit(user);
+    },
+    async signOut() {
+      await persist(null);
+      emit(null);
+    },
+  };
+}
+
+/** Supabase-backed implementation. */
+function createSupabaseBackend(client: NonNullable<ReturnType<typeof getSupabase>>): AuthBackend {
+  const toUser = (u: { id: string; email?: string } | null | undefined): AuthUser | null =>
+    u ? { id: u.id, email: u.email ?? '' } : null;
+
+  return {
+    mode: 'supabase',
+    async getUser() {
+      const { data } = await client.auth.getUser();
+      return toUser(data.user);
+    },
+    onChange(cb) {
+      const { data } = client.auth.onAuthStateChange((_event, session) => {
+        cb(toUser(session?.user));
+      });
+      return () => data.subscription.unsubscribe();
+    },
+    async signUp(email, password) {
+      const { error } = await client.auth.signUp({ email, password });
+      if (error) throw error;
+    },
+    async signIn(email, password) {
+      const { error } = await client.auth.signInWithPassword({ email, password });
+      if (error) throw error;
+    },
+    async signInWithOAuth(provider) {
+      const { error } = await client.auth.signInWithOAuth({ provider });
+      if (error) throw error;
+    },
+    async signOut() {
+      const { error } = await client.auth.signOut();
+      if (error) throw error;
+    },
+  };
+}
+
+/** Picks the real backend when Supabase is configured, else the demo backend. */
+export function createAuthBackend(): AuthBackend {
+  const client = getSupabase();
+  return client ? createSupabaseBackend(client) : createDemoBackend();
+}

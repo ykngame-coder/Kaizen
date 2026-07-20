@@ -1,0 +1,138 @@
+import React, { useState } from 'react';
+import { View } from 'react-native';
+import { Link } from 'expo-router';
+import { useForm, Controller } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { Badge, Button, Input, Screen, Text, useTheme } from '@supotsu/ui';
+import { spacing } from '@supotsu/design-system';
+import { useAuth } from './AuthProvider';
+import { credentialsSchema, type Credentials } from './authSchema';
+
+type Mode = 'signIn' | 'signUp';
+
+const COPY: Record<
+  Mode,
+  { title: string; cta: string; alt: string; altHref: string; altLabel: string }
+> = {
+  signIn: {
+    title: 'Content de te revoir',
+    cta: 'Se connecter',
+    alt: 'Pas encore de compte ?',
+    altHref: '/(auth)/sign-up',
+    altLabel: 'Créer un compte',
+  },
+  signUp: {
+    title: 'Bienvenue sur Supotsu',
+    cta: 'Créer un compte',
+    alt: 'Déjà un compte ?',
+    altHref: '/(auth)/sign-in',
+    altLabel: 'Se connecter',
+  },
+};
+
+/** Shared sign-in / sign-up screen (Master Prompt P17.2 écran 1). */
+export function AuthScreen({ mode }: { mode: Mode }): React.JSX.Element {
+  const { signIn, signUp, signInWithOAuth, mode: authMode } = useAuth();
+  const { colors } = useTheme();
+  const copy = COPY[mode];
+  const [submitError, setSubmitError] = useState<string | null>(null);
+
+  const { control, handleSubmit, formState } = useForm<Credentials>({
+    resolver: zodResolver(credentialsSchema),
+    defaultValues: { email: '', password: '' },
+  });
+
+  const onSubmit = handleSubmit(async ({ email, password }) => {
+    setSubmitError(null);
+    try {
+      await (mode === 'signIn' ? signIn(email, password) : signUp(email, password));
+    } catch (err) {
+      setSubmitError(err instanceof Error ? err.message : 'Une erreur est survenue');
+    }
+  });
+
+  return (
+    <Screen scroll>
+      <View style={{ gap: spacing[1], marginTop: spacing[8] }}>
+        <Text variant="display">Supotsu</Text>
+        <Text variant="body" color="textMuted">
+          {copy.title}
+        </Text>
+      </View>
+
+      {authMode === 'demo' ? (
+        <Badge label="Mode démo — backend non connecté" tone="warning" />
+      ) : null}
+
+      <Controller
+        control={control}
+        name="email"
+        render={({ field, fieldState }) => (
+          <Input
+            label="E-mail"
+            autoCapitalize="none"
+            keyboardType="email-address"
+            value={field.value}
+            onChangeText={field.onChange}
+            onBlur={field.onBlur}
+            error={fieldState.error?.message}
+          />
+        )}
+      />
+
+      <Controller
+        control={control}
+        name="password"
+        render={({ field, fieldState }) => (
+          <Input
+            label="Mot de passe"
+            secureTextEntry
+            value={field.value}
+            onChangeText={field.onChange}
+            onBlur={field.onBlur}
+            error={fieldState.error?.message}
+          />
+        )}
+      />
+
+      {submitError ? (
+        <Text variant="caption" style={{ color: colors.error }}>
+          {submitError}
+        </Text>
+      ) : null}
+
+      <Button
+        label={formState.isSubmitting ? '…' : copy.cta}
+        onPress={onSubmit}
+        disabled={formState.isSubmitting}
+        fullWidth
+      />
+
+      <View style={{ gap: spacing[2] }}>
+        <Button
+          label="Continuer avec Apple"
+          variant="secondary"
+          fullWidth
+          onPress={() => signInWithOAuth('apple')}
+        />
+        <Button
+          label="Continuer avec Google"
+          variant="secondary"
+          fullWidth
+          onPress={() => signInWithOAuth('google')}
+        />
+      </View>
+
+      <View style={{ flexDirection: 'row', gap: spacing[2], justifyContent: 'center' }}>
+        <Text variant="caption" color="textMuted">
+          {copy.alt}
+        </Text>
+        <Link href={copy.altHref}>
+          <Text variant="caption" color="primary">
+            {copy.altLabel}
+          </Text>
+        </Link>
+      </View>
+    </Screen>
+  );
+}
