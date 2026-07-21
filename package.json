@@ -19,11 +19,6 @@
     "db:reset": "npx --yes supabase db reset",
     "db:types": "npx --yes supabase gen types typescript --local > packages/database/src/generated/database.types.ts"
   },
-  "pnpm": {
-    "overrides": {
-      "react-native-reanimated": "3.16.7"
-    }
-  },
   "devDependencies": {
     "@typescript-eslint/eslint-plugin": "^8.18.0",
     "@typescript-eslint/parser": "^8.18.0",
