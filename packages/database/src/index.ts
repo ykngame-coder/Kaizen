@@ -7,3 +7,5 @@ export * from './repositories/goals';
 export * from './repositories/activities';
 export * from './repositories/workouts';
 export * from './repositories/health';
+export * from './repositories/nutrition';
+export * from './repositories/habits';

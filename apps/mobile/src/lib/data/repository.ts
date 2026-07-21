@@ -1,5 +1,5 @@
-import type { Activity, HealthMetric, Workout, SetEntry } from '@supotsu/core';
-import type { ActivityInput } from '@supotsu/shared';
+import type { Activity, HealthMetric, Habit, HabitLog, NutritionEntry, Workout, SetEntry } from '@supotsu/core';
+import type { ActivityInput, HabitInput, NutritionEntryInput } from '@supotsu/shared';
 import type { ImportedActivity, ImportedHealthMetric } from '@supotsu/connectors';
 import {
   insertActivity,
@@ -8,9 +8,18 @@ import {
   listWorkouts as listWorkoutsDb,
   insertHealthMetrics,
   listHealthMetrics as listHealthMetricsDb,
+  insertNutritionEntry,
+  listNutritionEntries as listNutritionEntriesDb,
+  insertHabit,
+  listHabits as listHabitsDb,
+  insertHabitLog,
+  listHabitLogs as listHabitLogsDb,
   type ActivityRow,
   type WorkoutRow,
   type HealthMetricRow,
+  type NutritionEntryRow,
+  type HabitRow,
+  type HabitLogRow,
 } from '@supotsu/database';
 import { getSupabase } from '@/lib/supabase';
 import { secureStorage } from '@/lib/secure-storage';
@@ -37,6 +46,12 @@ export interface DataRepository {
   listWorkouts(userId: string): Promise<Workout[]>;
   addWorkout(userId: string, workout: NewWorkout): Promise<Workout>;
   listHealthMetrics(userId: string): Promise<HealthMetric[]>;
+  listNutritionEntries(userId: string): Promise<NutritionEntry[]>;
+  addNutritionEntry(userId: string, input: NutritionEntryInput): Promise<NutritionEntry>;
+  listHabits(userId: string): Promise<Habit[]>;
+  addHabit(userId: string, input: HabitInput): Promise<Habit>;
+  listHabitLogs(userId: string): Promise<HabitLog[]>;
+  logHabit(userId: string, habitId: string): Promise<HabitLog>;
   /** Persist a validated connector import; returns how many rows were added. */
   persistImport(
     userId: string,
@@ -96,6 +111,49 @@ function rowToHealthMetric(r: HealthMetricRow): HealthMetric {
   };
 }
 
+function rowToNutrition(r: NutritionEntryRow): NutritionEntry {
+  return {
+    id: r.id,
+    userId: r.user_id,
+    mealType: r.meal_type,
+    description: r.description,
+    kcal: r.kcal,
+    proteinG: r.protein_g ?? undefined,
+    carbG: r.carb_g ?? undefined,
+    fatG: r.fat_g ?? undefined,
+    hydrationMl: r.hydration_ml ?? undefined,
+    source: r.source as NutritionEntry['source'],
+    loggedAt: r.logged_at,
+    createdAt: r.created_at,
+    updatedAt: r.updated_at,
+  };
+}
+
+function rowToHabit(r: HabitRow): Habit {
+  return {
+    id: r.id,
+    userId: r.user_id,
+    name: r.name,
+    pillar: r.pillar as Habit['pillar'],
+    cadence: r.cadence,
+    targetPerPeriod: r.target_per_period,
+    archivedAt: r.archived_at ?? undefined,
+    createdAt: r.created_at,
+    updatedAt: r.updated_at,
+  };
+}
+
+function rowToHabitLog(r: HabitLogRow): HabitLog {
+  return {
+    id: r.id,
+    userId: r.user_id,
+    habitId: r.habit_id,
+    completedAt: r.completed_at,
+    createdAt: r.created_at,
+    updatedAt: r.created_at,
+  };
+}
+
 function importedToActivity(userId: string, a: ImportedActivity): Activity {
   const now = new Date().toISOString();
   return {
@@ -134,6 +192,9 @@ function importedToHealth(userId: string, m: ImportedHealthMetric): HealthMetric
 const actKey = (u: string): string => `supotsu.activities.${u}`;
 const wkKey = (u: string): string => `supotsu.workouts.${u}`;
 const hmKey = (u: string): string => `supotsu.health.${u}`;
+const nutKey = (u: string): string => `supotsu.nutrition.${u}`;
+const habKey = (u: string): string => `supotsu.habits.${u}`;
+const hlogKey = (u: string): string => `supotsu.habitlogs.${u}`;
 
 async function readJson<T>(key: string): Promise<T[]> {
   const raw = await secureStorage.getItem(key);
@@ -193,6 +254,69 @@ function createDemoRepository(): DataRepository {
       const items = await readJson<HealthMetric>(hmKey(userId));
       return items.sort((a, b) => b.measuredAt.localeCompare(a.measuredAt));
     },
+    async listNutritionEntries(userId) {
+      const items = await readJson<NutritionEntry>(nutKey(userId));
+      return items.sort((a, b) => b.loggedAt.localeCompare(a.loggedAt));
+    },
+    async addNutritionEntry(userId, input) {
+      const now = new Date().toISOString();
+      const entry: NutritionEntry = {
+        id: randomId(),
+        userId,
+        mealType: input.mealType,
+        description: input.description,
+        kcal: input.kcal,
+        proteinG: input.proteinG,
+        carbG: input.carbG,
+        fatG: input.fatG,
+        hydrationMl: input.hydrationMl,
+        source: input.source,
+        loggedAt: input.loggedAt,
+        createdAt: now,
+        updatedAt: now,
+      };
+      const items = await readJson<NutritionEntry>(nutKey(userId));
+      await writeJson(nutKey(userId), [entry, ...items]);
+      return entry;
+    },
+    async listHabits(userId) {
+      const items = await readJson<Habit>(habKey(userId));
+      return items.filter((h) => !h.archivedAt).sort((a, b) => a.createdAt.localeCompare(b.createdAt));
+    },
+    async addHabit(userId, input) {
+      const now = new Date().toISOString();
+      const habit: Habit = {
+        id: randomId(),
+        userId,
+        name: input.name,
+        pillar: input.pillar,
+        cadence: input.cadence,
+        targetPerPeriod: input.targetPerPeriod,
+        createdAt: now,
+        updatedAt: now,
+      };
+      const items = await readJson<Habit>(habKey(userId));
+      await writeJson(habKey(userId), [...items, habit]);
+      return habit;
+    },
+    async listHabitLogs(userId) {
+      const items = await readJson<HabitLog>(hlogKey(userId));
+      return items.sort((a, b) => b.completedAt.localeCompare(a.completedAt));
+    },
+    async logHabit(userId, habitId) {
+      const now = new Date().toISOString();
+      const log: HabitLog = {
+        id: randomId(),
+        userId,
+        habitId,
+        completedAt: now,
+        createdAt: now,
+        updatedAt: now,
+      };
+      const items = await readJson<HabitLog>(hlogKey(userId));
+      await writeJson(hlogKey(userId), [log, ...items]);
+      return log;
+    },
     async persistImport(userId, payload) {
       const existingA = await readJson<Activity>(actKey(userId));
       const newA = payload.activities.map((a) => importedToActivity(userId, a));
@@ -238,6 +362,44 @@ function createSupabaseRepository(
     },
     async listHealthMetrics(userId) {
       return (await listHealthMetricsDb(client, userId)).map(rowToHealthMetric);
+    },
+    async listNutritionEntries(userId) {
+      return (await listNutritionEntriesDb(client, userId)).map(rowToNutrition);
+    },
+    async addNutritionEntry(userId, input) {
+      const row = await insertNutritionEntry(client, {
+        user_id: userId,
+        meal_type: input.mealType,
+        description: input.description,
+        kcal: input.kcal,
+        protein_g: input.proteinG ?? null,
+        carb_g: input.carbG ?? null,
+        fat_g: input.fatG ?? null,
+        hydration_ml: input.hydrationMl ?? null,
+        source: input.source,
+        logged_at: input.loggedAt,
+      });
+      return rowToNutrition(row);
+    },
+    async listHabits(userId) {
+      return (await listHabitsDb(client, userId)).map(rowToHabit);
+    },
+    async addHabit(userId, input) {
+      const row = await insertHabit(client, {
+        user_id: userId,
+        name: input.name,
+        pillar: input.pillar,
+        cadence: input.cadence,
+        target_per_period: input.targetPerPeriod,
+      });
+      return rowToHabit(row);
+    },
+    async listHabitLogs(userId) {
+      return (await listHabitLogsDb(client, userId)).map(rowToHabitLog);
+    },
+    async logHabit(userId, habitId) {
+      const row = await insertHabitLog(client, userId, habitId, new Date().toISOString());
+      return rowToHabitLog(row);
     },
     async persistImport(userId, payload) {
       for (const a of payload.activities) {

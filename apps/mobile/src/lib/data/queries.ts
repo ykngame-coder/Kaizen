@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import type { ActivityInput } from '@supotsu/shared';
+import type { ActivityInput, HabitInput, NutritionEntryInput } from '@supotsu/shared';
 import { getConnector, importFromConnector, type ConnectorProvider } from '@supotsu/connectors';
 import { useAuth } from '@/features/auth/AuthProvider';
 import { createDataRepository, type NewWorkout } from './repository';
@@ -65,6 +65,72 @@ export function useSyncConnector() {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['activities', user?.id] });
       qc.invalidateQueries({ queryKey: ['health', user?.id] });
+    },
+  });
+}
+
+export function useNutritionEntries() {
+  const { user } = useAuth();
+  const repo = useRepository();
+  return useQuery({
+    queryKey: ['nutrition', user?.id],
+    enabled: !!user,
+    queryFn: () => repo.listNutritionEntries(user!.id),
+  });
+}
+
+export function useAddNutritionEntry() {
+  const { user } = useAuth();
+  const repo = useRepository();
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (input: NutritionEntryInput) => repo.addNutritionEntry(user!.id, input),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['nutrition', user?.id] });
+    },
+  });
+}
+
+export function useHabits() {
+  const { user } = useAuth();
+  const repo = useRepository();
+  return useQuery({
+    queryKey: ['habits', user?.id],
+    enabled: !!user,
+    queryFn: () => repo.listHabits(user!.id),
+  });
+}
+
+export function useAddHabit() {
+  const { user } = useAuth();
+  const repo = useRepository();
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (input: HabitInput) => repo.addHabit(user!.id, input),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['habits', user?.id] });
+    },
+  });
+}
+
+export function useHabitLogs() {
+  const { user } = useAuth();
+  const repo = useRepository();
+  return useQuery({
+    queryKey: ['habitLogs', user?.id],
+    enabled: !!user,
+    queryFn: () => repo.listHabitLogs(user!.id),
+  });
+}
+
+export function useLogHabit() {
+  const { user } = useAuth();
+  const repo = useRepository();
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (habitId: string) => repo.logHabit(user!.id, habitId),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['habitLogs', user?.id] });
     },
   });
 }

@@ -7,6 +7,7 @@ const ICONS: Record<string, string> = {
   index: '◎',
   training: '⚡',
   activities: '≋',
+  nutrition: '◍',
   coach: '✦',
   profile: '☰',
 };
@@ -33,6 +34,7 @@ export default function TabsLayout(): React.JSX.Element {
       <Tabs.Screen name="index" options={{ title: 'Accueil' }} />
       <Tabs.Screen name="training" options={{ title: 'Entraînement' }} />
       <Tabs.Screen name="activities" options={{ title: 'Activités' }} />
+      <Tabs.Screen name="nutrition" options={{ title: 'Nutrition' }} />
       <Tabs.Screen name="coach" options={{ title: 'Coach IA' }} />
       <Tabs.Screen name="profile" options={{ title: 'Profil' }} />
     </Tabs>

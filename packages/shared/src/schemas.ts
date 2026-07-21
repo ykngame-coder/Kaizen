@@ -70,6 +70,41 @@ export const goalInputSchema = z.object({
 });
 export type GoalInput = z.infer<typeof goalInputSchema>;
 
+export const mealTypeSchema = z.enum(['breakfast', 'lunch', 'dinner', 'snack']);
+
+/** Manual meal / intake logging (Master Prompt P11 nutrition). */
+export const nutritionEntryInputSchema = z.object({
+  mealType: mealTypeSchema,
+  description: z.string().min(1).max(200),
+  kcal: z.number().nonnegative().max(10000),
+  proteinG: z.number().nonnegative().max(500).optional(),
+  carbG: z.number().nonnegative().max(1500).optional(),
+  fatG: z.number().nonnegative().max(500).optional(),
+  hydrationMl: z.number().nonnegative().max(10000).optional(),
+  source: dataSourceSchema.default('manual'),
+  loggedAt: z.string().datetime(),
+});
+export type NutritionEntryInput = z.infer<typeof nutritionEntryInputSchema>;
+
+export const pillarSchema = z.enum([
+  'sleep',
+  'recovery',
+  'performance',
+  'nutrition',
+  'habits',
+  'understanding',
+  'decision',
+]);
+
+/** Habit creation input (Master Prompt P12 habitudes). */
+export const habitInputSchema = z.object({
+  name: z.string().min(1).max(80),
+  pillar: pillarSchema.default('habits'),
+  cadence: z.enum(['daily', 'weekly']).default('daily'),
+  targetPerPeriod: z.number().int().positive().max(50).default(1),
+});
+export type HabitInput = z.infer<typeof habitInputSchema>;
+
 /** Manual activity logging (Master Prompt MVP 20.3 — ajout manuel activité). */
 export const activityInputSchema = z.object({
   type: activityTypeSchema,

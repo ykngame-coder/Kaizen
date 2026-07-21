@@ -6,6 +6,8 @@ import { spacing } from '@supotsu/design-system';
 import { buildDailySnapshot, recoveryBand } from '@supotsu/engines';
 import type { Confidence } from '@supotsu/core';
 import { useActivities, useHealthMetrics } from '@/lib/data/queries';
+import { BadgesCard } from '@/features/gamification/BadgesCard';
+import { HabitsCard } from '@/features/gamification/HabitsCard';
 
 const CONFIDENCE_LABEL: Record<Confidence, { label: string; tone: BadgeTone }> = {
   high: { label: 'Confiance élevée', tone: 'success' },
@@ -107,6 +109,9 @@ export function DashboardScreen(): React.JSX.Element {
           <Button label="Ajouter une activité" onPress={() => router.push('/activity/new')} />
         </View>
       </Card>
+
+      <HabitsCard />
+      <BadgesCard />
     </Screen>
   );
 }

@@ -225,6 +225,94 @@ export interface Database {
         Update: Partial<Database['public']['Tables']['exercises']['Insert']>;
         Relationships: [];
       };
+      nutrition_entries: {
+        Row: {
+          id: string;
+          user_id: string;
+          meal_type: 'breakfast' | 'lunch' | 'dinner' | 'snack';
+          description: string;
+          kcal: number;
+          protein_g: number | null;
+          carb_g: number | null;
+          fat_g: number | null;
+          hydration_ml: number | null;
+          source: string;
+          logged_at: string;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          user_id: string;
+          meal_type: 'breakfast' | 'lunch' | 'dinner' | 'snack';
+          description: string;
+          kcal: number;
+          protein_g?: number | null;
+          carb_g?: number | null;
+          fat_g?: number | null;
+          hydration_ml?: number | null;
+          source?: string;
+          logged_at: string;
+        };
+        Update: Partial<Database['public']['Tables']['nutrition_entries']['Insert']>;
+        Relationships: [];
+      };
+      habits: {
+        Row: {
+          id: string;
+          user_id: string;
+          name: string;
+          pillar: string;
+          cadence: 'daily' | 'weekly';
+          target_per_period: number;
+          archived_at: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          user_id: string;
+          name: string;
+          pillar?: string;
+          cadence?: 'daily' | 'weekly';
+          target_per_period?: number;
+          archived_at?: string | null;
+        };
+        Update: Partial<Database['public']['Tables']['habits']['Insert']>;
+        Relationships: [];
+      };
+      habit_logs: {
+        Row: {
+          id: string;
+          user_id: string;
+          habit_id: string;
+          completed_at: string;
+          created_at: string;
+        };
+        Insert: {
+          user_id: string;
+          habit_id: string;
+          completed_at?: string;
+        };
+        Update: Partial<Database['public']['Tables']['habit_logs']['Insert']>;
+        Relationships: [];
+      };
+      earned_badges: {
+        Row: {
+          id: string;
+          user_id: string;
+          badge_id: string;
+          reason: string;
+          earned_at: string;
+          created_at: string;
+        };
+        Insert: {
+          user_id: string;
+          badge_id: string;
+          reason: string;
+          earned_at?: string;
+        };
+        Update: Partial<Database['public']['Tables']['earned_badges']['Insert']>;
+        Relationships: [];
+      };
     };
     Views: Record<string, never>;
     Functions: Record<string, never>;

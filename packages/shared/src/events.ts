@@ -43,12 +43,31 @@ export interface DeviceSyncedEvent extends DomainEventBase {
   source: string;
 }
 
+export interface MealLoggedEvent extends DomainEventBase {
+  type: 'MealLogged';
+  entryId: UUID;
+  kcal: number;
+}
+
+export interface HabitCompletedEvent extends DomainEventBase {
+  type: 'HabitCompleted';
+  habitId: UUID;
+}
+
+export interface BadgeEarnedEvent extends DomainEventBase {
+  type: 'BadgeEarned';
+  badgeId: string;
+}
+
 export type DomainEvent =
   | WorkoutCompletedEvent
   | SleepRecordedEvent
   | WeightUpdatedEvent
   | GoalReachedEvent
   | NewRecordEvent
-  | DeviceSyncedEvent;
+  | DeviceSyncedEvent
+  | MealLoggedEvent
+  | HabitCompletedEvent
+  | BadgeEarnedEvent;
 
 export type DomainEventType = DomainEvent['type'];
