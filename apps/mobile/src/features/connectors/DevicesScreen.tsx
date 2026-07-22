@@ -324,6 +324,16 @@ export function DevicesScreen(): React.JSX.Element {
       </View>
 
       <Card>
+        <Text variant="heading">Importer un fichier</Text>
+        <Text variant="body" color="textMuted">
+          Centralise un export Garmin / Apple Santé (JSON). Gratuit, sans compte tiers.
+        </Text>
+        <View style={{ alignItems: 'flex-start' }}>
+          <Button label="Importer un fichier" onPress={() => router.push('/import')} />
+        </View>
+      </Card>
+
+      <Card>
         <Text variant="heading">Données santé importées</Text>
         <Text variant="body" color="textMuted">
           {health.length === 0

@@ -2,7 +2,13 @@ import { useMemo } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import type { ActivityInput, ChallengeInput, HabitInput, NutritionEntryInput } from '@supotsu/shared';
 import type { Challenge } from '@supotsu/core';
-import { getConnector, importFromConnector, type ConnectorProvider } from '@supotsu/connectors';
+import {
+  getConnector,
+  importFromConnector,
+  type ConnectorProvider,
+  type ImportedActivity,
+  type ImportedHealthMetric,
+} from '@supotsu/connectors';
 import { useAuth } from '@/features/auth/AuthProvider';
 import { createDataRepository, type NewWorkout } from './repository';
 
@@ -220,6 +226,20 @@ export function useEnrollProgram() {
     mutationFn: (programId: string) => repo.enrollProgram(user!.id, programId),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['enrollments', user?.id] });
+    },
+  });
+}
+
+export function useImportHealth() {
+  const { user } = useAuth();
+  const repo = useRepository();
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (payload: { activities: ImportedActivity[]; healthMetrics: ImportedHealthMetric[] }) =>
+      repo.persistImport(user!.id, payload),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['activities', user?.id] });
+      qc.invalidateQueries({ queryKey: ['health', user?.id] });
     },
   });
 }
