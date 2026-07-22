@@ -2,9 +2,11 @@ import { describe, expect, it } from 'vitest';
 import {
   detectAndParseGarminFile,
   parseGarminActivities,
+  parseGarminBenchmarks,
   parseGarminBioMetrics,
   parseGarminDailySummary,
   parseGarminHealthStatus,
+  parseGarminPersonalRecords,
   parseGarminSleep,
   parseImportFile,
 } from './garminExport';
@@ -134,6 +136,45 @@ describe('parseGarminActivities', () => {
     expect(out[0]?.startedAt).toBe('2023-07-18T10:51:47.000Z');
     expect(out[1]?.type).toBe('strength');
     expect(out[1]?.distanceM).toBeUndefined(); // distance 0 → omitted
+  });
+});
+
+// Real shapes from *_benchmarks.json and *_personalRecord.json.
+const BENCHMARKS = [
+  { id: 697149, benchmarkKey: 'BARBELL_BENCH_PRESS', reps: 1, maxWeight: 81.0, oneRepMax: 81.0, dateSet: '2025-10-28T10:06:07.0' },
+  { id: 637708, benchmarkKey: 'BARBELL_DEADLIFT', reps: 1, maxWeight: 135.0, oneRepMax: 135.0, dateSet: '2026-03-05T05:03:58.0' },
+];
+
+const PERSONAL_RECORDS = [
+  {
+    personalRecords: [
+      { personalRecordId: 2586140275, personalRecordType: 'Max Rep Weight (Barbell Deadlift)', value: 107000.0, prStartTimeGMT: 'Mon Jan 27 10:41:59 GMT 2025', createdDate: '2025-01-27' },
+      { personalRecordId: 2809019465, personalRecordType: 'Best 5km Run', value: 1826.55, prStartTimeGMT: 'Mon Dec 15 17:46:09 GMT 2025', createdDate: '2025-12-15' },
+      { personalRecordId: 2879016364, personalRecordType: 'Farthest Run', value: 10046.72, prStartTimeGMT: 'Sat Mar 21 20:20:05 GMT 2026', createdDate: '2026-03-21' },
+      { personalRecordId: 1, personalRecordType: 'Current Goal Streak', value: 0.0, prStartTimeGMT: 'Tue Jul 21 22:00:00 GMT 2026', createdDate: '2021-08-10' },
+    ],
+  },
+];
+
+describe('parseGarminBenchmarks', () => {
+  it('maps 1RM to strength records in kg with a readable label', () => {
+    const out = parseGarminBenchmarks(BENCHMARKS);
+    expect(out).toHaveLength(2);
+    expect(out[0]).toMatchObject({ category: 'strength', unit: 'kg', value: 81, source: 'garmin' });
+    expect(out[0]?.label).toBe('Barbell Bench Press (1RM)');
+    expect(out[1]?.achievedAt).toBe('2026-03-05T05:03:58.000Z');
+  });
+});
+
+describe('parseGarminPersonalRecords', () => {
+  it('classifies strength (g→kg), run time, run distance and skips streaks', () => {
+    const out = parseGarminPersonalRecords(PERSONAL_RECORDS);
+    const byLabel = Object.fromEntries(out.map((r) => [r.label, r]));
+    expect(out).toHaveLength(3); // streak skipped
+    expect(byLabel['Max Rep Weight (Barbell Deadlift)']).toMatchObject({ category: 'strength', unit: 'kg', value: 107 });
+    expect(byLabel['Best 5km Run']).toMatchObject({ category: 'run', unit: 's', value: 1826.55 });
+    expect(byLabel['Farthest Run']).toMatchObject({ category: 'run', unit: 'm', value: 10046.72 });
+    expect(byLabel['Best 5km Run']?.achievedAt).toBe('2025-12-15T17:46:09.000Z');
   });
 });
 

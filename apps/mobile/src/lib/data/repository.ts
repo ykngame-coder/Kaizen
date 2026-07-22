@@ -5,13 +5,14 @@ import type {
   Habit,
   HabitLog,
   NutritionEntry,
+  PersonalRecord,
   Program,
   Workout,
   SetEntry,
 } from '@supotsu/core';
 import type { ActivityInput, ChallengeInput, HabitInput, NutritionEntryInput } from '@supotsu/shared';
 import { PROGRAM_CATALOG } from '@supotsu/shared';
-import type { ImportedActivity, ImportedHealthMetric } from '@supotsu/connectors';
+import type { ImportedActivity, ImportedHealthMetric, ImportedRecord } from '@supotsu/connectors';
 import {
   insertActivity,
   upsertActivities,
@@ -34,6 +35,8 @@ import {
   listPrograms as listProgramsDb,
   listEnrollments as listEnrollmentsDb,
   enrollInProgram,
+  upsertRecords,
+  listRecords as listRecordsDb,
   type ActivityRow,
   type WorkoutRow,
   type HealthMetricRow,
@@ -42,6 +45,7 @@ import {
   type HabitLogRow,
   type ChallengeRow,
   type ProgramRow,
+  type RecordRow,
 } from '@supotsu/database';
 import { getSupabase } from '@/lib/supabase';
 import { secureStorage } from '@/lib/secure-storage';
@@ -55,6 +59,7 @@ export interface NewWorkout {
 export interface ImportPayload {
   activities: ImportedActivity[];
   healthMetrics: ImportedHealthMetric[];
+  records: ImportedRecord[];
 }
 
 /**
@@ -68,6 +73,7 @@ export interface DataRepository {
   listWorkouts(userId: string): Promise<Workout[]>;
   addWorkout(userId: string, workout: NewWorkout): Promise<Workout>;
   listHealthMetrics(userId: string): Promise<HealthMetric[]>;
+  listRecords(userId: string): Promise<PersonalRecord[]>;
   listNutritionEntries(userId: string): Promise<NutritionEntry[]>;
   addNutritionEntry(userId: string, input: NutritionEntryInput): Promise<NutritionEntry>;
   listHabits(userId: string): Promise<Habit[]>;
@@ -214,6 +220,39 @@ function rowToProgram(r: ProgramRow): Program {
   };
 }
 
+function rowToRecord(r: RecordRow): PersonalRecord {
+  return {
+    id: r.id,
+    userId: r.user_id,
+    externalId: r.external_id ?? undefined,
+    label: r.label,
+    category: r.category,
+    value: r.value,
+    unit: r.unit,
+    source: r.source as PersonalRecord['source'],
+    achievedAt: r.achieved_at,
+    createdAt: r.created_at,
+    updatedAt: r.updated_at,
+  };
+}
+
+function importedToRecord(userId: string, r: ImportedRecord): PersonalRecord {
+  const now = new Date().toISOString();
+  return {
+    id: randomId(),
+    userId,
+    externalId: r.externalId,
+    label: r.label,
+    category: r.category,
+    value: r.value,
+    unit: r.unit,
+    source: r.source,
+    achievedAt: r.achievedAt,
+    createdAt: now,
+    updatedAt: now,
+  };
+}
+
 /** Count a user's activities inside a challenge window (demo leaderboard). */
 function progressInWindow(challenge: Challenge, activities: Activity[]): number {
   const start = new Date(challenge.startsAt).getTime();
@@ -269,6 +308,7 @@ const hmKey = (u: string): string => `supotsu.health.${u}`;
 const nutKey = (u: string): string => `supotsu.nutrition.${u}`;
 const habKey = (u: string): string => `supotsu.habits.${u}`;
 const hlogKey = (u: string): string => `supotsu.habitlogs.${u}`;
+const recKey = (u: string): string => `supotsu.records.${u}`;
 const chKey = (u: string): string => `supotsu.challenges.${u}`;
 const chJoinKey = (u: string): string => `supotsu.challengejoins.${u}`;
 const enrollKey = (u: string): string => `supotsu.enrollments.${u}`;
@@ -330,6 +370,10 @@ function createDemoRepository(): DataRepository {
     async listHealthMetrics(userId) {
       const items = await readJson<HealthMetric>(hmKey(userId));
       return items.sort((a, b) => b.measuredAt.localeCompare(a.measuredAt));
+    },
+    async listRecords(userId) {
+      const items = await readJson<PersonalRecord>(recKey(userId));
+      return items.sort((a, b) => b.achievedAt.localeCompare(a.achievedAt));
     },
     async listNutritionEntries(userId) {
       const items = await readJson<NutritionEntry>(nutKey(userId));
@@ -462,6 +506,18 @@ function createDemoRepository(): DataRepository {
         .filter((h) => !seen.has(`${h.type}|${h.measuredAt}`));
       await writeJson(hmKey(userId), [...newH, ...existingH]);
 
+      const existingR = await readJson<PersonalRecord>(recKey(userId));
+      const seenR = new Set(existingR.map((r) => `${r.source}|${r.externalId ?? r.label + r.achievedAt}`));
+      const newR = payload.records
+        .map((r) => importedToRecord(userId, r))
+        .filter((r) => {
+          const key = `${r.source}|${r.externalId ?? r.label + r.achievedAt}`;
+          if (seenR.has(key)) return false;
+          seenR.add(key);
+          return true;
+        });
+      await writeJson(recKey(userId), [...newR, ...existingR]);
+
       return { activities: newA.length, health: newH.length };
     },
   };
@@ -495,6 +551,9 @@ function createSupabaseRepository(
     },
     async listHealthMetrics(userId) {
       return (await listHealthMetricsDb(client, userId)).map(rowToHealthMetric);
+    },
+    async listRecords(userId) {
+      return (await listRecordsDb(client, userId)).map(rowToRecord);
     },
     async listNutritionEntries(userId) {
       return (await listNutritionEntriesDb(client, userId)).map(rowToNutrition);
@@ -597,6 +656,19 @@ function createSupabaseRepository(
           source: m.source,
           reliability: m.reliability ?? null,
           measured_at: m.measuredAt,
+        })),
+      );
+      await upsertRecords(
+        client,
+        payload.records.map((r) => ({
+          user_id: userId,
+          external_id: r.externalId ?? null,
+          label: r.label,
+          category: r.category,
+          value: r.value,
+          unit: r.unit,
+          source: r.source,
+          achieved_at: r.achievedAt,
         })),
       );
       return { activities: payload.activities.length, health: payload.healthMetrics.length };

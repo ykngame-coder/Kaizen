@@ -1,5 +1,5 @@
-import type { ActivityType, HealthMetricType } from '@supotsu/core';
-import type { ImportedActivity, ImportedHealthMetric } from './types';
+import type { ActivityType, HealthMetricType, RecordCategory } from '@supotsu/core';
+import type { ImportedActivity, ImportedHealthMetric, ImportedRecord } from './types';
 import { parseHealthExport, type ParsedImport } from './healthImport';
 
 /**
@@ -14,7 +14,7 @@ import { parseHealthExport, type ParsedImport } from './healthImport';
 function garminToIso(ts: unknown): string | undefined {
   if (typeof ts !== 'string' || ts === '') return undefined;
   const s = /^\d{4}-\d{2}-\d{2}$/.test(ts) ? `${ts}T00:00:00` : ts;
-  const hasTz = /[Zz]$|[+-]\d{2}:?\d{2}$/.test(s);
+  const hasTz = /gmt|utc|[Zz]$|[+-]\d{2}:?\d{2}$/i.test(s);
   const d = new Date(hasTz ? s : `${s}Z`);
   return Number.isNaN(d.getTime()) ? undefined : d.toISOString();
 }
@@ -174,6 +174,88 @@ export function parseGarminActivities(activities: GarminSummarizedActivity[]): I
   return out;
 }
 
+/** "BARBELL_BENCH_PRESS" → "Barbell Bench Press". */
+function humanize(key: string): string {
+  return key
+    .toLowerCase()
+    .split('_')
+    .filter(Boolean)
+    .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+    .join(' ');
+}
+
+export interface GarminBenchmark {
+  id?: number;
+  benchmarkKey?: string;
+  oneRepMax?: number;
+  maxWeight?: number;
+  dateSet?: string;
+}
+
+/** DI-Connect-Fitness/*_benchmarks.json → 1RM strength records (kg). */
+export function parseGarminBenchmarks(records: GarminBenchmark[]): ImportedRecord[] {
+  const out: ImportedRecord[] = [];
+  for (const b of records ?? []) {
+    const value = typeof b.oneRepMax === 'number' ? b.oneRepMax : b.maxWeight;
+    const achievedAt = garminToIso(b.dateSet);
+    if (typeof value !== 'number' || !Number.isFinite(value) || !achievedAt || !b.benchmarkKey) continue;
+    out.push({
+      externalId: b.id !== undefined ? `garmin-bench-${b.id}` : undefined,
+      label: `${humanize(b.benchmarkKey)} (1RM)`,
+      category: 'strength',
+      value: Math.round(value * 10) / 10,
+      unit: 'kg',
+      source: 'garmin',
+      achievedAt,
+    });
+  }
+  return out;
+}
+
+export interface GarminPersonalRecordItem {
+  personalRecordId?: number;
+  personalRecordType?: string;
+  value?: number;
+  prStartTimeGMT?: string;
+  createdDate?: string;
+}
+
+/** Classify a Garmin personalRecordType into (category, unit, value transform). */
+function classifyPr(type: string, value: number): { category: RecordCategory; unit: string; value: number } | null {
+  if (/Max Rep Weight/i.test(type)) return { category: 'strength', unit: 'kg', value: value / 1000 }; // grams → kg
+  if (/Best .*(km|mile) Run/i.test(type)) return { category: 'run', unit: 's', value }; // time in seconds
+  if (/Farthest Run/i.test(type)) return { category: 'run', unit: 'm', value };
+  if (/Farthest Cycle/i.test(type)) return { category: 'cycling', unit: 'm', value };
+  if (/Max Elevation Gain/i.test(type)) return { category: 'cycling', unit: 'm', value };
+  if (/Steps/i.test(type)) return { category: 'steps', unit: 'steps', value };
+  return null; // streaks etc. are skipped
+}
+
+/** *_personalRecord.json → run / strength / steps records. */
+export function parseGarminPersonalRecords(
+  groups: { personalRecords?: GarminPersonalRecordItem[] }[],
+): ImportedRecord[] {
+  const items = (groups ?? []).flatMap((g) => (Array.isArray(g?.personalRecords) ? g.personalRecords : []));
+  const out: ImportedRecord[] = [];
+  for (const r of items) {
+    if (!r.personalRecordType || typeof r.value !== 'number' || r.value <= 0) continue;
+    const classified = classifyPr(r.personalRecordType, r.value);
+    if (!classified) continue;
+    const achievedAt = garminToIso(r.prStartTimeGMT) ?? garminToIso(r.createdDate);
+    if (!achievedAt) continue;
+    out.push({
+      externalId: r.personalRecordId !== undefined ? `garmin-pr-${r.personalRecordId}` : undefined,
+      label: r.personalRecordType,
+      category: classified.category,
+      value: Math.round(classified.value * 100) / 100,
+      unit: classified.unit,
+      source: 'garmin',
+      achievedAt,
+    });
+  }
+  return out;
+}
+
 const has = (o: unknown, key: string): boolean =>
   typeof o === 'object' && o !== null && key in (o as Record<string, unknown>);
 
@@ -181,23 +263,35 @@ const has = (o: unknown, key: string): boolean =>
 export function detectAndParseGarminFile(json: unknown): ParsedImport | null {
   if (!Array.isArray(json)) return null;
   const sample = json.slice(0, 20);
+  const wrap = (p: Partial<ParsedImport>): ParsedImport => ({
+    activities: p.activities ?? [],
+    healthMetrics: p.healthMetrics ?? [],
+    records: p.records ?? [],
+  });
+
   if (sample.some((x) => has(x, 'sleepStartTimestampGMT') || has(x, 'sleepEndTimestampGMT'))) {
-    return { activities: [], healthMetrics: parseGarminSleep(json as GarminSleepRecord[]) };
+    return wrap({ healthMetrics: parseGarminSleep(json as GarminSleepRecord[]) });
   }
   if (sample.some((x) => has(x, 'createTimestampUTC') && has(x, 'metrics'))) {
-    return { activities: [], healthMetrics: parseGarminHealthStatus(json as GarminHealthStatusRecord[]) };
+    return wrap({ healthMetrics: parseGarminHealthStatus(json as GarminHealthStatusRecord[]) });
   }
   if (sample.some((x) => has(x, 'summarizedActivitiesExport'))) {
     const acts = (json as { summarizedActivitiesExport?: GarminSummarizedActivity[] }[]).flatMap(
       (x) => (Array.isArray(x?.summarizedActivitiesExport) ? x.summarizedActivitiesExport : []),
     );
-    return { activities: parseGarminActivities(acts), healthMetrics: [] };
+    return wrap({ activities: parseGarminActivities(acts) });
   }
   if (sample.some((x) => has(x, 'allDayStress') || has(x, 'wellnessStartTimeGmt'))) {
-    return { activities: [], healthMetrics: parseGarminDailySummary(json as GarminDailyRecord[]) };
+    return wrap({ healthMetrics: parseGarminDailySummary(json as GarminDailyRecord[]) });
+  }
+  if (sample.some((x) => has(x, 'benchmarkKey'))) {
+    return wrap({ records: parseGarminBenchmarks(json as GarminBenchmark[]) });
+  }
+  if (sample.some((x) => has(x, 'personalRecords'))) {
+    return wrap({ records: parseGarminPersonalRecords(json as { personalRecords?: GarminPersonalRecordItem[] }[]) });
   }
   if (sample.some((x) => has(x, 'userSetNullForWeight') || has(x, 'weight'))) {
-    return { activities: [], healthMetrics: parseGarminBioMetrics(json as GarminBioRecord[]) };
+    return wrap({ healthMetrics: parseGarminBioMetrics(json as GarminBioRecord[]) });
   }
   return null;
 }

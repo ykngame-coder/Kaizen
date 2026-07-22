@@ -4,6 +4,7 @@ import type {
   HealthMetricType,
   Intensity,
   ISODateString,
+  RecordCategory,
   Reliability,
 } from '@supotsu/core';
 
@@ -45,6 +46,17 @@ export interface ImportedHealthMetric {
   source: DataSource;
   reliability?: Reliability;
   measuredAt: ISODateString;
+}
+
+/** Normalized personal record / benchmark. */
+export interface ImportedRecord {
+  externalId?: string;
+  label: string;
+  category: RecordCategory;
+  value: number;
+  unit: string;
+  source: DataSource;
+  achievedAt: ISODateString;
 }
 
 export interface ImportResult {

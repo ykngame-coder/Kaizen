@@ -19,6 +19,16 @@ export function TrainingScreen(): React.JSX.Element {
       </View>
 
       <Card>
+        <Text variant="heading">Mes records</Text>
+        <Text variant="body" color="textMuted">
+          1RM, meilleurs temps, distances — importés de ton export Garmin.
+        </Text>
+        <View style={{ alignItems: 'flex-start' }}>
+          <Button label="Voir mes records" onPress={() => router.push('/records')} />
+        </View>
+      </Card>
+
+      <Card>
         <Text variant="heading">Programmes de coachs</Text>
         <Text variant="body" color="textMuted">
           Suis un programme structuré, recommandé selon ce que tu pratiques.

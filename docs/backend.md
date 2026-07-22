@@ -21,6 +21,7 @@ Dans le **SQL Editor** de Supabase, exécute dans l'ordre le contenu de :
 5. `supabase/migrations/0005_connector_accounts.sql` (jetons connecteurs OAuth ; voir `connectors-garmin.md`)
 6. `supabase/migrations/0006_oauth2_tokens.sql` (jetons OAuth2 + anti-doublon activités ; voir `connectors-strava.md`)
 7. `supabase/migrations/0007_apple_health_ingest.sql` (Apple Santé via Raccourcis ; voir `apple-health-shortcut.md`)
+8. `supabase/migrations/0008_records.sql` (records personnels / 1RM)
 
 > Alternative CLI : `supabase link` puis `supabase db push`.
 

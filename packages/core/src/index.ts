@@ -8,4 +8,5 @@ export * from './nutrition';
 export * from './habits';
 export * from './community';
 export * from './marketplace';
+export * from './records';
 export * from './score';

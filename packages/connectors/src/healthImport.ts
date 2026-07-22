@@ -1,5 +1,5 @@
 import type { ActivityType, DataSource, HealthMetricType } from '@supotsu/core';
-import type { ImportedActivity, ImportedHealthMetric } from './types';
+import type { ImportedActivity, ImportedHealthMetric, ImportedRecord } from './types';
 
 /**
  * File import (Master Prompt P22 — import manuel de données). Pure parsing of a
@@ -46,6 +46,7 @@ const toIso = (v: unknown): string | undefined => {
 export interface ParsedImport {
   activities: ImportedActivity[];
   healthMetrics: ImportedHealthMetric[];
+  records: ImportedRecord[];
 }
 
 /** Parse a Supotsu health export object into activities + health metrics. */
@@ -91,7 +92,7 @@ export function parseHealthExport(input: unknown): ParsedImport {
     });
   }
 
-  return { activities, healthMetrics };
+  return { activities, healthMetrics, records: [] };
 }
 
 /** Parse raw file text (JSON) into an import payload. Throws on invalid JSON. */

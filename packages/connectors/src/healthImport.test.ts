@@ -41,8 +41,8 @@ describe('parseHealthExport', () => {
   });
 
   it('tolerates missing arrays and non-object input', () => {
-    expect(parseHealthExport(null)).toEqual({ activities: [], healthMetrics: [] });
-    expect(parseHealthExport({})).toEqual({ activities: [], healthMetrics: [] });
+    expect(parseHealthExport(null)).toEqual({ activities: [], healthMetrics: [], records: [] });
+    expect(parseHealthExport({})).toEqual({ activities: [], healthMetrics: [], records: [] });
   });
 });
 

@@ -8,6 +8,7 @@ import {
   type ConnectorProvider,
   type ImportedActivity,
   type ImportedHealthMetric,
+  type ImportedRecord,
 } from '@supotsu/connectors';
 import { useAuth } from '@/features/auth/AuthProvider';
 import { createDataRepository, type NewWorkout } from './repository';
@@ -67,6 +68,7 @@ export function useSyncConnector() {
       return repo.persistImport(user!.id, {
         activities: outcome.activities,
         healthMetrics: outcome.healthMetrics,
+        records: [],
       });
     },
     onSuccess: () => {
@@ -235,12 +237,26 @@ export function useImportHealth() {
   const repo = useRepository();
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (payload: { activities: ImportedActivity[]; healthMetrics: ImportedHealthMetric[] }) =>
-      repo.persistImport(user!.id, payload),
+    mutationFn: (payload: {
+      activities: ImportedActivity[];
+      healthMetrics: ImportedHealthMetric[];
+      records: ImportedRecord[];
+    }) => repo.persistImport(user!.id, payload),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['activities', user?.id] });
       qc.invalidateQueries({ queryKey: ['health', user?.id] });
+      qc.invalidateQueries({ queryKey: ['records', user?.id] });
     },
+  });
+}
+
+export function useRecords() {
+  const { user } = useAuth();
+  const repo = useRepository();
+  return useQuery({
+    queryKey: ['records', user?.id],
+    enabled: !!user,
+    queryFn: () => repo.listRecords(user!.id),
   });
 }
 

@@ -404,6 +404,33 @@ export interface Database {
         Update: Partial<Database['public']['Tables']['program_enrollments']['Insert']>;
         Relationships: [];
       };
+      records: {
+        Row: {
+          id: string;
+          user_id: string;
+          external_id: string | null;
+          label: string;
+          category: 'run' | 'strength' | 'cycling' | 'steps' | 'other';
+          value: number;
+          unit: string;
+          source: string;
+          achieved_at: string;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          user_id: string;
+          external_id?: string | null;
+          label: string;
+          category: 'run' | 'strength' | 'cycling' | 'steps' | 'other';
+          value: number;
+          unit: string;
+          source?: string;
+          achieved_at: string;
+        };
+        Update: Partial<Database['public']['Tables']['records']['Insert']>;
+        Relationships: [];
+      };
     };
     Views: Record<string, never>;
     Functions: {

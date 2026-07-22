@@ -49,6 +49,8 @@ ci-dessus. Sélectionne-les directement (tu peux en choisir plusieurs d'un coup)
 | `*_healthStatusData.json` | **HRV** (ms) + **FC de repos** (bpm) | ✅ |
 | `UDSFile_*.json` (Aggregator) | **Stress** + FC de repos | ✅ |
 | `*_summarizedActivities.json` (Fitness) | **Activités** (type, durée, distance, FC, calories) | ✅ |
+| `*_benchmarks.json` | **Records de force (1RM)** | ✅ |
+| `*_personalRecord.json` | **Records** course (temps/distance), force, pas | ✅ |
 
 > **Le plus simple : choisis directement l'archive `.zip`** de ton export — elle
 > est **dézippée dans l'app**, tous les fichiers reconnus sont importés d'un coup.
