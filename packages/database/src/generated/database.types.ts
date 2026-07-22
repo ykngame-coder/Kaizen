@@ -409,6 +409,10 @@ export interface Database {
         Args: { p_challenge: string };
         Returns: { user_id: string; progress: number }[];
       };
+      my_connectors: {
+        Args: Record<string, never>;
+        Returns: { provider: string; status: string; connected_at: string }[];
+      };
     };
     Enums: Record<string, never>;
     CompositeTypes: Record<string, never>;
