@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   detectAndParseGarminFile,
   parseGarminBioMetrics,
+  parseGarminHealthStatus,
   parseGarminSleep,
   parseImportFile,
 } from './garminExport';
@@ -49,12 +50,51 @@ describe('parseGarminBioMetrics', () => {
   });
 });
 
+// Real shape from DI-Connect-Wellness/*_healthStatusData.json.
+const HEALTH_STATUS = [
+  {
+    calendarDate: '2025-09-17',
+    createTimestampUTC: '2025-09-17T13:25:39.154',
+    metrics: [
+      { type: 'HRV', value: 0.0, status: 'UNKNOWN' }, // not measured → skip
+      { type: 'HR', value: 0.0, status: 'UNKNOWN' },
+    ],
+  },
+  {
+    calendarDate: '2025-09-18',
+    createTimestampUTC: '2025-09-18T16:54:56.716',
+    metrics: [
+      { type: 'HRV', value: 72.0, status: 'ONBOARDING' },
+      { type: 'HR', value: 58.0, status: 'ONBOARDING' },
+      { type: 'SPO2', value: 98.0, status: 'ONBOARDING' }, // not modelled → skip
+      { type: 'RESPIRATION', value: 12.6, status: 'ONBOARDING' }, // skip
+    ],
+  },
+];
+
+describe('parseGarminHealthStatus', () => {
+  it('extracts HRV + resting HR, skipping unmeasured and unmodelled metrics', () => {
+    const out = parseGarminHealthStatus(HEALTH_STATUS);
+    expect(out).toHaveLength(2); // HRV + HR for the 09-18 night only
+    const hrv = out.find((m) => m.type === 'hrv');
+    const hr = out.find((m) => m.type === 'resting_heart_rate');
+    expect(hrv).toMatchObject({ value: 72, unit: 'ms', source: 'garmin' });
+    expect(hr).toMatchObject({ value: 58, unit: 'bpm', source: 'garmin' });
+    expect(hrv?.measuredAt).toBe('2025-09-18T00:00:00.000Z');
+  });
+});
+
 describe('detectAndParseGarminFile', () => {
   it('recognizes a sleep file', () => {
     expect(detectAndParseGarminFile(SLEEP)?.healthMetrics[0]?.type).toBe('sleep_duration');
   });
   it('recognizes a biometrics file', () => {
     expect(detectAndParseGarminFile(BIO)?.healthMetrics[0]?.type).toBe('weight');
+  });
+  it('recognizes a health-status file (HRV/HR)', () => {
+    const types = detectAndParseGarminFile(HEALTH_STATUS)?.healthMetrics.map((m) => m.type);
+    expect(types).toContain('hrv');
+    expect(types).toContain('resting_heart_rate');
   });
   it('returns null for an unrelated array', () => {
     expect(detectAndParseGarminFile([{ foo: 1 }])).toBeNull();

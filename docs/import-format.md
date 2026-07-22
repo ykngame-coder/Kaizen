@@ -46,12 +46,11 @@ ci-dessus. Sélectionne-les directement (tu peux en choisir plusieurs d'un coup)
 |---|---|---|
 | `*_sleepData.json` | Durée de sommeil (deep+light+REM) | ✅ |
 | `*_userBioMetrics.json` | Poids (grammes → kg) | ✅ |
-| *HRV / FC de repos / stress* | — | 🔜 (fichier à identifier) |
+| `*_healthStatusData.json` | **HRV** (ms) + **FC de repos** (bpm) | ✅ |
 
 > L'archive est un `.zip` : dézippe-la d'abord, puis choisis les fichiers `.json`
-> voulus dans `DI-Connect-Wellness`. Le dézippage in-app viendra plus tard ;
-> pour l'instant on importe les `.json` directement.
+> voulus dans `DI-Connect-Wellness` (sélection multiple possible). Le dézippage
+> in-app viendra plus tard ; pour l'instant on importe les `.json` directement.
 
-La HRV / FC de repos / stress ne sont pas dans `sleepData` ni `userBioMetrics` :
-elles vivent dans un autre fichier (`DI-Connect-Metrics` ou un `HealthStatusData`),
-qui sera ajouté à l'adaptateur une fois son format vu.
+Le stress n'est pas dans ces fichiers (probablement dans `DI-Connect-Aggregator`) ;
+il sera ajouté à l'adaptateur si tu veux, une fois son format vu.
