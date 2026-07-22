@@ -19,6 +19,7 @@ Dans le **SQL Editor** de Supabase, exécute dans l'ordre le contenu de :
 3. `supabase/migrations/0003_nutrition_habits.sql` (nutrition, habitudes, badges + RLS)
 4. `supabase/migrations/0004_community_marketplace.sql` (défis, programmes, RLS + fonction classement)
 5. `supabase/migrations/0005_connector_accounts.sql` (jetons connecteurs OAuth ; voir `connectors-garmin.md`)
+6. `supabase/migrations/0006_oauth2_tokens.sql` (jetons OAuth2 + anti-doublon activités ; voir `connectors-strava.md`)
 
 > Alternative CLI : `supabase link` puis `supabase db push`.
 

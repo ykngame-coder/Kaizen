@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { View } from 'react-native';
 import { useRouter } from 'expo-router';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Badge, Button, Card, Screen, Text, type BadgeTone } from '@supotsu/ui';
 import { spacing } from '@supotsu/design-system';
 import { CONNECTORS } from '@supotsu/connectors';
@@ -12,6 +12,13 @@ import {
   garminAvailable,
   startGarminConnect,
 } from './garminClient';
+import {
+  disconnectStrava,
+  fetchStravaStatus,
+  startStravaConnect,
+  stravaAvailable,
+  syncStrava,
+} from './stravaClient';
 
 const GARMIN_STATUS_UI: Record<string, { label: string; tone: BadgeTone }> = {
   connected: { label: 'Connecté', tone: 'success' },
@@ -98,6 +105,86 @@ function GarminCard(): React.JSX.Element {
   );
 }
 
+/** Real Strava connection card (OAuth2 + pull sync via the Strava Edge Function). */
+function StravaCard(): React.JSX.Element {
+  const available = stravaAvailable();
+  const status = useQuery({
+    queryKey: ['stravaStatus'],
+    queryFn: fetchStravaStatus,
+    enabled: available,
+  });
+  const qc = useQueryClient();
+  const [busy, setBusy] = useState(false);
+  const [note, setNote] = useState<string | null>(null);
+  const connected = status.data === 'connected';
+
+  const run = async (fn: () => Promise<void>): Promise<void> => {
+    setNote(null);
+    setBusy(true);
+    try {
+      await fn();
+    } catch (e) {
+      setNote(e instanceof Error ? e.message : 'Erreur.');
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <Card>
+      <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+        <View style={{ flex: 1 }}>
+          <Text variant="subtitle">Strava</Text>
+          <Text variant="caption" color="textMuted">
+            Activités en direct (ta Garmin y synchronise déjà tes séances)
+          </Text>
+        </View>
+        <Badge
+          label={available ? (connected ? 'Connecté' : status.data === 'pending' ? 'En cours' : 'Non connecté') : 'Backend requis'}
+          tone={available ? (connected ? 'success' : 'neutral') : 'neutral'}
+        />
+      </View>
+      {available ? (
+        <View style={{ flexDirection: 'row', gap: spacing[2], marginTop: spacing[1] }}>
+          {connected ? (
+            <>
+              <Button
+                label={busy ? '…' : 'Synchroniser'}
+                onPress={() =>
+                  run(async () => {
+                    const n = await syncStrava();
+                    setNote(n === 0 ? 'Déjà à jour.' : `${n} activité(s) importée(s).`);
+                    qc.invalidateQueries({ queryKey: ['activities'] });
+                  })
+                }
+                disabled={busy}
+              />
+              <Button
+                label="Déconnecter"
+                variant="danger"
+                onPress={() => run(async () => { await disconnectStrava(); await status.refetch(); })}
+                disabled={busy}
+              />
+            </>
+          ) : (
+            <Button label={busy ? '…' : 'Connecter Strava'} onPress={() => run(startStravaConnect)} disabled={busy} />
+          )}
+        </View>
+      ) : (
+        <Text variant="caption" color="textMuted">
+          Nécessite un backend Supabase configuré et la fonction Strava déployée (voir
+          docs/connectors-strava.md).
+        </Text>
+      )}
+      {note ? (
+        <Text variant="caption" color="textMuted" style={{ marginTop: spacing[1] }}>
+          {note}
+        </Text>
+      ) : null}
+    </Card>
+  );
+}
+
 /** "Mes appareils connectés" (Master Prompt P9.13, P22.14). */
 export function DevicesScreen(): React.JSX.Element {
   const router = useRouter();
@@ -130,9 +217,10 @@ export function DevicesScreen(): React.JSX.Element {
       {message ? <Badge label={message} tone="info" /> : null}
 
       <GarminCard />
+      <StravaCard />
 
       <View style={{ gap: spacing[2] }}>
-        {CONNECTORS.filter((c) => c.provider !== 'garmin').map((c) => (
+        {CONNECTORS.filter((c) => c.provider !== 'garmin' && c.provider !== 'strava').map((c) => (
           <Card key={c.provider}>
             <View
               style={{
