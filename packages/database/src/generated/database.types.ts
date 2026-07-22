@@ -110,6 +110,7 @@ export interface Database {
           elevation_gain_m: number | null;
           raw: Json | null;
           notes: string | null;
+          external_id: string | null;
         } & Timestamps;
         Insert: {
           user_id: string;
@@ -122,6 +123,7 @@ export interface Database {
           intensity?: 'low' | 'moderate' | 'high' | 'max' | null;
           avg_heart_rate?: number | null;
           notes?: string | null;
+          external_id?: string | null;
         };
         Update: Partial<Database['public']['Tables']['activities']['Insert']>;
         Relationships: [];

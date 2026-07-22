@@ -1,7 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import {
   detectAndParseGarminFile,
+  parseGarminActivities,
   parseGarminBioMetrics,
+  parseGarminDailySummary,
   parseGarminHealthStatus,
   parseGarminSleep,
   parseImportFile,
@@ -84,6 +86,57 @@ describe('parseGarminHealthStatus', () => {
   });
 });
 
+// Real shapes from DI-Connect-Aggregator/UDSFile + DI-Connect-Fitness.
+const DAILY = [
+  {
+    calendarDate: '2022-06-14',
+    restingHeartRate: 59,
+    allDayStress: {
+      aggregatorList: [
+        { type: 'TOTAL', averageStressLevel: 37 },
+        { type: 'ASLEEP', averageStressLevel: -2 },
+      ],
+    },
+  },
+];
+
+const ACTIVITIES_FILE = [
+  {
+    summarizedActivitiesExport: [
+      { activityId: 11587211088, activityType: 'running', startTimeGmt: 1689677507000, duration: 2366877.9, distance: 313955.0, calories: 1768.18, avgHr: 127 },
+      { activityId: 1, activityType: 'strength_training', startTimeGmt: 1698119559000, duration: 968124.0, distance: 0, calories: 427.38, avgHr: 106 },
+    ],
+  },
+];
+
+describe('parseGarminDailySummary', () => {
+  it('extracts resting HR and TOTAL stress, skipping negative (asleep) stress', () => {
+    const out = parseGarminDailySummary(DAILY);
+    expect(out.map((m) => m.type).sort()).toEqual(['resting_heart_rate', 'stress']);
+    expect(out.find((m) => m.type === 'stress')).toMatchObject({ value: 37, unit: 'score', source: 'garmin' });
+    expect(out.find((m) => m.type === 'resting_heart_rate')?.value).toBe(59);
+  });
+});
+
+describe('parseGarminActivities', () => {
+  it('converts ms→s, cm→m and maps the sport type', () => {
+    const flat = ACTIVITIES_FILE.flatMap((f) => f.summarizedActivitiesExport);
+    const out = parseGarminActivities(flat);
+    expect(out[0]).toMatchObject({
+      externalId: 'garmin-11587211088',
+      type: 'running',
+      source: 'garmin',
+      durationSec: 2367, // 2366877.9 ms
+      distanceM: 3140, // 313955 cm
+      calories: 1768,
+      avgHeartRate: 127,
+    });
+    expect(out[0]?.startedAt).toBe('2023-07-18T10:51:47.000Z');
+    expect(out[1]?.type).toBe('strength');
+    expect(out[1]?.distanceM).toBeUndefined(); // distance 0 → omitted
+  });
+});
+
 describe('detectAndParseGarminFile', () => {
   it('recognizes a sleep file', () => {
     expect(detectAndParseGarminFile(SLEEP)?.healthMetrics[0]?.type).toBe('sleep_duration');
@@ -95,6 +148,14 @@ describe('detectAndParseGarminFile', () => {
     const types = detectAndParseGarminFile(HEALTH_STATUS)?.healthMetrics.map((m) => m.type);
     expect(types).toContain('hrv');
     expect(types).toContain('resting_heart_rate');
+  });
+  it('recognizes a daily-summary file (stress)', () => {
+    expect(detectAndParseGarminFile(DAILY)?.healthMetrics.some((m) => m.type === 'stress')).toBe(true);
+  });
+  it('recognizes an activities file (nested export)', () => {
+    const res = detectAndParseGarminFile(ACTIVITIES_FILE);
+    expect(res?.activities).toHaveLength(2);
+    expect(res?.activities[0]?.type).toBe('running');
   });
   it('returns null for an unrelated array', () => {
     expect(detectAndParseGarminFile([{ foo: 1 }])).toBeNull();

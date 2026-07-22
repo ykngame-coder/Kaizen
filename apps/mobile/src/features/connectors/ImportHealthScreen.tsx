@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Platform, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import * as DocumentPicker from 'expo-document-picker';
+import { strFromU8, unzipSync } from 'fflate';
 import { Badge, Button, Card, Screen, Text } from '@supotsu/ui';
 import { spacing } from '@supotsu/design-system';
 import { parseImportFile } from '@supotsu/connectors';
@@ -15,6 +16,19 @@ async function readFileText(uri: string): Promise<string> {
   }
   const { readAsStringAsync } = await import('expo-file-system/legacy');
   return readAsStringAsync(uri);
+}
+
+/** Read a picked file's raw bytes (for zip archives). */
+async function readFileBytes(uri: string): Promise<Uint8Array> {
+  if (Platform.OS === 'web') {
+    return new Uint8Array(await (await fetch(uri)).arrayBuffer());
+  }
+  const { readAsStringAsync, EncodingType } = await import('expo-file-system/legacy');
+  const b64 = await readAsStringAsync(uri, { encoding: EncodingType.Base64 });
+  const bin = atob(b64);
+  const bytes = new Uint8Array(bin.length);
+  for (let i = 0; i < bin.length; i += 1) bytes[i] = bin.charCodeAt(i);
+  return bytes;
 }
 
 /**
@@ -35,22 +49,41 @@ export function ImportHealthScreen(): React.JSX.Element {
     setStatus(null);
     try {
       const res = await DocumentPicker.getDocumentAsync({
-        type: ['application/json', 'text/json', '*/*'],
+        type: ['application/json', 'application/zip', '*/*'],
         copyToCacheDirectory: true,
         multiple: true,
       });
       if (res.canceled || !res.assets?.length) return;
       setBusy(true);
 
-      // Merge every selected file (a Garmin export is split across many files).
+      // Merge every selected file. A whole Garmin export .zip is unzipped in-app
+      // and each JSON inside is parsed; individual .json files also work.
       const activities: Parameters<typeof importHealth.mutateAsync>[0]['activities'] = [];
       const healthMetrics: Parameters<typeof importHealth.mutateAsync>[0]['healthMetrics'] = [];
       let failed = 0;
+      const absorb = (text: string): void => {
+        const parsed = parseImportFile(JSON.parse(text));
+        activities.push(...parsed.activities);
+        healthMetrics.push(...parsed.healthMetrics);
+      };
+
       for (const asset of res.assets) {
+        const isZip =
+          (asset.name ?? '').toLowerCase().endsWith('.zip') || asset.mimeType === 'application/zip';
         try {
-          const parsed = parseImportFile(JSON.parse(await readFileText(asset.uri)));
-          activities.push(...parsed.activities);
-          healthMetrics.push(...parsed.healthMetrics);
+          if (isZip) {
+            const files = unzipSync(await readFileBytes(asset.uri));
+            for (const [name, data] of Object.entries(files)) {
+              if (!name.toLowerCase().endsWith('.json')) continue;
+              try {
+                absorb(strFromU8(data));
+              } catch {
+                failed += 1;
+              }
+            }
+          } else {
+            absorb(await readFileText(asset.uri));
+          }
         } catch {
           failed += 1;
         }
@@ -91,9 +124,10 @@ export function ImportHealthScreen(): React.JSX.Element {
       <Card>
         <Text variant="heading">Fichier JSON</Text>
         <Text variant="body" color="textMuted">
-          Fichiers Garmin (DI-Connect-Wellness : sleepData, userBioMetrics…) reconnus
-          automatiquement, ou format JSON Supotsu. Tu peux en sélectionner plusieurs
-          d'un coup. Voir docs/import-format.md.
+          Choisis directement l'archive <Text variant="body">.zip</Text> de ton export Garmin
+          (elle est dézippée dans l'app), ou des fichiers .json isolés. Sommeil, poids, HRV,
+          FC de repos, stress et activités sont reconnus automatiquement. Voir
+          docs/import-format.md.
         </Text>
         <View style={{ alignItems: 'flex-start', marginTop: spacing[2] }}>
           <Button label={busy ? '…' : 'Choisir un fichier'} onPress={pickAndImport} disabled={busy} />

@@ -14,6 +14,7 @@ import { PROGRAM_CATALOG } from '@supotsu/shared';
 import type { ImportedActivity, ImportedHealthMetric } from '@supotsu/connectors';
 import {
   insertActivity,
+  upsertActivities,
   listActivities as listActivitiesDb,
   insertWorkout,
   listWorkouts as listWorkoutsDb,
@@ -442,7 +443,16 @@ function createDemoRepository(): DataRepository {
     },
     async persistImport(userId, payload) {
       const existingA = await readJson<Activity>(actKey(userId));
-      const newA = payload.activities.map((a) => importedToActivity(userId, a));
+      // Dedup by (start time + source): re-importing an export adds nothing.
+      const seenA = new Set(existingA.map((a) => `${a.source}|${a.startedAt}`));
+      const newA = payload.activities
+        .map((a) => importedToActivity(userId, a))
+        .filter((a) => {
+          const key = `${a.source}|${a.startedAt}`;
+          if (seenA.has(key)) return false;
+          seenA.add(key);
+          return true;
+        });
       await writeJson(actKey(userId), [...newA, ...existingA]);
 
       const existingH = await readJson<HealthMetric>(hmKey(userId));
@@ -562,9 +572,11 @@ function createSupabaseRepository(
       await enrollInProgram(client, userId, programId);
     },
     async persistImport(userId, payload) {
-      for (const a of payload.activities) {
-        await insertActivity(client, {
+      await upsertActivities(
+        client,
+        payload.activities.map((a) => ({
           user_id: userId,
+          external_id: a.externalId ?? null,
           type: a.type,
           source: a.source,
           started_at: a.startedAt,
@@ -573,8 +585,8 @@ function createSupabaseRepository(
           calories: a.calories ?? null,
           intensity: a.intensity ?? null,
           avg_heart_rate: a.avgHeartRate ?? null,
-        });
-      }
+        })),
+      );
       await insertHealthMetrics(
         client,
         payload.healthMetrics.map((m) => ({

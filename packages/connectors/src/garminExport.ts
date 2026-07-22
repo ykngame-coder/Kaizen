@@ -1,5 +1,5 @@
-import type { HealthMetricType } from '@supotsu/core';
-import type { ImportedHealthMetric } from './types';
+import type { ActivityType, HealthMetricType } from '@supotsu/core';
+import type { ImportedActivity, ImportedHealthMetric } from './types';
 import { parseHealthExport, type ParsedImport } from './healthImport';
 
 /**
@@ -107,6 +107,73 @@ export function parseGarminHealthStatus(records: GarminHealthStatusRecord[]): Im
   return out;
 }
 
+export interface GarminDailyRecord {
+  calendarDate?: string;
+  restingHeartRate?: number;
+  allDayStress?: { aggregatorList?: { type?: string; averageStressLevel?: number }[] };
+}
+
+/** DI-Connect-Aggregator/UDSFile_*.json → daily stress + resting-HR metrics. */
+export function parseGarminDailySummary(records: GarminDailyRecord[]): ImportedHealthMetric[] {
+  const out: ImportedHealthMetric[] = [];
+  for (const r of records ?? []) {
+    const measuredAt = garminToIso(r.calendarDate);
+    if (!measuredAt) continue;
+    if (typeof r.restingHeartRate === 'number' && r.restingHeartRate > 0) {
+      out.push({ type: 'resting_heart_rate', value: r.restingHeartRate, unit: 'bpm', source: 'garmin', reliability: 'high', measuredAt });
+    }
+    const total = r.allDayStress?.aggregatorList?.find((a) => a.type === 'TOTAL');
+    // Garmin uses negative averageStressLevel to mean "not measured".
+    if (total && typeof total.averageStressLevel === 'number' && total.averageStressLevel >= 0) {
+      out.push({ type: 'stress', value: total.averageStressLevel, unit: 'score', source: 'garmin', reliability: 'high', measuredAt });
+    }
+  }
+  return out;
+}
+
+/** Garmin summarized activityType (snake_case) → Supotsu ActivityType. */
+const ACTIVITY_MAP: Record<string, ActivityType> = {
+  running: 'running', treadmill_running: 'running', trail_running: 'running', indoor_running: 'running', track_running: 'running', obstacle_run: 'running',
+  walking: 'walking', hiking: 'walking', casual_walking: 'walking', speed_walking: 'walking',
+  cycling: 'cycling', indoor_cycling: 'cycling', mountain_biking: 'cycling', road_biking: 'cycling', gravel_cycling: 'cycling', virtual_ride: 'cycling', cyclocross: 'cycling',
+  swimming: 'swimming', lap_swimming: 'swimming', open_water_swimming: 'swimming',
+  strength_training: 'strength',
+  yoga: 'yoga', pilates: 'yoga',
+  fitness_equipment: 'cross_training', indoor_cardio: 'cross_training', cardio: 'cross_training', elliptical: 'cross_training', hiit: 'cross_training', jump_rope: 'cross_training', multi_sport: 'cross_training', stair_climbing: 'cross_training',
+};
+
+export interface GarminSummarizedActivity {
+  activityId?: number;
+  activityType?: string;
+  startTimeGmt?: number;
+  duration?: number;
+  distance?: number;
+  calories?: number;
+  avgHr?: number;
+}
+
+/**
+ * DI-Connect-Fitness/*_summarizedActivities.json → activities. Garmin uses epoch
+ * milliseconds for time, milliseconds for duration and centimetres for distance.
+ */
+export function parseGarminActivities(activities: GarminSummarizedActivity[]): ImportedActivity[] {
+  const out: ImportedActivity[] = [];
+  for (const a of activities ?? []) {
+    if (typeof a.startTimeGmt !== 'number' || !a.duration) continue;
+    out.push({
+      externalId: a.activityId !== undefined ? `garmin-${a.activityId}` : undefined,
+      type: (a.activityType && ACTIVITY_MAP[a.activityType]) || 'other',
+      source: 'garmin',
+      startedAt: new Date(a.startTimeGmt).toISOString(),
+      durationSec: Math.round(a.duration / 1000),
+      distanceM: typeof a.distance === 'number' && a.distance > 0 ? Math.round(a.distance / 100) : undefined,
+      calories: typeof a.calories === 'number' ? Math.round(a.calories) : undefined,
+      avgHeartRate: typeof a.avgHr === 'number' ? Math.round(a.avgHr) : undefined,
+    });
+  }
+  return out;
+}
+
 const has = (o: unknown, key: string): boolean =>
   typeof o === 'object' && o !== null && key in (o as Record<string, unknown>);
 
@@ -119,6 +186,15 @@ export function detectAndParseGarminFile(json: unknown): ParsedImport | null {
   }
   if (sample.some((x) => has(x, 'createTimestampUTC') && has(x, 'metrics'))) {
     return { activities: [], healthMetrics: parseGarminHealthStatus(json as GarminHealthStatusRecord[]) };
+  }
+  if (sample.some((x) => has(x, 'summarizedActivitiesExport'))) {
+    const acts = (json as { summarizedActivitiesExport?: GarminSummarizedActivity[] }[]).flatMap(
+      (x) => (Array.isArray(x?.summarizedActivitiesExport) ? x.summarizedActivitiesExport : []),
+    );
+    return { activities: parseGarminActivities(acts), healthMetrics: [] };
+  }
+  if (sample.some((x) => has(x, 'allDayStress') || has(x, 'wellnessStartTimeGmt'))) {
+    return { activities: [], healthMetrics: parseGarminDailySummary(json as GarminDailyRecord[]) };
   }
   if (sample.some((x) => has(x, 'userSetNullForWeight') || has(x, 'weight'))) {
     return { activities: [], healthMetrics: parseGarminBioMetrics(json as GarminBioRecord[]) };

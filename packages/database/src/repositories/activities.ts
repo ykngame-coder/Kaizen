@@ -14,6 +14,33 @@ export async function insertActivity(
   return data;
 }
 
+/**
+ * Bulk upsert activities (bulk import). Idempotent via the
+ * (user_id, source, external_id) unique index, so re-importing the same export
+ * adds nothing. Rows are chunked to keep requests reasonable.
+ */
+export async function upsertActivities(
+  client: SupotsuClient,
+  rows: ActivityInsertRow[],
+): Promise<void> {
+  const withId = rows.filter((r) => r.external_id);
+  const withoutId = rows.filter((r) => !r.external_id);
+  const chunk = <T>(a: T[], n: number): T[][] =>
+    Array.from({ length: Math.ceil(a.length / n) }, (_, i) => a.slice(i * n, i * n + n));
+
+  for (const part of chunk(withId, 500)) {
+    const { error } = await client
+      .from('activities')
+      .upsert(part, { onConflict: 'user_id,source,external_id', ignoreDuplicates: true });
+    if (error) throw error;
+  }
+  // Rows without an external id can't be deduped; insert them plainly.
+  for (const part of chunk(withoutId, 500)) {
+    const { error } = await client.from('activities').insert(part);
+    if (error) throw error;
+  }
+}
+
 /** List the user's activities, most recent first. */
 export async function listActivities(
   client: SupotsuClient,
