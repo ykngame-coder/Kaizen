@@ -5,4 +5,6 @@ export * from './scoring';
 export * from './recovery';
 export * from './nutrition';
 export * from './gamification';
+export * from './community';
+export * from './marketplace';
 export * from './coach';

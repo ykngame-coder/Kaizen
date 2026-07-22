@@ -6,4 +6,6 @@ export * from './training';
 export * from './health';
 export * from './nutrition';
 export * from './habits';
+export * from './community';
+export * from './marketplace';
 export * from './score';

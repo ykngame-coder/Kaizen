@@ -112,6 +112,17 @@ export function DashboardScreen(): React.JSX.Element {
 
       <HabitsCard />
       <BadgesCard />
+
+      <Card>
+        <Text variant="heading">Communauté</Text>
+        <Text variant="body" color="textMuted">
+          Rejoins des défis et compare-toi — chaque classement se lit dans les faits.
+        </Text>
+        <View style={{ flexDirection: 'row', gap: spacing[2] }}>
+          <Button label="Défis" onPress={() => router.push('/community')} />
+          <Button label="Programmes" variant="secondary" onPress={() => router.push('/marketplace')} />
+        </View>
+      </Card>
     </Screen>
   );
 }

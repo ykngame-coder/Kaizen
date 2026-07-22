@@ -313,9 +313,103 @@ export interface Database {
         Update: Partial<Database['public']['Tables']['earned_badges']['Insert']>;
         Relationships: [];
       };
+      challenges: {
+        Row: {
+          id: string;
+          user_id: string;
+          title: string;
+          description: string | null;
+          metric: 'activity_count' | 'active_days';
+          target: number;
+          starts_at: string;
+          ends_at: string;
+          visibility: 'public' | 'private';
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          user_id: string;
+          title: string;
+          description?: string | null;
+          metric?: 'activity_count' | 'active_days';
+          target: number;
+          starts_at: string;
+          ends_at: string;
+          visibility?: 'public' | 'private';
+        };
+        Update: Partial<Database['public']['Tables']['challenges']['Insert']>;
+        Relationships: [];
+      };
+      challenge_participants: {
+        Row: {
+          id: string;
+          user_id: string;
+          challenge_id: string;
+          joined_at: string;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          user_id: string;
+          challenge_id: string;
+          joined_at?: string;
+        };
+        Update: Partial<Database['public']['Tables']['challenge_participants']['Insert']>;
+        Relationships: [];
+      };
+      programs: {
+        Row: {
+          id: string;
+          title: string;
+          author: string;
+          focus: 'strength' | 'endurance' | 'hyrox' | 'weight_loss' | 'mobility' | 'general';
+          level: 'beginner' | 'intermediate' | 'confirmed' | 'advanced';
+          weeks: number;
+          sessions_per_week: number;
+          description: string;
+          price_cents: number;
+        };
+        Insert: {
+          id: string;
+          title: string;
+          author: string;
+          focus: 'strength' | 'endurance' | 'hyrox' | 'weight_loss' | 'mobility' | 'general';
+          level: 'beginner' | 'intermediate' | 'confirmed' | 'advanced';
+          weeks: number;
+          sessions_per_week: number;
+          description?: string;
+          price_cents?: number;
+        };
+        Update: Partial<Database['public']['Tables']['programs']['Insert']>;
+        Relationships: [];
+      };
+      program_enrollments: {
+        Row: {
+          id: string;
+          user_id: string;
+          program_id: string;
+          status: 'active' | 'completed' | 'abandoned';
+          started_at: string;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          user_id: string;
+          program_id: string;
+          status?: 'active' | 'completed' | 'abandoned';
+          started_at?: string;
+        };
+        Update: Partial<Database['public']['Tables']['program_enrollments']['Insert']>;
+        Relationships: [];
+      };
     };
     Views: Record<string, never>;
-    Functions: Record<string, never>;
+    Functions: {
+      challenge_leaderboard: {
+        Args: { p_challenge: string };
+        Returns: { user_id: string; progress: number }[];
+      };
+    };
     Enums: Record<string, never>;
     CompositeTypes: Record<string, never>;
   };

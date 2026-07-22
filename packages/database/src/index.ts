@@ -9,3 +9,5 @@ export * from './repositories/workouts';
 export * from './repositories/health';
 export * from './repositories/nutrition';
 export * from './repositories/habits';
+export * from './repositories/community';
+export * from './repositories/marketplace';

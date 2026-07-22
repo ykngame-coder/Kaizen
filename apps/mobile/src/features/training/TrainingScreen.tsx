@@ -18,6 +18,16 @@ export function TrainingScreen(): React.JSX.Element {
         <Button label="+ Séance" onPress={() => router.push('/workout/new')} />
       </View>
 
+      <Card>
+        <Text variant="heading">Programmes de coachs</Text>
+        <Text variant="body" color="textMuted">
+          Suis un programme structuré, recommandé selon ce que tu pratiques.
+        </Text>
+        <View style={{ alignItems: 'flex-start' }}>
+          <Button label="Explorer le marketplace" onPress={() => router.push('/marketplace')} />
+        </View>
+      </Card>
+
       <Text variant="heading">Historique</Text>
       {isLoading ? (
         <Text variant="body" color="textMuted">

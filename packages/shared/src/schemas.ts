@@ -105,6 +105,25 @@ export const habitInputSchema = z.object({
 });
 export type HabitInput = z.infer<typeof habitInputSchema>;
 
+export const challengeMetricSchema = z.enum(['activity_count', 'active_days']);
+
+/** Create a community challenge (Master Prompt P37 communauté). */
+export const challengeInputSchema = z
+  .object({
+    title: z.string().min(1).max(120),
+    description: z.string().max(1000).optional(),
+    metric: challengeMetricSchema.default('activity_count'),
+    target: z.number().int().positive().max(1000),
+    startsAt: z.string().datetime(),
+    endsAt: z.string().datetime(),
+    visibility: z.enum(['public', 'private']).default('public'),
+  })
+  .refine((c) => new Date(c.endsAt) > new Date(c.startsAt), {
+    message: 'La date de fin doit être après la date de début.',
+    path: ['endsAt'],
+  });
+export type ChallengeInput = z.infer<typeof challengeInputSchema>;
+
 /** Manual activity logging (Master Prompt MVP 20.3 — ajout manuel activité). */
 export const activityInputSchema = z.object({
   type: activityTypeSchema,

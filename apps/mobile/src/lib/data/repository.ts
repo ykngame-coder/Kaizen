@@ -1,5 +1,16 @@
-import type { Activity, HealthMetric, Habit, HabitLog, NutritionEntry, Workout, SetEntry } from '@supotsu/core';
-import type { ActivityInput, HabitInput, NutritionEntryInput } from '@supotsu/shared';
+import type {
+  Activity,
+  Challenge,
+  HealthMetric,
+  Habit,
+  HabitLog,
+  NutritionEntry,
+  Program,
+  Workout,
+  SetEntry,
+} from '@supotsu/core';
+import type { ActivityInput, ChallengeInput, HabitInput, NutritionEntryInput } from '@supotsu/shared';
+import { PROGRAM_CATALOG } from '@supotsu/shared';
 import type { ImportedActivity, ImportedHealthMetric } from '@supotsu/connectors';
 import {
   insertActivity,
@@ -14,12 +25,22 @@ import {
   listHabits as listHabitsDb,
   insertHabitLog,
   listHabitLogs as listHabitLogsDb,
+  insertChallenge,
+  listChallenges as listChallengesDb,
+  listMyParticipations,
+  joinChallenge as joinChallengeDb,
+  fetchLeaderboard,
+  listPrograms as listProgramsDb,
+  listEnrollments as listEnrollmentsDb,
+  enrollInProgram,
   type ActivityRow,
   type WorkoutRow,
   type HealthMetricRow,
   type NutritionEntryRow,
   type HabitRow,
   type HabitLogRow,
+  type ChallengeRow,
+  type ProgramRow,
 } from '@supotsu/database';
 import { getSupabase } from '@/lib/supabase';
 import { secureStorage } from '@/lib/secure-storage';
@@ -52,6 +73,14 @@ export interface DataRepository {
   addHabit(userId: string, input: HabitInput): Promise<Habit>;
   listHabitLogs(userId: string): Promise<HabitLog[]>;
   logHabit(userId: string, habitId: string): Promise<HabitLog>;
+  listChallenges(): Promise<Challenge[]>;
+  createChallenge(userId: string, input: ChallengeInput): Promise<Challenge>;
+  listMyChallengeIds(userId: string): Promise<string[]>;
+  joinChallenge(userId: string, challengeId: string): Promise<void>;
+  challengeLeaderboard(challenge: Challenge): Promise<{ userId: string; progress: number }[]>;
+  listPrograms(): Promise<Program[]>;
+  listEnrolledProgramIds(userId: string): Promise<string[]>;
+  enrollProgram(userId: string, programId: string): Promise<void>;
   /** Persist a validated connector import; returns how many rows were added. */
   persistImport(
     userId: string,
@@ -154,6 +183,50 @@ function rowToHabitLog(r: HabitLogRow): HabitLog {
   };
 }
 
+function rowToChallenge(r: ChallengeRow): Challenge {
+  return {
+    id: r.id,
+    userId: r.user_id,
+    title: r.title,
+    description: r.description ?? undefined,
+    metric: r.metric,
+    target: r.target,
+    startsAt: r.starts_at,
+    endsAt: r.ends_at,
+    visibility: r.visibility,
+    createdAt: r.created_at,
+    updatedAt: r.updated_at,
+  };
+}
+
+function rowToProgram(r: ProgramRow): Program {
+  return {
+    id: r.id,
+    title: r.title,
+    author: r.author,
+    focus: r.focus,
+    level: r.level,
+    weeks: r.weeks,
+    sessionsPerWeek: r.sessions_per_week,
+    description: r.description,
+    priceCents: r.price_cents,
+  };
+}
+
+/** Count a user's activities inside a challenge window (demo leaderboard). */
+function progressInWindow(challenge: Challenge, activities: Activity[]): number {
+  const start = new Date(challenge.startsAt).getTime();
+  const end = new Date(challenge.endsAt).getTime();
+  const scoped = activities.filter((a) => {
+    const t = new Date(a.startedAt).getTime();
+    return t >= start && t <= end;
+  });
+  if (challenge.metric === 'active_days') {
+    return new Set(scoped.map((a) => a.startedAt.slice(0, 10))).size;
+  }
+  return scoped.length;
+}
+
 function importedToActivity(userId: string, a: ImportedActivity): Activity {
   const now = new Date().toISOString();
   return {
@@ -195,6 +268,9 @@ const hmKey = (u: string): string => `supotsu.health.${u}`;
 const nutKey = (u: string): string => `supotsu.nutrition.${u}`;
 const habKey = (u: string): string => `supotsu.habits.${u}`;
 const hlogKey = (u: string): string => `supotsu.habitlogs.${u}`;
+const chKey = (u: string): string => `supotsu.challenges.${u}`;
+const chJoinKey = (u: string): string => `supotsu.challengejoins.${u}`;
+const enrollKey = (u: string): string => `supotsu.enrollments.${u}`;
 
 async function readJson<T>(key: string): Promise<T[]> {
   const raw = await secureStorage.getItem(key);
@@ -317,6 +393,53 @@ function createDemoRepository(): DataRepository {
       await writeJson(hlogKey(userId), [log, ...items]);
       return log;
     },
+    async listChallenges() {
+      // Demo mode is single-user: all challenges live under one local list.
+      return readJson<Challenge>(chKey('all'));
+    },
+    async createChallenge(userId, input) {
+      const now = new Date().toISOString();
+      const challenge: Challenge = {
+        id: randomId(),
+        userId,
+        title: input.title,
+        description: input.description,
+        metric: input.metric,
+        target: input.target,
+        startsAt: input.startsAt,
+        endsAt: input.endsAt,
+        visibility: input.visibility,
+        createdAt: now,
+        updatedAt: now,
+      };
+      const items = await readJson<Challenge>(chKey('all'));
+      await writeJson(chKey('all'), [challenge, ...items]);
+      // Auto-join your own challenge.
+      const joins = await readJson<string>(chJoinKey(userId));
+      await writeJson(chJoinKey(userId), [challenge.id, ...joins]);
+      return challenge;
+    },
+    async listMyChallengeIds(userId) {
+      return readJson<string>(chJoinKey(userId));
+    },
+    async joinChallenge(userId, challengeId) {
+      const joins = await readJson<string>(chJoinKey(userId));
+      if (!joins.includes(challengeId)) await writeJson(chJoinKey(userId), [challengeId, ...joins]);
+    },
+    async challengeLeaderboard(challenge) {
+      const activities = await readJson<Activity>(actKey(challenge.userId));
+      return [{ userId: challenge.userId, progress: progressInWindow(challenge, activities) }];
+    },
+    async listPrograms() {
+      return PROGRAM_CATALOG;
+    },
+    async listEnrolledProgramIds(userId) {
+      return readJson<string>(enrollKey(userId));
+    },
+    async enrollProgram(userId, programId) {
+      const ids = await readJson<string>(enrollKey(userId));
+      if (!ids.includes(programId)) await writeJson(enrollKey(userId), [programId, ...ids]);
+    },
     async persistImport(userId, payload) {
       const existingA = await readJson<Activity>(actKey(userId));
       const newA = payload.activities.map((a) => importedToActivity(userId, a));
@@ -400,6 +523,43 @@ function createSupabaseRepository(
     async logHabit(userId, habitId) {
       const row = await insertHabitLog(client, userId, habitId, new Date().toISOString());
       return rowToHabitLog(row);
+    },
+    async listChallenges() {
+      return (await listChallengesDb(client)).map(rowToChallenge);
+    },
+    async createChallenge(userId, input) {
+      const row = await insertChallenge(client, {
+        user_id: userId,
+        title: input.title,
+        description: input.description ?? null,
+        metric: input.metric,
+        target: input.target,
+        starts_at: input.startsAt,
+        ends_at: input.endsAt,
+        visibility: input.visibility,
+      });
+      // Auto-join your own challenge.
+      await joinChallengeDb(client, userId, row.id);
+      return rowToChallenge(row);
+    },
+    async listMyChallengeIds(userId) {
+      return (await listMyParticipations(client, userId)).map((p) => p.challenge_id);
+    },
+    async joinChallenge(userId, challengeId) {
+      await joinChallengeDb(client, userId, challengeId);
+    },
+    async challengeLeaderboard(challenge) {
+      const rows = await fetchLeaderboard(client, challenge.id);
+      return rows.map((r) => ({ userId: r.user_id, progress: r.progress }));
+    },
+    async listPrograms() {
+      return (await listProgramsDb(client)).map(rowToProgram);
+    },
+    async listEnrolledProgramIds(userId) {
+      return (await listEnrollmentsDb(client, userId)).map((e) => e.program_id);
+    },
+    async enrollProgram(userId, programId) {
+      await enrollInProgram(client, userId, programId);
     },
     async persistImport(userId, payload) {
       for (const a of payload.activities) {

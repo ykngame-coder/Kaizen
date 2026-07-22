@@ -17,6 +17,7 @@ Dans le **SQL Editor** de Supabase, exécute dans l'ordre le contenu de :
 1. `supabase/migrations/0001_init.sql` (tables, RLS, triggers)
 2. `supabase/migrations/0002_seed_and_constraints.sql` (bibliothèque d'exercices + index)
 3. `supabase/migrations/0003_nutrition_habits.sql` (nutrition, habitudes, badges + RLS)
+4. `supabase/migrations/0004_community_marketplace.sql` (défis, programmes, RLS + fonction classement)
 
 > Alternative CLI : `supabase link` puis `supabase db push`.
 

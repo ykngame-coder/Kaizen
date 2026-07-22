@@ -59,6 +59,16 @@ export interface BadgeEarnedEvent extends DomainEventBase {
   badgeId: string;
 }
 
+export interface ChallengeJoinedEvent extends DomainEventBase {
+  type: 'ChallengeJoined';
+  challengeId: UUID;
+}
+
+export interface ProgramEnrolledEvent extends DomainEventBase {
+  type: 'ProgramEnrolled';
+  programId: string;
+}
+
 export type DomainEvent =
   | WorkoutCompletedEvent
   | SleepRecordedEvent

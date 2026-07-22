@@ -1,6 +1,7 @@
 import { useMemo } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import type { ActivityInput, HabitInput, NutritionEntryInput } from '@supotsu/shared';
+import type { ActivityInput, ChallengeInput, HabitInput, NutritionEntryInput } from '@supotsu/shared';
+import type { Challenge } from '@supotsu/core';
 import { getConnector, importFromConnector, type ConnectorProvider } from '@supotsu/connectors';
 import { useAuth } from '@/features/auth/AuthProvider';
 import { createDataRepository, type NewWorkout } from './repository';
@@ -131,6 +132,94 @@ export function useLogHabit() {
     mutationFn: (habitId: string) => repo.logHabit(user!.id, habitId),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['habitLogs', user?.id] });
+    },
+  });
+}
+
+export function useChallenges() {
+  const { user } = useAuth();
+  const repo = useRepository();
+  return useQuery({
+    queryKey: ['challenges', user?.id],
+    enabled: !!user,
+    queryFn: () => repo.listChallenges(),
+  });
+}
+
+export function useMyChallengeIds() {
+  const { user } = useAuth();
+  const repo = useRepository();
+  return useQuery({
+    queryKey: ['myChallenges', user?.id],
+    enabled: !!user,
+    queryFn: () => repo.listMyChallengeIds(user!.id),
+  });
+}
+
+export function useCreateChallenge() {
+  const { user } = useAuth();
+  const repo = useRepository();
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (input: ChallengeInput) => repo.createChallenge(user!.id, input),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['challenges', user?.id] });
+      qc.invalidateQueries({ queryKey: ['myChallenges', user?.id] });
+    },
+  });
+}
+
+export function useJoinChallenge() {
+  const { user } = useAuth();
+  const repo = useRepository();
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (challengeId: string) => repo.joinChallenge(user!.id, challengeId),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['myChallenges', user?.id] });
+      qc.invalidateQueries({ queryKey: ['leaderboard'] });
+    },
+  });
+}
+
+export function useChallengeLeaderboard(challenge: Challenge | undefined) {
+  const { user } = useAuth();
+  const repo = useRepository();
+  return useQuery({
+    queryKey: ['leaderboard', challenge?.id],
+    enabled: !!user && !!challenge,
+    queryFn: () => repo.challengeLeaderboard(challenge!),
+  });
+}
+
+export function usePrograms() {
+  const { user } = useAuth();
+  const repo = useRepository();
+  return useQuery({
+    queryKey: ['programs', user?.id],
+    enabled: !!user,
+    queryFn: () => repo.listPrograms(),
+  });
+}
+
+export function useEnrolledProgramIds() {
+  const { user } = useAuth();
+  const repo = useRepository();
+  return useQuery({
+    queryKey: ['enrollments', user?.id],
+    enabled: !!user,
+    queryFn: () => repo.listEnrolledProgramIds(user!.id),
+  });
+}
+
+export function useEnrollProgram() {
+  const { user } = useAuth();
+  const repo = useRepository();
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (programId: string) => repo.enrollProgram(user!.id, programId),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['enrollments', user?.id] });
     },
   });
 }
