@@ -26,7 +26,7 @@ const AuthContext = createContext<AuthContextValue | null>(null);
  * Backend is chosen once (Supabase vs demo) and kept stable for the app's life.
  */
 export function AuthProvider({ children }: { children: React.ReactNode }): React.JSX.Element {
-  const backendRef = useRef<AuthBackend>();
+  const backendRef = useRef<AuthBackend | undefined>(undefined);
   if (!backendRef.current) backendRef.current = createAuthBackend();
   const backend = backendRef.current;
 

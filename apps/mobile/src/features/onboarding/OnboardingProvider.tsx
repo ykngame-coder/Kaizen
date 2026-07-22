@@ -17,7 +17,7 @@ const OnboardingContext = createContext<OnboardingContextValue | null>(null);
  */
 export function OnboardingProvider({ children }: { children: React.ReactNode }): React.JSX.Element {
   const { user, status: authStatus } = useAuth();
-  const storeRef = useRef<ProfileStore>();
+  const storeRef = useRef<ProfileStore | undefined>(undefined);
   if (!storeRef.current) storeRef.current = createProfileStore();
   const store = storeRef.current;
 

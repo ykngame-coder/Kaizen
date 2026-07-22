@@ -1,8 +1,3 @@
 packages:
   - "apps/*"
   - "packages/*"
-
-# pnpm 10 reads dependency overrides from here, not from package.json's "pnpm"
-# field. Pin reanimated to v3 (v4 breaks with the pinned NativeWind/worklets).
-overrides:
-  react-native-reanimated: "3.16.7"
