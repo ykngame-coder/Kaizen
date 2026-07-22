@@ -1,13 +1,14 @@
 import React, { useMemo } from 'react';
 import { View } from 'react-native';
 import { useRouter } from 'expo-router';
-import { Badge, Button, Card, KPICard, Screen, Text, useTheme, type BadgeTone } from '@supotsu/ui';
+import { Button, Card, KPICard, Screen, Text, useTheme, type BadgeTone } from '@supotsu/ui';
 import { spacing } from '@supotsu/design-system';
 import { buildDailySnapshot, recoveryBand } from '@supotsu/engines';
 import type { Confidence } from '@supotsu/core';
 import { useActivities, useHealthMetrics } from '@/lib/data/queries';
 import { BadgesCard } from '@/features/gamification/BadgesCard';
 import { HabitsCard } from '@/features/gamification/HabitsCard';
+import { DailyBriefingCard } from './DailyBriefingCard';
 
 const CONFIDENCE_LABEL: Record<Confidence, { label: string; tone: BadgeTone }> = {
   high: { label: 'Confiance élevée', tone: 'success' },
@@ -32,7 +33,6 @@ export function DashboardScreen(): React.JSX.Element {
   const s = snapshot.value;
   const hasData = activities.length > 0;
   const conf = CONFIDENCE_LABEL[snapshot.confidence];
-  const rec = s.recommendation;
 
   return (
     <Screen scroll>
@@ -71,30 +71,7 @@ export function DashboardScreen(): React.JSX.Element {
         </View>
       </View>
 
-      <Card>
-        <View
-          style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}
-        >
-          <Text variant="heading">Recommandation du jour</Text>
-          <Badge
-            label={
-              rec.confidence === 'high'
-                ? 'Confiance élevée'
-                : rec.confidence === 'medium'
-                  ? 'Confiance moyenne'
-                  : 'À confirmer'
-            }
-            tone={CONFIDENCE_LABEL[rec.confidence].tone}
-          />
-        </View>
-        <Text variant="caption" color="textMuted">
-          {rec.explanation.observation}
-        </Text>
-        <Text variant="caption" color="textMuted">
-          {rec.explanation.analysis}
-        </Text>
-        <Text variant="body">{rec.explanation.action}</Text>
-      </Card>
+      <DailyBriefingCard />
 
       <Card>
         <Text variant="heading">Activité</Text>

@@ -7,4 +7,5 @@ export * from './nutrition';
 export * from './gamification';
 export * from './community';
 export * from './marketplace';
+export * from './decision';
 export * from './coach';
