@@ -55,6 +55,12 @@ export function AddMealScreen(): React.JSX.Element {
     <Screen scroll>
       <Text variant="title">Nouveau repas</Text>
 
+      <Button
+        label="Chercher dans Open Food Facts"
+        variant="secondary"
+        onPress={() => router.replace('/food/search')}
+      />
+
       <View style={{ gap: spacing[2] }}>
         <Text variant="label" color="textMuted">
           MOMENT

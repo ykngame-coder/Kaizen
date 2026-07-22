@@ -154,8 +154,9 @@ export function NutritionScreen(): React.JSX.Element {
             Aucun repas enregistré aujourd'hui.
           </Text>
         )}
-        <View style={{ alignItems: 'flex-start', marginTop: spacing[2] }}>
-          <Button label="Ajouter un repas" onPress={() => router.push('/meal/new')} />
+        <View style={{ flexDirection: 'row', gap: spacing[2], marginTop: spacing[2] }}>
+          <Button label="Chercher un aliment" onPress={() => router.push('/food/search')} />
+          <Button label="Saisie manuelle" variant="secondary" onPress={() => router.push('/meal/new')} />
         </View>
       </Card>
     </Screen>
