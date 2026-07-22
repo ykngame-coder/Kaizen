@@ -5,6 +5,7 @@ import {
   normalizeHealthKitSample,
   normalizeHealthKitSamples,
   normalizeHealthKitWorkout,
+  normalizeShortcutHealth,
 } from './appleHealth';
 
 describe('normalizeHealthKitSample', () => {
@@ -90,5 +91,36 @@ describe('normalizeHealthKitWorkout', () => {
 
   it('returns null without start or duration', () => {
     expect(normalizeHealthKitWorkout({ workoutActivityType: 37, duration: 600 })).toBeNull();
+  });
+});
+
+describe('normalizeShortcutHealth', () => {
+  it('maps valid entries with canonical units and Apple Health provenance', () => {
+    const out = normalizeShortcutHealth([
+      { type: 'hrv', value: 61, date: '2026-07-20T05:00:00Z' },
+      { type: 'resting_heart_rate', value: 48, date: '2026-07-20T05:00:00Z' },
+      { type: 'sleep_duration', value: 7.5, date: '2026-07-20T06:30:00Z' },
+    ]);
+    expect(out).toHaveLength(3);
+    expect(out[0]).toMatchObject({ type: 'hrv', unit: 'ms', source: 'apple_health', reliability: 'high' });
+    expect(out.find((m) => m.type === 'sleep_duration')?.unit).toBe('h');
+  });
+
+  it('drops unknown types, non-numeric values and bad dates', () => {
+    const out = normalizeShortcutHealth([
+      { type: 'steps', value: 8000, date: '2026-07-20T05:00:00Z' }, // unknown type
+      { type: 'hrv', value: Number.NaN, date: '2026-07-20T05:00:00Z' }, // bad value
+      { type: 'hrv', value: 60, date: 'not-a-date' }, // bad date
+      { type: 'weight', value: 74.3, date: '2026-07-20T07:00:00Z' }, // ok
+    ]);
+    expect(out).toHaveLength(1);
+    expect(out[0]?.type).toBe('weight');
+  });
+
+  it('coerces stringified numeric values', () => {
+    const out = normalizeShortcutHealth([
+      { type: 'hrv', value: '61.4' as unknown as number, date: '2026-07-20T05:00:00Z' },
+    ]);
+    expect(out[0]?.value).toBe(61.4);
   });
 });

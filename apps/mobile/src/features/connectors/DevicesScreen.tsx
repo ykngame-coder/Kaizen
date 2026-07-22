@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { Badge, Button, Card, Screen, Text, type BadgeTone } from '@supotsu/ui';
+import { Badge, Button, Card, Screen, Text, useTheme, type BadgeTone } from '@supotsu/ui';
 import { spacing } from '@supotsu/design-system';
 import { CONNECTORS } from '@supotsu/connectors';
 import { useHealthMetrics, useSyncConnector } from '@/lib/data/queries';
@@ -19,6 +19,7 @@ import {
   stravaAvailable,
   syncStrava,
 } from './stravaClient';
+import { appleHealthAvailable, createIngestToken, ingestUrl } from './appleHealthClient';
 
 const GARMIN_STATUS_UI: Record<string, { label: string; tone: BadgeTone }> = {
   connected: { label: 'Connecté', tone: 'success' },
@@ -185,6 +186,76 @@ function StravaCard(): React.JSX.Element {
   );
 }
 
+/** Apple Santé via iOS Shortcuts webhook (free, no dev build). */
+function AppleHealthCard(): React.JSX.Element {
+  const { colors } = useTheme();
+  const available = appleHealthAvailable();
+  const [token, setToken] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const url = ingestUrl();
+
+  const generate = async (): Promise<void> => {
+    setError(null);
+    setBusy(true);
+    try {
+      setToken(await createIngestToken());
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Génération impossible.');
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <Card>
+      <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+        <View style={{ flex: 1 }}>
+          <Text variant="subtitle">Apple Santé (Raccourcis)</Text>
+          <Text variant="caption" color="textMuted">
+            HRV, FC, sommeil — automatique, gratuit, sans build (iOS)
+          </Text>
+        </View>
+        <Badge label={available ? 'Gratuit' : 'Backend requis'} tone={available ? 'success' : 'neutral'} />
+      </View>
+      {available ? (
+        <>
+          <Button label={busy ? '…' : token ? 'Régénérer le jeton' : 'Générer mon jeton'} onPress={generate} disabled={busy} />
+          {token && url ? (
+            <View style={{ gap: spacing[1], marginTop: spacing[1] }}>
+              <Text variant="label" color="textMuted">
+                URL (à mettre dans le Raccourci)
+              </Text>
+              <Text variant="caption" selectable style={{ color: colors.text }}>
+                {url}
+              </Text>
+              <Text variant="label" color="textMuted">
+                JETON (en-tête X-Supotsu-Token)
+              </Text>
+              <Text variant="caption" selectable style={{ color: colors.text }}>
+                {token}
+              </Text>
+              <Text variant="caption" color="textMuted">
+                Garde ce jeton secret. Suit docs/apple-health-shortcut.md pour créer le Raccourci.
+              </Text>
+            </View>
+          ) : null}
+        </>
+      ) : (
+        <Text variant="caption" color="textMuted">
+          Nécessite un backend Supabase configuré et la fonction apple-health déployée
+          (voir docs/apple-health-shortcut.md).
+        </Text>
+      )}
+      {error ? (
+        <Text variant="caption" style={{ marginTop: spacing[1] }}>
+          {error}
+        </Text>
+      ) : null}
+    </Card>
+  );
+}
+
 /** "Mes appareils connectés" (Master Prompt P9.13, P22.14). */
 export function DevicesScreen(): React.JSX.Element {
   const router = useRouter();
@@ -216,6 +287,7 @@ export function DevicesScreen(): React.JSX.Element {
 
       {message ? <Badge label={message} tone="info" /> : null}
 
+      <AppleHealthCard />
       <GarminCard />
       <StravaCard />
 

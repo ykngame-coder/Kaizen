@@ -413,6 +413,10 @@ export interface Database {
         Args: Record<string, never>;
         Returns: { provider: string; status: string; connected_at: string }[];
       };
+      create_apple_health_token: {
+        Args: Record<string, never>;
+        Returns: string;
+      };
     };
     Enums: Record<string, never>;
     CompositeTypes: Record<string, never>;

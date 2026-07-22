@@ -140,3 +140,44 @@ export function normalizeHealthKitWorkout(w: HKWorkout): ImportedActivity | null
     calories: w.totalEnergyBurned !== undefined ? Math.round(w.totalEnergyBurned) : undefined,
   };
 }
+
+/**
+ * Apple Health via the iOS Shortcuts webhook (free, no dev build). A Shortcut
+ * reads Health samples and POSTs a simple JSON payload; this normalizes it. The
+ * canonical unit per metric type is applied so entries stay comparable.
+ */
+export const SHORTCUT_METRIC_UNITS: Record<string, string> = {
+  hrv: 'ms',
+  resting_heart_rate: 'bpm',
+  sleep_duration: 'h',
+  stress: 'score',
+  weight: 'kg',
+  body_fat: '%',
+  hydration: 'ml',
+};
+
+export interface ShortcutHealthEntry {
+  type: string;
+  value: number;
+  date: string;
+}
+
+/** Normalize a Shortcut health payload → provenance-aware metrics (Apple Health). */
+export function normalizeShortcutHealth(entries: ShortcutHealthEntry[]): ImportedHealthMetric[] {
+  const out: ImportedHealthMetric[] = [];
+  for (const e of entries ?? []) {
+    const unit = SHORTCUT_METRIC_UNITS[e.type];
+    const value = typeof e.value === 'number' ? e.value : Number(e.value);
+    const time = e.date ? new Date(e.date) : null;
+    if (!unit || !Number.isFinite(value) || !time || Number.isNaN(time.getTime())) continue;
+    out.push({
+      type: e.type as HealthMetricType,
+      value: Number(value.toFixed(2)),
+      unit,
+      source: 'apple_health',
+      reliability: 'high',
+      measuredAt: time.toISOString(),
+    });
+  }
+  return out;
+}
