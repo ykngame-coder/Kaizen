@@ -4,7 +4,7 @@ import { useRouter } from 'expo-router';
 import * as DocumentPicker from 'expo-document-picker';
 import { Badge, Button, Card, Screen, Text } from '@supotsu/ui';
 import { spacing } from '@supotsu/design-system';
-import { parseHealthExportText } from '@supotsu/connectors';
+import { parseImportFile } from '@supotsu/connectors';
 import { useImportHealth } from '@/lib/data/queries';
 
 /** Read a picked file's text, cross-platform (web blob vs native file uri). */
@@ -37,20 +37,38 @@ export function ImportHealthScreen(): React.JSX.Element {
       const res = await DocumentPicker.getDocumentAsync({
         type: ['application/json', 'text/json', '*/*'],
         copyToCacheDirectory: true,
+        multiple: true,
       });
-      if (res.canceled || !res.assets?.[0]) return;
+      if (res.canceled || !res.assets?.length) return;
       setBusy(true);
-      const text = await readFileText(res.assets[0].uri);
-      const payload = parseHealthExportText(text);
-      const count = payload.activities.length + payload.healthMetrics.length;
-      if (count === 0) {
-        setStatus({ tone: 'error', text: 'Aucune donnée reconnue dans ce fichier.' });
+
+      // Merge every selected file (a Garmin export is split across many files).
+      const activities: Parameters<typeof importHealth.mutateAsync>[0]['activities'] = [];
+      const healthMetrics: Parameters<typeof importHealth.mutateAsync>[0]['healthMetrics'] = [];
+      let failed = 0;
+      for (const asset of res.assets) {
+        try {
+          const parsed = parseImportFile(JSON.parse(await readFileText(asset.uri)));
+          activities.push(...parsed.activities);
+          healthMetrics.push(...parsed.healthMetrics);
+        } catch {
+          failed += 1;
+        }
+      }
+
+      if (activities.length + healthMetrics.length === 0) {
+        setStatus({
+          tone: 'error',
+          text: failed > 0 ? `Aucune donnée reconnue (${failed} fichier(s) illisible(s)).` : 'Aucune donnée reconnue.',
+        });
         return;
       }
-      const added = await importHealth.mutateAsync(payload);
+      const added = await importHealth.mutateAsync({ activities, healthMetrics });
       setStatus({
         tone: 'success',
-        text: `Importé : ${added.activities} activité(s), ${added.health} donnée(s) santé.`,
+        text:
+          `Importé : ${added.activities} activité(s), ${added.health} donnée(s) santé` +
+          (failed > 0 ? ` (${failed} fichier(s) ignoré(s)).` : '.'),
       });
     } catch (e) {
       setStatus({
@@ -73,8 +91,9 @@ export function ImportHealthScreen(): React.JSX.Element {
       <Card>
         <Text variant="heading">Fichier JSON</Text>
         <Text variant="body" color="textMuted">
-          Format attendu : {'{'} "source": "garmin", "metrics": [...], "activities": [...] {'}'}.
-          Voir docs/import-format.md.
+          Fichiers Garmin (DI-Connect-Wellness : sleepData, userBioMetrics…) reconnus
+          automatiquement, ou format JSON Supotsu. Tu peux en sélectionner plusieurs
+          d'un coup. Voir docs/import-format.md.
         </Text>
         <View style={{ alignItems: 'flex-start', marginTop: spacing[2] }}>
           <Button label={busy ? '…' : 'Choisir un fichier'} onPress={pickAndImport} disabled={busy} />

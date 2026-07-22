@@ -36,10 +36,22 @@ mêmes points renvoyés deux fois ne créent pas de doublon).
 Les lignes invalides (type inconnu, valeur non numérique, date illisible) sont
 **ignorées** — jamais de donnée inventée.
 
-## Et l'export Garmin brut (.zip) ?
+## Export Garmin brut — reconnu automatiquement
 
-L'export RGPD Garmin est une **archive `.zip` de fichiers JSON** au format Garmin
-(différent de celui-ci). Pour l'importer directement, il faut un **adaptateur
-Garmin → format Supotsu** (dézippage + conversion). Il sera codé **dès que le
-format exact aura été vu** (arborescence + un extrait d'un fichier sommeil/HRV).
-En attendant, tout JSON déjà au format ci-dessus s'importe immédiatement.
+Les fichiers de l'export RGPD Garmin (dossier **`DI-Connect-Wellness`**) sont
+**détectés et convertis automatiquement** — pas besoin de les mettre au format
+ci-dessus. Sélectionne-les directement (tu peux en choisir plusieurs d'un coup) :
+
+| Fichier Garmin | Donnée importée | État |
+|---|---|---|
+| `*_sleepData.json` | Durée de sommeil (deep+light+REM) | ✅ |
+| `*_userBioMetrics.json` | Poids (grammes → kg) | ✅ |
+| *HRV / FC de repos / stress* | — | 🔜 (fichier à identifier) |
+
+> L'archive est un `.zip` : dézippe-la d'abord, puis choisis les fichiers `.json`
+> voulus dans `DI-Connect-Wellness`. Le dézippage in-app viendra plus tard ;
+> pour l'instant on importe les `.json` directement.
+
+La HRV / FC de repos / stress ne sont pas dans `sleepData` ni `userBioMetrics` :
+elles vivent dans un autre fichier (`DI-Connect-Metrics` ou un `HealthStatusData`),
+qui sera ajouté à l'adaptateur une fois son format vu.
