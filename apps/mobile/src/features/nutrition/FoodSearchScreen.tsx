@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Pressable, View } from 'react-native';
-import { useRouter } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Badge, Button, Card, Input, Screen, SegmentedControl, Text, useTheme } from '@supotsu/ui';
 import { radii, spacing } from '@supotsu/design-system';
 import { scaleMacros } from '@supotsu/connectors';
@@ -21,6 +21,7 @@ export function FoodSearchScreen(): React.JSX.Element {
   const router = useRouter();
   const { colors } = useTheme();
   const addMeal = useAddNutritionEntry();
+  const params = useLocalSearchParams<{ barcode?: string }>();
 
   const [query, setQuery] = useState('');
   const [barcode, setBarcode] = useState('');
@@ -47,12 +48,12 @@ export function FoodSearchScreen(): React.JSX.Element {
     }
   };
 
-  const runBarcode = async (): Promise<void> => {
+  const lookupBarcode = async (code: string): Promise<void> => {
     setError(null);
     setLoading(true);
     setSelected(null);
     try {
-      const food = await getFoodByBarcode(barcode);
+      const food = await getFoodByBarcode(code);
       if (food) {
         setResults([food]);
         pick(food);
@@ -71,6 +72,14 @@ export function FoodSearchScreen(): React.JSX.Element {
     setSelected(food);
     setGrams(food.servingSizeG ? String(food.servingSizeG) : '100');
   };
+
+  // Arriving from the scanner with a barcode param → look it up automatically.
+  useEffect(() => {
+    if (params.barcode) {
+      setBarcode(params.barcode);
+      void lookupBarcode(params.barcode);
+    }
+  }, [params.barcode]);
 
   const portion = selected ? scaleMacros(selected, Number(grams) || 0) : null;
 
@@ -112,8 +121,10 @@ export function FoodSearchScreen(): React.JSX.Element {
         <View style={{ flex: 1 }}>
           <Input label="Code-barres" keyboardType="numeric" value={barcode} onChangeText={setBarcode} />
         </View>
-        <Button label="Scanner n°" variant="secondary" onPress={runBarcode} disabled={loading} />
+        <Button label="Chercher" variant="secondary" onPress={() => lookupBarcode(barcode)} disabled={loading} />
       </View>
+
+      <Button label="📷 Scanner un code-barres" onPress={() => router.push('/food/scan')} fullWidth />
 
       {error ? <Badge label={error} tone="warning" /> : null}
 
