@@ -3,6 +3,8 @@ export { Text } from './Text';
 export type { TextProps } from './Text';
 export { Screen } from './Screen';
 export type { ScreenProps } from './Screen';
+export { EmptyState } from './EmptyState';
+export type { EmptyStateProps } from './EmptyState';
 export { Card } from './Card';
 export type { CardProps } from './Card';
 export { Button } from './Button';

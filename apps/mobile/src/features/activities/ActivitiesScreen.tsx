@@ -1,7 +1,7 @@
 import React, { useMemo } from 'react';
 import { View } from 'react-native';
 import { useRouter } from 'expo-router';
-import { Button, Card, KPICard, Screen, Text } from '@supotsu/ui';
+import { Button, Card, EmptyState, KPICard, Screen, Text } from '@supotsu/ui';
 import { spacing } from '@supotsu/design-system';
 import { useActivities } from '@/lib/data/queries';
 import { activityLabel, formatDate, formatDistance, formatDuration } from '@/lib/format';
@@ -42,13 +42,13 @@ export function ActivitiesScreen(): React.JSX.Element {
           Chargement…
         </Text>
       ) : activities.length === 0 ? (
-        <Card>
-          <Text variant="heading">Aucune activité</Text>
-          <Text variant="body" color="textMuted">
-            Ajoute ta première activité pour commencer à suivre ta progression et calibrer ton score
-            Supotsu.
-          </Text>
-        </Card>
+        <EmptyState
+          icon="≋"
+          title="Aucune activité"
+          message="Ajoute ta première activité pour suivre ta progression et calibrer ton score Supotsu."
+          actionLabel="Ajouter une activité"
+          onAction={() => router.push('/activity/new')}
+        />
       ) : (
         <View style={{ gap: spacing[2] }}>
           {activities.map((a) => {

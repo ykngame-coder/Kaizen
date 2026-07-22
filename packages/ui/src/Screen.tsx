@@ -1,5 +1,5 @@
 import React from 'react';
-import { ScrollView, View, type ViewStyle } from 'react-native';
+import { RefreshControl, ScrollView, View, type ViewStyle } from 'react-native';
 import { spacing } from '@supotsu/design-system';
 import { useTheme } from './theme';
 
@@ -8,6 +8,9 @@ export interface ScreenProps {
   scroll?: boolean;
   padded?: boolean;
   style?: ViewStyle;
+  /** Enables pull-to-refresh (scroll screens only). */
+  onRefresh?: () => void;
+  refreshing?: boolean;
 }
 
 /** Root container for a screen: applies the themed background and safe padding. */
@@ -16,6 +19,8 @@ export function Screen({
   scroll = false,
   padded = true,
   style,
+  onRefresh,
+  refreshing = false,
 }: ScreenProps): React.JSX.Element {
   const { colors } = useTheme();
   const base: ViewStyle = {
@@ -29,6 +34,16 @@ export function Screen({
       <ScrollView
         style={{ flex: 1, backgroundColor: colors.background }}
         contentContainerStyle={[{ padding: padded ? spacing[4] : 0, gap: spacing[4] }, style]}
+        refreshControl={
+          onRefresh ? (
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={onRefresh}
+              tintColor={colors.primary}
+              colors={[colors.primary]}
+            />
+          ) : undefined
+        }
       >
         {children}
       </ScrollView>

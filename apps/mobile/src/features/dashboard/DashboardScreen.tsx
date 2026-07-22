@@ -1,6 +1,7 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import { View } from 'react-native';
 import { useRouter } from 'expo-router';
+import { useQueryClient } from '@tanstack/react-query';
 import { Button, Card, KPICard, Screen, Text, useTheme, type BadgeTone } from '@supotsu/ui';
 import { spacing } from '@supotsu/design-system';
 import { buildDailySnapshot, recoveryBand } from '@supotsu/engines';
@@ -34,8 +35,16 @@ export function DashboardScreen(): React.JSX.Element {
   const hasData = activities.length > 0;
   const conf = CONFIDENCE_LABEL[snapshot.confidence];
 
+  const qc = useQueryClient();
+  const [refreshing, setRefreshing] = useState(false);
+  const onRefresh = async (): Promise<void> => {
+    setRefreshing(true);
+    await qc.invalidateQueries();
+    setRefreshing(false);
+  };
+
   return (
-    <Screen scroll>
+    <Screen scroll onRefresh={onRefresh} refreshing={refreshing}>
       <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
         <View>
           <Text variant="title">Bonjour 👋</Text>
