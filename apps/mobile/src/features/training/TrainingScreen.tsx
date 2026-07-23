@@ -39,6 +39,16 @@ export function TrainingScreen(): React.JSX.Element {
       </Card>
 
       <Card>
+        <Text variant="heading">Charge d'entraînement</Text>
+        <Text variant="body" color="textMuted">
+          Ton ratio charge aiguë / chronique — progresser sans te blesser.
+        </Text>
+        <View style={{ alignItems: 'flex-start' }}>
+          <Button label="Voir ma charge" onPress={() => router.push('/load')} />
+        </View>
+      </Card>
+
+      <Card>
         <Text variant="heading">Programmes de coachs</Text>
         <Text variant="body" color="textMuted">
           Suis un programme structuré, recommandé selon ce que tu pratiques.
