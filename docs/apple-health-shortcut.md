@@ -23,6 +23,9 @@ Note l'**URL** et le **JETON** affichés (appui long pour copier).
 
 ## Créer le Raccourci (app Raccourcis, gratuite)
 
+> Recette détaillée **action par action** (avec le JSON multi-métriques prêt à
+> coller) : voir [`apple-health-shortcut-recipe.md`](./apple-health-shortcut-recipe.md).
+
 Crée un raccourci « Envoyer ma santé à Supotsu » avec ces actions :
 
 1. **Rechercher des échantillons de santé** — Type *Variabilité de la fréquence
