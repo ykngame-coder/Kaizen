@@ -1,11 +1,12 @@
 import React, { useMemo } from 'react';
 import { View } from 'react-native';
 import { useRouter } from 'expo-router';
-import { Badge, Button, Card, EmptyState, Screen, Text, useTheme } from '@supotsu/ui';
+import { Badge, Button, Card, EmptyState, ProgressRing, Screen, Text, useTheme } from '@supotsu/ui';
 import { spacing } from '@supotsu/design-system';
 import type { MuscleGroup } from '@supotsu/core';
 import {
   computeMuscleStates,
+  overallReadiness,
   suggestNextMuscles,
   type MuscleState,
   type MuscleStatus,
@@ -28,6 +29,21 @@ const MUSCLE_LABEL: Record<MuscleGroup, string> = {
   full_body: 'Corps entier',
 };
 
+/** Lower-case names for inline sentences ("tes pectoraux et tes épaules"). */
+const MUSCLE_INLINE: Record<MuscleGroup, string> = {
+  chest: 'pectoraux',
+  back: 'dos',
+  shoulders: 'épaules',
+  biceps: 'biceps',
+  triceps: 'triceps',
+  quads: 'quadriceps',
+  hamstrings: 'ischios',
+  glutes: 'fessiers',
+  calves: 'mollets',
+  core: 'abdos',
+  full_body: 'corps entier',
+};
+
 /** How to describe each recovery state, in plain French. */
 const STATE_LABEL: Record<MuscleState, string> = {
   rested: 'Reposé',
@@ -42,6 +58,13 @@ const STATE_TONE: Record<MuscleState, 'success' | 'info' | 'warning' | 'error'> 
   worked: 'warning',
   fatigued: 'error',
 };
+
+/** Join French labels: "a, b et c". */
+function joinFr(labels: string[]): string {
+  if (labels.length === 0) return '';
+  if (labels.length === 1) return labels[0];
+  return `${labels.slice(0, -1).join(', ')} et ${labels[labels.length - 1]}`;
+}
 
 export function MusclesScreen(): React.JSX.Element {
   const router = useRouter();
@@ -80,6 +103,10 @@ export function MusclesScreen(): React.JSX.Element {
     return colorForState(status.state);
   };
 
+  const readiness = useMemo(() => overallReadiness(statuses), [statuses]);
+  const readinessColor =
+    readiness >= 75 ? colors.success : readiness >= 50 ? colors.warning : colors.error;
+
   const fresh = useMemo(() => suggestNextMuscles(statuses, 3), [statuses]);
   // Ordered for the readout: most fatigued first (what needs rest).
   const ranked = useMemo(
@@ -87,16 +114,31 @@ export function MusclesScreen(): React.JSX.Element {
     [statuses],
   );
 
-  const legend: { state: MuscleState }[] = [
-    { state: 'fatigued' },
-    { state: 'worked' },
-    { state: 'fresh' },
-    { state: 'rested' },
-  ];
+  // Coaching block (Bevel "Zone de récupération" style): a status pill + a
+  // sentence naming the muscles that recovered or still need rest.
+  const stillTired = ranked.filter((s) => s.state === 'fatigued' || s.state === 'worked');
+  const coaching = useMemo(() => {
+    if (stillTired.length > 0) {
+      const names = joinFr(stillTired.slice(0, 3).map((s) => MUSCLE_INLINE[s.muscle]));
+      const suggestion = joinFr(fresh.map((m) => MUSCLE_INLINE[m]));
+      return {
+        pill: 'RÉCUPÉRATION EN COURS',
+        tone: 'warning' as const,
+        text: `Tes ${names} récupèrent encore. Pour aujourd'hui, privilégie plutôt ${suggestion}.`,
+      };
+    }
+    return {
+      pill: "PRÊT À S'ENTRAÎNER",
+      tone: 'success' as const,
+      text: 'Tous tes groupes musculaires sont rétablis. C’est le moment idéal pour une grosse séance !',
+    };
+  }, [stillTired, fresh]);
+
+  const legend: MuscleState[] = ['fatigued', 'worked', 'fresh', 'rested'];
 
   return (
     <Screen scroll>
-      <Text variant="title">Carte musculaire</Text>
+      <Text variant="title">Zone de récupération</Text>
       <Text variant="caption" color="textMuted">
         Quels muscles sont fatigués et lesquels sont prêts à travailler, d'après tes séances
         des derniers jours.
@@ -117,9 +159,22 @@ export function MusclesScreen(): React.JSX.Element {
       ) : (
         <>
           <Card>
-            <View style={{ alignItems: 'center' }}>
+            <View style={{ alignItems: 'center', gap: spacing[1] }}>
+              <ProgressRing
+                value={readiness}
+                color={readinessColor}
+                caption="prêt"
+                size={116}
+              />
+              <Text variant="caption" color="textMuted">
+                Récupération globale
+              </Text>
+            </View>
+
+            <View style={{ alignItems: 'center', marginTop: spacing[2] }}>
               <BodyMap colorFor={colorFor} />
             </View>
+
             <View
               style={{
                 flexDirection: 'row',
@@ -129,7 +184,7 @@ export function MusclesScreen(): React.JSX.Element {
                 marginTop: spacing[2],
               }}
             >
-              {legend.map(({ state }) => (
+              {legend.map((state) => (
                 <View
                   key={state}
                   style={{ flexDirection: 'row', alignItems: 'center', gap: spacing[1] }}
@@ -150,6 +205,15 @@ export function MusclesScreen(): React.JSX.Element {
                 </View>
               ))}
             </View>
+          </Card>
+
+          <Card>
+            <View style={{ alignItems: 'flex-start' }}>
+              <Badge label={coaching.pill} tone={coaching.tone} />
+            </View>
+            <Text variant="body" style={{ marginTop: spacing[2] }}>
+              {coaching.text}
+            </Text>
           </Card>
 
           {fresh.length > 0 && (

@@ -13,6 +13,8 @@ export { Badge } from './Badge';
 export type { BadgeProps, BadgeTone } from './Badge';
 export { KPICard } from './KPICard';
 export type { KPICardProps, Trend } from './KPICard';
+export { ProgressRing } from './ProgressRing';
+export type { ProgressRingProps } from './ProgressRing';
 export { Input } from './Input';
 export type { InputProps } from './Input';
 export { SegmentedControl } from './SegmentedControl';

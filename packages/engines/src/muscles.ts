@@ -82,6 +82,13 @@ export function computeMuscleStates(sessions: MuscleSession[], asOf: ISODateStri
   });
 }
 
+/** Overall training readiness 0-100: mean freshness across all muscle groups. */
+export function overallReadiness(statuses: MuscleStatus[]): number {
+  if (statuses.length === 0) return 100;
+  const sum = statuses.reduce((acc, s) => acc + s.freshness, 0);
+  return Math.round(sum / statuses.length);
+}
+
 /** The freshest muscles (rested), useful to suggest what to train next. */
 export function suggestNextMuscles(statuses: MuscleStatus[], count = 3): MuscleGroup[] {
   return [...statuses]

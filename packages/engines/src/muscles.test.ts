@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { BODY_MUSCLES, computeMuscleStates, suggestNextMuscles } from './muscles';
+import { BODY_MUSCLES, computeMuscleStates, overallReadiness, suggestNextMuscles } from './muscles';
 
 const ASOF = '2026-07-20T12:00:00.000Z';
 const DAY = 86_400_000;
@@ -36,6 +36,19 @@ describe('computeMuscleStates', () => {
   it('expands full_body onto all muscles', () => {
     const out = computeMuscleStates([{ trainedAt: daysAgo(0), primaryMuscles: ['full_body'], secondaryMuscles: [] }], ASOF);
     expect(out.every((m) => m.lastTrainedDaysAgo === 0)).toBe(true);
+  });
+});
+
+describe('overallReadiness', () => {
+  it('is 100 when fully rested and drops after training', () => {
+    expect(overallReadiness(computeMuscleStates([], ASOF))).toBe(100);
+    const worked = overallReadiness(
+      computeMuscleStates(
+        [{ trainedAt: daysAgo(0), primaryMuscles: ['full_body'], secondaryMuscles: [] }],
+        ASOF,
+      ),
+    );
+    expect(worked).toBeLessThan(100);
   });
 });
 
