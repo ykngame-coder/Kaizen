@@ -28,21 +28,21 @@ function ScoreRing({
   size?: number;
 }): React.JSX.Element {
   const { colors } = useTheme();
-  const color =
-    value === null
-      ? colors.surfaceElevated
-      : value >= 75
-        ? colors.success
-        : value >= 50
-          ? colors.warning
-          : colors.error;
+  // Zone gauge: red (<50) · amber (50–75) · green (75+); the marker lands in
+  // the band matching the score, so the thresholds are visible at a glance.
+  const zones = [
+    { color: colors.error, weight: 50 },
+    { color: colors.warning, weight: 25 },
+    { color: colors.success, weight: 25 },
+  ];
   return (
     <View style={{ alignItems: 'center', gap: spacing[1] }}>
       <ProgressRing
         value={value ?? 0}
         centerLabel={value === null ? '—' : String(value)}
         caption="/100"
-        color={color}
+        segments={value === null ? undefined : zones}
+        color={colors.surfaceElevated}
         size={size}
       />
       <Text variant="label" color="textMuted">

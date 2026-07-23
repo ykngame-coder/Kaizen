@@ -104,8 +104,11 @@ export function MusclesScreen(): React.JSX.Element {
   };
 
   const readiness = useMemo(() => overallReadiness(statuses), [statuses]);
-  const readinessColor =
-    readiness >= 75 ? colors.success : readiness >= 50 ? colors.warning : colors.error;
+  const readinessZones = [
+    { color: colors.error, weight: 50 },
+    { color: colors.warning, weight: 25 },
+    { color: colors.success, weight: 25 },
+  ];
 
   const fresh = useMemo(() => suggestNextMuscles(statuses, 3), [statuses]);
   // Ordered for the readout: most fatigued first (what needs rest).
@@ -162,7 +165,7 @@ export function MusclesScreen(): React.JSX.Element {
             <View style={{ alignItems: 'center', gap: spacing[1] }}>
               <ProgressRing
                 value={readiness}
-                color={readinessColor}
+                segments={readinessZones}
                 caption="prêt"
                 size={116}
               />
