@@ -2,6 +2,7 @@ import React from 'react';
 import { View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Badge, Button, Card, Screen, Text, useTheme } from '@supotsu/ui';
+import { spacing } from '@supotsu/design-system';
 import { useAuth } from '@/features/auth/AuthProvider';
 
 /** Profile: account, appearance, devices and sign-out. */
@@ -54,13 +55,13 @@ export default function ProfileTab(): React.JSX.Element {
       </Card>
 
       <Card>
-        <Text variant="label" color="textMuted">
-          À VENIR
+        <Text variant="heading">Réglages</Text>
+        <Text variant="body" color="textMuted">
+          Profil sportif, unités, notifications, confidentialité et export de tes données.
         </Text>
-        <Text variant="body">
-          Export / suppression RGPD, abonnement Premium, et connecteurs natifs (Apple Santé, Garmin,
-          Strava).
-        </Text>
+        <View style={{ alignItems: 'flex-start', marginTop: spacing[1] }}>
+          <Button label="Ouvrir les réglages" onPress={() => router.push('/settings')} />
+        </View>
       </Card>
     </Screen>
   );

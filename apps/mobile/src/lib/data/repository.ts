@@ -14,6 +14,7 @@ import type {
 } from '@supotsu/core';
 import type {
   ActivityInput,
+  AthleteProfileInput,
   ChallengeInput,
   GoalInput,
   HabitInput,
@@ -55,6 +56,8 @@ import {
   insertGoal,
   listGoals as listGoalsDb,
   updateGoalCurrent,
+  getAthleteProfile as getAthleteProfileDb,
+  upsertAthleteProfile,
   type ActivityRow,
   type WorkoutRow,
   type HealthMetricRow,
@@ -100,6 +103,8 @@ export interface DataRepository {
   listGoals(userId: string): Promise<Goal[]>;
   addGoal(userId: string, input: GoalInput): Promise<Goal>;
   updateGoalCurrent(userId: string, goalId: string, currentValue: number): Promise<Goal>;
+  getAthleteProfile(userId: string): Promise<AthleteProfileInput | null>;
+  saveAthleteProfile(userId: string, input: AthleteProfileInput): Promise<void>;
   listNutritionEntries(userId: string): Promise<NutritionEntry[]>;
   addNutritionEntry(userId: string, input: NutritionEntryInput): Promise<NutritionEntry>;
   listHabits(userId: string): Promise<Habit[]>;
@@ -402,6 +407,7 @@ const hlogKey = (u: string): string => `supotsu.habitlogs.${u}`;
 const recKey = (u: string): string => `supotsu.records.${u}`;
 const wcKey = (u: string): string => `supotsu.wellness.${u}`;
 const goalKey = (u: string): string => `supotsu.goals.${u}`;
+const profKey = (u: string): string => `supotsu.athleteprofile.${u}`;
 const chKey = (u: string): string => `supotsu.challenges.${u}`;
 const chJoinKey = (u: string): string => `supotsu.challengejoins.${u}`;
 const enrollKey = (u: string): string => `supotsu.enrollments.${u}`;
@@ -532,6 +538,13 @@ function createDemoRepository(): DataRepository {
       if (!updated) throw new Error('Objectif introuvable.');
       await writeJson(goalKey(userId), next);
       return updated;
+    },
+    async getAthleteProfile(userId) {
+      const raw = await secureStorage.getItem(profKey(userId));
+      return raw ? (JSON.parse(raw) as AthleteProfileInput) : null;
+    },
+    async saveAthleteProfile(userId, input) {
+      await secureStorage.setItem(profKey(userId), JSON.stringify(input));
     },
     async listNutritionEntries(userId) {
       const items = await readJson<NutritionEntry>(nutKey(userId));
@@ -755,6 +768,33 @@ function createSupabaseRepository(
       const { progress, status } = progressedGoal(current, currentValue);
       return rowToGoal(await updateGoalCurrent(client, goalId, currentValue, progress, status));
     },
+    async getAthleteProfile(userId) {
+      const row = await getAthleteProfileDb(client, userId);
+      if (!row) return null;
+      return {
+        sex: row.sex,
+        heightCm: row.height_cm ?? undefined,
+        weightKg: row.weight_kg ?? undefined,
+        level: row.level,
+        sports: row.sports ?? [],
+        weeklyAvailability: row.weekly_availability ?? undefined,
+        equipment: row.equipment ?? [],
+        birthDate: row.birth_date ?? undefined,
+      };
+    },
+    async saveAthleteProfile(userId, input) {
+      await upsertAthleteProfile(client, {
+        user_id: userId,
+        sex: input.sex,
+        height_cm: input.heightCm ?? null,
+        weight_kg: input.weightKg ?? null,
+        level: input.level,
+        sports: input.sports,
+        weekly_availability: input.weeklyAvailability ?? null,
+        equipment: input.equipment,
+        birth_date: input.birthDate ?? null,
+      });
+    },
     async listNutritionEntries(userId) {
       return (await listNutritionEntriesDb(client, userId)).map(rowToNutrition);
     },
@@ -898,4 +938,38 @@ function createSupabaseRepository(
 export function createDataRepository(): DataRepository {
   const client = getSupabase();
   return client ? createSupabaseRepository(client) : createDemoRepository();
+}
+
+/** Gather all of a user's data into a plain object (RGPD export, Master Prompt P15). */
+export async function exportUserData(
+  repo: DataRepository,
+  userId: string,
+): Promise<Record<string, unknown>> {
+  const [activities, workouts, health, records, nutrition, habits, habitLogs, goals, wellness, profile] =
+    await Promise.all([
+      repo.listActivities(userId),
+      repo.listWorkouts(userId),
+      repo.listHealthMetrics(userId),
+      repo.listRecords(userId),
+      repo.listNutritionEntries(userId),
+      repo.listHabits(userId),
+      repo.listHabitLogs(userId),
+      repo.listGoals(userId),
+      repo.listWellnessCheckins(userId),
+      repo.getAthleteProfile(userId),
+    ]);
+  return {
+    exportedAt: new Date().toISOString(),
+    app: 'SUPOTSU',
+    profile,
+    activities,
+    workouts,
+    healthMetrics: health,
+    records,
+    nutrition,
+    habits,
+    habitLogs,
+    goals,
+    wellnessCheckins: wellness,
+  };
 }

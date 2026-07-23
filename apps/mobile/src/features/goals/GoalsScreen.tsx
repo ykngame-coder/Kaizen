@@ -24,6 +24,7 @@ import {
 } from '@supotsu/engines';
 import { useAddGoal, useGoals, useHealthMetrics, useUpdateGoalCurrent } from '@/lib/data/queries';
 import { formatDate } from '@/lib/format';
+import { formatWeight, usePreferences } from '@/lib/preferences';
 
 const TYPE_OPTIONS: { value: GoalType; label: string }[] = [
   { value: 'body_composition', label: 'Poids / compo' },
@@ -99,6 +100,7 @@ export function GoalsScreen(): React.JSX.Element {
   const router = useRouter();
   const { data: goals = [], isLoading } = useGoals();
   const { data: metrics = [] } = useHealthMetrics();
+  const { preferences } = usePreferences();
   const addGoal = useAddGoal();
   const asOf = new Date().toISOString();
 
@@ -148,13 +150,11 @@ export function GoalsScreen(): React.JSX.Element {
         <Card>
           <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
             <Text variant="heading">Poids</Text>
-            <Text variant="subtitle">
-              {weightSummary.last.toFixed(1)} kg
-            </Text>
+            <Text variant="subtitle">{formatWeight(weightSummary.last, preferences.units)}</Text>
           </View>
           <Text variant="caption" color="textMuted">
-            {weightSummary.changeAbs >= 0 ? '+' : ''}
-            {weightSummary.changeAbs.toFixed(1)} kg sur la période
+            {weightSummary.changeAbs >= 0 ? '+' : '−'}
+            {formatWeight(Math.abs(weightSummary.changeAbs), preferences.units)} sur la période
           </Text>
           <View style={{ marginTop: spacing[2] }}>
             <Sparkline values={weight.map((p) => p.value)} width={280} height={60} />

@@ -2,6 +2,7 @@ import { useMemo } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import type {
   ActivityInput,
+  AthleteProfileInput,
   ChallengeInput,
   GoalInput,
   HabitInput,
@@ -274,6 +275,28 @@ export function useMuscleSessions() {
     queryKey: ['muscleSessions', user?.id],
     enabled: !!user,
     queryFn: () => repo.listMuscleSessions(user!.id),
+  });
+}
+
+export function useAthleteProfile() {
+  const { user } = useAuth();
+  const repo = useRepository();
+  return useQuery({
+    queryKey: ['athleteProfile', user?.id],
+    enabled: !!user,
+    queryFn: () => repo.getAthleteProfile(user!.id),
+  });
+}
+
+export function useSaveAthleteProfile() {
+  const { user } = useAuth();
+  const repo = useRepository();
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (input: AthleteProfileInput) => repo.saveAthleteProfile(user!.id, input),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['athleteProfile', user?.id] });
+    },
   });
 }
 

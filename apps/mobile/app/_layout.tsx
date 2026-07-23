@@ -9,6 +9,7 @@ import { ThemeProvider, useTheme } from '@supotsu/ui';
 import { queryClient } from '@/lib/query';
 import { AuthProvider, useAuth } from '@/features/auth/AuthProvider';
 import { OnboardingProvider, useOnboarding } from '@/features/onboarding/OnboardingProvider';
+import { PreferencesProvider } from '@/lib/preferences';
 
 /**
  * Central route gate: sends users to auth, onboarding or the app depending on
@@ -59,14 +60,16 @@ export default function RootLayout(): React.JSX.Element {
     <SafeAreaProvider>
       <QueryClientProvider client={queryClient}>
         <ThemeProvider>
-          <AuthProvider>
-            <OnboardingProvider>
-              <StatusBar style="auto" />
-              <RouteGuard>
-                <Slot />
-              </RouteGuard>
-            </OnboardingProvider>
-          </AuthProvider>
+          <PreferencesProvider>
+            <AuthProvider>
+              <OnboardingProvider>
+                <StatusBar style="auto" />
+                <RouteGuard>
+                  <Slot />
+                </RouteGuard>
+              </OnboardingProvider>
+            </AuthProvider>
+          </PreferencesProvider>
         </ThemeProvider>
       </QueryClientProvider>
     </SafeAreaProvider>
