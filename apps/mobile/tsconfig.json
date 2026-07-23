@@ -4,15 +4,35 @@
     "strict": true,
     "baseUrl": ".",
     "paths": {
-      "@/*": ["./src/*"],
-      "@supotsu/core": ["../../packages/core/src/index.ts"],
-      "@supotsu/engines": ["../../packages/engines/src/index.ts"],
-      "@supotsu/shared": ["../../packages/shared/src/index.ts"],
-      "@supotsu/design-system": ["../../packages/design-system/src/index.ts"],
-      "@supotsu/ui": ["../../packages/ui/src/index.ts"],
-      "@supotsu/database": ["../../packages/database/src/index.ts"],
-      "@supotsu/connectors": ["../../packages/connectors/src/index.ts"]
+      "@/*": [
+        "./src/*"
+      ],
+      "@supotsu/core": [
+        "../../packages/core/src/index.ts"
+      ],
+      "@supotsu/engines": [
+        "../../packages/engines/src/index.ts"
+      ],
+      "@supotsu/shared": [
+        "../../packages/shared/src/index.ts"
+      ],
+      "@supotsu/design-system": [
+        "../../packages/design-system/src/index.ts"
+      ],
+      "@supotsu/ui": [
+        "../../packages/ui/src/index.ts"
+      ],
+      "@supotsu/database": [
+        "../../packages/database/src/index.ts"
+      ],
+      "@supotsu/connectors": [
+        "../../packages/connectors/src/index.ts"
+      ]
     }
   },
-  "include": ["**/*.ts", "**/*.tsx", ".expo/types/**/*.ts", "expo-env.d.ts", "nativewind-env.d.ts"]
+  "include": [
+    "**/*.ts",
+    "**/*.tsx",
+    "nativewind-env.d.ts"
+  ]
 }
