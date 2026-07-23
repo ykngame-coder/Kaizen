@@ -12,4 +12,5 @@ export * from './marketplace';
 export * from './decision';
 export * from './muscles';
 export * from './progression';
+export * from './analytics';
 export * from './coach';

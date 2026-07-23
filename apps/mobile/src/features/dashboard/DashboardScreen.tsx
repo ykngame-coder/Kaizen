@@ -121,8 +121,9 @@ export function DashboardScreen(): React.JSX.Element {
         <Text variant="body" color="textMuted">
           Fixe des objectifs mesurables et suis tes tendances dans le temps.
         </Text>
-        <View style={{ alignItems: 'flex-start', marginTop: spacing[1] }}>
+        <View style={{ flexDirection: 'row', gap: spacing[2], marginTop: spacing[1] }}>
           <Button label="Mes objectifs" onPress={() => router.push('/goals')} />
+          <Button label="Analyses" variant="secondary" onPress={() => router.push('/analytics')} />
         </View>
       </Card>
 
