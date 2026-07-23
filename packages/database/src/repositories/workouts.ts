@@ -33,6 +33,31 @@ export async function listWorkoutSetsForUser(
   return (data ?? []).map((r) => ({ workoutId: r.workout_id, exerciseId: r.exercise_id }));
 }
 
+/** Detailed logged set: exercise, reps, load and its parent workout. */
+export interface LoggedSet {
+  workoutId: string;
+  exerciseId: string;
+  order: number;
+  reps: number | null;
+  weightKg: number | null;
+}
+
+/** All of the user's logged sets with reps/load, for progression suggestions. */
+export async function listLoggedSets(client: SupotsuClient, _userId: string): Promise<LoggedSet[]> {
+  // RLS scopes workout_sets to the caller's own workouts.
+  const { data, error } = await client
+    .from('workout_sets')
+    .select('workout_id, exercise_id, order, reps, weight_kg');
+  if (error) throw error;
+  return (data ?? []).map((r) => ({
+    workoutId: r.workout_id,
+    exerciseId: r.exercise_id,
+    order: r.order,
+    reps: r.reps,
+    weightKg: r.weight_kg,
+  }));
+}
+
 /** List the user's workouts, most recent first. */
 export async function listWorkouts(client: SupotsuClient, userId: string): Promise<WorkoutRow[]> {
   const { data, error } = await client

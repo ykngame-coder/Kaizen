@@ -33,6 +33,7 @@ import {
   insertWorkout,
   listWorkouts as listWorkoutsDb,
   listWorkoutSetsForUser,
+  listLoggedSets as listLoggedSetsDb,
   insertHealthMetrics,
   listHealthMetrics as listHealthMetricsDb,
   insertNutritionEntry,
@@ -98,6 +99,8 @@ export interface DataRepository {
   listHealthMetrics(userId: string): Promise<HealthMetric[]>;
   listRecords(userId: string): Promise<PersonalRecord[]>;
   listMuscleSessions(userId: string): Promise<MuscleSession[]>;
+  /** The most recent logged session's sets per exercise (progressive overload). */
+  lastSessionSetsByExercise(userId: string): Promise<Record<string, SetEntry[]>>;
   listWellnessCheckins(userId: string): Promise<WellnessCheckin[]>;
   addWellnessCheckin(userId: string, input: WellnessCheckinInput): Promise<WellnessCheckin>;
   listGoals(userId: string): Promise<Goal[]>;
@@ -349,6 +352,51 @@ function buildMuscleSessions(
   return out;
 }
 
+interface LoggedSetRow {
+  workoutId: string;
+  exerciseId: string;
+  order: number;
+  reps: number | null;
+  weightKg: number | null;
+}
+
+/** For each exercise, the sets of the most recent workout that contains it. */
+function lastSessionByExercise(
+  workoutDate: Map<string, string>,
+  sets: LoggedSetRow[],
+): Record<string, SetEntry[]> {
+  const byExercise = new Map<string, LoggedSetRow[]>();
+  for (const s of sets) {
+    const list = byExercise.get(s.exerciseId) ?? [];
+    list.push(s);
+    byExercise.set(s.exerciseId, list);
+  }
+  const result: Record<string, SetEntry[]> = {};
+  for (const [exerciseId, list] of byExercise) {
+    let latestId: string | undefined;
+    let latestDate = '';
+    for (const s of list) {
+      const d = workoutDate.get(s.workoutId) ?? '';
+      if (d > latestDate) {
+        latestDate = d;
+        latestId = s.workoutId;
+      }
+    }
+    if (!latestId) continue;
+    result[exerciseId] = list
+      .filter((s) => s.workoutId === latestId)
+      .map((s) => ({
+        id: `${s.workoutId}-${s.order}`,
+        workoutId: s.workoutId,
+        exerciseId: s.exerciseId,
+        order: s.order,
+        reps: s.reps ?? undefined,
+        weightKg: s.weightKg ?? undefined,
+      }));
+  }
+  return result;
+}
+
 /** Count a user's activities inside a challenge window (demo leaderboard). */
 function progressInWindow(challenge: Challenge, activities: Activity[]): number {
   const start = new Date(challenge.startsAt).getTime();
@@ -400,6 +448,7 @@ function importedToHealth(userId: string, m: ImportedHealthMetric): HealthMetric
 // --- demo (local) implementation ------------------------------------------
 const actKey = (u: string): string => `supotsu.activities.${u}`;
 const wkKey = (u: string): string => `supotsu.workouts.${u}`;
+const setKey = (u: string): string => `supotsu.sets.${u}`;
 const hmKey = (u: string): string => `supotsu.health.${u}`;
 const nutKey = (u: string): string => `supotsu.nutrition.${u}`;
 const habKey = (u: string): string => `supotsu.habits.${u}`;
@@ -464,6 +513,19 @@ function createDemoRepository(): DataRepository {
       };
       const items = await readJson<Workout>(wkKey(userId));
       await writeJson(wkKey(userId), [created, ...items]);
+      // Persist the sets so muscle map & progressive overload work in demo too.
+      if (workout.sets.length > 0) {
+        const rows = await readJson<LoggedSetRow & { date: string }>(setKey(userId));
+        const added = workout.sets.map((s) => ({
+          workoutId: created.id,
+          exerciseId: s.exerciseId,
+          order: s.order,
+          reps: s.reps ?? null,
+          weightKg: s.weightKg ?? null,
+          date: now,
+        }));
+        await writeJson(setKey(userId), [...added, ...rows]);
+      }
       return created;
     },
     async listHealthMetrics(userId) {
@@ -474,9 +536,15 @@ function createDemoRepository(): DataRepository {
       const items = await readJson<PersonalRecord>(recKey(userId));
       return items.sort((a, b) => b.achievedAt.localeCompare(a.achievedAt));
     },
-    async listMuscleSessions() {
-      // Demo workouts don't store per-exercise sets yet → no muscle data.
-      return [];
+    async listMuscleSessions(userId) {
+      const rows = await readJson<LoggedSetRow & { date: string }>(setKey(userId));
+      const dates = new Map(rows.map((r) => [r.workoutId, r.date]));
+      return buildMuscleSessions(dates, rows);
+    },
+    async lastSessionSetsByExercise(userId) {
+      const rows = await readJson<LoggedSetRow & { date: string }>(setKey(userId));
+      const dates = new Map(rows.map((r) => [r.workoutId, r.date]));
+      return lastSessionByExercise(dates, rows);
     },
     async listWellnessCheckins(userId) {
       const items = await readJson<WellnessCheckin>(wcKey(userId));
@@ -731,6 +799,12 @@ function createSupabaseRepository(
       const dates = new Map(workouts.map((w) => [w.id, w.completed_at ?? w.created_at]));
       const sets = await listWorkoutSetsForUser(client, userId);
       return buildMuscleSessions(dates, sets);
+    },
+    async lastSessionSetsByExercise(userId) {
+      const workouts = await listWorkoutsDb(client, userId);
+      const dates = new Map(workouts.map((w) => [w.id, w.completed_at ?? w.created_at]));
+      const sets = await listLoggedSetsDb(client, userId);
+      return lastSessionByExercise(dates, sets);
     },
     async listWellnessCheckins(userId) {
       return (await listWellnessCheckinsDb(client, userId)).map(rowToWellness);

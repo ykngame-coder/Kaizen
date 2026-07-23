@@ -14,4 +14,6 @@ export * from './muscles';
 export * from './progression';
 export * from './analytics';
 export * from './load';
+export * from './dataquality';
+export * from './training';
 export * from './coach';

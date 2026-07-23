@@ -4,7 +4,8 @@ import { useRouter } from 'expo-router';
 import { Badge, Button, Card, Input, Screen, Text, useTheme } from '@supotsu/ui';
 import { radii, spacing } from '@supotsu/design-system';
 import { EXERCISE_LIBRARY } from '@supotsu/shared';
-import { useAddWorkout } from '@/lib/data/queries';
+import { suggestProgression } from '@supotsu/engines';
+import { useAddWorkout, useExerciseHistory } from '@/lib/data/queries';
 
 interface SetDraft {
   reps: string;
@@ -16,6 +17,7 @@ export function NewWorkoutScreen(): React.JSX.Element {
   const router = useRouter();
   const { colors } = useTheme();
   const addWorkout = useAddWorkout();
+  const { data: history = {} } = useExerciseHistory();
 
   const [name, setName] = useState('');
   const [selected, setSelected] = useState<Record<string, SetDraft>>({});
@@ -98,24 +100,57 @@ export function NewWorkoutScreen(): React.JSX.Element {
               </Pressable>
 
               {isSelected ? (
-                <View style={{ flexDirection: 'row', gap: spacing[4], marginTop: spacing[2] }}>
-                  <View style={{ flex: 1 }}>
-                    <Input
-                      label="Répétitions"
-                      keyboardType="numeric"
-                      value={selected[ex.id].reps}
-                      onChangeText={(v) => update(ex.id, { reps: v })}
-                    />
+                <>
+                  {(() => {
+                    const suggestion = history[ex.id] ? suggestProgression(history[ex.id]) : undefined;
+                    if (!suggestion) return null;
+                    return (
+                      <View
+                        style={{
+                          marginTop: spacing[2],
+                          padding: spacing[2],
+                          borderRadius: radii.md,
+                          backgroundColor: colors.surfaceElevated,
+                          gap: spacing[1],
+                        }}
+                      >
+                        <Text variant="caption" color="textMuted">
+                          💡 Surcharge progressive : {suggestion.rationale}
+                        </Text>
+                        <View style={{ alignItems: 'flex-start' }}>
+                          <Button
+                            label="Utiliser la suggestion"
+                            variant="secondary"
+                            onPress={() =>
+                              update(ex.id, {
+                                reps: suggestion.reps !== undefined ? String(suggestion.reps) : '',
+                                weight: suggestion.weightKg !== undefined ? String(suggestion.weightKg) : '',
+                              })
+                            }
+                          />
+                        </View>
+                      </View>
+                    );
+                  })()}
+                  <View style={{ flexDirection: 'row', gap: spacing[4], marginTop: spacing[2] }}>
+                    <View style={{ flex: 1 }}>
+                      <Input
+                        label="Répétitions"
+                        keyboardType="numeric"
+                        value={selected[ex.id].reps}
+                        onChangeText={(v) => update(ex.id, { reps: v })}
+                      />
+                    </View>
+                    <View style={{ flex: 1 }}>
+                      <Input
+                        label="Charge (kg)"
+                        keyboardType="numeric"
+                        value={selected[ex.id].weight}
+                        onChangeText={(v) => update(ex.id, { weight: v })}
+                      />
+                    </View>
                   </View>
-                  <View style={{ flex: 1 }}>
-                    <Input
-                      label="Charge (kg)"
-                      keyboardType="numeric"
-                      value={selected[ex.id].weight}
-                      onChangeText={(v) => update(ex.id, { weight: v })}
-                    />
-                  </View>
-                </View>
+                </>
               ) : null}
             </Card>
           );

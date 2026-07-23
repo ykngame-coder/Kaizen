@@ -151,13 +151,14 @@ export function SettingsScreen(): React.JSX.Element {
       <Card>
         <Text variant="heading">Mes données</Text>
         <Text variant="body" color="textMuted">
-          Exporte l'intégralité de tes données au format JSON (RGPD).
+          Exporte l'intégralité de tes données au format JSON (RGPD), ou vérifie leur provenance.
         </Text>
-        <View style={{ alignItems: 'flex-start', marginTop: spacing[1] }}>
+        <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: spacing[2], marginTop: spacing[1] }}>
           <Button
             label={exportState === 'working' ? 'Export…' : 'Exporter mes données'}
             onPress={onExport}
           />
+          <Button label="Qualité & provenance" variant="secondary" onPress={() => router.push('/data-quality')} />
         </View>
         {exportState === 'done' ? (
           <Text variant="caption" color="textMuted">

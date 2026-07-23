@@ -357,6 +357,16 @@ export function useAddWellnessCheckin() {
   });
 }
 
+export function useExerciseHistory() {
+  const { user } = useAuth();
+  const repo = useRepository();
+  return useQuery({
+    queryKey: ['exerciseHistory', user?.id],
+    enabled: !!user,
+    queryFn: () => repo.lastSessionSetsByExercise(user!.id),
+  });
+}
+
 export function useWorkouts() {
   const { user } = useAuth();
   const repo = useRepository();
@@ -375,6 +385,8 @@ export function useAddWorkout() {
     mutationFn: (workout: NewWorkout) => repo.addWorkout(user!.id, workout),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['workouts', user?.id] });
+      qc.invalidateQueries({ queryKey: ['muscleSessions', user?.id] });
+      qc.invalidateQueries({ queryKey: ['exerciseHistory', user?.id] });
     },
   });
 }
