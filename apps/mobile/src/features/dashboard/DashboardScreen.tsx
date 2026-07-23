@@ -128,6 +128,16 @@ export function DashboardScreen(): React.JSX.Element {
       </Card>
 
       <Card>
+        <Text variant="heading">Comprendre</Text>
+        <Text variant="body" color="textMuted">
+          Ta recommandation du jour et ce que tes chiffres veulent dire, expliqués.
+        </Text>
+        <View style={{ alignItems: 'flex-start', marginTop: spacing[1] }}>
+          <Button label="Comprendre & apprendre" onPress={() => router.push('/comprendre')} />
+        </View>
+      </Card>
+
+      <Card>
         <Text variant="heading">Activité</Text>
         <Text variant="body" color="textMuted">
           {isLoading

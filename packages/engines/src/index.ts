@@ -16,4 +16,6 @@ export * from './analytics';
 export * from './load';
 export * from './dataquality';
 export * from './training';
+export * from './recommendation';
+export * from './knowledge';
 export * from './coach';
