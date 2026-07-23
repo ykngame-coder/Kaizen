@@ -76,6 +76,7 @@ export interface Database {
           priority: 'primary' | 'secondary';
           target_value: number | null;
           target_unit: string | null;
+          start_value: number | null;
           current_value: number | null;
           deadline: string | null;
           status: 'active' | 'achieved' | 'paused' | 'abandoned';
@@ -89,7 +90,11 @@ export interface Database {
           priority?: 'primary' | 'secondary';
           target_value?: number | null;
           target_unit?: string | null;
+          start_value?: number | null;
+          current_value?: number | null;
           deadline?: string | null;
+          status?: 'active' | 'achieved' | 'paused' | 'abandoned';
+          progress?: number;
         };
         Update: Partial<Database['public']['Tables']['goals']['Insert']>;
         Relationships: [];

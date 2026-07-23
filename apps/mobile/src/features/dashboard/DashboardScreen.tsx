@@ -117,6 +117,16 @@ export function DashboardScreen(): React.JSX.Element {
       </Card>
 
       <Card>
+        <Text variant="heading">Objectifs & progression</Text>
+        <Text variant="body" color="textMuted">
+          Fixe des objectifs mesurables et suis tes tendances dans le temps.
+        </Text>
+        <View style={{ alignItems: 'flex-start', marginTop: spacing[1] }}>
+          <Button label="Mes objectifs" onPress={() => router.push('/goals')} />
+        </View>
+      </Card>
+
+      <Card>
         <Text variant="heading">Activité</Text>
         <Text variant="body" color="textMuted">
           {isLoading

@@ -14,6 +14,8 @@ export interface Goal extends OwnedEntity {
   priority: GoalPriority;
   targetValue?: number;
   targetUnit?: string;
+  /** Baseline captured when the goal was created (for progress vs target). */
+  startValue?: number;
   currentValue?: number;
   deadline?: ISODateString;
   status: GoalStatus;

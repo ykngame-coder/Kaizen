@@ -21,3 +21,21 @@ export async function listGoals(client: SupotsuClient, userId: string): Promise<
   if (error) throw error;
   return data ?? [];
 }
+
+/** Update a goal's current value + progress (RLS scopes it to the owner). */
+export async function updateGoalCurrent(
+  client: SupotsuClient,
+  goalId: string,
+  currentValue: number,
+  progress: number,
+  status: GoalRow['status'],
+): Promise<GoalRow> {
+  const { data, error } = await client
+    .from('goals')
+    .update({ current_value: currentValue, progress, status })
+    .eq('id', goalId)
+    .select('*')
+    .single();
+  if (error) throw error;
+  return data;
+}

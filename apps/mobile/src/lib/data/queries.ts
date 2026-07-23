@@ -3,6 +3,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import type {
   ActivityInput,
   ChallengeInput,
+  GoalInput,
   HabitInput,
   NutritionEntryInput,
   WellnessCheckinInput,
@@ -273,6 +274,41 @@ export function useMuscleSessions() {
     queryKey: ['muscleSessions', user?.id],
     enabled: !!user,
     queryFn: () => repo.listMuscleSessions(user!.id),
+  });
+}
+
+export function useGoals() {
+  const { user } = useAuth();
+  const repo = useRepository();
+  return useQuery({
+    queryKey: ['goals', user?.id],
+    enabled: !!user,
+    queryFn: () => repo.listGoals(user!.id),
+  });
+}
+
+export function useAddGoal() {
+  const { user } = useAuth();
+  const repo = useRepository();
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (input: GoalInput) => repo.addGoal(user!.id, input),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['goals', user?.id] });
+    },
+  });
+}
+
+export function useUpdateGoalCurrent() {
+  const { user } = useAuth();
+  const repo = useRepository();
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ goalId, currentValue }: { goalId: string; currentValue: number }) =>
+      repo.updateGoalCurrent(user!.id, goalId, currentValue),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['goals', user?.id] });
+    },
   });
 }
 

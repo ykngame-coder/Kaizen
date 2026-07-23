@@ -15,6 +15,8 @@ export { KPICard } from './KPICard';
 export type { KPICardProps, Trend } from './KPICard';
 export { ProgressRing } from './ProgressRing';
 export type { ProgressRingProps, RingSegment } from './ProgressRing';
+export { Sparkline } from './Sparkline';
+export type { SparklineProps } from './Sparkline';
 export { Input } from './Input';
 export type { InputProps } from './Input';
 export { SegmentedControl } from './SegmentedControl';

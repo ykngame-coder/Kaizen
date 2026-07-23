@@ -66,6 +66,8 @@ export const goalInputSchema = z.object({
   priority: z.enum(['primary', 'secondary']).default('primary'),
   targetValue: z.number().optional(),
   targetUnit: z.string().max(20).optional(),
+  /** Baseline / current value when the goal is created. */
+  currentValue: z.number().optional(),
   deadline: z.string().datetime().optional(),
 });
 export type GoalInput = z.infer<typeof goalInputSchema>;

@@ -1,6 +1,7 @@
 import type {
   Activity,
   Challenge,
+  Goal,
   HealthMetric,
   Habit,
   HabitLog,
@@ -14,10 +15,12 @@ import type {
 import type {
   ActivityInput,
   ChallengeInput,
+  GoalInput,
   HabitInput,
   NutritionEntryInput,
   WellnessCheckinInput,
 } from '@supotsu/shared';
+import { computeGoalProgress } from '@supotsu/engines';
 import { PROGRAM_CATALOG } from '@supotsu/shared';
 import type { ImportedActivity, ImportedHealthMetric, ImportedRecord } from '@supotsu/connectors';
 import type { MuscleSession } from '@supotsu/engines';
@@ -49,6 +52,9 @@ import {
   listRecords as listRecordsDb,
   insertWellnessCheckin,
   listWellnessCheckins as listWellnessCheckinsDb,
+  insertGoal,
+  listGoals as listGoalsDb,
+  updateGoalCurrent,
   type ActivityRow,
   type WorkoutRow,
   type HealthMetricRow,
@@ -59,6 +65,7 @@ import {
   type ProgramRow,
   type RecordRow,
   type WellnessCheckinRow,
+  type GoalRow,
 } from '@supotsu/database';
 import { getSupabase } from '@/lib/supabase';
 import { secureStorage } from '@/lib/secure-storage';
@@ -90,6 +97,9 @@ export interface DataRepository {
   listMuscleSessions(userId: string): Promise<MuscleSession[]>;
   listWellnessCheckins(userId: string): Promise<WellnessCheckin[]>;
   addWellnessCheckin(userId: string, input: WellnessCheckinInput): Promise<WellnessCheckin>;
+  listGoals(userId: string): Promise<Goal[]>;
+  addGoal(userId: string, input: GoalInput): Promise<Goal>;
+  updateGoalCurrent(userId: string, goalId: string, currentValue: number): Promise<Goal>;
   listNutritionEntries(userId: string): Promise<NutritionEntry[]>;
   addNutritionEntry(userId: string, input: NutritionEntryInput): Promise<NutritionEntry>;
   listHabits(userId: string): Promise<Habit[]>;
@@ -252,6 +262,32 @@ function rowToRecord(r: RecordRow): PersonalRecord {
   };
 }
 
+function rowToGoal(r: GoalRow): Goal {
+  return {
+    id: r.id,
+    userId: r.user_id,
+    type: r.type,
+    title: r.title,
+    description: r.description ?? undefined,
+    priority: r.priority,
+    targetValue: r.target_value ?? undefined,
+    targetUnit: r.target_unit ?? undefined,
+    startValue: r.start_value ?? undefined,
+    currentValue: r.current_value ?? undefined,
+    deadline: r.deadline ?? undefined,
+    status: r.status,
+    progress: r.progress,
+    createdAt: r.created_at,
+    updatedAt: r.updated_at,
+  };
+}
+
+/** Recompute a goal's progress + status after its current value changes. */
+function progressedGoal(goal: Goal, currentValue: number): { progress: number; status: Goal['status'] } {
+  const progress = computeGoalProgress({ ...goal, currentValue }, goal.startValue);
+  return { progress, status: progress >= 1 ? 'achieved' : 'active' };
+}
+
 function rowToWellness(r: WellnessCheckinRow): WellnessCheckin {
   return {
     id: r.id,
@@ -365,6 +401,7 @@ const habKey = (u: string): string => `supotsu.habits.${u}`;
 const hlogKey = (u: string): string => `supotsu.habitlogs.${u}`;
 const recKey = (u: string): string => `supotsu.records.${u}`;
 const wcKey = (u: string): string => `supotsu.wellness.${u}`;
+const goalKey = (u: string): string => `supotsu.goals.${u}`;
 const chKey = (u: string): string => `supotsu.challenges.${u}`;
 const chJoinKey = (u: string): string => `supotsu.challengejoins.${u}`;
 const enrollKey = (u: string): string => `supotsu.enrollments.${u}`;
@@ -455,6 +492,46 @@ function createDemoRepository(): DataRepository {
       const items = await readJson<WellnessCheckin>(wcKey(userId));
       await writeJson(wcKey(userId), [checkin, ...items]);
       return checkin;
+    },
+    async listGoals(userId) {
+      const items = await readJson<Goal>(goalKey(userId));
+      return items.sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+    },
+    async addGoal(userId, input) {
+      const now = new Date().toISOString();
+      const goal: Goal = {
+        id: randomId(),
+        userId,
+        type: input.type,
+        title: input.title,
+        description: input.description,
+        priority: input.priority,
+        targetValue: input.targetValue,
+        targetUnit: input.targetUnit,
+        startValue: input.currentValue,
+        currentValue: input.currentValue,
+        deadline: input.deadline,
+        status: 'active',
+        progress: 0,
+        createdAt: now,
+        updatedAt: now,
+      };
+      const items = await readJson<Goal>(goalKey(userId));
+      await writeJson(goalKey(userId), [goal, ...items]);
+      return goal;
+    },
+    async updateGoalCurrent(userId, goalId, currentValue) {
+      const items = await readJson<Goal>(goalKey(userId));
+      let updated: Goal | undefined;
+      const next = items.map((g) => {
+        if (g.id !== goalId) return g;
+        const { progress, status } = progressedGoal(g, currentValue);
+        updated = { ...g, currentValue, progress, status, updatedAt: new Date().toISOString() };
+        return updated;
+      });
+      if (!updated) throw new Error('Objectif introuvable.');
+      await writeJson(goalKey(userId), next);
+      return updated;
     },
     async listNutritionEntries(userId) {
       const items = await readJson<NutritionEntry>(nutKey(userId));
@@ -654,6 +731,29 @@ function createSupabaseRepository(
         note: input.note ?? null,
       });
       return rowToWellness(row);
+    },
+    async listGoals(userId) {
+      return (await listGoalsDb(client, userId)).map(rowToGoal);
+    },
+    async addGoal(userId, input) {
+      const row = await insertGoal(client, {
+        user_id: userId,
+        type: input.type,
+        title: input.title,
+        description: input.description,
+        priority: input.priority,
+        target_value: input.targetValue,
+        target_unit: input.targetUnit,
+        start_value: input.currentValue,
+        current_value: input.currentValue,
+      });
+      return rowToGoal(row);
+    },
+    async updateGoalCurrent(userId, goalId, currentValue) {
+      const current = (await listGoalsDb(client, userId)).map(rowToGoal).find((g) => g.id === goalId);
+      if (!current) throw new Error('Objectif introuvable.');
+      const { progress, status } = progressedGoal(current, currentValue);
+      return rowToGoal(await updateGoalCurrent(client, goalId, currentValue, progress, status));
     },
     async listNutritionEntries(userId) {
       return (await listNutritionEntriesDb(client, userId)).map(rowToNutrition);
