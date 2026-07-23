@@ -1,6 +1,12 @@
 import { useMemo } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import type { ActivityInput, ChallengeInput, HabitInput, NutritionEntryInput } from '@supotsu/shared';
+import type {
+  ActivityInput,
+  ChallengeInput,
+  HabitInput,
+  NutritionEntryInput,
+  WellnessCheckinInput,
+} from '@supotsu/shared';
 import type { Challenge } from '@supotsu/core';
 import {
   getConnector,
@@ -267,6 +273,28 @@ export function useMuscleSessions() {
     queryKey: ['muscleSessions', user?.id],
     enabled: !!user,
     queryFn: () => repo.listMuscleSessions(user!.id),
+  });
+}
+
+export function useWellnessCheckins() {
+  const { user } = useAuth();
+  const repo = useRepository();
+  return useQuery({
+    queryKey: ['wellness', user?.id],
+    enabled: !!user,
+    queryFn: () => repo.listWellnessCheckins(user!.id),
+  });
+}
+
+export function useAddWellnessCheckin() {
+  const { user } = useAuth();
+  const repo = useRepository();
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (input: WellnessCheckinInput) => repo.addWellnessCheckin(user!.id, input),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['wellness', user?.id] });
+    },
   });
 }
 

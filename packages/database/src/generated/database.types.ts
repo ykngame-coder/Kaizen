@@ -431,6 +431,28 @@ export interface Database {
         Update: Partial<Database['public']['Tables']['records']['Insert']>;
         Relationships: [];
       };
+      wellness_checkins: {
+        Row: {
+          id: string;
+          user_id: string;
+          mood: number;
+          energy: number;
+          stress: number;
+          note: string | null;
+          checked_at: string;
+          created_at: string;
+        };
+        Insert: {
+          user_id: string;
+          mood: number;
+          energy: number;
+          stress: number;
+          note?: string | null;
+          checked_at?: string;
+        };
+        Update: Partial<Database['public']['Tables']['wellness_checkins']['Insert']>;
+        Relationships: [];
+      };
     };
     Views: Record<string, never>;
     Functions: {

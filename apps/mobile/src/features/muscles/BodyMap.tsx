@@ -1,5 +1,5 @@
 import React from 'react';
-import Svg, { Circle, Ellipse, G, Path, Rect } from 'react-native-svg';
+import Svg, { Circle, Ellipse, G, Path } from 'react-native-svg';
 import type { MuscleGroup } from '@supotsu/core';
 import { useTheme } from '@supotsu/ui';
 

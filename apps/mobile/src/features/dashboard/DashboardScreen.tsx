@@ -106,6 +106,17 @@ export function DashboardScreen(): React.JSX.Element {
       <DailyBriefingCard />
 
       <Card>
+        <Text variant="heading">Sommeil & bien-être</Text>
+        <Text variant="body" color="textMuted">
+          Ton score de sommeil, tes signaux de récupération et ton ressenti du jour.
+        </Text>
+        <View style={{ flexDirection: 'row', gap: spacing[2], marginTop: spacing[1] }}>
+          <Button label="Sommeil" onPress={() => router.push('/sleep')} />
+          <Button label="Bien-être" variant="secondary" onPress={() => router.push('/wellness')} />
+        </View>
+      </Card>
+
+      <Card>
         <Text variant="heading">Activité</Text>
         <Text variant="body" color="textMuted">
           {isLoading

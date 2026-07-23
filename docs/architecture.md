@@ -76,6 +76,10 @@ docs/
 4. **Étape 4** : Supotsu AI (moteurs, recommandations, adaptation).
 5. **Étape 5** : connecteurs (Apple Health, Garmin, Strava).
 6. **Étape 6** : nutrition, communauté, coach, marketplace.
+7. **Étape 7** : records/1RM, carte musculaire, connecteurs réels (Garmin/Apple).
+8. **Étape 8** : sommeil & bien-être mental (score de sommeil, check-in
+   d'humeur, respiration), objectifs & progression, profil & réglages,
+   analytics & tendances.
 
 ## Démarrer
 

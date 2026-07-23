@@ -9,8 +9,15 @@ import type {
   Program,
   Workout,
   SetEntry,
+  WellnessCheckin,
 } from '@supotsu/core';
-import type { ActivityInput, ChallengeInput, HabitInput, NutritionEntryInput } from '@supotsu/shared';
+import type {
+  ActivityInput,
+  ChallengeInput,
+  HabitInput,
+  NutritionEntryInput,
+  WellnessCheckinInput,
+} from '@supotsu/shared';
 import { PROGRAM_CATALOG } from '@supotsu/shared';
 import type { ImportedActivity, ImportedHealthMetric, ImportedRecord } from '@supotsu/connectors';
 import type { MuscleSession } from '@supotsu/engines';
@@ -40,6 +47,8 @@ import {
   enrollInProgram,
   upsertRecords,
   listRecords as listRecordsDb,
+  insertWellnessCheckin,
+  listWellnessCheckins as listWellnessCheckinsDb,
   type ActivityRow,
   type WorkoutRow,
   type HealthMetricRow,
@@ -49,6 +58,7 @@ import {
   type ChallengeRow,
   type ProgramRow,
   type RecordRow,
+  type WellnessCheckinRow,
 } from '@supotsu/database';
 import { getSupabase } from '@/lib/supabase';
 import { secureStorage } from '@/lib/secure-storage';
@@ -78,6 +88,8 @@ export interface DataRepository {
   listHealthMetrics(userId: string): Promise<HealthMetric[]>;
   listRecords(userId: string): Promise<PersonalRecord[]>;
   listMuscleSessions(userId: string): Promise<MuscleSession[]>;
+  listWellnessCheckins(userId: string): Promise<WellnessCheckin[]>;
+  addWellnessCheckin(userId: string, input: WellnessCheckinInput): Promise<WellnessCheckin>;
   listNutritionEntries(userId: string): Promise<NutritionEntry[]>;
   addNutritionEntry(userId: string, input: NutritionEntryInput): Promise<NutritionEntry>;
   listHabits(userId: string): Promise<Habit[]>;
@@ -240,6 +252,20 @@ function rowToRecord(r: RecordRow): PersonalRecord {
   };
 }
 
+function rowToWellness(r: WellnessCheckinRow): WellnessCheckin {
+  return {
+    id: r.id,
+    userId: r.user_id,
+    mood: r.mood,
+    energy: r.energy,
+    stress: r.stress,
+    note: r.note ?? undefined,
+    checkedAt: r.checked_at,
+    createdAt: r.created_at,
+    updatedAt: r.created_at,
+  };
+}
+
 function importedToRecord(userId: string, r: ImportedRecord): PersonalRecord {
   const now = new Date().toISOString();
   return {
@@ -338,6 +364,7 @@ const nutKey = (u: string): string => `supotsu.nutrition.${u}`;
 const habKey = (u: string): string => `supotsu.habits.${u}`;
 const hlogKey = (u: string): string => `supotsu.habitlogs.${u}`;
 const recKey = (u: string): string => `supotsu.records.${u}`;
+const wcKey = (u: string): string => `supotsu.wellness.${u}`;
 const chKey = (u: string): string => `supotsu.challenges.${u}`;
 const chJoinKey = (u: string): string => `supotsu.challengejoins.${u}`;
 const enrollKey = (u: string): string => `supotsu.enrollments.${u}`;
@@ -407,6 +434,27 @@ function createDemoRepository(): DataRepository {
     async listMuscleSessions() {
       // Demo workouts don't store per-exercise sets yet → no muscle data.
       return [];
+    },
+    async listWellnessCheckins(userId) {
+      const items = await readJson<WellnessCheckin>(wcKey(userId));
+      return items.sort((a, b) => b.checkedAt.localeCompare(a.checkedAt));
+    },
+    async addWellnessCheckin(userId, input) {
+      const now = new Date().toISOString();
+      const checkin: WellnessCheckin = {
+        id: randomId(),
+        userId,
+        mood: input.mood,
+        energy: input.energy,
+        stress: input.stress,
+        note: input.note,
+        checkedAt: now,
+        createdAt: now,
+        updatedAt: now,
+      };
+      const items = await readJson<WellnessCheckin>(wcKey(userId));
+      await writeJson(wcKey(userId), [checkin, ...items]);
+      return checkin;
     },
     async listNutritionEntries(userId) {
       const items = await readJson<NutritionEntry>(nutKey(userId));
@@ -593,6 +641,19 @@ function createSupabaseRepository(
       const dates = new Map(workouts.map((w) => [w.id, w.completed_at ?? w.created_at]));
       const sets = await listWorkoutSetsForUser(client, userId);
       return buildMuscleSessions(dates, sets);
+    },
+    async listWellnessCheckins(userId) {
+      return (await listWellnessCheckinsDb(client, userId)).map(rowToWellness);
+    },
+    async addWellnessCheckin(userId, input) {
+      const row = await insertWellnessCheckin(client, {
+        user_id: userId,
+        mood: input.mood,
+        energy: input.energy,
+        stress: input.stress,
+        note: input.note ?? null,
+      });
+      return rowToWellness(row);
     },
     async listNutritionEntries(userId) {
       return (await listNutritionEntriesDb(client, userId)).map(rowToNutrition);

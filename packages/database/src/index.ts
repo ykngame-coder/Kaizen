@@ -12,3 +12,4 @@ export * from './repositories/habits';
 export * from './repositories/community';
 export * from './repositories/marketplace';
 export * from './repositories/records';
+export * from './repositories/wellness';

@@ -3,6 +3,8 @@ export * from './contracts';
 export { EngineRegistry } from './registry';
 export * from './scoring';
 export * from './recovery';
+export * from './sleep';
+export * from './wellness';
 export * from './nutrition';
 export * from './gamification';
 export * from './community';

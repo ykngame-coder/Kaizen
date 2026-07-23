@@ -105,6 +105,15 @@ export const habitInputSchema = z.object({
 });
 export type HabitInput = z.infer<typeof habitInputSchema>;
 
+/** Daily mental-wellness check-in (Master Prompt P14 bien-être mental). */
+export const wellnessCheckinInputSchema = z.object({
+  mood: z.number().int().min(1).max(5),
+  energy: z.number().int().min(1).max(5),
+  stress: z.number().int().min(1).max(5),
+  note: z.string().max(500).optional(),
+});
+export type WellnessCheckinInput = z.infer<typeof wellnessCheckinInputSchema>;
+
 export const challengeMetricSchema = z.enum(['activity_count', 'active_days']);
 
 /** Create a community challenge (Master Prompt P37 communauté). */

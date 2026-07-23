@@ -4,6 +4,7 @@ export * from './goal';
 export * from './activity';
 export * from './training';
 export * from './health';
+export * from './wellness';
 export * from './nutrition';
 export * from './habits';
 export * from './community';
