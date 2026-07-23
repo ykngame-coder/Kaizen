@@ -21,7 +21,7 @@ const CONFIDENCE_LABEL: Record<Confidence, { label: string; tone: BadgeTone }> =
 function ScoreRing({
   label,
   value,
-  size = 92,
+  size = 72,
 }: {
   label: string;
   value: number | null;
@@ -92,7 +92,7 @@ export function DashboardScreen(): React.JSX.Element {
 
       <Card>
         <View style={{ flexDirection: 'row', justifyContent: 'space-around', alignItems: 'flex-start' }}>
-          <ScoreRing label="Supotsu" value={hasData ? s.overall : null} size={104} />
+          <ScoreRing label="Supotsu" value={hasData ? s.overall : null} size={84} />
           <ScoreRing label="Récupération" value={s.recovery} />
           <ScoreRing label="Régularité" value={hasData ? s.consistency : null} />
         </View>
