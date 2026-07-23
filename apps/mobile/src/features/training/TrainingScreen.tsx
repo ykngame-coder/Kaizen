@@ -29,6 +29,16 @@ export function TrainingScreen(): React.JSX.Element {
       </Card>
 
       <Card>
+        <Text variant="heading">Carte musculaire</Text>
+        <Text variant="body" color="textMuted">
+          Vois quels muscles sont fatigués et lesquels sont prêts à travailler.
+        </Text>
+        <View style={{ alignItems: 'flex-start' }}>
+          <Button label="Voir la carte musculaire" onPress={() => router.push('/muscles')} />
+        </View>
+      </Card>
+
+      <Card>
         <Text variant="heading">Programmes de coachs</Text>
         <Text variant="body" color="textMuted">
           Suis un programme structuré, recommandé selon ce que tu pratiques.

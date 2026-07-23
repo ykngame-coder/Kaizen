@@ -13,12 +13,15 @@ import type {
 import type { ActivityInput, ChallengeInput, HabitInput, NutritionEntryInput } from '@supotsu/shared';
 import { PROGRAM_CATALOG } from '@supotsu/shared';
 import type { ImportedActivity, ImportedHealthMetric, ImportedRecord } from '@supotsu/connectors';
+import type { MuscleSession } from '@supotsu/engines';
+import { EXERCISE_LIBRARY } from '@supotsu/shared';
 import {
   insertActivity,
   upsertActivities,
   listActivities as listActivitiesDb,
   insertWorkout,
   listWorkouts as listWorkoutsDb,
+  listWorkoutSetsForUser,
   insertHealthMetrics,
   listHealthMetrics as listHealthMetricsDb,
   insertNutritionEntry,
@@ -74,6 +77,7 @@ export interface DataRepository {
   addWorkout(userId: string, workout: NewWorkout): Promise<Workout>;
   listHealthMetrics(userId: string): Promise<HealthMetric[]>;
   listRecords(userId: string): Promise<PersonalRecord[]>;
+  listMuscleSessions(userId: string): Promise<MuscleSession[]>;
   listNutritionEntries(userId: string): Promise<NutritionEntry[]>;
   addNutritionEntry(userId: string, input: NutritionEntryInput): Promise<NutritionEntry>;
   listHabits(userId: string): Promise<Habit[]>;
@@ -253,6 +257,31 @@ function importedToRecord(userId: string, r: ImportedRecord): PersonalRecord {
   };
 }
 
+const EXERCISE_BY_ID = new Map(EXERCISE_LIBRARY.map((e) => [e.id, e]));
+
+/** Build muscle sessions from logged sets: one per (workout, exercise) with muscles. */
+function buildMuscleSessions(
+  workoutDate: Map<string, string>,
+  sets: { workoutId: string; exerciseId: string }[],
+): MuscleSession[] {
+  const seen = new Set<string>();
+  const out: MuscleSession[] = [];
+  for (const s of sets) {
+    const key = `${s.workoutId}|${s.exerciseId}`;
+    if (seen.has(key)) continue;
+    seen.add(key);
+    const exercise = EXERCISE_BY_ID.get(s.exerciseId);
+    const trainedAt = workoutDate.get(s.workoutId);
+    if (!exercise || !trainedAt) continue;
+    out.push({
+      trainedAt,
+      primaryMuscles: exercise.primaryMuscles,
+      secondaryMuscles: exercise.secondaryMuscles,
+    });
+  }
+  return out;
+}
+
 /** Count a user's activities inside a challenge window (demo leaderboard). */
 function progressInWindow(challenge: Challenge, activities: Activity[]): number {
   const start = new Date(challenge.startsAt).getTime();
@@ -374,6 +403,10 @@ function createDemoRepository(): DataRepository {
     async listRecords(userId) {
       const items = await readJson<PersonalRecord>(recKey(userId));
       return items.sort((a, b) => b.achievedAt.localeCompare(a.achievedAt));
+    },
+    async listMuscleSessions() {
+      // Demo workouts don't store per-exercise sets yet → no muscle data.
+      return [];
     },
     async listNutritionEntries(userId) {
       const items = await readJson<NutritionEntry>(nutKey(userId));
@@ -554,6 +587,12 @@ function createSupabaseRepository(
     },
     async listRecords(userId) {
       return (await listRecordsDb(client, userId)).map(rowToRecord);
+    },
+    async listMuscleSessions(userId) {
+      const workouts = await listWorkoutsDb(client, userId);
+      const dates = new Map(workouts.map((w) => [w.id, w.completed_at ?? w.created_at]));
+      const sets = await listWorkoutSetsForUser(client, userId);
+      return buildMuscleSessions(dates, sets);
     },
     async listNutritionEntries(userId) {
       return (await listNutritionEntriesDb(client, userId)).map(rowToNutrition);

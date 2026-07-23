@@ -260,6 +260,16 @@ export function useRecords() {
   });
 }
 
+export function useMuscleSessions() {
+  const { user } = useAuth();
+  const repo = useRepository();
+  return useQuery({
+    queryKey: ['muscleSessions', user?.id],
+    enabled: !!user,
+    queryFn: () => repo.listMuscleSessions(user!.id),
+  });
+}
+
 export function useWorkouts() {
   const { user } = useAuth();
   const repo = useRepository();
