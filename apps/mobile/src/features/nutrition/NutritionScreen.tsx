@@ -19,34 +19,36 @@ const MEAL_LABEL: Record<string, string> = {
   snack: 'Collation',
 };
 
-function ProgressRow({
+function MacroBar({
   label,
   current,
   target,
   unit,
+  color,
 }: {
   label: string;
   current: number;
   target: number;
   unit: string;
+  color: string;
 }): React.JSX.Element {
   const { colors } = useTheme();
   const pct = target > 0 ? Math.min(100, Math.round((current / target) * 100)) : 0;
+  const remaining = Math.max(0, Math.round(target - current));
   return (
     <View style={{ gap: spacing[1] }}>
-      <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
-        <Text variant="caption" color="textMuted">
-          {label}
-        </Text>
+      <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'baseline' }}>
+        <Text variant="body">{label}</Text>
         <Text variant="caption" color="textMuted">
           {Math.round(current)} / {target} {unit}
         </Text>
       </View>
-      <View style={{ height: 6, borderRadius: 3, backgroundColor: colors.border }}>
-        <View
-          style={{ width: `${pct}%`, height: 6, borderRadius: 3, backgroundColor: colors.primary }}
-        />
+      <View style={{ height: 10, borderRadius: 5, backgroundColor: colors.surfaceElevated, overflow: 'hidden' }}>
+        <View style={{ width: `${pct}%`, height: 10, borderRadius: 5, backgroundColor: color }} />
       </View>
+      <Text variant="caption" color="textSubtle">
+        {remaining} {unit} restant{remaining > 1 ? 's' : ''}
+      </Text>
     </View>
   );
 }
@@ -54,6 +56,7 @@ function ProgressRow({
 /** Nutrition pillar (Master Prompt P11): explainable score, targets, day log. */
 export function NutritionScreen(): React.JSX.Element {
   const router = useRouter();
+  const { colors } = useTheme();
   const { data: entries = [] } = useNutritionEntries();
   const { data: health = [] } = useHealthMetrics();
   const asOf = new Date().toISOString();
@@ -109,15 +112,44 @@ export function NutritionScreen(): React.JSX.Element {
           {targets.explanation?.observation}
         </Text>
         <View style={{ gap: spacing[3], marginTop: spacing[2] }}>
-          <ProgressRow label="Calories" current={totals.kcal} target={targets.value.kcal} unit="kcal" />
-          <ProgressRow label="Protéines" current={totals.proteinG} target={targets.value.proteinG} unit="g" />
-          <ProgressRow
+          <MacroBar
+            label="Calories"
+            current={totals.kcal}
+            target={targets.value.kcal}
+            unit="kcal"
+            color={colors.primary}
+          />
+          <MacroBar
+            label="Protéines"
+            current={totals.proteinG}
+            target={targets.value.proteinG}
+            unit="g"
+            color={colors.success}
+          />
+          <MacroBar
             label="Hydratation"
             current={totals.hydrationMl}
             target={targets.value.hydrationMl}
             unit="ml"
+            color={colors.info}
           />
         </View>
+        {(totals.carbG > 0 || totals.fatG > 0) && (
+          <View style={{ flexDirection: 'row', gap: spacing[4], marginTop: spacing[3] }}>
+            <View>
+              <Text variant="caption" color="textSubtle">
+                Glucides
+              </Text>
+              <Text variant="body">{Math.round(totals.carbG)} g</Text>
+            </View>
+            <View>
+              <Text variant="caption" color="textSubtle">
+                Lipides
+              </Text>
+              <Text variant="body">{Math.round(totals.fatG)} g</Text>
+            </View>
+          </View>
+        )}
       </Card>
 
       {explanation ? (

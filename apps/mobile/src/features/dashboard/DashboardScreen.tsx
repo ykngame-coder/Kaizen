@@ -2,9 +2,9 @@ import React, { useMemo, useState } from 'react';
 import { View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useQueryClient } from '@tanstack/react-query';
-import { Button, Card, KPICard, Screen, Text, useTheme, type BadgeTone } from '@supotsu/ui';
+import { Button, Card, ProgressRing, Screen, Text, useTheme, type BadgeTone } from '@supotsu/ui';
 import { spacing } from '@supotsu/design-system';
-import { buildDailySnapshot, recoveryBand } from '@supotsu/engines';
+import { buildDailySnapshot } from '@supotsu/engines';
 import type { Confidence } from '@supotsu/core';
 import { useActivities, useHealthMetrics } from '@/lib/data/queries';
 import { BadgesCard } from '@/features/gamification/BadgesCard';
@@ -16,6 +16,41 @@ const CONFIDENCE_LABEL: Record<Confidence, { label: string; tone: BadgeTone }> =
   medium: { label: 'Confiance moyenne', tone: 'info' },
   to_confirm: { label: 'À confirmer', tone: 'warning' },
 };
+
+/** A dashboard score as a circular gauge (Garmin Connect style) with a label. */
+function ScoreRing({
+  label,
+  value,
+  size = 92,
+}: {
+  label: string;
+  value: number | null;
+  size?: number;
+}): React.JSX.Element {
+  const { colors } = useTheme();
+  const color =
+    value === null
+      ? colors.surfaceElevated
+      : value >= 75
+        ? colors.success
+        : value >= 50
+          ? colors.warning
+          : colors.error;
+  return (
+    <View style={{ alignItems: 'center', gap: spacing[1] }}>
+      <ProgressRing
+        value={value ?? 0}
+        centerLabel={value === null ? '—' : String(value)}
+        caption="/100"
+        color={color}
+        size={size}
+      />
+      <Text variant="label" color="textMuted">
+        {label.toUpperCase()}
+      </Text>
+    </View>
+  );
+}
 
 /**
  * Dashboard wired to the scoring engine (Master Prompt P3, P10, P34): real
@@ -55,30 +90,18 @@ export function DashboardScreen(): React.JSX.Element {
         <Button label={name === 'dark' ? '☀︎' : '☾'} variant="secondary" onPress={toggle} />
       </View>
 
-      <KPICard
-        label="Score Supotsu"
-        value={hasData ? String(s.overall) : '—'}
-        unit="/100"
-        caption={
-          hasData
+      <Card>
+        <View style={{ flexDirection: 'row', justifyContent: 'space-around', alignItems: 'flex-start' }}>
+          <ScoreRing label="Supotsu" value={hasData ? s.overall : null} size={104} />
+          <ScoreRing label="Récupération" value={s.recovery} />
+          <ScoreRing label="Régularité" value={hasData ? s.consistency : null} />
+        </View>
+        <Text variant="caption" color="textMuted" style={{ textAlign: 'center', marginTop: spacing[3] }}>
+          {hasData
             ? `Basé sur ta performance et ta régularité (${conf.label.toLowerCase()}).`
-            : 'Ajoute une activité pour calibrer ton score.'
-        }
-      />
-
-      <View style={{ flexDirection: 'row', gap: spacing[4] }}>
-        <View style={{ flex: 1 }}>
-          <KPICard
-            label="Récupération"
-            value={s.recovery !== null ? String(s.recovery) : '—'}
-            unit="/100"
-            caption={s.recovery !== null ? recoveryBand(s.recovery) : 'Connecte un appareil'}
-          />
-        </View>
-        <View style={{ flex: 1 }}>
-          <KPICard label="Régularité" value={hasData ? String(s.consistency) : '—'} unit="/100" />
-        </View>
-      </View>
+            : 'Ajoute une activité pour calibrer ton score.'}
+        </Text>
+      </Card>
 
       <DailyBriefingCard />
 
