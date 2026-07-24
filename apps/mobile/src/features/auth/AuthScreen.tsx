@@ -7,6 +7,7 @@ import { Badge, Button, Input, Screen, Text, useTheme } from '@supotsu/ui';
 import { spacing } from '@supotsu/design-system';
 import { useAuth } from './AuthProvider';
 import { credentialsSchema, type Credentials } from './authSchema';
+import type { OAuthProvider } from './authClient';
 
 type Mode = 'signIn' | 'signUp';
 
@@ -59,6 +60,20 @@ export function AuthScreen({ mode }: { mode: Mode }): React.JSX.Element {
       setSubmitError(err instanceof Error ? err.message : 'Une erreur est survenue');
     }
   });
+
+  const [oauthPending, setOauthPending] = useState<OAuthProvider | null>(null);
+  const onOAuthPress = async (provider: OAuthProvider): Promise<void> => {
+    setSubmitError(null);
+    setInfo(null);
+    setOauthPending(provider);
+    try {
+      await signInWithOAuth(provider);
+    } catch (err) {
+      setSubmitError(err instanceof Error ? err.message : 'Une erreur est survenue');
+    } finally {
+      setOauthPending(null);
+    }
+  };
 
   return (
     <Screen scroll>
@@ -121,16 +136,18 @@ export function AuthScreen({ mode }: { mode: Mode }): React.JSX.Element {
 
       <View style={{ gap: spacing[2] }}>
         <Button
-          label="Continuer avec Apple"
+          label={oauthPending === 'apple' ? '…' : 'Continuer avec Apple'}
           variant="secondary"
           fullWidth
-          onPress={() => signInWithOAuth('apple')}
+          disabled={oauthPending !== null}
+          onPress={() => onOAuthPress('apple')}
         />
         <Button
-          label="Continuer avec Google"
+          label={oauthPending === 'google' ? '…' : 'Continuer avec Google'}
           variant="secondary"
           fullWidth
-          onPress={() => signInWithOAuth('google')}
+          disabled={oauthPending !== null}
+          onPress={() => onOAuthPress('google')}
         />
       </View>
 

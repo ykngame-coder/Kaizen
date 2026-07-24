@@ -26,7 +26,8 @@
         {
           "cameraPermission": "Supotsu utilise la caméra pour scanner les codes-barres des aliments."
         }
-      ]
+      ],
+      "expo-web-browser"
     ],
     "experiments": {
       "typedRoutes": false

@@ -1,3 +1,4 @@
+import 'react-native-url-polyfill/auto';
 import { createSupotsuClient, type SupotsuClient } from '@supotsu/database';
 import { secureStorage } from '@/lib/secure-storage';
 

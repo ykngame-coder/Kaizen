@@ -1,5 +1,11 @@
+import * as AuthSession from 'expo-auth-session';
+import * as WebBrowser from 'expo-web-browser';
 import { secureStorage } from '@/lib/secure-storage';
 import { getSupabase } from '@/lib/supabase';
+
+// Closes the in-app browser tab once the OAuth redirect lands (web only; no-op
+// on native, but required for the web flow to resolve openAuthSessionAsync).
+WebBrowser.maybeCompleteAuthSession();
 
 export interface AuthUser {
   id: string;
@@ -111,8 +117,22 @@ function createSupabaseBackend(client: NonNullable<ReturnType<typeof getSupabase
       if (error) throw error;
     },
     async signInWithOAuth(provider) {
-      const { error } = await client.auth.signInWithOAuth({ provider });
+      const redirectTo = AuthSession.makeRedirectUri({ path: 'auth/callback' });
+      const { data, error } = await client.auth.signInWithOAuth({
+        provider,
+        options: { redirectTo, skipBrowserRedirect: true },
+      });
       if (error) throw error;
+      if (!data.url) throw new Error("Aucune URL d'authentification reçue.");
+
+      const result = await WebBrowser.openAuthSessionAsync(data.url, redirectTo);
+      if (result.type !== 'success') return; // user cancelled or dismissed — not an error
+
+      const code = new URL(result.url).searchParams.get('code');
+      if (!code) throw new Error("Réponse d'authentification invalide.");
+
+      const { error: exchangeError } = await client.auth.exchangeCodeForSession(code);
+      if (exchangeError) throw exchangeError;
     },
     async signOut() {
       const { error } = await client.auth.signOut();
