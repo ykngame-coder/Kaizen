@@ -1,5 +1,5 @@
 import React from 'react';
-import { Pressable, type PressableProps, type ViewStyle } from 'react-native';
+import { Pressable, View, type PressableProps, type ViewStyle } from 'react-native';
 import { radii, spacing } from '@supotsu/design-system';
 import { Text } from './Text';
 import { useTheme } from './theme';
@@ -35,27 +35,35 @@ export function Button({
     danger: 'onPrimary',
   };
 
-  const style: ViewStyle = {
+  // The visual (background/padding/radius) lives on an inner View with a plain
+  // *object* style. NativeWind (jsxImportSource) drops backgroundColor when the
+  // style is passed as a *function* to Pressable — object styles are honored
+  // (same reason Input renders its background). So Pressable stays layout-only
+  // and the View carries the fill.
+  const fillStyle: ViewStyle = {
     backgroundColor: bg[variant],
     borderRadius: radii.md,
     paddingVertical: spacing[3],
     paddingHorizontal: spacing[5],
+    minHeight: 48,
     alignItems: 'center',
     justifyContent: 'center',
-    opacity: disabled ? 0.5 : 1,
-    alignSelf: fullWidth ? 'stretch' : 'flex-start',
   };
 
   return (
     <Pressable
       accessibilityRole="button"
       disabled={disabled}
-      style={({ pressed }) => [style, pressed && { opacity: 0.8 }]}
+      style={{ alignSelf: fullWidth ? 'stretch' : 'flex-start' }}
       {...rest}
     >
-      <Text variant="subtitle" color={fg[variant]}>
-        {label}
-      </Text>
+      {({ pressed }) => (
+        <View style={{ ...fillStyle, opacity: disabled ? 0.5 : pressed ? 0.8 : 1 }}>
+          <Text variant="subtitle" color={fg[variant]}>
+            {label}
+          </Text>
+        </View>
+      )}
     </Pressable>
   );
 }
