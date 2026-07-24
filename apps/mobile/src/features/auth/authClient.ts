@@ -1,3 +1,4 @@
+import { Platform } from 'react-native';
 import * as AuthSession from 'expo-auth-session';
 import * as WebBrowser from 'expo-web-browser';
 import { secureStorage } from '@/lib/secure-storage';
@@ -117,6 +118,20 @@ function createSupabaseBackend(client: NonNullable<ReturnType<typeof getSupabase
       if (error) throw error;
     },
     async signInWithOAuth(provider) {
+      // Web: full-page redirect. A popup + openAuthSessionAsync trips the
+      // Cross-Origin-Opener-Policy (can't observe window.closed), so let the
+      // browser navigate to the provider and back; detectSessionInUrl (enabled
+      // on web) completes the session on return.
+      if (Platform.OS === 'web') {
+        const { error } = await client.auth.signInWithOAuth({
+          provider,
+          options: { redirectTo: window.location.origin },
+        });
+        if (error) throw error;
+        return; // page navigates away
+      }
+
+      // Native: open the provider in an in-app browser and exchange the code.
       const redirectTo = AuthSession.makeRedirectUri({ path: 'auth/callback' });
       const { data, error } = await client.auth.signInWithOAuth({
         provider,

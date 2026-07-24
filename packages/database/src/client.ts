@@ -18,6 +18,12 @@ export interface SupotsuClientConfig {
   supabaseUrl: string;
   supabaseAnonKey: string;
   storage?: AuthStorage;
+  /**
+   * Auto-complete an OAuth session from the URL on load. Needed on web, where
+   * the provider redirects the whole page back with a `?code=`; false on native
+   * (the in-app browser flow exchanges the code explicitly).
+   */
+  detectSessionInUrl?: boolean;
 }
 
 /**
@@ -30,7 +36,7 @@ export function createSupotsuClient(config: SupotsuClientConfig): SupotsuClient 
       storage: config.storage,
       autoRefreshToken: true,
       persistSession: true,
-      detectSessionInUrl: false,
+      detectSessionInUrl: config.detectSessionInUrl ?? false,
     },
   });
 }

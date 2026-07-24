@@ -1,4 +1,5 @@
 import 'react-native-url-polyfill/auto';
+import { Platform } from 'react-native';
 import { createSupotsuClient, type SupotsuClient } from '@supotsu/database';
 import { secureStorage } from '@/lib/secure-storage';
 
@@ -22,6 +23,9 @@ export function getSupabase(): SupotsuClient | null {
     supabaseUrl: url,
     supabaseAnonKey: anonKey,
     storage: secureStorage,
+    // On web the OAuth provider redirects the whole page back with a `?code=`;
+    // let supabase-js complete the session from the URL automatically.
+    detectSessionInUrl: Platform.OS === 'web',
   });
   return client;
 }
