@@ -165,12 +165,17 @@ export function WellnessScreen(): React.JSX.Element {
       )}
 
       <Card>
-        <Text variant="heading">Respiration guidée</Text>
+        <Text variant="heading">Récupération neuro-sensorielle</Text>
         <Text variant="body" color="textMuted">
-          Une minute de respiration en carré pour faire redescendre la pression.
+          Respiration guidée, cohérence cardiaque et stimulation bilatérale pour faire redescendre
+          la pression.
         </Text>
         <View style={{ alignItems: 'flex-start', marginTop: spacing[1] }}>
-          <Button label="Démarrer la respiration" variant="secondary" onPress={() => router.push('/breathing')} />
+          <Button
+            label="Ouvrir les outils"
+            variant="secondary"
+            onPress={() => router.push('/neuro-recovery')}
+          />
         </View>
       </Card>
 

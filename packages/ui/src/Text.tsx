@@ -3,7 +3,16 @@ import { Text as RNText, type TextProps as RNTextProps } from 'react-native';
 import { textVariants, type TextVariant } from '@supotsu/design-system';
 import { useTheme } from './theme';
 
-type ColorRole = 'text' | 'textMuted' | 'textSubtle' | 'primary' | 'onPrimary';
+type ColorRole =
+  | 'text'
+  | 'textMuted'
+  | 'textSubtle'
+  | 'primary'
+  | 'onPrimary'
+  | 'success'
+  | 'warning'
+  | 'error'
+  | 'info';
 
 export interface TextProps extends RNTextProps {
   variant?: TextVariant;

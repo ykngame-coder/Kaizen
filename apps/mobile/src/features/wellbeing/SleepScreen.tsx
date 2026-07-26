@@ -6,14 +6,23 @@ import { spacing } from '@supotsu/design-system';
 import type { HealthMetric } from '@supotsu/core';
 import {
   averageSleepHours,
-  computeSleepScore,
+  computeAcwr,
+  computeSleepScore2,
+  predictNextDayEnergy,
   sleepBand,
-  sleepExplanation,
+  sleepCoaching,
   sleepTrend,
+  type FatigueRisk,
   type SleepBand,
 } from '@supotsu/engines';
-import { useHealthMetrics } from '@/lib/data/queries';
+import { useActivities, useHealthMetrics } from '@/lib/data/queries';
 import { formatDate } from '@/lib/format';
+
+const RISK_TONE: Record<FatigueRisk, 'success' | 'warning' | 'error'> = {
+  faible: 'success',
+  modéré: 'warning',
+  élevé: 'error',
+};
 
 const BAND_LABEL: Record<SleepBand, string> = {
   excellent: 'Excellent',
@@ -34,17 +43,49 @@ function latestOf(metrics: HealthMetric[], type: HealthMetric['type']): HealthMe
     .sort((a, b) => b.measuredAt.localeCompare(a.measuredAt))[0];
 }
 
-/** Sleep pillar (Master Prompt P14): explainable sleep score, trend, signals. */
+/** Thin 0-100 meter used for each Sleep Score 2.0 component. */
+function ScoreBar({
+  value,
+  color,
+  track,
+}: {
+  value: number | null;
+  color: string;
+  track: string;
+}): React.JSX.Element {
+  return (
+    <View style={{ height: 8, borderRadius: 4, backgroundColor: track, overflow: 'hidden' }}>
+      {value !== null && (
+        <View
+          style={{ width: `${value}%`, height: '100%', backgroundColor: color, borderRadius: 4 }}
+        />
+      )}
+    </View>
+  );
+}
+
+/**
+ * Sleep pillar (Sleep Suite). Explainable Sleep Score 2.0 decomposed into its
+ * components, natural-language coaching, recovery signals and a weekly trend.
+ * Every component shows its own rationale; missing ones say what's needed
+ * rather than being silently zeroed (explicabilité obligatoire).
+ */
 export function SleepScreen(): React.JSX.Element {
   const router = useRouter();
   const { colors } = useTheme();
   const { data: metrics = [], isLoading } = useHealthMetrics();
+  const { data: activities = [] } = useActivities();
   const asOf = new Date().toISOString();
 
-  const score = useMemo(() => computeSleepScore(metrics, asOf), [metrics, asOf]);
+  const score = useMemo(() => computeSleepScore2(metrics, asOf), [metrics, asOf]);
   const trend = useMemo(() => sleepTrend(metrics, asOf, 7), [metrics, asOf]);
   const avg = useMemo(() => averageSleepHours(metrics, asOf, 7), [metrics, asOf]);
-  const explanation = useMemo(() => sleepExplanation(metrics, asOf), [metrics, asOf]);
+  const coaching = useMemo(() => sleepCoaching(metrics, asOf), [metrics, asOf]);
+  const acwr = useMemo(() => computeAcwr(activities, asOf).ratio, [activities, asOf]);
+  const prediction = useMemo(
+    () => predictNextDayEnergy(metrics, asOf, { acwr }),
+    [metrics, asOf, acwr],
+  );
   const hasData = score.confidence !== 'to_confirm';
 
   const zones = [
@@ -67,7 +108,8 @@ export function SleepScreen(): React.JSX.Element {
     <Screen scroll>
       <Text variant="title">Sommeil</Text>
       <Text variant="caption" color="textMuted">
-        Ton sommeil, expliqué — durée et efficacité de tes nuits importées de Garmin ou Apple Santé.
+        Ton Sleep Score 2.0, décomposé et expliqué — à partir de tes nuits importées de Garmin ou
+        Apple Santé.
       </Text>
 
       {isLoading ? (
@@ -96,25 +138,88 @@ export function SleepScreen(): React.JSX.Element {
             </View>
           </Card>
 
-          {explanation && (
+          <Card>
+            <Text variant="heading">Détail du score</Text>
+            <Text variant="caption" color="textSubtle">
+              Chaque composante est notée sur 100. Les composantes sans donnée n’entrent pas dans le
+              calcul.
+            </Text>
+            <View style={{ gap: spacing[3], marginTop: spacing[3] }}>
+              {score.components.map((c) => {
+                const tone = c.value !== null ? BAND_TONE[sleepBand(c.value)] : undefined;
+                const barColor = tone ? colors[tone] : colors.border;
+                return (
+                  <View key={c.key} style={{ gap: spacing[1] }}>
+                    <View
+                      style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'baseline' }}
+                    >
+                      <Text variant="body">{c.label}</Text>
+                      <Text variant="subtitle" color={c.value !== null ? 'text' : 'textSubtle'}>
+                        {c.value !== null ? `${c.value}` : '—'}
+                      </Text>
+                    </View>
+                    <ScoreBar value={c.value} color={barColor} track={colors.surfaceElevated} />
+                    <Text variant="caption" color="textSubtle">
+                      {c.detail}
+                    </Text>
+                  </View>
+                );
+              })}
+            </View>
+          </Card>
+
+          {coaching && (
             <Card>
-              <Text variant="heading">Analyse</Text>
+              <Text variant="heading">Coaching</Text>
               <Text variant="caption" color="textMuted">
-                {explanation.observation}
+                {coaching.observation}
               </Text>
               <Text variant="caption" color="textMuted">
-                {explanation.analysis}
+                {coaching.analysis}
               </Text>
               <Text variant="body" style={{ marginTop: spacing[1] }}>
-                {explanation.action}
+                {coaching.action}
               </Text>
             </Card>
           )}
 
+          {prediction.value && prediction.explanation && (
+            <Card>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing[2] }}>
+                <Text variant="heading">Prévision de demain</Text>
+                <Badge
+                  label={`Fatigue ${prediction.value.fatigueRisk}`}
+                  tone={RISK_TONE[prediction.value.fatigueRisk]}
+                />
+              </View>
+              <Text variant="subtitle" color="primary" style={{ marginTop: spacing[1] }}>
+                Énergie estimée {prediction.value.energyScore}/100
+              </Text>
+              <Text variant="caption" color="textMuted" style={{ marginTop: spacing[1] }}>
+                {prediction.explanation.analysis}
+              </Text>
+              <Text variant="body" style={{ marginTop: spacing[1] }}>
+                {prediction.explanation.action}
+              </Text>
+            </Card>
+          )}
+
+          <Card>
+            <Text variant="heading">Rythme circadien</Text>
+            <Text variant="caption" color="textMuted">
+              Découvre ton chronotype et tes horaires optimaux (coucher, caféine, sport, lumière).
+            </Text>
+            <View style={{ alignItems: 'flex-start', marginTop: spacing[2] }}>
+              <Button label="Voir mes horaires optimaux" onPress={() => router.push('/circadian')} />
+            </View>
+          </Card>
+
           {signals.length > 0 && (
             <Card>
               <Text variant="heading">Signaux de récupération</Text>
-              <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: spacing[4], marginTop: spacing[2] }}>
+              <View
+                style={{ flexDirection: 'row', flexWrap: 'wrap', gap: spacing[4], marginTop: spacing[2] }}
+              >
                 {signals.map((s) => (
                   <View key={s.label}>
                     <Text variant="caption" color="textSubtle">
