@@ -45,7 +45,7 @@ export function ActivitiesScreen(): React.JSX.Element {
         <EmptyState
           icon="≋"
           title="Aucune activité"
-          message="Ajoute ta première activité pour suivre ta progression et calibrer ton score Supotsu."
+          message="Ajoute ta première activité pour suivre ta progression et calibrer ton score Kaizen."
           actionLabel="Ajouter une activité"
           onAction={() => router.push('/activity/new')}
         />

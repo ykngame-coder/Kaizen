@@ -139,7 +139,7 @@ export function OnboardingFlow(): React.JSX.Element {
       {step === 0 ? (
         <Card>
           <Text variant="body" color="textMuted">
-            Quelques questions pour que Supotsu comprenne ton point de départ et personnalise ton
+            Quelques questions pour que Kaizen Supotsu comprenne ton point de départ et personnalise ton
             accompagnement. Tu pourras tout modifier plus tard.
           </Text>
         </Card>
@@ -303,7 +303,7 @@ export function OnboardingFlow(): React.JSX.Element {
         <View style={{ gap: spacing[4] }}>
           <OnboardingSummary getValues={getValues} />
           <KPICard
-            label="Score Supotsu initial"
+            label="Score Kaizen initial"
             value="—"
             unit="/100"
             caption="Se calibre avec tes premières séances et données."
@@ -342,7 +342,7 @@ function OnboardingSummary({ getValues }: { getValues: () => OnboardingForm }): 
   const goalLabel = GOALS.find((g) => g.value === v.goalType)?.label ?? v.goalType;
   return (
     <Card>
-      <Text variant="heading">Ton profil Supotsu</Text>
+      <Text variant="heading">Ton profil Kaizen</Text>
       <Text variant="body" color="textMuted">
         Niveau : {levelLabel}
       </Text>

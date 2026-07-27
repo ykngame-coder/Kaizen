@@ -105,7 +105,7 @@ export function DashboardScreen(): React.JSX.Element {
 
       <Card>
         <View style={{ flexDirection: 'row', justifyContent: 'space-around', alignItems: 'flex-start' }}>
-          <ScoreRing label="Supotsu" value={hasData ? s.overall : null} size={84} />
+          <ScoreRing label="Kaizen" value={hasData ? s.overall : null} size={84} />
           <ScoreRing label="Récupération" value={s.recovery} />
           <ScoreRing label="Régularité" value={hasData ? s.consistency : null} />
         </View>

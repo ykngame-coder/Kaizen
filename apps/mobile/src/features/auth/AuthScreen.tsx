@@ -23,7 +23,7 @@ const COPY: Record<
     altLabel: 'Créer un compte',
   },
   signUp: {
-    title: 'Bienvenue sur Supotsu',
+    title: 'Bienvenue sur Kaizen Supotsu',
     cta: 'Créer un compte',
     alt: 'Déjà un compte ?',
     altHref: '/(auth)/sign-in',
@@ -78,7 +78,10 @@ export function AuthScreen({ mode }: { mode: Mode }): React.JSX.Element {
   return (
     <Screen scroll>
       <View style={{ gap: spacing[1], marginTop: spacing[8] }}>
-        <Text variant="display">Supotsu</Text>
+        <Text variant="display">Kaizen Supotsu</Text>
+        <Text variant="caption" color="textSubtle">
+          Progresser aujourd'hui, être meilleur demain.
+        </Text>
         <Text variant="body" color="textMuted">
           {copy.title}
         </Text>

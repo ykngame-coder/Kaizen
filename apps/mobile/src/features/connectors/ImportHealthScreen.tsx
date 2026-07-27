@@ -122,7 +122,7 @@ export function ImportHealthScreen(): React.JSX.Element {
     <Screen scroll>
       <Text variant="title">Importer un fichier</Text>
       <Text variant="caption" color="textMuted">
-        Centralise un export santé (Garmin, Apple Santé…) au format JSON Supotsu. Rien n'est
+        Centralise un export santé (Garmin, Apple Santé…) au format JSON Kaizen. Rien n'est
         écrasé : réimporter un fichier ne crée aucun doublon.
       </Text>
 
@@ -132,7 +132,7 @@ export function ImportHealthScreen(): React.JSX.Element {
           Trois formats reconnus automatiquement : l'export de l'app{' '}
           <Text variant="body">Health Auto Export</Text> (Apple Santé → sommeil avec phases,
           poids, FC repos, hydratation, activités…), l'archive <Text variant="body">.zip</Text>{' '}
-          d'un export Garmin (dézippée dans l'app), ou des .json Supotsu. Voir
+          d'un export Garmin (dézippée dans l'app), ou des .json Kaizen. Voir
           docs/import-format.md.
         </Text>
         <View style={{ alignItems: 'flex-start', marginTop: spacing[2] }}>

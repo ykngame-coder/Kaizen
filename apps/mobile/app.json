@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "Supotsu",
+    "name": "Kaizen Supotsu",
     "slug": "supotsu",
     "version": "0.1.0",
     "orientation": "portrait",
@@ -24,7 +24,7 @@
       [
         "expo-camera",
         {
-          "cameraPermission": "Supotsu utilise la caméra pour scanner les codes-barres des aliments."
+          "cameraPermission": "Kaizen Supotsu utilise la caméra pour scanner les codes-barres des aliments."
         }
       ],
       "expo-web-browser"
