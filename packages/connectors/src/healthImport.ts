@@ -1,5 +1,6 @@
 import type { ActivityType, DataSource, HealthMetricType } from '@supotsu/core';
 import type { ImportedActivity, ImportedHealthMetric, ImportedRecord } from './types';
+import { healthAutoExportToSupotsu, isHealthAutoExport } from './healthAutoExport';
 
 /**
  * File import (Master Prompt P22 — import manuel de données). Pure parsing of a
@@ -51,6 +52,10 @@ export interface ParsedImport {
 
 /** Parse a Supotsu health export object into activities + health metrics. */
 export function parseHealthExport(input: unknown): ParsedImport {
+  // Health Auto Export's native shape → convert to the generic shape first.
+  if (isHealthAutoExport(input)) {
+    return parseHealthExport(healthAutoExportToSupotsu(input));
+  }
   const obj = (input ?? {}) as Record<string, unknown>;
   const source: DataSource = DATA_SOURCES.has(obj.source as string)
     ? (obj.source as DataSource)
