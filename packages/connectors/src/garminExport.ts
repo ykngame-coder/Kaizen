@@ -1,6 +1,7 @@
 import type { ActivityType, HealthMetricType, RecordCategory } from '@supotsu/core';
 import type { ImportedActivity, ImportedHealthMetric, ImportedRecord } from './types';
 import { parseHealthExport, type ParsedImport } from './healthImport';
+import { parseHealthAutoExport } from './healthAutoExport';
 
 /**
  * Garmin "Export your data" (RGPD) adapter (Master Prompt P22). Pure conversion
@@ -297,9 +298,11 @@ export function detectAndParseGarminFile(json: unknown): ParsedImport | null {
 }
 
 /**
- * Unified entry for the import screen: a Garmin export file if recognized,
- * otherwise the plain Supotsu health-export format.
+ * Unified entry for the import screen: a Health Auto Export archive or a Garmin
+ * export file if recognized, otherwise the plain Supotsu health-export format.
  */
 export function parseImportFile(json: unknown): ParsedImport {
-  return detectAndParseGarminFile(json) ?? parseHealthExport(json);
+  return (
+    parseHealthAutoExport(json) ?? detectAndParseGarminFile(json) ?? parseHealthExport(json)
+  );
 }

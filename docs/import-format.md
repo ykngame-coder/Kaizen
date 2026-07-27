@@ -29,6 +29,51 @@ mêmes points renvoyés deux fois ne créent pas de doublon).
 `hrv` (ms) · `resting_heart_rate` (bpm) · `sleep_duration` (h) · `sleep_efficiency` ·
 `stress` · `weight` (kg) · `body_fat` (%) · `muscle_mass` (kg) · `hydration` (ml).
 
+## Health Auto Export (Apple Santé)
+
+L'app iOS **[Health Auto Export](https://apps.apple.com/app/id1115567069)** exporte
+Apple Santé en JSON. Comme **Garmin Connect se synchronise dans Apple Santé**, ce
+fichier unique porte les données Garmin **y compris les phases de sommeil** — sans
+Mac ni API Garmin. On choisit ce `.json` directement dans l'écran d'import, il est
+reconnu automatiquement (`packages/connectors/src/healthAutoExport.ts`).
+
+Forme du fichier :
+
+```jsonc
+{
+  "data": {
+    "metrics": [
+      { "name": "sleep_analysis", "units": "hr",
+        "data": [ { "sleepStart": "2026-06-26 01:30:31 +0200", "sleepEnd": "…",
+                    "totalSleep": 6.57, "inBed": 7.77,
+                    "deep": 2.28, "core": 3.03, "rem": 1.25, "awake": 1.2 } ] },
+      { "name": "resting_heart_rate",  "units": "count/min", "data": [ { "qty": 51,  "date": "…" } ] },
+      { "name": "weight_body_mass",    "units": "kg",        "data": [ { "qty": 102.7,"date": "…" } ] },
+      { "name": "body_fat_percentage", "units": "%",         "data": [ { "qty": 30.5, "date": "…" } ] },
+      { "name": "lean_body_mass",      "units": "kg",        "data": [ { "qty": 71.4, "date": "…" } ] },
+      { "name": "dietary_water",       "units": "mL",        "data": [ { "qty": 3000, "date": "…" } ] }
+    ],
+    "workouts": [
+      { "id": "…", "name": "Course à pied extérieure", "start": "…", "end": "…",
+        "duration": 972.7, "distance": { "qty": 0, "units": "km" },
+        "activeEnergyBurned": { "qty": 644, "units": "kJ" },
+        "avgHeartRate": { "qty": 127, "units": "count/min" } }
+    ]
+  }
+}
+```
+
+Mappage :
+`sleep_analysis` → `sleep_duration` (= `totalSleep`, horodaté à l'heure de coucher)
+et `sleep_efficiency` (= `totalSleep / inBed`, une efficacité **réelle**) ·
+`resting_heart_rate` → `resting_heart_rate` · `weight_body_mass` → `weight` ·
+`body_fat_percentage` → `body_fat` · `lean_body_mass` → `muscle_mass` ·
+`dietary_water` → `hydration` · `heart_rate_variability` → `hrv`. Les `workouts`
+deviennent des activités (le nom localisé est classé par mots-clés). Les métriques
+non modélisées (pas, distance, macros nutritionnelles…) sont ignorées sans erreur.
+Les phases (`deep`/`core`/`rem`/`awake`) sont lues mais pas encore stockées — c'est
+l'étape suivante (stockage des phases + hypnogramme).
+
 ### Types d'activité acceptés
 `walking` · `running` · `cycling` · `swimming` · `strength` · `cross_training` ·
 `hyrox` · `mobility` · `yoga` · `other` (inconnu → `other`).

@@ -126,9 +126,10 @@ export function ImportHealthScreen(): React.JSX.Element {
       <Card>
         <Text variant="heading">Fichier JSON</Text>
         <Text variant="body" color="textMuted">
-          Choisis directement l'archive <Text variant="body">.zip</Text> de ton export Garmin
-          (elle est dézippée dans l'app), ou des fichiers .json isolés. Sommeil, poids, HRV,
-          FC de repos, stress et activités sont reconnus automatiquement. Voir
+          Trois formats reconnus automatiquement : l'export de l'app{' '}
+          <Text variant="body">Health Auto Export</Text> (Apple Santé → sommeil avec phases,
+          poids, FC repos, hydratation, activités…), l'archive <Text variant="body">.zip</Text>{' '}
+          d'un export Garmin (dézippée dans l'app), ou des .json Supotsu. Voir
           docs/import-format.md.
         </Text>
         <View style={{ alignItems: 'flex-start', marginTop: spacing[2] }}>

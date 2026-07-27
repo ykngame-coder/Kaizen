@@ -7,6 +7,7 @@ export * from './garmin';
 export * from './strava';
 export * from './appleHealth';
 export * from './healthImport';
+export * from './healthAutoExport';
 export * from './garminExport';
 export * from './openFoodFacts';
 export { CONNECTORS, getConnector } from './registry';
