@@ -18,6 +18,9 @@ export default function TabsLayout(): React.JSX.Element {
 
   return (
     <Tabs
+      // The bottom bar is rendered once at the app root (AppTabBar) so it stays
+      // visible on detail screens too; hide the native one to avoid a duplicate.
+      tabBar={() => null}
       screenOptions={({ route }) => ({
         headerShown: false,
         tabBarActiveTintColor: colors.primary,

@@ -12,7 +12,8 @@ type ColorRole =
   | 'success'
   | 'warning'
   | 'error'
-  | 'info';
+  | 'info'
+  | 'accentLime';
 
 export interface TextProps extends RNTextProps {
   variant?: TextVariant;

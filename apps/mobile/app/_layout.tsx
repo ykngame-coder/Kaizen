@@ -10,6 +10,7 @@ import { queryClient } from '@/lib/query';
 import { AuthProvider, useAuth } from '@/features/auth/AuthProvider';
 import { OnboardingProvider, useOnboarding } from '@/features/onboarding/OnboardingProvider';
 import { PreferencesProvider } from '@/lib/preferences';
+import { AppTabBar } from '@/features/navigation/AppTabBar';
 
 /**
  * Central route gate: sends users to auth, onboarding or the app depending on
@@ -65,7 +66,12 @@ export default function RootLayout(): React.JSX.Element {
               <OnboardingProvider>
                 <StatusBar style="auto" />
                 <RouteGuard>
-                  <Slot />
+                  <View style={{ flex: 1 }}>
+                    <View style={{ flex: 1 }}>
+                      <Slot />
+                    </View>
+                    <AppTabBar />
+                  </View>
                 </RouteGuard>
               </OnboardingProvider>
             </AuthProvider>

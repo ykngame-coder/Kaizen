@@ -17,6 +17,8 @@ export { ProgressRing } from './ProgressRing';
 export type { ProgressRingProps, RingSegment } from './ProgressRing';
 export { Sparkline } from './Sparkline';
 export type { SparklineProps } from './Sparkline';
+export { Meter } from './Meter';
+export type { MeterProps } from './Meter';
 export { Input } from './Input';
 export type { InputProps } from './Input';
 export { SegmentedControl } from './SegmentedControl';

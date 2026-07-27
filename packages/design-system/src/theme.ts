@@ -30,6 +30,8 @@ export interface SemanticColors {
   accentEndurance: string;
   accentMobility: string;
   accentRecovery: string;
+  /** Secondary highlight accent (energy / streaks / focus) — lime. */
+  accentLime: string;
   /** State colors. */
   success: string;
   warning: string;
@@ -51,6 +53,7 @@ export const darkTheme: SemanticColors = {
   accentEndurance: palette.accent.endurance,
   accentMobility: palette.accent.mobility,
   accentRecovery: palette.accent.recovery,
+  accentLime: palette.accent.lime,
   success: palette.state.success,
   warning: palette.state.warning,
   error: palette.state.error,
@@ -71,6 +74,7 @@ export const lightTheme: SemanticColors = {
   accentEndurance: palette.accent.endurance,
   accentMobility: palette.accent.mobility,
   accentRecovery: palette.accent.recovery,
+  accentLime: palette.accent.lime,
   success: palette.state.success,
   warning: palette.state.warning,
   error: palette.state.error,

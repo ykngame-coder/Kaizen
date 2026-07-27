@@ -41,6 +41,7 @@ export const palette = {
     endurance: '#3b9dff', // endurance / cardio
     mobility: '#a78bfa', // mobilité
     recovery: '#22d3ee', // récupération
+    lime: '#c6f24e', // secondary highlight accent (energy / streaks / focus)
   },
   // System / state colors (Master Prompt P28.5, P47.4).
   state: {
