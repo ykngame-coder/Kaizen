@@ -17,6 +17,7 @@ import {
   type ImportedActivity,
   type ImportedHealthMetric,
   type ImportedRecord,
+  type ImportedSleepSession,
 } from '@supotsu/connectors';
 import { useAuth } from '@/features/auth/AuthProvider';
 import { createDataRepository, type NewWorkout } from './repository';
@@ -58,6 +59,16 @@ export function useHealthMetrics() {
   });
 }
 
+export function useSleepSessions() {
+  const { user } = useAuth();
+  const repo = useRepository();
+  return useQuery({
+    queryKey: ['sleepSessions', user?.id],
+    enabled: !!user,
+    queryFn: () => repo.listSleepSessions(user!.id),
+  });
+}
+
 /** Run a connector through the import pipeline and persist the result. */
 export function useSyncConnector() {
   const { user } = useAuth();
@@ -77,6 +88,7 @@ export function useSyncConnector() {
         activities: outcome.activities,
         healthMetrics: outcome.healthMetrics,
         records: [],
+        sleepSessions: [],
       });
     },
     onSuccess: () => {
@@ -249,11 +261,13 @@ export function useImportHealth() {
       activities: ImportedActivity[];
       healthMetrics: ImportedHealthMetric[];
       records: ImportedRecord[];
+      sleepSessions: ImportedSleepSession[];
     }) => repo.persistImport(user!.id, payload),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['activities', user?.id] });
       qc.invalidateQueries({ queryKey: ['health', user?.id] });
       qc.invalidateQueries({ queryKey: ['records', user?.id] });
+      qc.invalidateQueries({ queryKey: ['sleepSessions', user?.id] });
     },
   });
 }

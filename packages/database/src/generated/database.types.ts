@@ -208,6 +208,40 @@ export interface Database {
         Update: Partial<Database['public']['Tables']['health_metrics']['Insert']>;
         Relationships: [];
       };
+      sleep_sessions: {
+        Row: {
+          id: string;
+          user_id: string;
+          source: string;
+          reliability: 'high' | 'medium' | 'low' | null;
+          started_at: string;
+          ended_at: string;
+          deep_min: number;
+          light_min: number;
+          rem_min: number;
+          awake_min: number;
+          asleep_min: number;
+          in_bed_min: number;
+          segments: Json | null;
+          created_at: string;
+        };
+        Insert: {
+          user_id: string;
+          source?: string;
+          reliability?: 'high' | 'medium' | 'low' | null;
+          started_at: string;
+          ended_at: string;
+          deep_min?: number;
+          light_min?: number;
+          rem_min?: number;
+          awake_min?: number;
+          asleep_min: number;
+          in_bed_min: number;
+          segments?: Json | null;
+        };
+        Update: Partial<Database['public']['Tables']['sleep_sessions']['Insert']>;
+        Relationships: [];
+      };
       exercises: {
         Row: {
           id: string;

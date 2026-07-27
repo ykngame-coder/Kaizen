@@ -3,7 +3,7 @@ import { View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Badge, Button, Card, EmptyState, ProgressRing, Screen, Text, useTheme } from '@supotsu/ui';
 import { spacing } from '@supotsu/design-system';
-import type { HealthMetric } from '@supotsu/core';
+import type { HealthMetric, SleepSession } from '@supotsu/core';
 import {
   averageSleepHours,
   computeAcwr,
@@ -15,7 +15,7 @@ import {
   type FatigueRisk,
   type SleepBand,
 } from '@supotsu/engines';
-import { useActivities, useHealthMetrics } from '@/lib/data/queries';
+import { useActivities, useHealthMetrics, useSleepSessions } from '@/lib/data/queries';
 import { formatDate } from '@/lib/format';
 
 const RISK_TONE: Record<FatigueRisk, 'success' | 'warning' | 'error'> = {
@@ -64,6 +64,82 @@ function ScoreBar({
   );
 }
 
+const fmtClock = (iso: string): string =>
+  new Date(iso).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
+const fmtHM = (min: number): string => {
+  const h = Math.floor(min / 60);
+  const m = Math.round(min % 60);
+  return h > 0 ? `${h} h ${String(m).padStart(2, '0')}` : `${m} min`;
+};
+
+/**
+ * Sleep-phase breakdown for one night. A proportional stacked bar shows the
+ * share of each stage (real device data), with a legend of minutes + %. The
+ * minute-by-minute hypnogram is only shown when the source provides real
+ * segments — a nightly-aggregated import doesn't, so we say so rather than
+ * drawing a fabricated timeline (Master Prompt : pas de boîte noire).
+ */
+function PhasesCard({ session }: { session: SleepSession }): React.JSX.Element {
+  const { colors } = useTheme();
+  const stages = [
+    { key: 'deep', label: 'Profond', min: session.deepMin, color: colors.primary },
+    { key: 'light', label: 'Léger', min: session.lightMin, color: colors.info },
+    { key: 'rem', label: 'Paradoxal', min: session.remMin, color: colors.accentLime },
+    { key: 'awake', label: 'Éveillé', min: session.awakeMin, color: colors.border },
+  ].filter((s) => s.min > 0);
+  const total = stages.reduce((s, x) => s + x.min, 0) || 1;
+  const asleep = session.asleepMin || 1;
+
+  return (
+    <Card>
+      <Text variant="heading">Phases de sommeil</Text>
+      <Text variant="caption" color="textSubtle">
+        {fmtClock(session.startedAt)} → {fmtClock(session.endedAt)} · {fmtHM(session.inBedMin)} au
+        lit, {fmtHM(session.asleepMin)} dormies
+      </Text>
+
+      <View
+        style={{
+          flexDirection: 'row',
+          height: 16,
+          borderRadius: 8,
+          overflow: 'hidden',
+          marginTop: spacing[3],
+        }}
+      >
+        {stages.map((s) => (
+          <View key={s.key} style={{ flex: s.min / total, backgroundColor: s.color }} />
+        ))}
+      </View>
+
+      <View style={{ gap: spacing[2], marginTop: spacing[3] }}>
+        {stages.map((s) => (
+          <View
+            key={s.key}
+            style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}
+          >
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing[2] }}>
+              <View style={{ width: 10, height: 10, borderRadius: 5, backgroundColor: s.color }} />
+              <Text variant="body">{s.label}</Text>
+            </View>
+            <Text variant="caption" color="textMuted">
+              {fmtHM(s.min)}
+              {s.key !== 'awake' ? ` · ${Math.round((s.min / asleep) * 100)}%` : ''}
+            </Text>
+          </View>
+        ))}
+      </View>
+
+      {!session.segments && (
+        <Text variant="caption" color="textSubtle" style={{ marginTop: spacing[3] }}>
+          Chronologie minute par minute non fournie par cet export — seules les durées par phase
+          sont disponibles.
+        </Text>
+      )}
+    </Card>
+  );
+}
+
 /**
  * Sleep pillar (Sleep Suite). Explainable Sleep Score 2.0 decomposed into its
  * components, natural-language coaching, recovery signals and a weekly trend.
@@ -75,9 +151,14 @@ export function SleepScreen(): React.JSX.Element {
   const { colors } = useTheme();
   const { data: metrics = [], isLoading } = useHealthMetrics();
   const { data: activities = [] } = useActivities();
+  const { data: sessions = [] } = useSleepSessions();
   const asOf = new Date().toISOString();
 
-  const score = useMemo(() => computeSleepScore2(metrics, asOf), [metrics, asOf]);
+  const lastSession = sessions[0];
+  const score = useMemo(
+    () => computeSleepScore2(metrics, asOf, 7, sessions),
+    [metrics, asOf, sessions],
+  );
   const trend = useMemo(() => sleepTrend(metrics, asOf, 7), [metrics, asOf]);
   const avg = useMemo(() => averageSleepHours(metrics, asOf, 7), [metrics, asOf]);
   const coaching = useMemo(() => sleepCoaching(metrics, asOf), [metrics, asOf]);
@@ -167,6 +248,8 @@ export function SleepScreen(): React.JSX.Element {
               })}
             </View>
           </Card>
+
+          {lastSession && <PhasesCard session={lastSession} />}
 
           {coaching && (
             <Card>

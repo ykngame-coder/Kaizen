@@ -10,6 +10,7 @@ import type {
   Program,
   Workout,
   SetEntry,
+  SleepSession,
   WellnessCheckin,
 } from '@supotsu/core';
 import type {
@@ -23,7 +24,12 @@ import type {
 } from '@supotsu/shared';
 import { computeGoalProgress } from '@supotsu/engines';
 import { PROGRAM_CATALOG } from '@supotsu/shared';
-import type { ImportedActivity, ImportedHealthMetric, ImportedRecord } from '@supotsu/connectors';
+import type {
+  ImportedActivity,
+  ImportedHealthMetric,
+  ImportedRecord,
+  ImportedSleepSession,
+} from '@supotsu/connectors';
 import type { MuscleSession } from '@supotsu/engines';
 import { EXERCISE_LIBRARY } from '@supotsu/shared';
 import {
@@ -36,6 +42,8 @@ import {
   listLoggedSets as listLoggedSetsDb,
   insertHealthMetrics,
   listHealthMetrics as listHealthMetricsDb,
+  insertSleepSessions,
+  listSleepSessions as listSleepSessionsDb,
   insertNutritionEntry,
   listNutritionEntries as listNutritionEntriesDb,
   insertHabit,
@@ -62,6 +70,7 @@ import {
   type ActivityRow,
   type WorkoutRow,
   type HealthMetricRow,
+  type SleepSessionRow,
   type NutritionEntryRow,
   type HabitRow,
   type HabitLogRow,
@@ -84,6 +93,7 @@ export interface ImportPayload {
   activities: ImportedActivity[];
   healthMetrics: ImportedHealthMetric[];
   records: ImportedRecord[];
+  sleepSessions: ImportedSleepSession[];
 }
 
 /**
@@ -97,6 +107,7 @@ export interface DataRepository {
   listWorkouts(userId: string): Promise<Workout[]>;
   addWorkout(userId: string, workout: NewWorkout): Promise<Workout>;
   listHealthMetrics(userId: string): Promise<HealthMetric[]>;
+  listSleepSessions(userId: string): Promise<SleepSession[]>;
   listRecords(userId: string): Promise<PersonalRecord[]>;
   listMuscleSessions(userId: string): Promise<MuscleSession[]>;
   /** The most recent logged session's sets per exercise (progressive overload). */
@@ -126,7 +137,7 @@ export interface DataRepository {
   persistImport(
     userId: string,
     payload: ImportPayload,
-  ): Promise<{ activities: number; health: number }>;
+  ): Promise<{ activities: number; health: number; sleep: number }>;
 }
 
 // --- mapping helpers (DB row ⇄ core) --------------------------------------
@@ -176,6 +187,26 @@ function rowToHealthMetric(r: HealthMetricRow): HealthMetric {
     source: r.source as HealthMetric['source'],
     reliability: r.reliability ?? undefined,
     measuredAt: r.measured_at,
+    createdAt: r.created_at,
+    updatedAt: r.created_at,
+  };
+}
+
+function rowToSleepSession(r: SleepSessionRow): SleepSession {
+  return {
+    id: r.id,
+    userId: r.user_id,
+    source: r.source as SleepSession['source'],
+    reliability: r.reliability ?? undefined,
+    startedAt: r.started_at,
+    endedAt: r.ended_at,
+    deepMin: r.deep_min,
+    lightMin: r.light_min,
+    remMin: r.rem_min,
+    awakeMin: r.awake_min,
+    asleepMin: r.asleep_min,
+    inBedMin: r.in_bed_min,
+    segments: (r.segments as unknown as SleepSession['segments']) ?? undefined,
     createdAt: r.created_at,
     updatedAt: r.created_at,
   };
@@ -445,11 +476,33 @@ function importedToHealth(userId: string, m: ImportedHealthMetric): HealthMetric
   };
 }
 
+function importedToSleepSession(userId: string, s: ImportedSleepSession): SleepSession {
+  const now = new Date().toISOString();
+  return {
+    id: randomId(),
+    userId,
+    source: s.source,
+    reliability: s.reliability,
+    startedAt: s.startedAt,
+    endedAt: s.endedAt,
+    deepMin: s.deepMin,
+    lightMin: s.lightMin,
+    remMin: s.remMin,
+    awakeMin: s.awakeMin,
+    asleepMin: s.asleepMin,
+    inBedMin: s.inBedMin,
+    segments: s.segments,
+    createdAt: now,
+    updatedAt: now,
+  };
+}
+
 // --- demo (local) implementation ------------------------------------------
 const actKey = (u: string): string => `supotsu.activities.${u}`;
 const wkKey = (u: string): string => `supotsu.workouts.${u}`;
 const setKey = (u: string): string => `supotsu.sets.${u}`;
 const hmKey = (u: string): string => `supotsu.health.${u}`;
+const sleepKey = (u: string): string => `supotsu.sleep.${u}`;
 const nutKey = (u: string): string => `supotsu.nutrition.${u}`;
 const habKey = (u: string): string => `supotsu.habits.${u}`;
 const hlogKey = (u: string): string => `supotsu.habitlogs.${u}`;
@@ -531,6 +584,10 @@ function createDemoRepository(): DataRepository {
     async listHealthMetrics(userId) {
       const items = await readJson<HealthMetric>(hmKey(userId));
       return items.sort((a, b) => b.measuredAt.localeCompare(a.measuredAt));
+    },
+    async listSleepSessions(userId) {
+      const items = await readJson<SleepSession>(sleepKey(userId));
+      return items.sort((a, b) => b.startedAt.localeCompare(a.startedAt));
     },
     async listRecords(userId) {
       const items = await readJson<PersonalRecord>(recKey(userId));
@@ -757,7 +814,19 @@ function createDemoRepository(): DataRepository {
         });
       await writeJson(recKey(userId), [...newR, ...existingR]);
 
-      return { activities: newA.length, health: newH.length };
+      const existingS = await readJson<SleepSession>(sleepKey(userId));
+      const seenS = new Set(existingS.map((s) => `${s.source}|${s.startedAt}`));
+      const newS = payload.sleepSessions
+        .map((s) => importedToSleepSession(userId, s))
+        .filter((s) => {
+          const key = `${s.source}|${s.startedAt}`;
+          if (seenS.has(key)) return false;
+          seenS.add(key);
+          return true;
+        });
+      await writeJson(sleepKey(userId), [...newS, ...existingS]);
+
+      return { activities: newA.length, health: newH.length, sleep: newS.length };
     },
   };
 }
@@ -790,6 +859,9 @@ function createSupabaseRepository(
     },
     async listHealthMetrics(userId) {
       return (await listHealthMetricsDb(client, userId)).map(rowToHealthMetric);
+    },
+    async listSleepSessions(userId) {
+      return (await listSleepSessionsDb(client, userId)).map(rowToSleepSession);
     },
     async listRecords(userId) {
       return (await listRecordsDb(client, userId)).map(rowToRecord);
@@ -985,7 +1057,28 @@ function createSupabaseRepository(
           achieved_at: r.achievedAt,
         })),
       );
-      return { activities: payload.activities.length, health: payload.healthMetrics.length };
+      await insertSleepSessions(
+        client,
+        payload.sleepSessions.map((s) => ({
+          user_id: userId,
+          source: s.source,
+          reliability: s.reliability ?? null,
+          started_at: s.startedAt,
+          ended_at: s.endedAt,
+          deep_min: s.deepMin,
+          light_min: s.lightMin,
+          rem_min: s.remMin,
+          awake_min: s.awakeMin,
+          asleep_min: s.asleepMin,
+          in_bed_min: s.inBedMin,
+          segments: (s.segments ?? null) as unknown as SleepSessionRow['segments'],
+        })),
+      );
+      return {
+        activities: payload.activities.length,
+        health: payload.healthMetrics.length,
+        sleep: payload.sleepSessions.length,
+      };
     },
     async addWorkout(userId, workout) {
       const row = await insertWorkout(

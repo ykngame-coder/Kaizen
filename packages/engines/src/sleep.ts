@@ -1,4 +1,4 @@
-import type { Confidence, HealthMetric, ISODateString } from '@supotsu/core';
+import type { Confidence, HealthMetric, ISODateString, SleepSession } from '@supotsu/core';
 import type { EngineResult, Explanation } from './result';
 import { computeRecoveryScore } from './recovery';
 
@@ -246,10 +246,57 @@ function debtScore(debtHours: number): number {
  * show what's missing and what's needed. The headline `value` is the weighted
  * mean over the *available* components (weights renormalized).
  */
+/** Healthy adult stage references, as a fraction of time asleep (§3.10). */
+export const DEEP_TARGET_PCT = 0.15;
+export const REM_TARGET_PCT = 0.22;
+
+export interface PhaseQuality {
+  score: number;
+  deepPct: number;
+  remPct: number;
+  efficiencyPct: number;
+}
+
+/**
+ * Phase-based sleep quality (§3.10) — an *explainable* score from the real stage
+ * composition of a night: enough deep sleep, enough REM, high efficiency. Each
+ * sub-score is capped at 100 (more than the reference isn't penalized). Falls to
+ * the caller to use `sleep_efficiency` when no session with stages is available.
+ */
+export function sleepPhaseQuality(session: SleepSession): PhaseQuality | null {
+  const asleep = session.asleepMin;
+  if (!(asleep > 0)) return null;
+  const deepPct = session.deepMin / asleep;
+  const remPct = session.remMin / asleep;
+  const efficiencyPct = session.inBedMin > 0 ? clamp((asleep / session.inBedMin) * 100) : 100;
+  const deepScore = clamp((deepPct / DEEP_TARGET_PCT) * 100);
+  const remScore = clamp((remPct / REM_TARGET_PCT) * 100);
+  const score = Math.round(0.35 * deepScore + 0.3 * remScore + 0.35 * efficiencyPct);
+  return {
+    score,
+    deepPct: Math.round(deepPct * 100),
+    remPct: Math.round(remPct * 100),
+    efficiencyPct: Math.round(efficiencyPct),
+  };
+}
+
+/** The most recent sleep session at/before `asOf`, or undefined. */
+function latestSession(
+  sessions: SleepSession[] | undefined,
+  asOf: ISODateString,
+): SleepSession | undefined {
+  if (!sessions?.length) return undefined;
+  const cutoff = new Date(asOf).getTime();
+  return sessions
+    .filter((s) => new Date(s.startedAt).getTime() <= cutoff)
+    .sort((a, b) => b.startedAt.localeCompare(a.startedAt))[0];
+}
+
 export function computeSleepScore2(
   metrics: HealthMetric[],
   asOf: ISODateString,
   windowDays = 7,
+  sessions?: SleepSession[],
 ): SleepScore2Result {
   const components: SleepScoreComponent[] = [];
 
@@ -266,18 +313,29 @@ export function computeSleepScore2(
         : 'Nécessite une nuit enregistrée (Garmin ou Apple Santé).',
   });
 
-  // 2) Qualité — device sleep score / efficiency (deep/REM phases would refine
-  //    this in V2; here we surface what Garmin/Apple provide honestly).
+  // 2) Qualité — the real stage composition when a sleep session is available
+  //    (deep %, REM %, efficiency); otherwise fall back to the device efficiency
+  //    metric. Both paths are surfaced honestly in the detail line.
+  const session = latestSession(sessions, asOf);
+  const phase = session ? sleepPhaseQuality(session) : null;
   const efficiency = latest(metrics, 'sleep_efficiency', asOf);
+  const qualityValue =
+    phase !== null
+      ? phase.score
+      : efficiency !== undefined
+        ? Math.round(clamp(efficiency))
+        : null;
   components.push({
     key: 'quality',
     label: COMPONENT_LABEL.quality,
     weight: COMPONENT_WEIGHT.quality,
-    value: efficiency !== undefined ? Math.round(clamp(efficiency)) : null,
+    value: qualityValue,
     detail:
-      efficiency !== undefined
-        ? `Basé sur le score de sommeil de ton appareil (${Math.round(efficiency)}/100).`
-        : 'Nécessite un score/efficacité de sommeil (Garmin).',
+      phase !== null
+        ? `Profond ${phase.deepPct}%, paradoxal ${phase.remPct}%, efficacité ${phase.efficiencyPct}%.`
+        : efficiency !== undefined
+          ? `Basé sur le score de sommeil de ton appareil (${Math.round(efficiency)}/100).`
+          : 'Nécessite les phases de sommeil ou un score/efficacité (Garmin/Apple).',
   });
 
   // 3) Régularité — how consistent bedtimes are across the window.

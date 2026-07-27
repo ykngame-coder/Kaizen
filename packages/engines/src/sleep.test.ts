@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import type { HealthMetric, HealthMetricType } from '@supotsu/core';
+import type { HealthMetric, HealthMetricType, SleepSession } from '@supotsu/core';
 import {
   averageSleepHours,
   bedtimeSpreadMinutes,
@@ -8,6 +8,7 @@ import {
   sleepBand,
   sleepCoaching,
   sleepDebtHours,
+  sleepPhaseQuality,
   sleepTrend,
 } from './sleep';
 
@@ -48,6 +49,55 @@ function metricAt(
     updatedAt: measuredAt,
   };
 }
+
+function session(over: Partial<SleepSession> = {}): SleepSession {
+  return {
+    id: 'sess1',
+    userId: 'u1',
+    source: 'apple_health',
+    startedAt: nightsAgo(0),
+    endedAt: nightsAgo(0),
+    deepMin: 90,
+    lightMin: 240,
+    remMin: 100,
+    awakeMin: 30,
+    asleepMin: 430,
+    inBedMin: 460,
+    createdAt: nightsAgo(0),
+    updatedAt: nightsAgo(0),
+    ...over,
+  };
+}
+
+describe('sleepPhaseQuality', () => {
+  it('rewards healthy deep/REM proportions and high efficiency', () => {
+    const q = sleepPhaseQuality(session())!;
+    expect(q.deepPct).toBe(21); // 90/430
+    expect(q.remPct).toBe(23); // 100/430
+    expect(q.efficiencyPct).toBe(93); // 430/460
+    expect(q.score).toBeGreaterThanOrEqual(90);
+  });
+
+  it('scores a stage-poor night lower', () => {
+    const poor = sleepPhaseQuality(session({ deepMin: 20, remMin: 20, lightMin: 300, asleepMin: 340 }))!;
+    expect(poor.score).toBeLessThan(75);
+  });
+
+  it('returns null when nothing was asleep', () => {
+    expect(sleepPhaseQuality(session({ asleepMin: 0 }))).toBeNull();
+  });
+});
+
+describe('computeSleepScore2 with phases', () => {
+  it('uses phase composition for Qualité when a session is present', () => {
+    const metrics = [sleep(7.5, 0)];
+    const withPhases = computeSleepScore2(metrics, ASOF, 7, [session({ startedAt: nightsAgo(0) })]);
+    const quality = withPhases.components.find((c) => c.key === 'quality')!;
+    expect(quality.value).toBeGreaterThanOrEqual(90);
+    expect(quality.detail).toContain('Profond');
+    expect(quality.detail).toContain('paradoxal');
+  });
+});
 
 describe('computeSleepScore', () => {
   it('is to_confirm with no data', () => {

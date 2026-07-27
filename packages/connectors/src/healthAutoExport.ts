@@ -1,5 +1,5 @@
 import type { ActivityType, HealthMetricType } from '@supotsu/core';
-import type { ImportedActivity, ImportedHealthMetric } from './types';
+import type { ImportedActivity, ImportedHealthMetric, ImportedSleepSession } from './types';
 import type { ParsedImport } from './healthImport';
 
 /**
@@ -146,6 +146,47 @@ export function parseHealthAutoExportSleep(points: HaeSleepPoint[]): ImportedHea
   return out;
 }
 
+const H_TO_MIN = 60;
+
+/**
+ * sleep_analysis → one ImportedSleepSession per night with its stage minutes.
+ * The export is nightly-aggregated, so `segments` (the minute-by-minute
+ * hypnogram) is intentionally left undefined — never fabricated.
+ */
+export function parseHealthAutoExportSleepSessions(
+  points: HaeSleepPoint[],
+): ImportedSleepSession[] {
+  const out: ImportedSleepSession[] = [];
+  for (const p of points ?? []) {
+    const startedAt = haeToIso(p.sleepStart) ?? haeToIso(p.inBedStart) ?? haeToIso(p.date);
+    const endedAt = haeToIso(p.sleepEnd) ?? haeToIso(p.inBedEnd);
+    if (!startedAt || !endedAt) continue;
+
+    const deepMin = (asNum(p.deep) ?? 0) * H_TO_MIN;
+    const lightMin = (asNum(p.core) ?? 0) * H_TO_MIN;
+    const remMin = (asNum(p.rem) ?? 0) * H_TO_MIN;
+    const awakeMin = (asNum(p.awake) ?? 0) * H_TO_MIN;
+    const stageAsleep = deepMin + lightMin + remMin;
+    const asleepMin = asNum(p.totalSleep) !== undefined ? asNum(p.totalSleep)! * H_TO_MIN : stageAsleep;
+    if (asleepMin <= 0) continue;
+    const inBedMin = asNum(p.inBed) !== undefined ? asNum(p.inBed)! * H_TO_MIN : asleepMin + awakeMin;
+
+    out.push({
+      source: 'apple_health',
+      reliability: 'high',
+      startedAt,
+      endedAt,
+      deepMin: Math.round(deepMin),
+      lightMin: Math.round(lightMin),
+      remMin: Math.round(remMin),
+      awakeMin: Math.round(awakeMin),
+      asleepMin: Math.round(asleepMin),
+      inBedMin: Math.round(inBedMin),
+    });
+  }
+  return out;
+}
+
 /** Localized workout name → Supotsu ActivityType (accent-insensitive keywords). */
 function mapWorkoutName(name: unknown): ActivityType {
   const n = (typeof name === 'string' ? name : '')
@@ -219,14 +260,17 @@ export function parseHealthAutoExport(json: unknown): ParsedImport | null {
   const data = (json as { data: { metrics?: HaeMetric[]; workouts?: HaeWorkout[] } }).data;
 
   const healthMetrics: ImportedHealthMetric[] = [];
+  const sleepSessions: ImportedSleepSession[] = [];
   for (const m of data.metrics ?? []) {
     if (m?.name === 'sleep_analysis') {
-      healthMetrics.push(...parseHealthAutoExportSleep((m.data ?? []) as HaeSleepPoint[]));
+      const points = (m.data ?? []) as HaeSleepPoint[];
+      healthMetrics.push(...parseHealthAutoExportSleep(points));
+      sleepSessions.push(...parseHealthAutoExportSleepSessions(points));
     } else {
       healthMetrics.push(...parseScalarMetric(m));
     }
   }
 
   const activities = parseHealthAutoExportWorkouts(data.workouts ?? []);
-  return { activities, healthMetrics, records: [] };
+  return { activities, healthMetrics, records: [], sleepSessions };
 }

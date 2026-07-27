@@ -268,6 +268,7 @@ export function detectAndParseGarminFile(json: unknown): ParsedImport | null {
     activities: p.activities ?? [],
     healthMetrics: p.healthMetrics ?? [],
     records: p.records ?? [],
+    sleepSessions: p.sleepSessions ?? [],
   });
 
   if (sample.some((x) => has(x, 'sleepStartTimestampGMT') || has(x, 'sleepEndTimestampGMT'))) {

@@ -6,6 +6,7 @@ import type {
   ISODateString,
   RecordCategory,
   Reliability,
+  SleepSegment,
 } from '@supotsu/core';
 
 /**
@@ -46,6 +47,21 @@ export interface ImportedHealthMetric {
   source: DataSource;
   reliability?: Reliability;
   measuredAt: ISODateString;
+}
+
+/** Normalized night of sleep with its stage breakdown, provenance preserved. */
+export interface ImportedSleepSession {
+  source: DataSource;
+  reliability?: Reliability;
+  startedAt: ISODateString;
+  endedAt: ISODateString;
+  deepMin: number;
+  lightMin: number;
+  remMin: number;
+  awakeMin: number;
+  asleepMin: number;
+  inBedMin: number;
+  segments?: SleepSegment[];
 }
 
 /** Normalized personal record / benchmark. */

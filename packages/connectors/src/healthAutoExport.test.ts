@@ -3,6 +3,7 @@ import {
   isHealthAutoExport,
   parseHealthAutoExport,
   parseHealthAutoExportSleep,
+  parseHealthAutoExportSleepSessions,
   parseHealthAutoExportWorkouts,
 } from './healthAutoExport';
 import { parseImportFile } from './garminExport';
@@ -61,6 +62,26 @@ describe('parseHealthAutoExportSleep', () => {
 
   it('skips nights without a usable asleep value', () => {
     expect(parseHealthAutoExportSleep([{ date: '2026-06-26 00:00:00 +0200' }])).toHaveLength(0);
+  });
+});
+
+describe('parseHealthAutoExportSleepSessions', () => {
+  it('maps a night to stage minutes without fabricating a timeline', () => {
+    const [s] = parseHealthAutoExportSleepSessions([SLEEP_NIGHT]);
+    expect(s?.source).toBe('apple_health');
+    expect(s?.startedAt).toBe('2026-06-25T23:30:31.000Z'); // sleepStart
+    expect(s?.endedAt).toBe('2026-06-26T07:16:30.000Z'); // sleepEnd
+    expect(s?.deepMin).toBe(137); // 2.283 h
+    expect(s?.lightMin).toBe(182); // 3.033 h (core)
+    expect(s?.remMin).toBe(75); // 1.25 h
+    expect(s?.awakeMin).toBe(72); // 1.2 h
+    expect(s?.asleepMin).toBe(394); // 6.566 h
+    expect(s?.inBedMin).toBe(466); // 7.767 h
+    expect(s?.segments).toBeUndefined(); // no minute-by-minute data in the export
+  });
+
+  it('skips nights missing start or end', () => {
+    expect(parseHealthAutoExportSleepSessions([{ deep: 1 }])).toHaveLength(0);
   });
 });
 

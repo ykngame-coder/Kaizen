@@ -61,12 +61,14 @@ export function ImportHealthScreen(): React.JSX.Element {
       const activities: Parameters<typeof importHealth.mutateAsync>[0]['activities'] = [];
       const healthMetrics: Parameters<typeof importHealth.mutateAsync>[0]['healthMetrics'] = [];
       const records: Parameters<typeof importHealth.mutateAsync>[0]['records'] = [];
+      const sleepSessions: Parameters<typeof importHealth.mutateAsync>[0]['sleepSessions'] = [];
       let failed = 0;
       const absorb = (text: string): void => {
         const parsed = parseImportFile(JSON.parse(text));
         activities.push(...parsed.activities);
         healthMetrics.push(...parsed.healthMetrics);
         records.push(...parsed.records);
+        sleepSessions.push(...parsed.sleepSessions);
       };
 
       for (const asset of res.assets) {
@@ -91,18 +93,19 @@ export function ImportHealthScreen(): React.JSX.Element {
         }
       }
 
-      if (activities.length + healthMetrics.length + records.length === 0) {
+      if (activities.length + healthMetrics.length + records.length + sleepSessions.length === 0) {
         setStatus({
           tone: 'error',
           text: failed > 0 ? `Aucune donnée reconnue (${failed} fichier(s) illisible(s)).` : 'Aucune donnée reconnue.',
         });
         return;
       }
-      await importHealth.mutateAsync({ activities, healthMetrics, records });
+      await importHealth.mutateAsync({ activities, healthMetrics, records, sleepSessions });
       setStatus({
         tone: 'success',
         text:
-          `Importé : ${activities.length} activité(s), ${healthMetrics.length} donnée(s) santé, ${records.length} record(s)` +
+          `Importé : ${activities.length} activité(s), ${healthMetrics.length} donnée(s) santé, ` +
+          `${sleepSessions.length} nuit(s), ${records.length} record(s)` +
           (failed > 0 ? ` (${failed} fichier(s) ignoré(s)).` : '.'),
       });
     } catch (e) {

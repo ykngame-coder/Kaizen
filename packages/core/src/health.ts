@@ -24,3 +24,39 @@ export interface HealthMetric extends OwnedEntity {
   reliability?: Reliability;
   measuredAt: ISODateString;
 }
+
+/** Sleep stages tracked per night (Master Prompt P32.10, Cahier des charges §3.10). */
+export type SleepStage = 'deep' | 'light' | 'rem' | 'awake';
+
+/** One contiguous stretch of a single stage — the building block of a hypnogram. */
+export interface SleepSegment {
+  stage: SleepStage;
+  startedAt: ISODateString;
+  endedAt: ISODateString;
+}
+
+/**
+ * One night's sleep with its stage breakdown. Complements `sleep_duration` /
+ * `sleep_efficiency` health metrics with the phase composition a device provides
+ * (Apple Santé / Garmin). Minutes are per stage; `segments` (the minute-by-minute
+ * timeline) is only present when the source exposes it — nightly-aggregated
+ * exports omit it, so the UI must not fabricate one.
+ */
+export interface SleepSession extends OwnedEntity {
+  source: DataSource;
+  reliability?: Reliability;
+  /** Bedtime (fell asleep / got in bed). */
+  startedAt: ISODateString;
+  /** Wake time. */
+  endedAt: ISODateString;
+  deepMin: number;
+  lightMin: number;
+  remMin: number;
+  awakeMin: number;
+  /** Minutes actually asleep (deep + light + rem). */
+  asleepMin: number;
+  /** Minutes in bed (asleep + awake). */
+  inBedMin: number;
+  /** Contiguous stage segments, when the source provides a real timeline. */
+  segments?: SleepSegment[];
+}
