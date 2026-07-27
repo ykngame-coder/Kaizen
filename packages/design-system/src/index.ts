@@ -1,5 +1,5 @@
-export { palette } from './colors';
-export type { Palette } from './colors';
+export { palette, gradients } from './colors';
+export type { Palette, Gradients } from './colors';
 
 export { darkTheme, lightTheme, themes } from './theme';
 export type { SemanticColors, ThemeName } from './theme';

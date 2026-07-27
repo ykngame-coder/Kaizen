@@ -7,18 +7,19 @@
  */
 
 export const palette = {
-  // Signature brand color — energetic emerald = progression / health / performance.
+  // Signature brand color — the Kaizen Supotsu logo gradient collapses to a
+  // "blurple" primary; the full blue→purple→pink gradient lives in `gradients`.
   brand: {
-    50: '#e6fff7',
-    100: '#b3ffe8',
-    200: '#80ffd9',
-    300: '#4dffca',
-    400: '#1af0b4',
-    500: '#00d99b', // primary
-    600: '#00b37f',
-    700: '#008c64',
-    800: '#006649',
-    900: '#00402e',
+    50: '#f0ecff',
+    100: '#dcd0ff',
+    200: '#c0aaff',
+    300: '#a17dff',
+    400: '#8a5cff',
+    500: '#7c5cff', // primary
+    600: '#6a3ff0',
+    700: '#5730c9',
+    800: '#3f2391',
+    900: '#281559',
   },
   // Neutral ramp tuned for OLED-friendly dark surfaces.
   neutral: {
@@ -42,6 +43,7 @@ export const palette = {
     mobility: '#a78bfa', // mobilité
     recovery: '#22d3ee', // récupération
     lime: '#c6f24e', // secondary highlight accent (energy / streaks / focus)
+    data: '#00d99b', // emerald — positive data-viz (scores, upward trends)
   },
   // System / state colors (Master Prompt P28.5, P47.4).
   state: {
@@ -52,4 +54,17 @@ export const palette = {
   },
 } as const;
 
+/**
+ * Signature gradients (Kaizen Supotsu logo). Multi-stop arrays consumed by the
+ * `Gradient` primitive — kept out of the semantic theme so the CSS-variable
+ * derivation stays string-only.
+ */
+export const gradients = {
+  /** Brand: blue → purple → pink. Buttons, active states, hero rings. */
+  brand: ['#4c8dff', '#8b5cf6', '#ec4899'],
+  /** Positive data: emerald → cyan. Scores, upward trends, recovery. */
+  data: ['#00d99b', '#22d3ee'],
+} as const;
+
 export type Palette = typeof palette;
+export type Gradients = typeof gradients;

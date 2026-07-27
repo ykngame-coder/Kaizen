@@ -9,6 +9,8 @@ export { Card } from './Card';
 export type { CardProps } from './Card';
 export { Button } from './Button';
 export type { ButtonProps, ButtonVariant } from './Button';
+export { Gradient } from './Gradient';
+export type { GradientProps, GradientName } from './Gradient';
 export { Badge } from './Badge';
 export type { BadgeProps, BadgeTone } from './Badge';
 export { KPICard } from './KPICard';

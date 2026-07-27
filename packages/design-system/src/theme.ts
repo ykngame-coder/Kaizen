@@ -32,6 +32,8 @@ export interface SemanticColors {
   accentRecovery: string;
   /** Secondary highlight accent (energy / streaks / focus) — lime. */
   accentLime: string;
+  /** Positive data-viz accent (scores, upward trends) — emerald. */
+  accentData: string;
   /** State colors. */
   success: string;
   warning: string;
@@ -48,12 +50,13 @@ export const darkTheme: SemanticColors = {
   textMuted: palette.neutral[300],
   textSubtle: palette.neutral[500],
   primary: palette.brand[500],
-  onPrimary: palette.neutral[950],
+  onPrimary: palette.neutral[0],
   accentStrength: palette.accent.strength,
   accentEndurance: palette.accent.endurance,
   accentMobility: palette.accent.mobility,
   accentRecovery: palette.accent.recovery,
   accentLime: palette.accent.lime,
+  accentData: palette.accent.data,
   success: palette.state.success,
   warning: palette.state.warning,
   error: palette.state.error,
@@ -75,6 +78,7 @@ export const lightTheme: SemanticColors = {
   accentMobility: palette.accent.mobility,
   accentRecovery: palette.accent.recovery,
   accentLime: palette.accent.lime,
+  accentData: palette.accent.data,
   success: palette.state.success,
   warning: palette.state.warning,
   error: palette.state.error,
