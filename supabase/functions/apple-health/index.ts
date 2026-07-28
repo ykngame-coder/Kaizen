@@ -7,9 +7,12 @@
 //
 // Route: POST /functions/v1/apple-health/ingest
 //   header  X-Supotsu-Token: <ingest token>   (or ?token=)
-//   body    { "metrics": [ { "type": "hrv", "value": 61, "date": "2026-07-20T05:00:00Z" }, ... ] }
+//   body, either:
+//     · Shortcut format : { "metrics": [ { "type": "hrv", "value": 61, "date": "…ISO…" }, … ] }
+//     · Health Auto Export: { "data": { "metrics": [ { "name": "resting_heart_rate",
+//                            "data": [ { "date": "2026-07-26 00:00:00 +0200", "qty": 56 } ] }, … ] } }
 //
-// Normalization mirrors packages/connectors/src/appleHealth.ts (tested spec).
+// Normalization mirrors packages/connectors/src/{appleHealth,healthAutoExport}.ts (tested spec).
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.47.10';
 
@@ -29,11 +32,62 @@ const UNITS: Record<string, string> = {
   hrv: 'ms',
   resting_heart_rate: 'bpm',
   sleep_duration: 'h',
+  sleep_efficiency: 'score',
   stress: 'score',
   weight: 'kg',
   body_fat: '%',
+  muscle_mass: 'kg',
   hydration: 'ml',
 };
+
+// Health Auto Export metric name → Supotsu type (mirrors healthAutoExport.ts).
+const HAE_MAP: Record<string, string> = {
+  heart_rate_variability: 'hrv',
+  resting_heart_rate: 'resting_heart_rate',
+  weight_body_mass: 'weight',
+  body_fat_percentage: 'body_fat',
+  lean_body_mass: 'muscle_mass',
+  dietary_water: 'hydration',
+};
+
+/** "2026-07-26 00:00:00 +0200" (or ISO) → UTC ISO, else null. */
+function haeDate(ts: unknown): string | null {
+  if (typeof ts !== 'string') return null;
+  const m = ts.match(/^(\d{4})-(\d{2})-(\d{2})[ T](\d{2}):(\d{2}):(\d{2})\s*([+-]\d{2}):?(\d{2})?$/);
+  const iso = m ? `${m[1]}-${m[2]}-${m[3]}T${m[4]}:${m[5]}:${m[6]}${m[7]}:${m[8] ?? '00'}` : ts;
+  const d = new Date(iso);
+  return Number.isNaN(d.getTime()) ? null : d.toISOString();
+}
+
+/** Flatten Health Auto Export's { data: { metrics } } to simple entries. */
+// deno-lint-ignore no-explicit-any
+function fromHealthAutoExport(data: any): { type: string; value: number; date: string }[] {
+  const out: { type: string; value: number; date: string }[] = [];
+  for (const metric of Array.isArray(data?.metrics) ? data.metrics : []) {
+    const points = Array.isArray(metric?.data) ? metric.data : [];
+    if (metric?.name === 'sleep_analysis') {
+      for (const p of points) {
+        const date = haeDate(p?.sleepEnd ?? p?.date);
+        const total = Number(p?.totalSleep);
+        const inBed = Number(p?.inBed);
+        if (!date || !Number.isFinite(total) || total <= 0) continue;
+        out.push({ type: 'sleep_duration', value: total, date });
+        if (Number.isFinite(inBed) && inBed > 0) {
+          out.push({ type: 'sleep_efficiency', value: Math.min(100, (total / inBed) * 100), date });
+        }
+      }
+      continue;
+    }
+    const type = HAE_MAP[metric?.name];
+    if (!type) continue;
+    for (const p of points) {
+      const value = Number(p?.qty);
+      const date = haeDate(p?.date);
+      if (Number.isFinite(value) && date) out.push({ type, value, date });
+    }
+  }
+  return out;
+}
 
 // deno-lint-ignore no-explicit-any
 function normalize(entries: any[], userId: string): Record<string, unknown>[] {
@@ -69,14 +123,19 @@ async function handleIngest(req: Request, url: URL): Promise<Response> {
     .maybeSingle();
   if (!acc) return json({ error: 'invalid token' }, 401);
 
-  let body: { metrics?: unknown[] };
+  // deno-lint-ignore no-explicit-any
+  let body: any;
   try {
     body = await req.json();
   } catch {
     return json({ error: 'invalid json' }, 400);
   }
 
-  const rows = normalize((body.metrics as unknown[]) ?? [], acc.user_id);
+  // Accept either the Shortcut format or Health Auto Export ({ data: { metrics } }).
+  const entries = body?.data && Array.isArray(body.data.metrics)
+    ? fromHealthAutoExport(body.data)
+    : ((body?.metrics as unknown[]) ?? []);
+  const rows = normalize(entries, acc.user_id);
   if (rows.length > 0) {
     // Idempotent via the (user, type, measured_at, source) unique index.
     const { error } = await db
