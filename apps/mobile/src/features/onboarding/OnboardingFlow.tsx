@@ -7,13 +7,15 @@ import {
   Button,
   Card,
   ChipMultiSelect,
+  Gradient,
   Input,
   KPICard,
   Screen,
   SegmentedControl,
   Text,
+  useTheme,
 } from '@supotsu/ui';
-import { spacing } from '@supotsu/design-system';
+import { radii, spacing } from '@supotsu/design-system';
 import { useAuth } from '@/features/auth/AuthProvider';
 import { useOnboarding } from './OnboardingProvider';
 import { onboardingSchema, STEP_FIELDS, type OnboardingForm } from './onboardingSchema';
@@ -76,6 +78,7 @@ const STEP_TITLES = [
 export function OnboardingFlow(): React.JSX.Element {
   const { user, signOut } = useAuth();
   const { complete } = useOnboarding();
+  const { colors } = useTheme();
   const [step, setStep] = useState(0);
   const [submitError, setSubmitError] = useState<string | null>(null);
   const lastStep = STEP_TITLES.length - 1;
@@ -129,10 +132,24 @@ export function OnboardingFlow(): React.JSX.Element {
 
   return (
     <Screen scroll>
-      <View style={{ gap: spacing[1], marginTop: spacing[6] }}>
+      <View style={{ gap: spacing[2], marginTop: spacing[6] }}>
         <Text variant="label" color="textMuted">
           ÉTAPE {step + 1} / {lastStep + 1}
         </Text>
+        <View
+          style={{
+            height: 6,
+            borderRadius: radii.full,
+            backgroundColor: colors.surfaceElevated,
+            overflow: 'hidden',
+          }}
+        >
+          <Gradient
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 0 }}
+            style={{ width: `${((step + 1) / (lastStep + 1)) * 100}%`, height: '100%' }}
+          />
+        </View>
         <Text variant="title">{STEP_TITLES[step]}</Text>
       </View>
 

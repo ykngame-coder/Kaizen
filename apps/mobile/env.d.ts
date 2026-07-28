@@ -8,3 +8,9 @@ declare const process: {
     EXPO_PUBLIC_SUPABASE_ANON_KEY?: string;
   };
 };
+
+/** Static image assets bundled by Metro resolve to an opaque asset id. */
+declare module '*.png' {
+  const asset: number;
+  export default asset;
+}

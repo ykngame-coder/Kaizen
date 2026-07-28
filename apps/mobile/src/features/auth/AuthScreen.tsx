@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View } from 'react-native';
+import { Image, View } from 'react-native';
 import { Link } from 'expo-router';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -8,6 +8,7 @@ import { spacing } from '@supotsu/design-system';
 import { useAuth } from './AuthProvider';
 import { credentialsSchema, type Credentials } from './authSchema';
 import type { OAuthProvider } from './authClient';
+import appIcon from '../../../assets/icon.png';
 
 type Mode = 'signIn' | 'signUp';
 
@@ -77,12 +78,13 @@ export function AuthScreen({ mode }: { mode: Mode }): React.JSX.Element {
 
   return (
     <Screen scroll>
-      <View style={{ gap: spacing[1], marginTop: spacing[8] }}>
+      <View style={{ alignItems: 'center', gap: spacing[2], marginTop: spacing[8] }}>
+        <Image source={appIcon} style={{ width: 88, height: 88, borderRadius: 22 }} />
         <Text variant="display">Kaizen Supotsu</Text>
         <Text variant="caption" color="textSubtle">
           Progresser aujourd'hui, être meilleur demain.
         </Text>
-        <Text variant="body" color="textMuted">
+        <Text variant="body" color="textMuted" style={{ marginTop: spacing[1] }}>
           {copy.title}
         </Text>
       </View>
