@@ -1,7 +1,7 @@
 import React, { useMemo } from 'react';
 import { View } from 'react-native';
 import { useRouter } from 'expo-router';
-import { Badge, Button, Card, KPICard, Screen, Text, useTheme } from '@supotsu/ui';
+import { Badge, Button, Card, ProgressRing, Screen, Text, useTheme } from '@supotsu/ui';
 import { spacing } from '@supotsu/design-system';
 import {
   computeNutritionScore,
@@ -85,6 +85,14 @@ export function NutritionScreen(): React.JSX.Element {
   const today = useMemo(() => entriesForDay(entries, asOf), [entries, asOf]);
   const hasData = today.length > 0;
 
+  // Carb/fat targets aren't stored — derive them from the remaining calories
+  // after protein (transparent 55/45 split), same as the dashboard widget.
+  const kcalTarget = targets.value.kcal;
+  const remainingKcal = Math.max(0, kcalTarget - targets.value.proteinG * 4);
+  const carbTarget = Math.round((remainingKcal * 0.55) / 4);
+  const fatTarget = Math.round((remainingKcal * 0.45) / 9);
+  const kcalPct = hasData && kcalTarget > 0 ? Math.min(100, (totals.kcal / kcalTarget) * 100) : 0;
+
   return (
     <Screen scroll>
       <Text variant="title">Nutrition</Text>
@@ -92,20 +100,29 @@ export function NutritionScreen(): React.JSX.Element {
         Ce que tu manges et bois, expliqué — pas de calcul opaque.
       </Text>
 
-      <KPICard
-        label="Score nutrition du jour"
-        value={hasData ? String(score.value) : '—'}
-        unit="/100"
-        caption={
-          hasData
-            ? 'Basé sur calories, protéines et hydratation vs tes cibles.'
-            : 'Ajoute un repas pour calculer ton score.'
-        }
-      />
+      <Card>
+        <View style={{ alignItems: 'center', gap: spacing[2] }}>
+          <ProgressRing
+            value={kcalPct}
+            color={colors.primary}
+            centerLabel={hasData ? String(Math.round(totals.kcal)) : '—'}
+            caption={`/ ${Math.round(kcalTarget)} kcal`}
+            size={148}
+          />
+          <View style={{ flexDirection: 'row', gap: spacing[2], alignItems: 'center' }}>
+            <Badge label={hasData ? `Score ${score.value}/100` : 'À calibrer'} tone="info" />
+            <Text variant="caption" color="textMuted">
+              {hasData
+                ? `${Math.max(0, Math.round(kcalTarget - totals.kcal))} kcal restantes`
+                : 'Ajoute un repas pour calculer ton score.'}
+            </Text>
+          </View>
+        </View>
+      </Card>
 
       <Card>
         <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-          <Text variant="heading">Cibles du jour</Text>
+          <Text variant="heading">Macros du jour</Text>
           <Badge label="À confirmer" tone="warning" />
         </View>
         <Text variant="caption" color="textMuted">
@@ -113,43 +130,22 @@ export function NutritionScreen(): React.JSX.Element {
         </Text>
         <View style={{ gap: spacing[3], marginTop: spacing[2] }}>
           <MacroBar
-            label="Calories"
-            current={totals.kcal}
-            target={targets.value.kcal}
-            unit="kcal"
-            color={colors.primary}
-          />
-          <MacroBar
             label="Protéines"
             current={totals.proteinG}
             target={targets.value.proteinG}
             unit="g"
-            color={colors.success}
+            color={colors.accentData}
           />
+          <MacroBar label="Glucides" current={totals.carbG} target={carbTarget} unit="g" color={colors.info} />
+          <MacroBar label="Lipides" current={totals.fatG} target={fatTarget} unit="g" color={colors.warning} />
           <MacroBar
             label="Hydratation"
             current={totals.hydrationMl}
             target={targets.value.hydrationMl}
             unit="ml"
-            color={colors.info}
+            color={colors.accentEndurance}
           />
         </View>
-        {(totals.carbG > 0 || totals.fatG > 0) && (
-          <View style={{ flexDirection: 'row', gap: spacing[4], marginTop: spacing[3] }}>
-            <View>
-              <Text variant="caption" color="textSubtle">
-                Glucides
-              </Text>
-              <Text variant="body">{Math.round(totals.carbG)} g</Text>
-            </View>
-            <View>
-              <Text variant="caption" color="textSubtle">
-                Lipides
-              </Text>
-              <Text variant="body">{Math.round(totals.fatG)} g</Text>
-            </View>
-          </View>
-        )}
       </Card>
 
       {explanation ? (
