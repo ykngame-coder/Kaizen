@@ -15,6 +15,8 @@ export interface BodyMapProps {
   /** Fill colour for a muscle group (freshness, targeting, …). */
   colorFor: (muscle: MuscleGroup) => string;
   width?: number;
+  /** 'both' shows front + back side by side; 'front'/'back' a single figure. */
+  view?: 'front' | 'back' | 'both';
 }
 
 // Grey silhouette (head, neck, torso, arms, legs), local coords.
@@ -66,7 +68,7 @@ const BACK: [MuscleGroup, string][] = [
 const FRONT_DETAIL = ['M40 64 L40 97', 'M33 72 L47 72', 'M33 80 L47 80', 'M33 88 L47 88', 'M40 48 L40 62'];
 const BACK_DETAIL = ['M40 45 L40 85'];
 
-export function BodyMap({ colorFor, width = 300 }: BodyMapProps): React.JSX.Element {
+export function BodyMap({ colorFor, width = 300, view = 'both' }: BodyMapProps): React.JSX.Element {
   const { colors } = useTheme();
   const limb = colors.surfaceElevated;
   const stroke = colors.border;
@@ -96,6 +98,15 @@ export function BodyMap({ colorFor, width = 300 }: BodyMapProps): React.JSX.Elem
       ))}
     </G>
   );
+
+  if (view !== 'both') {
+    // Single figure, centred in an 82×226 viewBox (one body + margin).
+    return (
+      <Svg width={width} height={width * (226 / 82)} viewBox="0 0 82 226">
+        {view === 'front' ? figure(FRONT, FRONT_DETAIL, 8) : figure(BACK, BACK_DETAIL, 8)}
+      </Svg>
+    );
+  }
 
   return (
     <Svg width={width} height={width * (240 / 220)} viewBox="0 0 220 240">
