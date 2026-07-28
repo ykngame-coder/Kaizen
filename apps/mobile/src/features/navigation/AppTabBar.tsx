@@ -13,13 +13,12 @@ interface TabDef {
   path: Href;
 }
 
-/** The five main sections — mirrors the (tabs) group, always reachable. */
+/** The five main sections (architecture: APP → Application). Always reachable. */
 const TABS: TabDef[] = [
   { key: 'index', label: 'Accueil', icon: '◎', path: '/' },
-  { key: 'training', label: 'Entraînement', icon: '⚡', path: '/training' },
-  { key: 'activities', label: 'Activités', icon: '≋', path: '/activities' },
-  { key: 'nutrition', label: 'Nutrition', icon: '◍', path: '/nutrition' },
-  { key: 'coach', label: 'Coach', icon: '✦', path: '/coach' },
+  { key: 'training', label: 'Entraînements', icon: '⚡', path: '/training' },
+  { key: 'sante', label: 'Santé', icon: '♥', path: '/sante' },
+  { key: 'progression', label: 'Progression', icon: '↗', path: '/progression' },
   { key: 'profile', label: 'Profil', icon: '☰', path: '/profile' },
 ];
 

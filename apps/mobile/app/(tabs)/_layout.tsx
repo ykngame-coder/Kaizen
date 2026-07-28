@@ -6,6 +6,8 @@ import { useTheme } from '@supotsu/ui';
 const ICONS: Record<string, string> = {
   index: '◎',
   training: '⚡',
+  sante: '♥',
+  progression: '↗',
   activities: '≋',
   nutrition: '◍',
   coach: '✦',
@@ -34,12 +36,16 @@ export default function TabsLayout(): React.JSX.Element {
         ),
       })}
     >
+      {/* The 5 sections shown in the persistent AppTabBar */}
       <Tabs.Screen name="index" options={{ title: 'Accueil' }} />
-      <Tabs.Screen name="training" options={{ title: 'Entraînement' }} />
+      <Tabs.Screen name="training" options={{ title: 'Entraînements' }} />
+      <Tabs.Screen name="sante" options={{ title: 'Santé' }} />
+      <Tabs.Screen name="progression" options={{ title: 'Progression' }} />
+      <Tabs.Screen name="profile" options={{ title: 'Profil' }} />
+      {/* Still routable (linked from hubs/Accueil), not shown in the bar */}
       <Tabs.Screen name="activities" options={{ title: 'Activités' }} />
       <Tabs.Screen name="nutrition" options={{ title: 'Nutrition' }} />
       <Tabs.Screen name="coach" options={{ title: 'Coach IA' }} />
-      <Tabs.Screen name="profile" options={{ title: 'Profil' }} />
     </Tabs>
   );
 }

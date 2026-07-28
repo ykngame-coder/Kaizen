@@ -53,13 +53,13 @@ function MiniBars({ values, color, height = 44 }: { values: number[]; color: str
 }
 
 const QUICK_LINKS: { label: string; icon: string; path: Href }[] = [
-  { label: 'Muscles', icon: '💪', path: '/muscles' },
+  { label: 'Coach IA', icon: '✦', path: '/coach' },
+  { label: 'Sommeil', icon: '😴', path: '/sleep' },
   { label: 'Nutrition', icon: '◍', path: '/nutrition' },
   { label: 'Objectifs', icon: '🎯', path: '/goals' },
   { label: 'Habitudes', icon: '✓', path: '/wellness' },
-  { label: 'Statistiques', icon: '📊', path: '/analytics' },
   { label: 'Calendrier', icon: '🗓', path: '/calendar' },
-  { label: 'Récup neuro', icon: '✦', path: '/neuro-recovery' },
+  { label: 'Récup neuro', icon: '🧠', path: '/neuro-recovery' },
   { label: 'Notifications', icon: '🔔', path: '/notifications' },
 ];
 

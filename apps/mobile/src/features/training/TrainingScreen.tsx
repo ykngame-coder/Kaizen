@@ -1,41 +1,22 @@
 import React from 'react';
-import { Pressable, View } from 'react-native';
+import { View } from 'react-native';
 import { useRouter, type Href } from 'expo-router';
-import { Button, Card, Screen, Text, useTheme } from '@supotsu/ui';
+import { Button, Card, Screen, Text } from '@supotsu/ui';
 import { spacing } from '@supotsu/design-system';
 import { useWorkouts } from '@/lib/data/queries';
 import { formatDate } from '@/lib/format';
+import { HubRow } from '@/features/navigation/HubRow';
 
-const NAV: { title: string; subtitle: string; path: Href }[] = [
-  { title: 'Mes records', subtitle: '1RM, meilleurs temps, distances — importés de Garmin.', path: '/records' },
-  { title: 'Carte musculaire', subtitle: 'Quels muscles sont fatigués et lesquels sont prêts.', path: '/muscles' },
-  { title: "Charge d'entraînement", subtitle: 'Ton ratio charge aiguë / chronique.', path: '/load' },
-  { title: 'Programmes de coachs', subtitle: 'Suis un programme structuré et recommandé.', path: '/marketplace' },
+const NAV: { title: string; subtitle: string; icon: string; path?: Href; soon?: boolean }[] = [
+  { title: 'Calendrier', subtitle: 'Tes séances et événements', icon: '🗓', path: '/calendar' },
+  { title: 'Programmes', subtitle: 'Programmes structurés et recommandés', icon: '📋', path: '/marketplace' },
+  { title: 'Récupération musculaire', subtitle: 'Muscles fatigués vs prêts à travailler', icon: '💪', path: '/muscles' },
+  { title: 'Records', subtitle: '1RM, meilleurs temps, distances', icon: '🏆', path: '/records' },
+  { title: 'Exercices', subtitle: 'Bibliothèque, tutoriels, recherche', icon: '📚', soon: true },
+  { title: 'Progression musculaire', subtitle: 'Volume et charge par groupe', icon: '📈', soon: true },
 ];
 
-/** A tappable navigation row inside a card, with a chevron. */
-function NavRow({ title, subtitle, onPress }: { title: string; subtitle: string; onPress: () => void }): React.JSX.Element {
-  const { colors } = useTheme();
-  return (
-    <Pressable onPress={onPress} style={({ pressed }) => ({ opacity: pressed ? 0.85 : 1 })}>
-      <Card>
-        <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
-          <View style={{ flex: 1, paddingRight: spacing[2] }}>
-            <Text variant="heading">{title}</Text>
-            <Text variant="caption" color="textMuted">
-              {subtitle}
-            </Text>
-          </View>
-          <Text variant="subtitle" style={{ color: colors.textSubtle }}>
-            ›
-          </Text>
-        </View>
-      </Card>
-    </Pressable>
-  );
-}
-
-/** Training home: workout history + entry point to log a session (P36, P20.3). */
+/** Entraînements hub (architecture: Application → Entraînements). */
 export function TrainingScreen(): React.JSX.Element {
   const router = useRouter();
   const { data: workouts = [], isLoading } = useWorkouts();
@@ -43,13 +24,22 @@ export function TrainingScreen(): React.JSX.Element {
   return (
     <Screen scroll>
       <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-        <Text variant="title">Entraînement</Text>
+        <Text variant="title">Entraînements</Text>
         <Button label="+ Séance" onPress={() => router.push('/workout/new')} />
       </View>
 
-      {NAV.map((n) => (
-        <NavRow key={n.title} title={n.title} subtitle={n.subtitle} onPress={() => router.push(n.path)} />
-      ))}
+      <View style={{ gap: spacing[2] }}>
+        {NAV.map((n) => (
+          <HubRow
+            key={n.title}
+            title={n.title}
+            subtitle={n.subtitle}
+            icon={n.icon}
+            soon={n.soon}
+            onPress={n.path ? () => router.push(n.path!) : undefined}
+          />
+        ))}
+      </View>
 
       <Text variant="heading">Historique</Text>
       {isLoading ? (
