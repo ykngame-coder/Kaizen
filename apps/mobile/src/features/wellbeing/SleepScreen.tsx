@@ -17,7 +17,6 @@ import {
   type SleepBand,
 } from '@supotsu/engines';
 import { useActivities, useHealthMetrics, useSleepSessions } from '@/lib/data/queries';
-import { formatDate } from '@/lib/format';
 
 const RISK_TONE: Record<FatigueRisk, 'success' | 'warning' | 'error'> = {
   faible: 'success',
@@ -67,6 +66,8 @@ function ScoreBar({
 
 const fmtClock = (iso: string): string =>
   new Date(iso).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
+const weekdayLetter = (iso: string): string =>
+  new Date(iso).toLocaleDateString('fr-FR', { weekday: 'narrow' }).toUpperCase();
 
 /** "22:30" → a ±15 min window "22:15 – 22:45". */
 function bedtimeWindow(hhmm: string): string {
@@ -173,6 +174,8 @@ export function SleepScreen(): React.JSX.Element {
     [metrics, asOf, sessions],
   );
   const trend = useMemo(() => sleepTrend(metrics, asOf, 7), [metrics, asOf]);
+  const chrono = useMemo(() => [...trend].sort((a, b) => a.date.localeCompare(b.date)), [trend]);
+  const chronoMax = Math.max(1, ...chrono.map((n) => n.hours));
   const avg = useMemo(() => averageSleepHours(metrics, asOf, 7), [metrics, asOf]);
   const coaching = useMemo(() => sleepCoaching(metrics, asOf), [metrics, asOf]);
   const acwr = useMemo(() => computeAcwr(activities, asOf).ratio, [activities, asOf]);
@@ -209,8 +212,7 @@ export function SleepScreen(): React.JSX.Element {
     <Screen scroll>
       <Text variant="title">Sommeil</Text>
       <Text variant="caption" color="textMuted">
-        Ton Sleep Score 2.0, décomposé et expliqué — à partir de tes nuits importées de Garmin ou
-        Apple Santé.
+        Ta dernière nuit, ton score et tes horaires optimaux.
       </Text>
 
       {isLoading ? (
@@ -266,6 +268,72 @@ export function SleepScreen(): React.JSX.Element {
             )}
           </Card>
 
+          {/* Weekly sleep bar chart (mockup #4) */}
+          {chrono.length > 0 && (
+            <Card>
+              <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'baseline' }}>
+                <Text variant="heading">7 dernières nuits</Text>
+                {avg !== undefined && (
+                  <Text variant="caption" color="textMuted">
+                    moy. {avg.toFixed(1)} h
+                  </Text>
+                )}
+              </View>
+              <View
+                style={{ flexDirection: 'row', alignItems: 'flex-end', gap: spacing[2], height: 92, marginTop: spacing[3] }}
+              >
+                {chrono.map((n) => (
+                  <View key={n.date} style={{ flex: 1, alignItems: 'center', gap: spacing[1] }}>
+                    <View
+                      style={{
+                        width: '70%',
+                        height: Math.max(6, (n.hours / chronoMax) * 72),
+                        borderRadius: 4,
+                        backgroundColor: colors[BAND_TONE[sleepBand(n.score)]],
+                      }}
+                    />
+                    <Text variant="caption" color="textSubtle">
+                      {weekdayLetter(n.date)}
+                    </Text>
+                  </View>
+                ))}
+              </View>
+            </Card>
+          )}
+
+          {/* Optimal bedtime */}
+          {circadian.value && (
+            <Card>
+              <Text variant="caption" color="textMuted">
+                Heure de coucher optimale
+              </Text>
+              <Text variant="display" color="primary" style={{ marginTop: spacing[1] }}>
+                {bedtimeWindow(circadian.value.idealBedtime)}
+              </Text>
+              <Text variant="caption" color="textSubtle">
+                Estimation basée sur ton rythme et ta récupération (chronotype{' '}
+                {circadian.value.chronotype}).
+              </Text>
+            </Card>
+          )}
+
+          {/* Advice */}
+          {coaching && (
+            <Card>
+              <Text variant="heading">Conseil</Text>
+              <Text variant="caption" color="textMuted">
+                {coaching.observation}
+              </Text>
+              <Text variant="caption" color="textMuted">
+                {coaching.analysis}
+              </Text>
+              <Text variant="body" style={{ marginTop: spacing[1] }}>
+                {coaching.action}
+              </Text>
+            </Card>
+          )}
+
+          {/* --- Détails --- */}
           <Card>
             <Text variant="heading">Détail du score</Text>
             <Text variant="caption" color="textSubtle">
@@ -298,21 +366,6 @@ export function SleepScreen(): React.JSX.Element {
 
           {lastSession && <PhasesCard session={lastSession} />}
 
-          {coaching && (
-            <Card>
-              <Text variant="heading">Coaching</Text>
-              <Text variant="caption" color="textMuted">
-                {coaching.observation}
-              </Text>
-              <Text variant="caption" color="textMuted">
-                {coaching.analysis}
-              </Text>
-              <Text variant="body" style={{ marginTop: spacing[1] }}>
-                {coaching.action}
-              </Text>
-            </Card>
-          )}
-
           {prediction.value && prediction.explanation && (
             <Card>
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing[2] }}>
@@ -330,21 +383,6 @@ export function SleepScreen(): React.JSX.Element {
               </Text>
               <Text variant="body" style={{ marginTop: spacing[1] }}>
                 {prediction.explanation.action}
-              </Text>
-            </Card>
-          )}
-
-          {circadian.value && (
-            <Card>
-              <Text variant="caption" color="textMuted">
-                Heure de coucher optimale
-              </Text>
-              <Text variant="display" color="primary" style={{ marginTop: spacing[1] }}>
-                {bedtimeWindow(circadian.value.idealBedtime)}
-              </Text>
-              <Text variant="caption" color="textSubtle">
-                Estimation basée sur ton rythme et ta récupération (chronotype{' '}
-                {circadian.value.chronotype}).
               </Text>
             </Card>
           )}
@@ -375,28 +413,6 @@ export function SleepScreen(): React.JSX.Element {
                       {s.label}
                     </Text>
                     <Text variant="subtitle">{s.value}</Text>
-                  </View>
-                ))}
-              </View>
-            </Card>
-          )}
-
-          {trend.length > 0 && (
-            <Card>
-              <Text variant="heading">7 derniers jours</Text>
-              <View style={{ gap: spacing[2], marginTop: spacing[1] }}>
-                {trend.map((n) => (
-                  <View
-                    key={n.date}
-                    style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}
-                  >
-                    <Text variant="body">{formatDate(n.date)}</Text>
-                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing[2] }}>
-                      <Text variant="caption" color="textMuted">
-                        {n.hours.toFixed(1)} h
-                      </Text>
-                      <Badge label={`${n.score}`} tone={BAND_TONE[sleepBand(n.score)]} />
-                    </View>
                   </View>
                 ))}
               </View>
