@@ -123,6 +123,7 @@ function StatCard({
 
 const QUICK_LINKS: { label: string; path: Href }[] = [
   { label: 'Sommeil', path: '/sleep' },
+  { label: 'Calendrier', path: '/calendar' },
   { label: 'Récup neuro', path: '/neuro-recovery' },
   { label: 'Bien-être', path: '/wellness' },
   { label: 'Objectifs', path: '/goals' },
@@ -211,6 +212,9 @@ export function DashboardScreen(): React.JSX.Element {
             Voici ton résumé du jour.
           </Text>
         </View>
+        <Pressable onPress={() => router.push('/notifications')} hitSlop={8} style={{ marginRight: spacing[3] }}>
+          <Text variant="subtitle">🔔</Text>
+        </Pressable>
         <Pressable onPress={toggle} hitSlop={8} style={{ marginRight: spacing[2] }}>
           <Text variant="subtitle">{themeName === 'dark' ? '☀︎' : '☾'}</Text>
         </Pressable>
