@@ -256,6 +256,45 @@ function AppleHealthCard(): React.JSX.Element {
   );
 }
 
+/**
+ * Renpho smart scale. Renpho has no public API, but it writes body composition
+ * into Apple Santé — so its data reaches Supotsu through the Apple Santé / Health
+ * Auto Export import and is attributed to the 'renpho' source. This card surfaces
+ * that bridge and how many Renpho measurements were detected.
+ */
+function RenphoCard(): React.JSX.Element {
+  const { data: health = [] } = useHealthMetrics();
+  const renpho = health.filter((m) => m.source === 'renpho');
+  const connected = renpho.length > 0;
+  const days = new Set(renpho.map((m) => m.measuredAt.slice(0, 10))).size;
+  return (
+    <Card>
+      <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+        <View style={{ flex: 1 }}>
+          <Text variant="subtitle">Renpho (balance)</Text>
+          <Text variant="caption" color="textMuted">
+            Poids, masse grasse, masse musculaire — via Apple Santé
+          </Text>
+        </View>
+        <Badge
+          label={connected ? 'Synchronisé' : 'Via Apple Santé'}
+          tone={connected ? 'success' : 'neutral'}
+        />
+      </View>
+      {connected ? (
+        <Text variant="caption" color="textSubtle" style={{ marginTop: spacing[1] }}>
+          {renpho.length} mesure(s) sur {days} jour(s) détectée(s) depuis ta balance Renpho.
+        </Text>
+      ) : (
+        <Text variant="caption" color="textSubtle" style={{ marginTop: spacing[1] }}>
+          Pèse-toi avec l'app Renpho (sync Apple Santé activée), puis importe ton export Apple
+          Santé — le poids et la composition corporelle apparaîtront ici.
+        </Text>
+      )}
+    </Card>
+  );
+}
+
 /** "Mes appareils connectés" (Master Prompt P9.13, P22.14). */
 export function DevicesScreen(): React.JSX.Element {
   const router = useRouter();
@@ -288,6 +327,7 @@ export function DevicesScreen(): React.JSX.Element {
       {message ? <Badge label={message} tone="info" /> : null}
 
       <AppleHealthCard />
+      <RenphoCard />
       <GarminCard />
       <StravaCard />
 

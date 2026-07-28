@@ -5,6 +5,7 @@ import {
   parseHealthAutoExportSleep,
   parseHealthAutoExportSleepSessions,
   parseHealthAutoExportWorkouts,
+  resolveHaeSource,
 } from './healthAutoExport';
 import { parseImportFile } from './garminExport';
 
@@ -68,7 +69,7 @@ describe('parseHealthAutoExportSleep', () => {
 describe('parseHealthAutoExportSleepSessions', () => {
   it('maps a night to stage minutes without fabricating a timeline', () => {
     const [s] = parseHealthAutoExportSleepSessions([SLEEP_NIGHT]);
-    expect(s?.source).toBe('apple_health');
+    expect(s?.source).toBe('garmin'); // source "Connect" → Garmin
     expect(s?.startedAt).toBe('2026-06-25T23:30:31.000Z'); // sleepStart
     expect(s?.endedAt).toBe('2026-06-26T07:16:30.000Z'); // sleepEnd
     expect(s?.deepMin).toBe(137); // 2.283 h
@@ -82,6 +83,34 @@ describe('parseHealthAutoExportSleepSessions', () => {
 
   it('skips nights missing start or end', () => {
     expect(parseHealthAutoExportSleepSessions([{ deep: 1 }])).toHaveLength(0);
+  });
+});
+
+describe('resolveHaeSource (Renpho & co. provenance)', () => {
+  it('maps the per-sample source string to the real provider', () => {
+    expect(resolveHaeSource('Renpho | RENPHO Health')).toBe('renpho');
+    expect(resolveHaeSource('Connect')).toBe('garmin');
+    expect(resolveHaeSource('Withings')).toBe('withings');
+    expect(resolveHaeSource('Oura')).toBe('oura');
+    expect(resolveHaeSource('MyFitnessPal')).toBe('apple_health'); // unknown → Apple Santé
+    expect(resolveHaeSource(undefined)).toBe('apple_health');
+  });
+
+  it('attributes Renpho body-composition samples to the renpho source', () => {
+    const archive = {
+      data: {
+        metrics: [
+          { name: 'weight_body_mass', units: 'kg', data: [{ qty: 102.7, date: '2026-06-26 00:00:00 +0200', source: 'Renpho | RENPHO Health' }] },
+          { name: 'body_fat_percentage', units: '%', data: [{ qty: 30.5, date: '2026-06-26 00:00:00 +0200', source: 'Renpho | RENPHO Health' }] },
+          { name: 'lean_body_mass', units: 'kg', data: [{ qty: 71.4, date: '2026-06-26 00:00:00 +0200', source: 'Renpho | RENPHO Health' }] },
+          { name: 'resting_heart_rate', units: 'count/min', data: [{ qty: 51, date: '2026-06-26 00:00:00 +0200', source: 'Connect' }] },
+        ],
+      },
+    };
+    const out = parseHealthAutoExport(archive)!;
+    const renpho = out.healthMetrics.filter((m) => m.source === 'renpho').map((m) => m.type).sort();
+    expect(renpho).toEqual(['body_fat', 'muscle_mass', 'weight']);
+    expect(out.healthMetrics.find((m) => m.type === 'resting_heart_rate')?.source).toBe('garmin');
   });
 });
 

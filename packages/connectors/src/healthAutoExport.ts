@@ -1,4 +1,4 @@
-import type { ActivityType, HealthMetricType } from '@supotsu/core';
+import type { ActivityType, DataSource, HealthMetricType } from '@supotsu/core';
 import type { ImportedActivity, ImportedHealthMetric, ImportedSleepSession } from './types';
 import type { ParsedImport } from './healthImport';
 
@@ -35,6 +35,25 @@ function haeToIso(ts: unknown): string | undefined {
 
 const asNum = (v: unknown): number | undefined =>
   typeof v === 'number' && Number.isFinite(v) ? v : undefined;
+
+/**
+ * Resolve the real provider from a Health Auto Export per-sample `source` string
+ * (e.g. "Renpho | RENPHO Health", "Connect", "Withings"). A Renpho smart scale
+ * writes body composition into Apple Santé, so this attributes it to 'renpho'
+ * (and Garmin/Withings/… likewise) instead of collapsing everything to Apple
+ * Santé — the free, reliable Renpho bridge. Unknown sources stay 'apple_health'.
+ */
+export function resolveHaeSource(raw: unknown): DataSource {
+  const s = (typeof raw === 'string' ? raw : '').toLowerCase();
+  if (s.includes('renpho')) return 'renpho';
+  if (s.includes('withings')) return 'withings';
+  if (s.includes('garmin') || s.includes('connect')) return 'garmin';
+  if (s.includes('polar')) return 'polar';
+  if (s.includes('coros')) return 'coros';
+  if (s.includes('oura')) return 'oura';
+  if (s.includes('fitbit')) return 'fitbit';
+  return 'apple_health';
+}
 
 /** A simple scalar metric (one qty per timestamp). */
 interface HaeQtyPoint {
@@ -76,7 +95,7 @@ function parseScalarMetric(m: HaeMetric): ImportedHealthMetric[] {
       type: mapped.type,
       value: Number((value * (mapped.scale ?? 1)).toFixed(2)),
       unit: mapped.unit,
-      source: 'apple_health',
+      source: resolveHaeSource(p.source),
       reliability: 'high',
       measuredAt,
     });
@@ -86,6 +105,7 @@ function parseScalarMetric(m: HaeMetric): ImportedHealthMetric[] {
 
 /** One night of Apple Santé sleep-analysis (hours per stage + timestamps). */
 interface HaeSleepPoint {
+  source?: string;
   date?: string;
   sleepStart?: string;
   sleepEnd?: string;
@@ -118,12 +138,13 @@ export function parseHealthAutoExportSleep(points: HaeSleepPoint[]): ImportedHea
       (asNum(p.deep) ?? 0) + (asNum(p.core) ?? 0) + (asNum(p.rem) ?? 0) + (asNum(p.asleep) ?? 0);
     const asleepHours = asNum(p.totalSleep) ?? (stages > 0 ? stages : undefined);
     if (asleepHours === undefined || asleepHours <= 0) continue;
+    const source = resolveHaeSource(p.source);
 
     out.push({
       type: 'sleep_duration',
       value: Number(asleepHours.toFixed(2)),
       unit: 'h',
-      source: 'apple_health',
+      source,
       reliability: 'high',
       measuredAt: bedtime,
     });
@@ -137,7 +158,7 @@ export function parseHealthAutoExportSleep(points: HaeSleepPoint[]): ImportedHea
         type: 'sleep_efficiency',
         value: Number(efficiency.toFixed(1)),
         unit: 'score',
-        source: 'apple_health',
+        source,
         reliability: 'high',
         measuredAt: bedtime,
       });
@@ -172,7 +193,7 @@ export function parseHealthAutoExportSleepSessions(
     const inBedMin = asNum(p.inBed) !== undefined ? asNum(p.inBed)! * H_TO_MIN : asleepMin + awakeMin;
 
     out.push({
-      source: 'apple_health',
+      source: resolveHaeSource(p.source),
       reliability: 'high',
       startedAt,
       endedAt,
