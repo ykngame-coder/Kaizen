@@ -1,10 +1,39 @@
 import React from 'react';
-import { View } from 'react-native';
-import { useRouter } from 'expo-router';
-import { Button, Card, Screen, Text } from '@supotsu/ui';
+import { Pressable, View } from 'react-native';
+import { useRouter, type Href } from 'expo-router';
+import { Button, Card, Screen, Text, useTheme } from '@supotsu/ui';
 import { spacing } from '@supotsu/design-system';
 import { useWorkouts } from '@/lib/data/queries';
 import { formatDate } from '@/lib/format';
+
+const NAV: { title: string; subtitle: string; path: Href }[] = [
+  { title: 'Mes records', subtitle: '1RM, meilleurs temps, distances — importés de Garmin.', path: '/records' },
+  { title: 'Carte musculaire', subtitle: 'Quels muscles sont fatigués et lesquels sont prêts.', path: '/muscles' },
+  { title: "Charge d'entraînement", subtitle: 'Ton ratio charge aiguë / chronique.', path: '/load' },
+  { title: 'Programmes de coachs', subtitle: 'Suis un programme structuré et recommandé.', path: '/marketplace' },
+];
+
+/** A tappable navigation row inside a card, with a chevron. */
+function NavRow({ title, subtitle, onPress }: { title: string; subtitle: string; onPress: () => void }): React.JSX.Element {
+  const { colors } = useTheme();
+  return (
+    <Pressable onPress={onPress} style={({ pressed }) => ({ opacity: pressed ? 0.85 : 1 })}>
+      <Card>
+        <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+          <View style={{ flex: 1, paddingRight: spacing[2] }}>
+            <Text variant="heading">{title}</Text>
+            <Text variant="caption" color="textMuted">
+              {subtitle}
+            </Text>
+          </View>
+          <Text variant="subtitle" style={{ color: colors.textSubtle }}>
+            ›
+          </Text>
+        </View>
+      </Card>
+    </Pressable>
+  );
+}
 
 /** Training home: workout history + entry point to log a session (P36, P20.3). */
 export function TrainingScreen(): React.JSX.Element {
@@ -18,45 +47,9 @@ export function TrainingScreen(): React.JSX.Element {
         <Button label="+ Séance" onPress={() => router.push('/workout/new')} />
       </View>
 
-      <Card>
-        <Text variant="heading">Mes records</Text>
-        <Text variant="body" color="textMuted">
-          1RM, meilleurs temps, distances — importés de ton export Garmin.
-        </Text>
-        <View style={{ alignItems: 'flex-start' }}>
-          <Button label="Voir mes records" onPress={() => router.push('/records')} />
-        </View>
-      </Card>
-
-      <Card>
-        <Text variant="heading">Carte musculaire</Text>
-        <Text variant="body" color="textMuted">
-          Vois quels muscles sont fatigués et lesquels sont prêts à travailler.
-        </Text>
-        <View style={{ alignItems: 'flex-start' }}>
-          <Button label="Voir la carte musculaire" onPress={() => router.push('/muscles')} />
-        </View>
-      </Card>
-
-      <Card>
-        <Text variant="heading">Charge d'entraînement</Text>
-        <Text variant="body" color="textMuted">
-          Ton ratio charge aiguë / chronique — progresser sans te blesser.
-        </Text>
-        <View style={{ alignItems: 'flex-start' }}>
-          <Button label="Voir ma charge" onPress={() => router.push('/load')} />
-        </View>
-      </Card>
-
-      <Card>
-        <Text variant="heading">Programmes de coachs</Text>
-        <Text variant="body" color="textMuted">
-          Suis un programme structuré, recommandé selon ce que tu pratiques.
-        </Text>
-        <View style={{ alignItems: 'flex-start' }}>
-          <Button label="Explorer le marketplace" onPress={() => router.push('/marketplace')} />
-        </View>
-      </Card>
+      {NAV.map((n) => (
+        <NavRow key={n.title} title={n.title} subtitle={n.subtitle} onPress={() => router.push(n.path)} />
+      ))}
 
       <Text variant="heading">Historique</Text>
       {isLoading ? (

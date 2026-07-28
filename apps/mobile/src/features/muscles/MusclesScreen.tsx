@@ -1,7 +1,7 @@
 import React, { useMemo } from 'react';
 import { View } from 'react-native';
 import { useRouter } from 'expo-router';
-import { Badge, Button, Card, EmptyState, ProgressRing, Screen, Text, useTheme } from '@supotsu/ui';
+import { Badge, Button, Card, EmptyState, Meter, ProgressRing, Screen, Text, useTheme } from '@supotsu/ui';
 import { spacing } from '@supotsu/design-system';
 import type { MuscleGroup } from '@supotsu/core';
 import {
@@ -235,23 +235,25 @@ export function MusclesScreen(): React.JSX.Element {
 
           <Card>
             <Text variant="heading">Détail par muscle</Text>
-            <View style={{ gap: spacing[2], marginTop: spacing[1] }}>
+            <View style={{ gap: spacing[3], marginTop: spacing[2] }}>
               {ranked.map((s) => (
-                <View
-                  key={s.muscle}
-                  style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}
-                >
-                  <View style={{ flex: 1, paddingRight: spacing[2] }}>
-                    <Text variant="body">{MUSCLE_LABEL[s.muscle]}</Text>
-                    <Text variant="caption" color="textMuted">
-                      {s.lastTrainedDaysAgo === 0
-                        ? "Travaillé aujourd'hui"
-                        : s.lastTrainedDaysAgo === 1
-                          ? 'Travaillé hier'
-                          : `Travaillé il y a ${s.lastTrainedDaysAgo} jours`}
-                    </Text>
+                <View key={s.muscle} style={{ gap: spacing[1] }}>
+                  <View
+                    style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}
+                  >
+                    <View style={{ flex: 1, paddingRight: spacing[2] }}>
+                      <Text variant="body">{MUSCLE_LABEL[s.muscle]}</Text>
+                      <Text variant="caption" color="textMuted">
+                        {s.lastTrainedDaysAgo === 0
+                          ? "Travaillé aujourd'hui"
+                          : s.lastTrainedDaysAgo === 1
+                            ? 'Travaillé hier'
+                            : `Travaillé il y a ${s.lastTrainedDaysAgo} jours`}
+                      </Text>
+                    </View>
+                    <Badge label={`${STATE_LABEL[s.state]} · ${s.freshness}%`} tone={STATE_TONE[s.state]} />
                   </View>
-                  <Badge label={`${STATE_LABEL[s.state]} · ${s.freshness}%`} tone={STATE_TONE[s.state]} />
+                  <Meter value={s.freshness} color={colorForState(s.state)} height={6} />
                 </View>
               ))}
             </View>
