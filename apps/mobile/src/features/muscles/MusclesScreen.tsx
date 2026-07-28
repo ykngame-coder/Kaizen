@@ -83,8 +83,8 @@ export function MusclesScreen(): React.JSX.Element {
   const stateColor = (state: MuscleState): string => colors[STATE_TONE[state]];
   const colorFor = (muscle: MuscleGroup): string => {
     const status = byMuscle.get(muscle);
-    // Never trained in the window → neutral (nothing to recover).
-    if (!status || status.lastTrainedDaysAgo === null) return colors.surfaceElevated;
+    // Never trained in the window → transparent so the blue base body shows.
+    if (!status || status.lastTrainedDaysAgo === null) return 'transparent';
     return stateColor(status.state);
   };
 
@@ -149,7 +149,7 @@ export function MusclesScreen(): React.JSX.Element {
             </View>
 
             <View style={{ alignItems: 'center', marginTop: spacing[2] }}>
-              <BodyMap colorFor={colorFor} view="front" width={150} />
+              <BodyMap colorFor={colorFor} width={280} />
             </View>
 
             <View

@@ -70,8 +70,11 @@ const BACK_DETAIL = ['M40 45 L40 85'];
 
 export function BodyMap({ colorFor, width = 300, view = 'both' }: BodyMapProps): React.JSX.Element {
   const { colors } = useTheme();
-  const limb = colors.surfaceElevated;
-  const stroke = colors.border;
+  // Anatomical figure with a brand-blue base tone (mockup #5); muscle states are
+  // painted on top, worked/fatigued groups standing out against the blue body.
+  const limb = colors.accentEndurance;
+  const limbOpacity = 0.32;
+  const stroke = colors.accentEndurance;
   const skin = colors.textSubtle;
 
   const figure = (
@@ -80,9 +83,9 @@ export function BodyMap({ colorFor, width = 300, view = 'both' }: BodyMapProps):
     tx: number,
   ): React.JSX.Element => (
     <G transform={`translate(${tx} 8)`}>
-      <Ellipse cx={HEAD[0]} cy={HEAD[1]} rx={HEAD[2]} ry={HEAD[3]} fill={limb} stroke={stroke} strokeWidth={0.5} />
+      <Ellipse cx={HEAD[0]} cy={HEAD[1]} rx={HEAD[2]} ry={HEAD[3]} fill={limb} fillOpacity={limbOpacity} stroke={stroke} strokeOpacity={0.5} strokeWidth={0.5} />
       {SILHOUETTE.map((d, i) => (
-        <Path key={`s${i}`} d={d} fill={limb} stroke={stroke} strokeWidth={0.5} />
+        <Path key={`s${i}`} d={d} fill={limb} fillOpacity={limbOpacity} stroke={stroke} strokeOpacity={0.5} strokeWidth={0.5} />
       ))}
       {HANDS.map(([cx, cy, r], i) => (
         <Circle key={`h${i}`} cx={cx} cy={cy} r={r} fill={skin} />
