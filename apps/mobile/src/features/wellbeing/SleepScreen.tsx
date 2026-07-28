@@ -7,6 +7,7 @@ import type { HealthMetric, SleepSession } from '@supotsu/core';
 import {
   averageSleepHours,
   computeAcwr,
+  computeCircadianProfile,
   computeSleepScore2,
   predictNextDayEnergy,
   sleepBand,
@@ -66,6 +67,18 @@ function ScoreBar({
 
 const fmtClock = (iso: string): string =>
   new Date(iso).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
+
+/** "22:30" → a ±15 min window "22:15 – 22:45". */
+function bedtimeWindow(hhmm: string): string {
+  const [h, m] = hhmm.split(':').map(Number);
+  if (h === undefined || m === undefined) return hhmm;
+  const base = h * 60 + m;
+  const fmt = (min: number): string => {
+    const mm = ((min % 1440) + 1440) % 1440;
+    return `${String(Math.floor(mm / 60)).padStart(2, '0')}:${String(mm % 60).padStart(2, '0')}`;
+  };
+  return `${fmt(base - 15)} – ${fmt(base + 15)}`;
+}
 const fmtHM = (min: number): string => {
   const h = Math.floor(min / 60);
   const m = Math.round(min % 60);
@@ -167,6 +180,13 @@ export function SleepScreen(): React.JSX.Element {
     () => predictNextDayEnergy(metrics, asOf, { acwr }),
     [metrics, asOf, acwr],
   );
+  const circadian = useMemo(
+    () =>
+      computeCircadianProfile(metrics, asOf, {
+        tzOffsetMinutes: -new Date().getTimezoneOffset(),
+      }),
+    [metrics, asOf],
+  );
   const hasData = score.confidence !== 'to_confirm';
 
   const zones = [
@@ -217,6 +237,33 @@ export function SleepScreen(): React.JSX.Element {
                 </Text>
               )}
             </View>
+            {lastSession && (
+              <View
+                style={{
+                  flexDirection: 'row',
+                  justifyContent: 'space-around',
+                  marginTop: spacing[4],
+                  paddingTop: spacing[4],
+                  borderTopWidth: 1,
+                  borderTopColor: colors.border,
+                }}
+              >
+                <View style={{ alignItems: 'center' }}>
+                  <Text variant="subtitle">{fmtHM(lastSession.asleepMin)}</Text>
+                  <Text variant="caption" color="textSubtle">
+                    Durée totale
+                  </Text>
+                </View>
+                <View style={{ alignItems: 'center' }}>
+                  <Text variant="subtitle" color="primary">
+                    {fmtHM(lastSession.deepMin)}
+                  </Text>
+                  <Text variant="caption" color="textSubtle">
+                    Sommeil profond
+                  </Text>
+                </View>
+              </View>
+            )}
           </Card>
 
           <Card>
@@ -287,13 +334,32 @@ export function SleepScreen(): React.JSX.Element {
             </Card>
           )}
 
+          {circadian.value && (
+            <Card>
+              <Text variant="caption" color="textMuted">
+                Heure de coucher optimale
+              </Text>
+              <Text variant="display" color="primary" style={{ marginTop: spacing[1] }}>
+                {bedtimeWindow(circadian.value.idealBedtime)}
+              </Text>
+              <Text variant="caption" color="textSubtle">
+                Estimation basée sur ton rythme et ta récupération (chronotype{' '}
+                {circadian.value.chronotype}).
+              </Text>
+            </Card>
+          )}
+
           <Card>
             <Text variant="heading">Rythme circadien</Text>
             <Text variant="caption" color="textMuted">
               Découvre ton chronotype et tes horaires optimaux (coucher, caféine, sport, lumière).
             </Text>
             <View style={{ alignItems: 'flex-start', marginTop: spacing[2] }}>
-              <Button label="Voir mes horaires optimaux" onPress={() => router.push('/circadian')} />
+              <Button
+                label="Voir mes horaires optimaux"
+                variant="gradient"
+                onPress={() => router.push('/circadian')}
+              />
             </View>
           </Card>
 
