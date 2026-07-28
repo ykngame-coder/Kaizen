@@ -1,6 +1,6 @@
 import React, { useMemo, useRef, useState } from 'react';
 import { ScrollView, View, type ScrollView as ScrollViewType } from 'react-native';
-import { Badge, Button, Card, Input, Screen, Text, useTheme, type BadgeTone } from '@supotsu/ui';
+import { Badge, Button, Card, Gradient, Input, Screen, Text, useTheme, type BadgeTone } from '@supotsu/ui';
 import { radii, spacing } from '@supotsu/design-system';
 import { askCoach, SUGGESTED_QUESTIONS, type CoachReply } from '@supotsu/engines';
 import type { Confidence } from '@supotsu/core';
@@ -80,12 +80,13 @@ export function CoachScreen(): React.JSX.Element {
               style={{
                 alignSelf: 'flex-end',
                 maxWidth: '85%',
-                backgroundColor: colors.primary,
                 borderRadius: radii.lg,
+                overflow: 'hidden',
                 paddingVertical: spacing[2],
                 paddingHorizontal: spacing[4],
               }}
             >
+              <Gradient fill start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} />
               <Text variant="body" color="onPrimary">
                 {m.text}
               </Text>
