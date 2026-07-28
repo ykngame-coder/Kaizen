@@ -23,7 +23,9 @@ export function Button({
 }: ButtonProps): React.JSX.Element {
   const { colors } = useTheme();
 
-  const isGradient = variant === 'gradient';
+  // Primary is the mockup's signature gradient pill; `gradient` is an explicit
+  // alias. Both fill with the brand gradient and use a fully-rounded shape.
+  const isGradient = variant === 'gradient' || variant === 'primary';
   const bg: Record<ButtonVariant, string> = {
     primary: colors.primary,
     secondary: colors.surfaceElevated,
