@@ -1,8 +1,9 @@
 import React from 'react';
 import { Image, View } from 'react-native';
-import Svg, { Defs, Ellipse, RadialGradient, Stop } from 'react-native-svg';
+import Svg, { Defs, Ellipse, G, Image as SvgImage, Mask } from 'react-native-svg';
 import type { MuscleGroup } from '@supotsu/core';
 import greyBody from '../../../assets/muscle-body-grey.png';
+import bodyMask from '../../../assets/muscle-body-mask.png';
 
 const IMG_W = 266;
 const IMG_H = 466;
@@ -15,11 +16,11 @@ interface Region {
 }
 
 /**
- * Front-view muscle regions in the grey body's own pixel space (266×466),
- * traced from the coloured reference: shoulders (delts), chest (pecs), biceps,
- * core (abs + obliques), quadriceps and calves. Back-only groups (back,
- * hamstrings, glutes, triceps) don't appear on a front figure — they still show
- * in the per-group list below the figure.
+ * Front-view muscle regions in the grey body's own pixel space (266×466), traced
+ * from the coloured reference and the figure's real edges (body centre x=116):
+ * shoulders (delts), chest (pecs), biceps, core (abs), quadriceps and calves.
+ * Back-only groups (back, hamstrings, glutes, triceps) don't appear on a front
+ * figure — they still show in the per-group list below the figure.
  */
 const REGIONS: Partial<Record<MuscleGroup, Region[]>> = {
   shoulders: [
@@ -56,8 +57,9 @@ export interface MuscleBodyProps {
 
 /**
  * Realistic muscle map: the grey anatomical body (front) with each worked muscle
- * group softly lit in its recovery-state colour via radial-gradient overlays,
- * aligned to the figure's own coordinate space.
+ * group filled solid in its recovery-state colour. The whole colour layer is
+ * clipped to the body silhouette via a luminance mask, so colour never bleeds
+ * onto the background — a clean fill, not an airbrushed blob.
  */
 export function MuscleBody({ colorFor, width = 220 }: MuscleBodyProps): React.JSX.Element {
   const height = (width * IMG_H) / IMG_W;
@@ -70,19 +72,17 @@ export function MuscleBody({ colorFor, width = 220 }: MuscleBodyProps): React.JS
       <Image source={greyBody} style={{ width, height }} resizeMode="contain" />
       <Svg width={width} height={height} viewBox={`0 0 ${IMG_W} ${IMG_H}`} style={{ position: 'absolute', left: 0, top: 0 }}>
         <Defs>
-          {active.map((e) => (
-            <RadialGradient key={e.muscle} id={`mg-${e.muscle}`} cx="50%" cy="50%" r="50%">
-              <Stop offset="0" stopColor={e.color} stopOpacity={0.9} />
-              <Stop offset="0.65" stopColor={e.color} stopOpacity={0.5} />
-              <Stop offset="1" stopColor={e.color} stopOpacity={0} />
-            </RadialGradient>
-          ))}
+          <Mask id="bodyMask" maskUnits="userSpaceOnUse" x="0" y="0" width={IMG_W} height={IMG_H}>
+            <SvgImage href={bodyMask} x={0} y={0} width={IMG_W} height={IMG_H} preserveAspectRatio="xMidYMid meet" />
+          </Mask>
         </Defs>
-        {active.flatMap((e) =>
-          e.regions.map((r, i) => (
-            <Ellipse key={`${e.muscle}-${i}`} cx={r.cx} cy={r.cy} rx={r.rx} ry={r.ry} fill={`url(#mg-${e.muscle})`} />
-          )),
-        )}
+        <G mask="url(#bodyMask)">
+          {active.flatMap((e) =>
+            e.regions.map((r, i) => (
+              <Ellipse key={`${e.muscle}-${i}`} cx={r.cx} cy={r.cy} rx={r.rx} ry={r.ry} fill={e.color} fillOpacity={0.55} />
+            )),
+          )}
+        </G>
       </Svg>
     </View>
   );
