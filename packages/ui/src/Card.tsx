@@ -12,7 +12,7 @@ export function Card({ elevated = false, style, ...rest }: CardProps): React.JSX
   const { colors } = useTheme();
   const base: ViewStyle = {
     backgroundColor: elevated ? colors.surfaceElevated : colors.surface,
-    borderRadius: radii.lg,
+    borderRadius: radii.xl,
     borderWidth: 1,
     borderColor: colors.border,
     padding: spacing[4],

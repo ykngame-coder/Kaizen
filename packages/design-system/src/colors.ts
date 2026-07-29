@@ -21,36 +21,36 @@ export const palette = {
     800: '#3f2391',
     900: '#281559',
   },
-  // Neutral ramp tuned for OLED-friendly dark surfaces.
+  // Neutral ramp — premium dark identity (#071018 bg, #101923 / #172330 cards).
   neutral: {
     0: '#ffffff',
     50: '#f6f7f9',
     100: '#eceef2',
     200: '#d5d9e0',
-    300: '#b0b7c3',
+    300: '#aab6c5', // dark textMuted
     400: '#8a93a3',
-    500: '#656e7e',
+    500: '#748092', // dark textSubtle
     600: '#49515f',
-    700: '#333a45',
-    800: '#1e232b',
-    900: '#141820',
-    950: '#0b0e13', // deepest background (dark mode)
+    700: '#1e2733', // dark hairline border
+    800: '#172330', // secondary card
+    900: '#101923', // card
+    950: '#071018', // deepest background (dark mode)
   },
   // Secondary accents for sport categories / statistics (Master Prompt P28.5).
   accent: {
-    strength: '#ff7a45', // force
-    endurance: '#3b9dff', // endurance / cardio
-    mobility: '#a78bfa', // mobilité
-    recovery: '#22d3ee', // récupération
+    strength: '#ff8b5e', // force
+    endurance: '#3bcbff', // endurance / cardio
+    mobility: '#8b5cf6', // mobilité
+    recovery: '#19d3a2', // récupération
     lime: '#c6f24e', // secondary highlight accent (energy / streaks / focus)
-    data: '#00d99b', // emerald — positive data-viz (scores, upward trends)
+    data: '#2be38b', // emerald — positive data-viz (scores, upward trends)
   },
-  // System / state colors (Master Prompt P28.5, P47.4).
+  // System / state colors (premium palette).
   state: {
-    success: '#22c55e',
-    warning: '#f59e0b',
-    error: '#ef4444',
-    info: '#3b82f6',
+    success: '#2be38b',
+    warning: '#f5b742',
+    error: '#ff4d67',
+    info: '#2d7ff9',
   },
 } as const;
 

@@ -1,6 +1,7 @@
 import React from 'react';
 import { View } from 'react-native';
-import Svg, { Circle } from 'react-native-svg';
+import Svg, { Circle, Defs, LinearGradient, Stop } from 'react-native-svg';
+import { gradients } from '@supotsu/design-system';
 import { Text } from './Text';
 import { useTheme } from './theme';
 
@@ -25,11 +26,18 @@ export interface ProgressRingProps {
    * clockwise from the top instead.
    */
   segments?: RingSegment[];
+  /**
+   * Fill the single arc with the premium blue→purple gradient instead of a flat
+   * colour. Pass a custom two-stop array to override. Ignored in segment mode.
+   */
+  gradient?: boolean | readonly [string, string];
   /** Big number in the centre (defaults to the rounded value). */
   centerLabel?: string;
   /** Small caption under the centre number. */
   caption?: string;
 }
+
+let ringGradientSeq = 0;
 
 /**
  * Circular gauge (Garmin Connect / Bevel style). Either a single arc that fills
@@ -43,6 +51,7 @@ export function ProgressRing({
   thickness = 10,
   color,
   segments,
+  gradient,
   centerLabel,
   caption,
 }: ProgressRingProps): React.JSX.Element {
@@ -51,6 +60,12 @@ export function ProgressRing({
   const r = (size - thickness) / 2;
   const cx = size / 2;
   const circumference = 2 * Math.PI * r;
+  const gradId = React.useMemo(() => `ring-grad-${(ringGradientSeq += 1)}`, []);
+  const gradStops = gradient
+    ? Array.isArray(gradient)
+      ? gradient
+      : (gradients.brand.slice(0, 2) as [string, string])
+    : null;
 
   let ring: React.JSX.Element[];
   if (segments && segments.length > 0) {
@@ -99,7 +114,7 @@ export function ProgressRing({
         cx={cx}
         cy={cx}
         r={r}
-        stroke={color ?? colors.primary}
+        stroke={gradStops ? `url(#${gradId})` : (color ?? colors.primary)}
         strokeWidth={thickness}
         fill="none"
         strokeLinecap="round"
@@ -112,6 +127,14 @@ export function ProgressRing({
   return (
     <View style={{ width: size, height: size, alignItems: 'center', justifyContent: 'center' }}>
       <Svg width={size} height={size} style={{ position: 'absolute' }}>
+        {gradStops ? (
+          <Defs>
+            <LinearGradient id={gradId} x1="0" y1="0" x2="1" y2="1">
+              <Stop offset="0" stopColor={gradStops[0]} />
+              <Stop offset="1" stopColor={gradStops[1]} />
+            </LinearGradient>
+          </Defs>
+        ) : null}
         <Circle cx={cx} cy={cx} r={r} stroke={colors.surfaceElevated} strokeWidth={thickness} fill="none" />
         {ring}
       </Svg>
