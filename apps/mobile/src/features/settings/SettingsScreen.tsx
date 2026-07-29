@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Platform, Share, View } from 'react-native';
 import { useRouter } from 'expo-router';
-import { Button, Card, Screen, SegmentedControl, Text, Toggle, useTheme } from '@supotsu/ui';
+import { Badge, Button, Card, ListRow, Screen, SegmentedControl, Text, Toggle, useTheme } from '@supotsu/ui';
 import { spacing } from '@supotsu/design-system';
 import { useAuth } from '@/features/auth/AuthProvider';
 import { usePreferences, type UnitSystem } from '@/lib/preferences';
@@ -11,40 +11,39 @@ const UNIT_OPTIONS: { value: UnitSystem; label: string }[] = [
   { value: 'metric', label: 'Métrique (kg, km)' },
   { value: 'imperial', label: 'Impérial (lb, mi)' },
 ];
+const THEME_OPTIONS = [
+  { value: 'dark' as const, label: 'Sombre' },
+  { value: 'light' as const, label: 'Clair' },
+  { value: 'system' as const, label: 'Auto' },
+];
+const TIME_OPTIONS = [
+  { value: '24h', label: '24 h' },
+  { value: '12h', label: '12 h' },
+];
 
-function ToggleRow({
-  label,
-  hint,
-  value,
-  onValueChange,
-}: {
-  label: string;
-  hint?: string;
-  value: boolean;
-  onValueChange: (v: boolean) => void;
-}): React.JSX.Element {
-  return (
-    <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', gap: spacing[3] }}>
-      <View style={{ flex: 1 }}>
-        <Text variant="body">{label}</Text>
-        {hint ? (
-          <Text variant="caption" color="textMuted">
-            {hint}
-          </Text>
-        ) : null}
-      </View>
-      <Toggle value={value} onValueChange={onValueChange} />
-    </View>
-  );
+function GroupTitle({ children }: { children: React.ReactNode }): React.JSX.Element {
+  return <Text variant="label" color="textSubtle" style={{ marginTop: spacing[4], marginBottom: spacing[1], letterSpacing: 1 }}>{children}</Text>;
+}
+function Group({ children }: { children: React.ReactNode }): React.JSX.Element {
+  return <Card style={{ paddingVertical: spacing[1] }}>{children}</Card>;
+}
+function ToggleRow({ icon, tint, label, value, onValueChange, divider }: { icon: string; tint: string; label: string; value: boolean; onValueChange: (v: boolean) => void; divider?: boolean }): React.JSX.Element {
+  return <ListRow icon={icon} iconColor={tint} title={label} accessory={<Toggle value={value} onValueChange={onValueChange} />} divider={divider} />;
 }
 
-/** Settings & privacy (Master Prompt P15 confidentialité, P17 réglages). */
+/** Réglages (mockup #16) — grouped preferences, notifications, privacy, security, about. */
 export function SettingsScreen(): React.JSX.Element {
   const router = useRouter();
-  const { name, preference, toggle, setPreference: setThemePref } = useTheme();
+  const { name, preference, setPreference: setThemePref } = useTheme();
   const { preferences, setPreference } = usePreferences();
-  const { user, mode } = useAuth();
+  const { user, mode, signOut } = useAuth();
   const [exportState, setExportState] = useState<'idle' | 'working' | 'done' | 'error'>('idle');
+  // Presentational (session) toggles — persistence/behaviour wired later.
+  const [timeFormat, setTimeFormat] = useState('24h');
+  const [animations, setAnimations] = useState(true);
+  const [haptics, setHaptics] = useState(true);
+  const [aiConsent, setAiConsent] = useState(true);
+  const [faceId, setFaceId] = useState(false);
 
   const onExport = async (): Promise<void> => {
     if (!user) return;
@@ -52,14 +51,12 @@ export function SettingsScreen(): React.JSX.Element {
     try {
       const data = await exportUserData(createDataRepository(), user.id);
       const json = JSON.stringify(data, null, 2);
-      const filename = `supotsu-export-${new Date().toISOString().slice(0, 10)}.json`;
+      const filename = `kaizen-export-${new Date().toISOString().slice(0, 10)}.json`;
       if (Platform.OS === 'web') {
         const blob = new Blob([json], { type: 'application/json' });
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
-        a.href = url;
-        a.download = filename;
-        a.click();
+        a.href = url; a.download = filename; a.click();
         URL.revokeObjectURL(url);
       } else {
         const FS = await import('expo-file-system/legacy');
@@ -76,103 +73,72 @@ export function SettingsScreen(): React.JSX.Element {
   return (
     <Screen scroll>
       <Text variant="title">Réglages</Text>
-      <Text variant="caption" color="textMuted">
-        Unités, notifications, confidentialité et tes données.
-      </Text>
+      <Text variant="caption" color="textSubtle">Préférences • Compte • Sécurité</Text>
 
+      {/* Compte */}
+      <GroupTitle>COMPTE</GroupTitle>
+      <Group>
+        <ListRow icon="👤" iconColor="rgba(45,127,249,0.18)" title="Profil sportif" subtitle="Poids, taille, niveau, disponibilités" onPress={() => router.push('/profile/edit')} divider />
+        <ListRow icon="⭐" iconColor="rgba(245,183,66,0.18)" title="Abonnement" accessory={<Badge label="Gratuit" tone="neutral" />} divider />
+        <ListRow icon="🎯" iconColor="rgba(43,227,139,0.18)" title="Objectifs" onPress={() => router.push('/goals')} divider />
+        <ListRow icon="⚖" iconColor="rgba(139,92,246,0.18)" title="Appareils & synchronisation" onPress={() => router.push('/connectors')} divider />
+        <ListRow icon="🔗" iconColor="rgba(59,203,255,0.18)" title="Données & intégrations" onPress={() => router.push('/integrations')} />
+      </Group>
+
+      {/* Préférences */}
+      <GroupTitle>PRÉFÉRENCES</GroupTitle>
       <Card>
-        <Text variant="heading">Profil sportif</Text>
-        <Text variant="body" color="textMuted">
-          Ton poids, ta taille, ton niveau et tes disponibilités.
-        </Text>
-        <View style={{ alignItems: 'flex-start', marginTop: spacing[1] }}>
-          <Button label="Modifier mon profil" onPress={() => router.push('/profile/edit')} />
-        </View>
+        <Text variant="body" style={{ fontWeight: '600', marginBottom: spacing[2] }}>Thème</Text>
+        <SegmentedControl options={THEME_OPTIONS} value={preference} onChange={(v) => setThemePref(v)} />
+        <Text variant="caption" color="textSubtle" style={{ marginTop: spacing[1] }}>Actif : {name === 'dark' ? 'sombre' : 'clair'}</Text>
+        <Text variant="body" style={{ fontWeight: '600', marginTop: spacing[4], marginBottom: spacing[2] }}>Unités</Text>
+        <SegmentedControl options={UNIT_OPTIONS} value={preferences.units} onChange={(v) => setPreference('units', v)} />
+        <Text variant="body" style={{ fontWeight: '600', marginTop: spacing[4], marginBottom: spacing[2] }}>Format horaire</Text>
+        <SegmentedControl options={TIME_OPTIONS} value={timeFormat} onChange={setTimeFormat} />
       </Card>
+      <Group>
+        <ListRow icon="🌐" iconColor="rgba(116,128,146,0.22)" title="Langue" value="Français" divider />
+        <ToggleRow icon="✨" tint="rgba(139,92,246,0.18)" label="Animations" value={animations} onValueChange={setAnimations} divider />
+        <ToggleRow icon="📳" tint="rgba(59,203,255,0.18)" label="Retour haptique" value={haptics} onValueChange={setHaptics} />
+      </Group>
 
-      <Card>
-        <Text variant="heading">Unités</Text>
-        <View style={{ marginTop: spacing[2] }}>
-          <SegmentedControl
-            options={UNIT_OPTIONS}
-            value={preferences.units}
-            onChange={(v) => setPreference('units', v)}
-          />
-        </View>
-      </Card>
+      {/* Notifications */}
+      <GroupTitle>NOTIFICATIONS</GroupTitle>
+      <Group>
+        <ToggleRow icon="📋" tint="rgba(43,227,139,0.18)" label="Bilan du jour" value={preferences.dailyBriefing} onValueChange={(v) => setPreference('dailyBriefing', v)} divider />
+        <ToggleRow icon="🔔" tint="rgba(245,183,66,0.18)" label="Rappels (habitudes, check-in)" value={preferences.reminders} onValueChange={(v) => setPreference('reminders', v)} divider />
+        <ListRow icon="⚙️" iconColor="rgba(116,128,146,0.22)" title="Configurer par catégorie" onPress={() => router.push('/notifications')} />
+      </Group>
 
-      <Card>
-        <Text variant="heading">Apparence</Text>
-        <Text variant="caption" color="textMuted">
-          Thème : {name} (préférence {preference}).
-        </Text>
-        <View style={{ flexDirection: 'row', gap: spacing[2], flexWrap: 'wrap', marginTop: spacing[1] }}>
-          <Button label="Clair / sombre" onPress={toggle} />
-          <Button label="Système" variant="secondary" onPress={() => setThemePref('system')} />
-        </View>
-      </Card>
+      {/* Confidentialité */}
+      <GroupTitle>CONFIDENTIALITÉ & DONNÉES</GroupTitle>
+      <Group>
+        <ListRow icon="⬇️" iconColor="rgba(45,127,249,0.18)" title={exportState === 'working' ? 'Export en cours…' : 'Exporter mes données (JSON)'} subtitle="Toutes tes données, format RGPD" onPress={onExport} divider />
+        <ListRow icon="🔎" iconColor="rgba(59,203,255,0.18)" title="Qualité & provenance" onPress={() => router.push('/data-quality')} divider />
+        <ToggleRow icon="🧠" tint="rgba(139,92,246,0.18)" label="Consentement analyses IA" value={aiConsent} onValueChange={setAiConsent} divider />
+        <ToggleRow icon="🏆" tint="rgba(245,183,66,0.18)" label="Apparaître dans les classements" value={preferences.shareInLeaderboards} onValueChange={(v) => setPreference('shareInLeaderboards', v)} />
+      </Group>
+      {exportState === 'done' ? <Text variant="caption" color="textSubtle">Export prêt {Platform.OS === 'web' ? '(téléchargé)' : '(partagé)'}.</Text> : null}
+      {exportState === 'error' ? <Text variant="caption" color="error">L'export a échoué. Réessaie.</Text> : null}
 
-      <Card>
-        <Text variant="heading">Notifications</Text>
-        <View style={{ gap: spacing[3], marginTop: spacing[2] }}>
-          <ToggleRow
-            label="Bilan du jour"
-            hint="Un résumé chaque matin"
-            value={preferences.dailyBriefing}
-            onValueChange={(v) => setPreference('dailyBriefing', v)}
-          />
-          <ToggleRow
-            label="Rappels"
-            hint="Habitudes et check-in bien-être"
-            value={preferences.reminders}
-            onValueChange={(v) => setPreference('reminders', v)}
-          />
-        </View>
-      </Card>
+      {/* Sécurité */}
+      <GroupTitle>SÉCURITÉ</GroupTitle>
+      <Group>
+        <ToggleRow icon="🔐" tint="rgba(43,227,139,0.18)" label="Verrouillage biométrique" value={faceId} onValueChange={setFaceId} divider />
+        <ListRow icon="🚪" iconColor="rgba(255,77,103,0.18)" title="Se déconnecter" destructive onPress={signOut} />
+      </Group>
 
-      <Card>
-        <Text variant="heading">Confidentialité</Text>
-        <View style={{ marginTop: spacing[2] }}>
-          <ToggleRow
-            label="Apparaître dans les classements"
-            hint="Tes agrégats restent anonymisés par le serveur"
-            value={preferences.shareInLeaderboards}
-            onValueChange={(v) => setPreference('shareInLeaderboards', v)}
-          />
-        </View>
-      </Card>
+      {/* À propos */}
+      <GroupTitle>À PROPOS</GroupTitle>
+      <Group>
+        <ListRow icon="ℹ️" iconColor="rgba(116,128,146,0.22)" title="Version" value="1.0.0" divider />
+        <ListRow icon="📄" iconColor="rgba(116,128,146,0.22)" title="Conditions d'utilisation" chevron divider />
+        <ListRow icon="🔒" iconColor="rgba(116,128,146,0.22)" title="Politique de confidentialité" chevron />
+      </Group>
 
-      <Card>
-        <Text variant="heading">Mes données</Text>
-        <Text variant="body" color="textMuted">
-          Exporte l'intégralité de tes données au format JSON (RGPD), ou vérifie leur provenance.
-        </Text>
-        <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: spacing[2], marginTop: spacing[1] }}>
-          <Button
-            label={exportState === 'working' ? 'Export…' : 'Exporter mes données'}
-            onPress={onExport}
-          />
-          <Button label="Qualité & provenance" variant="secondary" onPress={() => router.push('/data-quality')} />
-        </View>
-        {exportState === 'done' ? (
-          <Text variant="caption" color="textMuted">
-            Export prêt {Platform.OS === 'web' ? '(téléchargé)' : '(partagé)'}.
-          </Text>
-        ) : null}
-        {exportState === 'error' ? (
-          <Text variant="caption" style={{ color: '#ef4444' }}>
-            L'export a échoué. Réessaie.
-          </Text>
-        ) : null}
-      </Card>
+      {mode === 'demo' ? <Text variant="caption" color="textSubtle" style={{ marginTop: spacing[3] }}>Mode démo : tes données restent sur cet appareil.</Text> : null}
 
-      {mode === 'demo' ? (
-        <Text variant="caption" color="textSubtle">
-          Mode démo : tes données restent sur cet appareil.
-        </Text>
-      ) : null}
-
-      <View style={{ alignItems: 'flex-start' }}>
+      <View style={{ alignItems: 'flex-start', marginTop: spacing[2] }}>
         <Button label="Retour" variant="secondary" onPress={() => router.back()} />
       </View>
     </Screen>
