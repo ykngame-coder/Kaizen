@@ -3,8 +3,9 @@ import { View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Badge, Button, Card, Screen, Text, useTheme, type BadgeTone } from '@supotsu/ui';
-import { spacing } from '@supotsu/design-system';
+import { radii, spacing } from '@supotsu/design-system';
 import { CONNECTORS } from '@supotsu/connectors';
+import type { DataSource, HealthMetricType } from '@supotsu/core';
 import { useHealthMetrics, useSyncConnector } from '@/lib/data/queries';
 import {
   disconnectGarmin,
@@ -21,12 +22,51 @@ import {
 } from './stravaClient';
 import { appleHealthAvailable, createIngestToken, ingestUrl } from './appleHealthClient';
 
+const SOURCE_LABEL: Partial<Record<DataSource, { name: string; icon: string }>> = {
+  garmin: { name: 'Garmin', icon: '⌚' },
+  apple_health: { name: 'Apple Santé', icon: '🍎' },
+  renpho: { name: 'Renpho', icon: '⚖' },
+  withings: { name: 'Withings', icon: '⚖' },
+  polar: { name: 'Polar', icon: '❤️' },
+  coros: { name: 'Coros', icon: '⌚' },
+  oura: { name: 'Oura', icon: '💍' },
+  fitbit: { name: 'Fitbit', icon: '⌚' },
+  manual: { name: 'Saisie manuelle', icon: '✍️' },
+};
+
+const METRIC_LABEL: Partial<Record<HealthMetricType, string>> = {
+  sleep_duration: 'Sommeil',
+  hrv: 'HRV',
+  resting_heart_rate: 'FC repos',
+  weight: 'Poids',
+  body_fat: 'Masse grasse',
+  muscle_mass: 'Masse musc.',
+};
+
+/** Supported devices shown in the compatibility grid. */
+const COMPATIBLE = ['Garmin', 'Apple Watch', 'Polar', 'Coros', 'Whoop', 'Oura', 'Withings', 'Renpho', 'Fitbit', 'Wahoo', 'Dexcom', 'Strava'];
+
 const GARMIN_STATUS_UI: Record<string, { label: string; tone: BadgeTone }> = {
   connected: { label: 'Connecté', tone: 'success' },
   pending: { label: 'Autorisation en cours', tone: 'warning' },
   revoked: { label: 'Accès révoqué', tone: 'error' },
   disconnected: { label: 'Non connecté', tone: 'neutral' },
 };
+
+/** Summary KPI cell (2-up). */
+function KpiCell({ value, label, small, color }: { value: string; label: string; small?: boolean; color?: string }): React.JSX.Element {
+  const { colors } = useTheme();
+  return (
+    <View style={{ flexGrow: 1, flexBasis: '45%', backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border, borderRadius: radii.lg, padding: spacing[4] }}>
+      <Text variant={small ? 'subtitle' : 'data'} style={{ color: color ?? colors.text, ...(small ? { fontSize: 18 } : {}) }}>
+        {value}
+      </Text>
+      <Text variant="caption" color="textSubtle" style={{ marginTop: 4 }}>
+        {label}
+      </Text>
+    </View>
+  );
+}
 
 /** Real Garmin connection card (OAuth via the Garmin Edge Function). */
 function GarminCard(): React.JSX.Element {
@@ -298,9 +338,35 @@ function RenphoCard(): React.JSX.Element {
 /** "Mes appareils connectés" (Master Prompt P9.13, P22.14). */
 export function DevicesScreen(): React.JSX.Element {
   const router = useRouter();
+  const { colors } = useTheme();
   const sync = useSyncConnector();
   const { data: health = [] } = useHealthMetrics();
   const [message, setMessage] = useState<string | null>(null);
+
+  // Real breakdown of imported data by source.
+  const bySource = React.useMemo(() => {
+    const map = new Map<DataSource, { count: number; types: Set<HealthMetricType> }>();
+    for (const m of health) {
+      const e = map.get(m.source) ?? { count: 0, types: new Set<HealthMetricType>() };
+      e.count += 1;
+      e.types.add(m.type);
+      map.set(m.source, e);
+    }
+    return [...map.entries()].sort((a, b) => b[1].count - a[1].count);
+  }, [health]);
+
+  const lastSync = React.useMemo(() => {
+    if (health.length === 0) return null;
+    return health.reduce((max, m) => (m.measuredAt > max ? m.measuredAt : max), health[0]!.measuredAt);
+  }, [health]);
+
+  const fmtAgo = (iso: string): string => {
+    const mins = Math.round((Date.now() - new Date(iso).getTime()) / 60000);
+    if (mins < 60) return `il y a ${Math.max(1, mins)} min`;
+    const h = Math.round(mins / 60);
+    if (h < 24) return `il y a ${h} h`;
+    return `il y a ${Math.round(h / 24)} j`;
+  };
 
   const runSync = async (provider: 'demo'): Promise<void> => {
     setMessage(null);
@@ -318,14 +384,24 @@ export function DevicesScreen(): React.JSX.Element {
 
   return (
     <Screen scroll>
-      <Text variant="title">Mes appareils</Text>
-      <Text variant="body" color="textMuted">
-        Connecte tes appareils pour importer automatiquement tes activités et données de santé.
-        Chaque donnée conserve sa source et sa fiabilité.
+      <Text variant="title">Appareils & capteurs</Text>
+      <Text variant="caption" color="textSubtle">
+        Synchronisation • Connexions • Sources
       </Text>
+
+      {/* Résumé */}
+      <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: spacing[3] }}>
+        <KpiCell value={`${bySource.length}`} label="Sources actives" />
+        <KpiCell value={`${health.length}`} label="Données santé" />
+        <KpiCell value={lastSync ? fmtAgo(lastSync) : '—'} label="Dernière donnée" small />
+        <KpiCell value={health.length > 0 ? 'Actif' : 'En attente'} label="État général" small color={health.length > 0 ? colors.accentData : colors.textMuted} />
+      </View>
 
       {message ? <Badge label={message} tone="info" /> : null}
 
+      <Text variant="heading" style={{ marginTop: spacing[2] }}>
+        Applications & appareils
+      </Text>
       <AppleHealthCard />
       <RenphoCard />
       <GarminCard />
@@ -362,6 +438,61 @@ export function DevicesScreen(): React.JSX.Element {
           </Card>
         ))}
       </View>
+
+      {/* Données par source (réel) */}
+      {bySource.length > 0 ? (
+        <Card>
+          <Text variant="heading">Données par source</Text>
+          <View style={{ gap: spacing[3], marginTop: spacing[2] }}>
+            {bySource.map(([source, info]) => {
+              const meta = SOURCE_LABEL[source] ?? { name: source, icon: '📡' };
+              return (
+                <View key={source} style={{ flexDirection: 'row', gap: spacing[3], alignItems: 'flex-start' }}>
+                  <View style={{ width: 40, height: 40, borderRadius: radii.md, backgroundColor: colors.surfaceElevated, alignItems: 'center', justifyContent: 'center' }}>
+                    <Text style={{ fontSize: 19 }}>{meta.icon}</Text>
+                  </View>
+                  <View style={{ flex: 1 }}>
+                    <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
+                      <Text variant="body" style={{ fontWeight: '700' }}>
+                        {meta.name}
+                      </Text>
+                      <Text variant="caption" color="textSubtle">
+                        {info.count} donnée{info.count > 1 ? 's' : ''}
+                      </Text>
+                    </View>
+                    <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginTop: 6 }}>
+                      {[...info.types].map((t) => (
+                        <View key={t} style={{ backgroundColor: colors.surfaceElevated, borderRadius: radii.sm, paddingHorizontal: 8, paddingVertical: 4 }}>
+                          <Text variant="caption" color="textMuted">
+                            {METRIC_LABEL[t] ?? t}
+                          </Text>
+                        </View>
+                      ))}
+                    </View>
+                  </View>
+                </View>
+              );
+            })}
+          </View>
+        </Card>
+      ) : null}
+
+      {/* Compatibilité */}
+      <Card>
+        <Text variant="heading">Compatibilité</Text>
+        <Text variant="caption" color="textSubtle">
+          Appareils et services pris en charge par Kaizen.
+        </Text>
+        <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: spacing[2], marginTop: spacing[3] }}>
+          {COMPATIBLE.map((d) => (
+            <View key={d} style={{ backgroundColor: colors.surfaceElevated, borderWidth: 1, borderColor: colors.border, borderRadius: radii.md, paddingHorizontal: spacing[3], paddingVertical: spacing[2] }}>
+              <Text variant="caption" color="textMuted">
+                {d}
+              </Text>
+            </View>
+          ))}
+        </View>
+      </Card>
 
       <Card>
         <Text variant="heading">Importer un fichier</Text>
