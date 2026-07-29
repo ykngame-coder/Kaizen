@@ -48,7 +48,7 @@ function latestMetric(health: { type: HealthMetricType; value: number; measuredA
 const QUICK_LINKS: { label: string; icon: string; path: Href }[] = [
   { label: 'Repas', icon: '🍽', path: '/nutrition' },
   { label: 'Séance', icon: '▶️', path: '/workouts' },
-  { label: 'Pesée', icon: '⚖', path: '/analytics' },
+  { label: 'Pesée', icon: '⚖', path: '/weight' },
   { label: 'Habitude', icon: '✓', path: '/wellness' },
   { label: 'Objectif', icon: '🎯', path: '/goals' },
   { label: 'Sommeil', icon: '😴', path: '/sleep' },

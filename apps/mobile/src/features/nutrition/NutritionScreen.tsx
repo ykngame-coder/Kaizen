@@ -1,8 +1,8 @@
 import React, { useMemo } from 'react';
 import { View } from 'react-native';
 import { useRouter } from 'expo-router';
-import { Badge, Button, Card, ProgressRing, Screen, Text, useTheme } from '@supotsu/ui';
-import { spacing } from '@supotsu/design-system';
+import { Badge, Button, Card, Fab, ProgressRing, Screen, Text, useTheme } from '@supotsu/ui';
+import { radii, spacing } from '@supotsu/design-system';
 import {
   computeNutritionScore,
   entriesForDay,
@@ -10,7 +10,7 @@ import {
   nutritionExplanation,
   sumDay,
 } from '@supotsu/engines';
-import { useHealthMetrics, useNutritionEntries } from '@/lib/data/queries';
+import { useAddNutritionEntry, useHealthMetrics, useNutritionEntries } from '@/lib/data/queries';
 
 const MEAL_LABEL: Record<string, string> = {
   breakfast: 'Petit-déj',
@@ -59,7 +59,12 @@ export function NutritionScreen(): React.JSX.Element {
   const { colors } = useTheme();
   const { data: entries = [] } = useNutritionEntries();
   const { data: health = [] } = useHealthMetrics();
+  const addEntry = useAddNutritionEntry();
   const asOf = new Date().toISOString();
+
+  const addWater = (ml: number): void => {
+    addEntry.mutate({ mealType: 'snack', description: 'Eau', kcal: 0, hydrationMl: ml, source: 'manual', loggedAt: new Date().toISOString() });
+  };
 
   const latestWeight = useMemo(
     () =>
@@ -104,7 +109,7 @@ export function NutritionScreen(): React.JSX.Element {
         <View style={{ alignItems: 'center', gap: spacing[2] }}>
           <ProgressRing
             value={kcalPct}
-            color={colors.primary}
+            gradient
             centerLabel={hasData ? String(Math.round(totals.kcal)) : '—'}
             caption={`/ ${Math.round(kcalTarget)} kcal`}
             size={148}
@@ -148,6 +153,21 @@ export function NutritionScreen(): React.JSX.Element {
         </View>
       </Card>
 
+      {/* Hydratation — ajout rapide */}
+      <Card>
+        <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+          <Text variant="heading">Hydratation</Text>
+          <Text variant="subtitle" style={{ color: colors.accentEndurance }}>
+            {(totals.hydrationMl / 1000).toFixed(1)} / {(targets.value.hydrationMl / 1000).toFixed(1)} L
+          </Text>
+        </View>
+        <View style={{ flexDirection: 'row', gap: spacing[2], marginTop: spacing[3] }}>
+          {[250, 500, 750].map((ml) => (
+            <Button key={ml} label={`+${ml} ml`} variant="secondary" onPress={() => addWater(ml)} />
+          ))}
+        </View>
+      </Card>
+
       {explanation ? (
         <Card>
           <Text variant="heading">Analyse</Text>
@@ -187,6 +207,8 @@ export function NutritionScreen(): React.JSX.Element {
           <Button label="Saisie manuelle" variant="secondary" onPress={() => router.push('/meal/new')} />
         </View>
       </Card>
+
+      <Fab icon="+" accessibilityLabel="Ajouter un aliment" onPress={() => router.push('/food/search')} />
     </Screen>
   );
 }
