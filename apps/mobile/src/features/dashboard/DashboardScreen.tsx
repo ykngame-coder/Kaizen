@@ -156,6 +156,11 @@ export function DashboardScreen(): React.JSX.Element {
           </Text>
         </View>
         <View style={{ flexDirection: 'row', gap: spacing[2] }}>
+          <Pressable onPress={() => router.push('/search')}>
+            <View style={{ width: 38, height: 38, borderRadius: 19, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border, alignItems: 'center', justifyContent: 'center' }}>
+              <Text style={{ fontSize: 16 }}>🔍</Text>
+            </View>
+          </Pressable>
           <Pressable onPress={() => router.push('/notifications')}>
             <View style={{ width: 38, height: 38, borderRadius: 19, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border, alignItems: 'center', justifyContent: 'center' }}>
               <Text style={{ fontSize: 16 }}>🔔</Text>
