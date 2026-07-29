@@ -60,7 +60,7 @@ export default function RootLayout(): React.JSX.Element {
   return (
     <SafeAreaProvider>
       <QueryClientProvider client={queryClient}>
-        <ThemeProvider>
+        <ThemeProvider initialPreference="dark">
           <PreferencesProvider>
             <AuthProvider>
               <OnboardingProvider>
