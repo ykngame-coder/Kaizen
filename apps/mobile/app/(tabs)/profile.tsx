@@ -66,7 +66,7 @@ export default function ProfileTab(): React.JSX.Element {
         <ListRow icon="⚖" iconColor="rgba(45,127,249,0.18)" title="Appareils & synchronisation" subtitle="Garmin, Apple Santé, Renpho…" onPress={() => router.push('/connectors')} divider />
         <ListRow icon="🎯" iconColor="rgba(43,227,139,0.18)" title="Objectifs" subtitle="Cibles et progression" onPress={() => router.push('/goals')} divider />
         <ListRow icon="🔔" iconColor="rgba(245,183,66,0.18)" title="Notifications" subtitle="Rappels et alertes" onPress={() => router.push('/notifications')} divider />
-        <ListRow icon="🔗" iconColor="rgba(139,92,246,0.18)" title="Données & intégrations" subtitle="Export, connexions tierces" onPress={() => router.push('/connectors')} />
+        <ListRow icon="🔗" iconColor="rgba(139,92,246,0.18)" title="Données & intégrations" subtitle="Export, connexions tierces" onPress={() => router.push('/integrations')} />
       </Group>
 
       {/* Préférences */}
