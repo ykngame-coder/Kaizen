@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
-import { Platform, Share, Switch, View } from 'react-native';
+import { Platform, Share, View } from 'react-native';
 import { useRouter } from 'expo-router';
-import { Button, Card, Screen, SegmentedControl, Text, useTheme } from '@supotsu/ui';
+import { Button, Card, Screen, SegmentedControl, Text, Toggle, useTheme } from '@supotsu/ui';
 import { spacing } from '@supotsu/design-system';
 import { useAuth } from '@/features/auth/AuthProvider';
 import { usePreferences, type UnitSystem } from '@/lib/preferences';
@@ -23,7 +23,6 @@ function ToggleRow({
   value: boolean;
   onValueChange: (v: boolean) => void;
 }): React.JSX.Element {
-  const { colors } = useTheme();
   return (
     <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', gap: spacing[3] }}>
       <View style={{ flex: 1 }}>
@@ -34,12 +33,7 @@ function ToggleRow({
           </Text>
         ) : null}
       </View>
-      <Switch
-        value={value}
-        onValueChange={onValueChange}
-        trackColor={{ true: colors.primary, false: colors.surfaceElevated }}
-        thumbColor={colors.onPrimary}
-      />
+      <Toggle value={value} onValueChange={onValueChange} />
     </View>
   );
 }
