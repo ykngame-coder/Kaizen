@@ -12,7 +12,7 @@ import {
   type MuscleStatus,
 } from '@supotsu/engines';
 import { useMuscleSessions } from '@/lib/data/queries';
-import { BodyMap } from './BodyMap';
+import { MuscleBody } from './MuscleBody';
 
 /** French display names for each muscle group. */
 const MUSCLE_LABEL: Record<MuscleGroup, string> = {
@@ -149,7 +149,7 @@ export function MusclesScreen(): React.JSX.Element {
             </View>
 
             <View style={{ alignItems: 'center', marginTop: spacing[2] }}>
-              <BodyMap colorFor={colorFor} width={280} />
+              <MuscleBody colorFor={colorFor} width={210} />
             </View>
 
             <View
