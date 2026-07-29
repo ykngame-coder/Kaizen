@@ -12,6 +12,8 @@ export interface Preferences {
   reminders: boolean;
   /** Appear in community leaderboards. */
   shareInLeaderboards: boolean;
+  /** Primary goal archetype — personalises the whole app (mockup #17). */
+  primaryGoal?: string;
 }
 
 const DEFAULTS: Preferences = {
@@ -19,6 +21,7 @@ const DEFAULTS: Preferences = {
   dailyBriefing: true,
   reminders: true,
   shareInLeaderboards: true,
+  primaryGoal: 'fat_loss',
 };
 
 const STORAGE_KEY = 'supotsu.preferences';
