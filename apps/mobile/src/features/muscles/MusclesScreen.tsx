@@ -149,7 +149,7 @@ export function MusclesScreen(): React.JSX.Element {
             </View>
 
             <View style={{ alignItems: 'center', marginTop: spacing[2] }}>
-              <MuscleBody colorFor={colorFor} width={210} />
+              <MuscleBody colorFor={colorFor} width={330} />
             </View>
 
             <View

@@ -281,7 +281,7 @@ export function DashboardScreen(): React.JSX.Element {
         <Card>
           <SectionTitle right={<Pressable onPress={() => router.push('/muscles')}><Text variant="caption" color="primary">Voir ›</Text></Pressable>}>Corps & récupération</SectionTitle>
           <View style={{ flexDirection: 'row', gap: spacing[4] }}>
-            <View style={{ alignItems: 'center' }}><MuscleBody colorFor={() => 'transparent'} width={96} /></View>
+            <View style={{ alignItems: 'center' }}><MuscleBody colorFor={() => 'transparent'} width={132} /></View>
             <View style={{ flex: 1, justifyContent: 'center' }}>
               <BodyStat label="Poids" value={weight != null ? `${weight.toFixed(1)} kg` : '—'} />
               <BodyStat label="Masse grasse" value={bodyFat != null ? `${bodyFat.toFixed(1)} %` : '—'} />
