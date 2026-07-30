@@ -57,6 +57,7 @@ export function CalendarScreen(): React.JSX.Element {
   const now = useMemo(() => new Date(), []);
   const asOf = useMemo(() => now.toISOString(), [now]);
   const [monthOffset, setMonthOffset] = useState(0);
+  const [selectedKey, setSelectedKey] = useState(() => dayKey(now));
 
   const actsByDay = useMemo(() => {
     const map = new Map<string, ActivityType[]>();
@@ -87,12 +88,13 @@ export function CalendarScreen(): React.JSX.Element {
     return { year, month, cells };
   }, [now, monthOffset]);
 
+  // Timeline for the currently selected day (defaults to today).
   const timeline = useMemo(() => {
     const items: { time: string; icon: string; label: string; sort: number }[] = [];
-    for (const a of todayActs) items.push({ time: hhmm(a.startedAt), icon: ACT_ICON[a.type], label: `${ACT_LABEL[a.type]} · ${Math.round(a.durationSec / 60)} min`, sort: new Date(a.startedAt).getTime() });
-    for (const e of nutrition) if (dayKey(new Date(e.loggedAt)) === dayKey(now)) items.push({ time: hhmm(e.loggedAt), icon: MEAL_ICON[e.mealType] ?? '🍽', label: `${e.description} · ${Math.round(e.kcal)} kcal`, sort: new Date(e.loggedAt).getTime() });
+    for (const a of activities) if (dayKey(new Date(a.startedAt)) === selectedKey) items.push({ time: hhmm(a.startedAt), icon: ACT_ICON[a.type], label: `${ACT_LABEL[a.type]} · ${Math.round(a.durationSec / 60)} min`, sort: new Date(a.startedAt).getTime() });
+    for (const e of nutrition) if (dayKey(new Date(e.loggedAt)) === selectedKey) items.push({ time: hhmm(e.loggedAt), icon: MEAL_ICON[e.mealType] ?? '🍽', label: `${e.description} · ${Math.round(e.kcal)} kcal`, sort: new Date(e.loggedAt).getTime() });
     return items.sort((a, b) => a.sort - b.sort);
-  }, [todayActs, nutrition, now]);
+  }, [activities, nutrition, selectedKey]);
 
   const deadlines = useMemo(() => {
     const items: { icon: string; label: string; date: string }[] = [];
@@ -148,33 +150,36 @@ export function CalendarScreen(): React.JSX.Element {
             if (!cell) return <View key={i} style={{ width: `${100 / 7}%`, aspectRatio: 1 }} />;
             const types = actsByDay.get(cell.key) ?? [];
             const isToday = cell.key === dayKey(now);
+            const isSelected = cell.key === selectedKey;
             return (
-              <View key={i} style={{ width: `${100 / 7}%`, aspectRatio: 1, padding: 2 }}>
-                <View style={{ flex: 1, borderRadius: 10, backgroundColor: types.length > 0 ? 'rgba(45,127,249,0.12)' : colors.surfaceElevated, borderWidth: isToday ? 1.5 : 0, borderColor: colors.primary, alignItems: 'center', paddingTop: 4 }}>
-                  <Text variant="caption" style={{ color: isToday ? colors.primary : colors.textMuted, fontWeight: isToday ? '800' : '400' }}>{cell.day}</Text>
+              <Pressable key={i} onPress={() => setSelectedKey(cell.key)} style={{ width: `${100 / 7}%`, aspectRatio: 1, padding: 2 }}>
+                <View style={{ flex: 1, borderRadius: 10, backgroundColor: isSelected ? 'rgba(45,127,249,0.22)' : types.length > 0 ? 'rgba(45,127,249,0.12)' : colors.surfaceElevated, borderWidth: isSelected || isToday ? 1.5 : 0, borderColor: isSelected ? colors.primary : colors.accentData, alignItems: 'center', paddingTop: 4 }}>
+                  <Text variant="caption" style={{ color: isToday ? colors.accentData : isSelected ? colors.primary : colors.textMuted, fontWeight: isToday || isSelected ? '800' : '400' }}>{cell.day}</Text>
                   <View style={{ flexDirection: 'row', gap: 2, position: 'absolute', bottom: 4 }}>
                     {types.slice(0, 3).map((t, j) => (<View key={j} style={{ width: 4, height: 4, borderRadius: 2, backgroundColor: ACT_COLOR[t] }} />))}
                   </View>
                 </View>
-              </View>
+              </Pressable>
             );
           })}
         </View>
       </Card>
 
-      {/* Today timeline */}
-      {timeline.length > 0 ? (
-        <Card>
-          <SectionTitle>Aujourd'hui</SectionTitle>
-          {timeline.map((it, i) => (
+      {/* Selected-day timeline */}
+      <Card>
+        <SectionTitle>{selectedKey === dayKey(now) ? "Aujourd'hui" : formatDate(`${selectedKey}T12:00:00`)}</SectionTitle>
+        {timeline.length > 0 ? (
+          timeline.map((it, i) => (
             <View key={i} style={{ flexDirection: 'row', gap: spacing[3], alignItems: 'center', paddingVertical: spacing[2] }}>
               <Text variant="caption" color="textSubtle" style={{ width: 44 }}>{it.time}</Text>
               <View style={{ width: 34, height: 34, borderRadius: 10, backgroundColor: colors.surfaceElevated, alignItems: 'center', justifyContent: 'center' }}><Text style={{ fontSize: 16 }}>{it.icon}</Text></View>
               <Text variant="body" style={{ flex: 1 }}>{it.label}</Text>
             </View>
-          ))}
-        </Card>
-      ) : null}
+          ))
+        ) : (
+          <Text variant="body" color="textMuted">Rien d'enregistré ce jour-là.</Text>
+        )}
+      </Card>
 
       {/* Deadlines */}
       {deadlines.length > 0 ? (
