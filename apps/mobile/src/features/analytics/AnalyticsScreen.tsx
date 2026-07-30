@@ -62,8 +62,8 @@ export function AnalyticsScreen(): React.JSX.Element {
   const router = useRouter();
   const { colors } = useTheme();
   const { user } = useAuth();
-  const asOf = new Date().toISOString();
-  const now = new Date();
+  const asOf = useMemo(() => new Date().toISOString(), []);
+  const now = useMemo(() => new Date(asOf), [asOf]);
 
   const { data: activities = [] } = useActivities();
   const { data: metrics = [] } = useHealthMetrics();

@@ -108,8 +108,8 @@ export function DashboardScreen(): React.JSX.Element {
   const { data: nutrition = [] } = useNutritionEntries();
   const { data: habits = [] } = useHabits();
   const { data: habitLogs = [] } = useHabitLogs();
-  const asOf = new Date().toISOString();
-  const now = new Date();
+  const asOf = useMemo(() => new Date().toISOString(), []);
+  const now = useMemo(() => new Date(asOf), [asOf]);
 
   const recovery = useMemo(() => {
     const today = computeRecoveryScore(health, asOf);
@@ -190,7 +190,7 @@ export function DashboardScreen(): React.JSX.Element {
     { done: waterLeftMl <= 0, label: waterLeftMl > 0 ? `Boire encore ${(waterLeftMl / 1000).toFixed(1)} L d'eau` : 'Hydratation atteinte' },
     { done: proteinLeft <= 0, label: proteinLeft > 0 ? `Atteindre ${Math.round(targets.proteinG)} g de protéines (${proteinLeft} g restants)` : 'Protéines atteintes' },
     { done: pendingHabits.length === 0 && activeHabits.length > 0, label: activeHabits.length === 0 ? 'Ajouter une habitude à suivre' : pendingHabits.length === 0 ? 'Toutes les habitudes validées' : `Valider ${pendingHabits.length} habitude${pendingHabits.length > 1 ? 's' : ''}` },
-    { done: !!lastNight && lastNight.hours >= 7.5, label: lastNight ? `Sommeil ${fmtSleep(lastNight.hours)} (cible 7 h 45)` : 'Enregistrer ta nuit' },
+    { done: !!lastNight && lastNight.hours >= 7.75, label: lastNight ? `Sommeil ${fmtSleep(lastNight.hours)} (cible 7 h 45)` : 'Enregistrer ta nuit' },
   ];
 
   return (
@@ -380,7 +380,7 @@ export function DashboardScreen(): React.JSX.Element {
 
 const QUICK_LINKS: { label: string; icon: string; path: Href }[] = [
   { label: 'Repas', icon: '🍽', path: '/nutrition' },
-  { label: 'Séance', icon: '▶️', path: '/workouts' },
+  { label: 'Séance', icon: '▶️', path: '/workout/new' },
   { label: 'Pesée', icon: '⚖', path: '/weight' },
   { label: 'Habitude', icon: '✓', path: '/wellness' },
   { label: 'Objectif', icon: '🎯', path: '/goals' },

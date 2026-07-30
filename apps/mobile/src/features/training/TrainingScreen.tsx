@@ -89,6 +89,7 @@ export function TrainingScreen(): React.JSX.Element {
   );
 
   return (
+    <View style={{ flex: 1 }}>
     <Screen scroll>
       <Text variant="title">Entraînements</Text>
       <Text variant="caption" color="textMuted">
@@ -185,7 +186,8 @@ export function TrainingScreen(): React.JSX.Element {
         </Card>
       )}
 
-      <Fab icon="+" accessibilityLabel="Nouvelle séance" onPress={() => router.push('/workout/new')} />
     </Screen>
+      <Fab icon="+" accessibilityLabel="Nouvelle séance" onPress={() => router.push('/workout/new')} />
+    </View>
   );
 }

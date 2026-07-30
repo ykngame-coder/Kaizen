@@ -18,10 +18,10 @@ export default function ProfileTab(): React.JSX.Element {
   const router = useRouter();
   const { data: workouts = [] } = useWorkouts();
 
-  const email = user?.email ?? 'Non connecté';
-  const firstName = (email.split('@')[0] ?? '').replace(/[._-]+/g, ' ').trim();
+  const email = user?.email ?? '';
+  const firstName = email.includes('@') ? email.split('@')[0]!.replace(/[._-]+/g, ' ').trim() : '';
   const displayName = firstName ? firstName.charAt(0).toUpperCase() + firstName.slice(1) : 'Mon compte';
-  const initial = email.charAt(0).toUpperCase();
+  const initial = user ? email.charAt(0).toUpperCase() : '?';
 
   return (
     <Screen scroll>

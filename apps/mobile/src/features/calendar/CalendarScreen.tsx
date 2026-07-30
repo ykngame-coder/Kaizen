@@ -54,14 +54,14 @@ export function CalendarScreen(): React.JSX.Element {
   const { data: goals = [] } = useGoals();
   const { data: challenges = [] } = useChallenges();
   const { data: health = [] } = useHealthMetrics();
-  const now = new Date();
-  const asOf = now.toISOString();
+  const now = useMemo(() => new Date(), []);
+  const asOf = useMemo(() => now.toISOString(), [now]);
   const [monthOffset, setMonthOffset] = useState(0);
 
   const actsByDay = useMemo(() => {
     const map = new Map<string, ActivityType[]>();
     for (const a of activities) {
-      const k = a.startedAt.slice(0, 10);
+      const k = dayKey(new Date(a.startedAt));
       const arr = map.get(k) ?? [];
       arr.push(a.type);
       map.set(k, arr);
@@ -71,7 +71,7 @@ export function CalendarScreen(): React.JSX.Element {
 
   const recovery = useMemo(() => computeRecoveryScore(health, asOf), [health, asOf]);
   const acwr = useMemo(() => computeAcwr(activities, asOf), [activities, asOf]);
-  const todayActs = activities.filter((a) => a.startedAt.slice(0, 10) === dayKey(now));
+  const todayActs = activities.filter((a) => dayKey(new Date(a.startedAt)) === dayKey(now));
   const lastNight = sleepTrend(health, asOf, 1).at(-1);
   const todayKcal = sumDay(nutrition, asOf).kcal;
 
@@ -90,7 +90,7 @@ export function CalendarScreen(): React.JSX.Element {
   const timeline = useMemo(() => {
     const items: { time: string; icon: string; label: string; sort: number }[] = [];
     for (const a of todayActs) items.push({ time: hhmm(a.startedAt), icon: ACT_ICON[a.type], label: `${ACT_LABEL[a.type]} · ${Math.round(a.durationSec / 60)} min`, sort: new Date(a.startedAt).getTime() });
-    for (const e of nutrition) if (e.loggedAt.slice(0, 10) === dayKey(now)) items.push({ time: hhmm(e.loggedAt), icon: MEAL_ICON[e.mealType] ?? '🍽', label: `${e.description} · ${Math.round(e.kcal)} kcal`, sort: new Date(e.loggedAt).getTime() });
+    for (const e of nutrition) if (dayKey(new Date(e.loggedAt)) === dayKey(now)) items.push({ time: hhmm(e.loggedAt), icon: MEAL_ICON[e.mealType] ?? '🍽', label: `${e.description} · ${Math.round(e.kcal)} kcal`, sort: new Date(e.loggedAt).getTime() });
     return items.sort((a, b) => a.sort - b.sort);
   }, [todayActs, nutrition, now]);
 

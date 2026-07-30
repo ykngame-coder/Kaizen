@@ -60,8 +60,8 @@ export function WeeklyReportScreen(): React.JSX.Element {
   const { data: habits = [] } = useHabits();
   const { data: habitLogs = [] } = useHabitLogs();
   const { data: records = [] } = useRecords();
-  const now = new Date();
-  const asOf = now.toISOString();
+  const now = useMemo(() => new Date(), []);
+  const asOf = useMemo(() => now.toISOString(), [now]);
   const since = now.getTime() - 7 * DAY_MS;
   const prevSince = now.getTime() - 14 * DAY_MS;
   const [exporting, setExporting] = useState(false);
@@ -109,7 +109,7 @@ export function WeeklyReportScreen(): React.JSX.Element {
 
     const weights = health.filter((m) => m.type === 'weight').sort((a, b) => a.measuredAt.localeCompare(b.measuredAt));
     const wLast = weights.at(-1)?.value;
-    const wRef = weights.find((m) => new Date(m.measuredAt).getTime() >= since)?.value ?? weights[0]?.value;
+    const wRef = weights.find((m) => new Date(m.measuredAt).getTime() >= since)?.value;
     const wDelta = wLast != null && wRef != null ? wLast - wRef : null;
 
     // Objectives (derived, real)

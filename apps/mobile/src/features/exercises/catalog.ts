@@ -32,7 +32,7 @@ export function exerciseImageUrl(image: string | null): string | null {
 
 /** French muscle-group labels for the library UI. */
 export const MUSCLE_LABEL: Record<MuscleGroup, string> = {
-  chest: 'Pectoraux', back: 'Dos', shoulders: 'Épaules', biceps: 'Bras', triceps: 'Triceps',
+  chest: 'Pectoraux', back: 'Dos', shoulders: 'Épaules', biceps: 'Biceps', triceps: 'Triceps',
   quads: 'Quadriceps', hamstrings: 'Ischios', glutes: 'Fessiers', calves: 'Mollets', core: 'Abdos / gainage', full_body: 'Corps entier',
 };
 

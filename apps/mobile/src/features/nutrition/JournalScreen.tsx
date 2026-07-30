@@ -50,8 +50,8 @@ export function JournalScreen(): React.JSX.Element {
   const { data: entries = [] } = useNutritionEntries();
   const { data: health = [] } = useHealthMetrics();
   const addEntry = useAddNutritionEntry();
-  const now = new Date();
-  const asOf = now.toISOString();
+  const now = useMemo(() => new Date(), []);
+  const asOf = useMemo(() => now.toISOString(), [now]);
 
   const weight = useMemo(() => health.filter((m) => m.type === 'weight').sort((a, b) => b.measuredAt.localeCompare(a.measuredAt))[0]?.value, [health]);
   const targets = useMemo(() => estimateTargets({ weightKg: weight }, asOf).value, [weight, asOf]);

@@ -41,7 +41,7 @@ export function SearchScreen(): React.JSX.Element {
 
   const index = useMemo<Item[]>(() => {
     const items: Item[] = [];
-    for (const e of EXERCISES) items.push({ category: 'Exercices', icon: CAT_ICON.Exercices, title: e.name, subtitle: `${MUSCLE_LABEL[e.primary]} · ${e.equipment}`, path: '/exercises' });
+    for (const e of EXERCISES) items.push({ category: 'Exercices', icon: CAT_ICON.Exercices, title: e.name, subtitle: `${MUSCLE_LABEL[e.primary]} · ${e.equipment}`, path: { pathname: '/exercise/[id]', params: { id: e.id } } });
     for (const w of workouts) items.push({ category: 'Séances', icon: CAT_ICON.Séances, title: w.name, subtitle: formatDate(w.completedAt ?? w.createdAt), path: { pathname: '/workout/[id]', params: { id: w.id } } });
     for (const a of activities) items.push({ category: 'Activités', icon: CAT_ICON.Activités, title: ACTIVITY_LABEL[a.type], subtitle: `${formatDate(a.startedAt)} · ${Math.round(a.durationSec / 60)} min`, path: '/analytics' });
     for (const n of nutrition) items.push({ category: 'Nutrition', icon: CAT_ICON.Nutrition, title: n.description, subtitle: `${Math.round(n.kcal)} kcal · ${formatDate(n.loggedAt)}`, path: '/nutrition' });

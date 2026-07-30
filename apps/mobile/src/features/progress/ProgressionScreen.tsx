@@ -47,7 +47,7 @@ export function ProgressionScreen(): React.JSX.Element {
     const rec = computeRecoveryScore(health, asOf);
     const weights = health.filter((m) => m.type === 'weight').sort((a, b) => a.measuredAt.localeCompare(b.measuredAt));
     const wLast = weights.at(-1)?.value;
-    const wRef = weights.find((m) => new Date(m.measuredAt).getTime() >= since)?.value ?? weights[0]?.value;
+    const wRef = weights.find((m) => new Date(m.measuredAt).getTime() >= since)?.value;
     const wDelta = wLast != null && wRef != null ? wLast - wRef : null;
     return {
       sessions,
