@@ -48,10 +48,10 @@ export function SanteScreen(): React.JSX.Element {
     { title: 'Poids & composition', subtitle: 'Poids, masse grasse, masse musculaire', icon: '⚖', path: '/weight' },
     { title: 'Habitudes & discipline', subtitle: 'Suivi quotidien et bien-être', icon: '✓', path: '/wellness' },
     { title: 'Respiration', subtitle: 'Cohérence cardiaque, 4-7-8', icon: '🌬', path: '/breathing' },
-    { title: 'VO₂ Max', subtitle: 'Capacité cardio-respiratoire', icon: '🫁', soon: true },
-    { title: 'HRV (VFC)', subtitle: 'Variabilité cardiaque détaillée', icon: '📈', soon: true },
-    { title: 'Stress', subtitle: 'Niveau de stress sur la journée', icon: '🧠', soon: true },
-    { title: 'Fréquence cardiaque', subtitle: 'FC repos et continue', icon: '💓', soon: true },
+    { title: 'HRV (VFC)', subtitle: 'Variabilité cardiaque détaillée', icon: '📈', path: { pathname: '/health/[metric]', params: { metric: 'hrv' } } },
+    { title: 'Fréquence cardiaque', subtitle: 'FC repos et tendance', icon: '💓', path: { pathname: '/health/[metric]', params: { metric: 'resting_heart_rate' } } },
+    { title: 'Stress', subtitle: 'Niveau de stress sur la journée', icon: '🧠', path: { pathname: '/health/[metric]', params: { metric: 'stress' } } },
+    { title: 'VO₂ Max', subtitle: 'Capacité cardio-respiratoire', icon: '🫁', path: { pathname: '/health/[metric]', params: { metric: 'vo2max' } } },
   ];
 
   return (
