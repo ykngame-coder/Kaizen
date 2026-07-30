@@ -5,6 +5,7 @@ import { Badge, Button, Card, Fab, ProgressRing, Screen, Sparkline, Text, useThe
 import { radii, spacing } from '@supotsu/design-system';
 import { dailySums, entriesForDay, estimateTargets, sumDay, type TrendPoint } from '@supotsu/engines';
 import { useAddNutritionEntry, useHealthMetrics, useNutritionEntries } from '@/lib/data/queries';
+import { usePreferences } from '@/lib/preferences';
 
 const DAY_MS = 86_400_000;
 const MEAL_ICON: Record<string, string> = { breakfast: '🥣', lunch: '🍗', dinner: '🍝', snack: '🍎' };
@@ -54,7 +55,8 @@ export function JournalScreen(): React.JSX.Element {
   const asOf = useMemo(() => now.toISOString(), [now]);
 
   const weight = useMemo(() => health.filter((m) => m.type === 'weight').sort((a, b) => b.measuredAt.localeCompare(a.measuredAt))[0]?.value, [health]);
-  const targets = useMemo(() => estimateTargets({ weightKg: weight }, asOf).value, [weight, asOf]);
+  const { preferences } = usePreferences();
+  const targets = useMemo(() => preferences.nutritionGoals ?? estimateTargets({ weightKg: weight }, asOf).value, [preferences.nutritionGoals, weight, asOf]);
   const totals = useMemo(() => sumDay(entries, asOf), [entries, asOf]);
   const today = useMemo(() => entriesForDay(entries, asOf), [entries, asOf]);
   const hasData = today.length > 0;

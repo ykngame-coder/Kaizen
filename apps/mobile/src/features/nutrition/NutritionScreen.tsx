@@ -13,6 +13,7 @@ import {
 } from '@supotsu/engines';
 import type { TrendPoint } from '@supotsu/engines';
 import { useAddNutritionEntry, useHealthMetrics, useNutritionEntries } from '@/lib/data/queries';
+import { usePreferences } from '@/lib/preferences';
 
 const MEAL_ORDER = ['breakfast', 'lunch', 'dinner', 'snack'] as const;
 const MEAL_LABEL: Record<string, string> = { breakfast: 'Petit-déjeuner', lunch: 'Déjeuner', dinner: 'Dîner', snack: 'Collation' };
@@ -55,6 +56,22 @@ function GoalBar({ label, current, target, unit, color }: { label: string; curre
   );
 }
 
+/** A label + value with − / + steppers for adjusting a goal. */
+function StepperRow({ label, value, onMinus, onPlus }: { label: string; value: string; onMinus: () => void; onPlus: () => void }): React.JSX.Element {
+  const { colors } = useTheme();
+  const btn = { width: 34, height: 34, borderRadius: 10, backgroundColor: colors.surfaceElevated, borderWidth: 1, borderColor: colors.border, alignItems: 'center' as const, justifyContent: 'center' as const };
+  return (
+    <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: spacing[3] }}>
+      <Text variant="body" style={{ flex: 1 }}>{label}</Text>
+      <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing[3] }}>
+        <Pressable onPress={onMinus} style={({ pressed }) => [btn, { opacity: pressed ? 0.6 : 1 }]}><Text variant="subtitle">−</Text></Pressable>
+        <Text variant="body" style={{ fontWeight: '700', minWidth: 84, textAlign: 'center' }}>{value}</Text>
+        <Pressable onPress={onPlus} style={({ pressed }) => [btn, { opacity: pressed ? 0.6 : 1 }]}><Text variant="subtitle">+</Text></Pressable>
+      </View>
+    </View>
+  );
+}
+
 /** Nutrition (mockup #11) — kcal ring, macros, hydration, meals, score, trends, goals. */
 export function NutritionScreen(): React.JSX.Element {
   const router = useRouter();
@@ -69,15 +86,26 @@ export function NutritionScreen(): React.JSX.Element {
   };
 
   const latestWeight = useMemo(() => health.filter((m) => m.type === 'weight').sort((a, b) => b.measuredAt.localeCompare(a.measuredAt))[0]?.value, [health]);
+  const { preferences, setPreference } = usePreferences();
   const targets = useMemo(() => estimateTargets({ weightKg: latestWeight }, asOf), [latestWeight, asOf]);
+  const goals = preferences.nutritionGoals ?? targets.value;
+  const customized = preferences.nutritionGoals != null;
+  const adjust = (patch: Partial<{ kcal: number; proteinG: number; hydrationMl: number }>): void => {
+    const base = preferences.nutritionGoals ?? { kcal: Math.round(goals.kcal), proteinG: Math.round(goals.proteinG), hydrationMl: Math.round(goals.hydrationMl) };
+    setPreference('nutritionGoals', {
+      kcal: Math.max(800, base.kcal + (patch.kcal ?? 0)),
+      proteinG: Math.max(0, base.proteinG + (patch.proteinG ?? 0)),
+      hydrationMl: Math.max(0, base.hydrationMl + (patch.hydrationMl ?? 0)),
+    });
+  };
   const totals = useMemo(() => sumDay(entries, asOf), [entries, asOf]);
   const today = useMemo(() => entriesForDay(entries, asOf), [entries, asOf]);
-  const score = useMemo(() => computeNutritionScore(entries, targets.value, asOf), [entries, targets, asOf]);
-  const explanation = useMemo(() => nutritionExplanation(entries, targets.value, asOf), [entries, targets, asOf]);
+  const score = useMemo(() => computeNutritionScore(entries, goals, asOf), [entries, goals, asOf]);
+  const explanation = useMemo(() => nutritionExplanation(entries, goals, asOf), [entries, goals, asOf]);
   const hasData = today.length > 0;
 
-  const kcalTarget = targets.value.kcal;
-  const remainingKcal = Math.max(0, kcalTarget - targets.value.proteinG * 4);
+  const kcalTarget = goals.kcal;
+  const remainingKcal = Math.max(0, kcalTarget - goals.proteinG * 4);
   const carbTarget = Math.round((remainingKcal * 0.55) / 4);
   const fatTarget = Math.round((remainingKcal * 0.45) / 9);
   const kcalPct = hasData && kcalTarget > 0 ? Math.min(100, (totals.kcal / kcalTarget) * 100) : 0;
@@ -128,7 +156,7 @@ export function NutritionScreen(): React.JSX.Element {
         <Card>
           <SectionTitle>Macronutriments</SectionTitle>
           <View style={{ flexDirection: 'row', justifyContent: 'space-around' }}>
-            <MacroRing label="Protéines" current={totals.proteinG} target={targets.value.proteinG} color={colors.accentData} />
+            <MacroRing label="Protéines" current={totals.proteinG} target={goals.proteinG} color={colors.accentData} />
             <MacroRing label="Glucides" current={totals.carbG} target={carbTarget} color={colors.warning} />
             <MacroRing label="Lipides" current={totals.fatG} target={fatTarget} color={colors.accentMobility} />
           </View>
@@ -136,9 +164,9 @@ export function NutritionScreen(): React.JSX.Element {
 
         {/* Hydration */}
         <Card>
-          <SectionTitle right={<Text variant="subtitle" style={{ color: colors.accentEndurance }}>{(totals.hydrationMl / 1000).toFixed(1)} / {(targets.value.hydrationMl / 1000).toFixed(1)} L</Text>}>Hydratation</SectionTitle>
+          <SectionTitle right={<Text variant="subtitle" style={{ color: colors.accentEndurance }}>{(totals.hydrationMl / 1000).toFixed(1)} / {(goals.hydrationMl / 1000).toFixed(1)} L</Text>}>Hydratation</SectionTitle>
           <View style={{ height: 10, borderRadius: 6, backgroundColor: colors.surfaceElevated, overflow: 'hidden' }}>
-            <View style={{ width: `${Math.min(100, (totals.hydrationMl / targets.value.hydrationMl) * 100)}%`, height: 10, backgroundColor: colors.accentEndurance }} />
+            <View style={{ width: `${Math.min(100, (totals.hydrationMl / goals.hydrationMl) * 100)}%`, height: 10, backgroundColor: colors.accentEndurance }} />
           </View>
           <View style={{ flexDirection: 'row', gap: spacing[2], marginTop: spacing[3] }}>
             {[250, 500, 750].map((ml) => (<Button key={ml} label={`+${ml} ml`} variant="secondary" onPress={() => addWater(ml)} />))}
@@ -196,10 +224,19 @@ export function NutritionScreen(): React.JSX.Element {
 
         {/* Objectifs */}
         <Card>
-          <SectionTitle>Objectifs</SectionTitle>
+          <SectionTitle right={
+            <Pressable onPress={() => setPreference('nutritionGoals', undefined)} disabled={!customized}>
+              <Text variant="caption" color={customized ? 'primary' : 'textSubtle'}>{customized ? 'Repasser en auto' : 'Auto'}</Text>
+            </Pressable>
+          }>Objectifs</SectionTitle>
           <GoalBar label="Calories" current={totals.kcal} target={kcalTarget} unit="kcal" color={colors.info} />
-          <GoalBar label="Protéines" current={totals.proteinG} target={targets.value.proteinG} unit="g" color={colors.accentData} />
-          <GoalBar label="Hydratation" current={totals.hydrationMl / 1000} target={targets.value.hydrationMl / 1000} unit="L" color={colors.accentEndurance} />
+          <GoalBar label="Protéines" current={totals.proteinG} target={goals.proteinG} unit="g" color={colors.accentData} />
+          <GoalBar label="Hydratation" current={totals.hydrationMl / 1000} target={goals.hydrationMl / 1000} unit="L" color={colors.accentEndurance} />
+
+          <Text variant="caption" color="textSubtle" style={{ marginTop: spacing[4] }}>Ajuster mes objectifs {customized ? '(perso)' : '(auto — modifie pour personnaliser)'}</Text>
+          <StepperRow label="Calories" value={`${Math.round(goals.kcal)} kcal`} onMinus={() => adjust({ kcal: -50 })} onPlus={() => adjust({ kcal: 50 })} />
+          <StepperRow label="Protéines" value={`${Math.round(goals.proteinG)} g`} onMinus={() => adjust({ proteinG: -5 })} onPlus={() => adjust({ proteinG: 5 })} />
+          <StepperRow label="Hydratation" value={`${(goals.hydrationMl / 1000).toFixed(2)} L`} onMinus={() => adjust({ hydrationMl: -250 })} onPlus={() => adjust({ hydrationMl: 250 })} />
         </Card>
 
         {/* Micronutriments — honest */}

@@ -14,6 +14,8 @@ export interface Preferences {
   shareInLeaderboards: boolean;
   /** Primary goal archetype — personalises the whole app (mockup #17). */
   primaryGoal?: string;
+  /** Manual nutrition targets — override the auto-estimated ones when set. */
+  nutritionGoals?: { kcal: number; proteinG: number; hydrationMl: number };
 }
 
 const DEFAULTS: Preferences = {
