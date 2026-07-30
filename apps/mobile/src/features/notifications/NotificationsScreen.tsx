@@ -94,7 +94,7 @@ export function NotificationsScreen(): React.JSX.Element {
     const doneToday = new Set(habitLogs.filter((l) => dayKey(new Date(l.completedAt)) === todayKey).map((l) => l.habitId));
     const pending = habits.filter((h) => !h.archivedAt && !doneToday.has(h.id));
     if (pending.length > 0) {
-      out.push({ id: 'habits', category: 'important', icon: '✓', title: pending.length === 1 ? `Habitude à valider : ${pending[0]!.name}` : `${pending.length} habitudes à valider`, when: "Aujourd'hui", action: { label: 'Valider', path: '/wellness', primary: true } });
+      out.push({ id: 'habits', category: 'important', icon: '✓', title: pending.length === 1 ? `Habitude à valider : ${pending[0]!.name}` : `${pending.length} habitudes à valider`, when: "Aujourd'hui", action: { label: 'Valider', path: '/habits', primary: true } });
     }
 
     // Nutrition — remaining protein / hydration from real targets
@@ -138,7 +138,7 @@ export function NotificationsScreen(): React.JSX.Element {
     // Succès — last record + habits all done
     const lastRecord = [...records].sort((a, b) => b.achievedAt.localeCompare(a.achievedAt))[0];
     if (lastRecord) out.push({ id: 'record', category: 'succes', icon: '🏆', title: `Record : ${lastRecord.label} — ${lastRecord.value} ${lastRecord.unit}.`, when: relative(lastRecord.achievedAt), path: '/records' });
-    if (habits.length > 0 && pending.length === 0) out.push({ id: 'habits-done', category: 'succes', icon: '🔥', title: 'Toutes tes habitudes du jour sont validées !', when: "Aujourd'hui", path: '/wellness' });
+    if (habits.length > 0 && pending.length === 0) out.push({ id: 'habits-done', category: 'succes', icon: '🔥', title: 'Toutes tes habitudes du jour sont validées !', when: "Aujourd'hui", path: '/habits' });
 
     // Appareils — Renpho pesée, latest sync
     const renpho = health.filter((m) => m.source === 'renpho' && m.type === 'weight').sort((a, b) => a.measuredAt.localeCompare(b.measuredAt)).at(-1);

@@ -306,7 +306,7 @@ export function DashboardScreen(): React.JSX.Element {
 
         {/* Habitudes */}
         <Card>
-          <SectionTitle right={<Pressable onPress={() => router.push('/wellness')}><Text variant="caption" color="primary">Voir ›</Text></Pressable>}>Habitudes</SectionTitle>
+          <SectionTitle right={<Pressable onPress={() => router.push('/habits')}><Text variant="caption" color="primary">Voir ›</Text></Pressable>}>Habitudes</SectionTitle>
           <View style={{ flexDirection: 'row', justifyContent: 'space-around', marginBottom: spacing[4] }}>
             <MiniStat value={`${activeHabits.length - pendingHabits.length}/${activeHabits.length || 0}`} label="Aujourd'hui" />
             <MiniStat value={`${streak} j`} label="Série active" color={colors.accentData} />
@@ -382,7 +382,7 @@ const QUICK_LINKS: { label: string; icon: string; path: Href }[] = [
   { label: 'Repas', icon: '🍽', path: '/nutrition' },
   { label: 'Séance', icon: '▶️', path: '/workout/new' },
   { label: 'Pesée', icon: '⚖', path: '/weight' },
-  { label: 'Habitude', icon: '✓', path: '/wellness' },
+  { label: 'Habitude', icon: '✓', path: '/habits' },
   { label: 'Objectif', icon: '🎯', path: '/goals' },
   { label: 'Sommeil', icon: '😴', path: '/sleep' },
   { label: 'Coach IA', icon: '✦', path: '/coach' },
