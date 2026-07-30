@@ -67,7 +67,9 @@ function fromHealthAutoExport(data: any): { type: string; value: number; date: s
     const points = Array.isArray(metric?.data) ? metric.data : [];
     if (metric?.name === 'sleep_analysis') {
       for (const p of points) {
-        const date = haeDate(p?.sleepEnd ?? p?.date);
+        // Convention (mirrors healthAutoExport.ts): measured_at of sleep_duration
+        // is the BEDTIME (sleepStart), so circadian/regularity read correct times.
+        const date = haeDate(p?.sleepStart ?? p?.inBedStart ?? p?.date);
         const total = Number(p?.totalSleep);
         const inBed = Number(p?.inBed);
         if (!date || !Number.isFinite(total) || total <= 0) continue;

@@ -190,7 +190,9 @@ export function SleepScreen(): React.JSX.Element {
       }),
     [metrics, asOf],
   );
-  const hasData = score.confidence !== 'to_confirm';
+  // Show the screen as soon as we have any sleep night (any source), even if the
+  // full quality score can't be computed yet.
+  const hasData = trend.length > 0 || lastSession != null;
 
   const zones = [
     { color: colors.error, weight: 50 },
@@ -223,7 +225,7 @@ export function SleepScreen(): React.JSX.Element {
         <EmptyState
           icon="😴"
           title="Pas encore de données de sommeil"
-          message="Importe ton export Garmin ou connecte Apple Santé pour suivre tes nuits."
+          message="Synchronise Apple Santé (Health Auto Export) ou importe un export pour suivre tes nuits — toute source est prise en compte."
           actionLabel="Importer / connecter"
           onAction={() => router.push('/import')}
         />

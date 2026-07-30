@@ -1,7 +1,7 @@
 import React, { useMemo } from 'react';
 import { View } from 'react-native';
 import { useRouter } from 'expo-router';
-import { Badge, Button, Card, EmptyState, Meter, Screen, Text, useTheme } from '@supotsu/ui';
+import { Badge, Button, Card, Meter, Screen, Text, useTheme } from '@supotsu/ui';
 import { spacing } from '@supotsu/design-system';
 import type { MuscleGroup } from '@supotsu/core';
 import {
@@ -129,17 +129,9 @@ export function MusclesScreen(): React.JSX.Element {
         <Text variant="body" color="textMuted">
           Chargement…
         </Text>
-      ) : ranked.length === 0 ? (
-        <EmptyState
-          icon="💪"
-          title="Aucune séance récente"
-          message="Enregistre une séance de musculation avec ses exercices pour voir tes muscles travaillés et au repos."
-          actionLabel="Créer une séance"
-          onAction={() => router.push('/workout/new')}
-        />
       ) : (
         <>
-          {/* État global — body map + legend */}
+          {/* État global — body map + legend (shown even without recent sessions) */}
           <Card>
             <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'baseline' }}>
               <Text variant="heading">État global</Text>
@@ -175,6 +167,17 @@ export function MusclesScreen(): React.JSX.Element {
             </View>
           </Card>
 
+          {ranked.length === 0 ? (
+            <Card>
+              <Text variant="body" color="textMuted">
+                Aucune séance récente. Enregistre une séance de musculation pour colorer tes muscles travaillés et voir ceux au repos.
+              </Text>
+              <View style={{ alignItems: 'flex-start', marginTop: spacing[2] }}>
+                <Button label="Créer une séance" onPress={() => router.push('/workout/new')} />
+              </View>
+            </Card>
+          ) : (
+          <>
           {/* Groupes musculaires — name + coloured status */}
           <Card>
             <Text variant="heading">Groupes musculaires</Text>
@@ -207,6 +210,8 @@ export function MusclesScreen(): React.JSX.Element {
               <Button label="Planifier une séance" onPress={() => router.push('/workout/new')} />
             </View>
           </Card>
+          </>
+          )}
         </>
       )}
 

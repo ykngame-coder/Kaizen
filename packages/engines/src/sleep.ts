@@ -310,7 +310,7 @@ export function computeSleepScore2(
     detail:
       hours !== undefined
         ? `${hours.toFixed(1)} h dormies sur ${SLEEP_TARGET_HOURS} h visées.`
-        : 'Nécessite une nuit enregistrée (Garmin ou Apple Santé).',
+        : 'Nécessite une nuit enregistrée (toute source).',
   });
 
   // 2) Qualité — the real stage composition when a sleep session is available
@@ -335,7 +335,7 @@ export function computeSleepScore2(
         ? `Profond ${phase.deepPct}%, paradoxal ${phase.remPct}%, efficacité ${phase.efficiencyPct}%.`
         : efficiency !== undefined
           ? `Basé sur le score de sommeil de ton appareil (${Math.round(efficiency)}/100).`
-          : 'Nécessite les phases de sommeil ou un score/efficacité (Garmin/Apple).',
+          : 'Nécessite les phases de sommeil ou une efficacité (selon la source).',
   });
 
   // 3) Régularité — how consistent bedtimes are across the window.
@@ -382,7 +382,7 @@ export function computeSleepScore2(
     value: hasRecovery ? recovery.value : null,
     detail: hasRecovery
       ? 'HRV, fréquence cardiaque de repos et stress.'
-      : 'Nécessite HRV / FC de repos (Garmin ou Apple Santé).',
+      : 'Nécessite HRV / FC de repos.',
   });
 
   const available = components.filter(
