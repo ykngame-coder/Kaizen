@@ -22,7 +22,7 @@ const NAV: { title: string; subtitle: string; icon: string; path?: Href; soon?: 
   { title: 'Récupération musculaire', subtitle: 'Muscles fatigués vs prêts à travailler', icon: '💪', path: '/muscles' },
   { title: 'Records', subtitle: '1RM, meilleurs temps, distances', icon: '🏆', path: '/records' },
   { title: 'Exercices', subtitle: 'Bibliothèque, muscles, matériel', icon: '📚', path: '/exercises' },
-  { title: 'Progression musculaire', subtitle: 'Volume et charge par groupe', icon: '📈', soon: true },
+  { title: 'Progression musculaire', subtitle: 'Évolution par groupe musculaire', icon: '📈', path: '/muscle-progress' },
 ];
 
 /** hh h mm from seconds. */

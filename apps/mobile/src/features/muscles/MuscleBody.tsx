@@ -32,6 +32,8 @@ export interface MuscleBodyProps {
   /** Fill colour for a muscle group ('transparent' → use the neutral body). */
   colorFor: (muscle: MuscleGroup) => string;
   width?: number;
+  /** Called with the muscle group when its shape is tapped. */
+  onSelect?: (muscle: MuscleGroup) => void;
 }
 
 /**
@@ -40,7 +42,7 @@ export interface MuscleBodyProps {
  * filled in their recovery-state colour; everything else stays a neutral grey
  * body. Crisp at any size, no raster overlays.
  */
-export function MuscleBody({ colorFor, width = 320 }: MuscleBodyProps): React.JSX.Element {
+export function MuscleBody({ colorFor, width = 320, onSelect }: MuscleBodyProps): React.JSX.Element {
   const { colors } = useTheme();
   const height = (width * VIEW.h) / VIEW.w;
   const BASE = '#38495a'; // neutral body fill on dark bg
@@ -60,9 +62,11 @@ export function MuscleBody({ colorFor, width = 320 }: MuscleBodyProps): React.JS
       <Svg width={width} height={height} viewBox={`0 0 ${VIEW.w} ${VIEW.h}`}>
         {parts.map((part, pi) => {
           const fill = fillFor(part);
+          const muscle = part.slug ? SLUG_TO_MUSCLE[part.slug] : undefined;
+          const press = onSelect && muscle ? () => onSelect(muscle) : undefined;
           const ds = [...(part.path?.common ?? []), ...(part.path?.left ?? []), ...(part.path?.right ?? [])];
           return ds.map((d, di) => (
-            <Path key={`${pi}-${di}`} d={d} fill={fill} stroke={LINE} strokeWidth={1.5} vectorEffect="non-scaling-stroke" />
+            <Path key={`${pi}-${di}`} d={d} fill={fill} stroke={LINE} strokeWidth={1.5} vectorEffect="non-scaling-stroke" onPress={press} />
           ));
         })}
       </Svg>
