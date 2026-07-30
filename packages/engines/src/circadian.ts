@@ -106,9 +106,14 @@ function nightsInWindow(
     })
     .map((m) => {
       const local = new Date(new Date(m.measuredAt).getTime() + tz * 60_000);
-      const bedMin = local.getUTCHours() * 60 + local.getUTCMinutes();
+      const t = local.getUTCHours() * 60 + local.getUTCMinutes();
       const durMin = m.value * 60;
       const day = local.getUTCDay(); // 0 Sun .. 6 Sat
+      // `measured_at` can be the bedtime (sleepStart) or the wake time (sleepEnd)
+      // depending on the source. Disambiguate by time of day: an evening/night
+      // stamp is a bedtime; a daytime stamp is a wake time (bed = wake − duration).
+      const isEveningStamp = t >= 18 * 60 || t < 3 * 60;
+      const bedMin = isEveningStamp ? t : clampMin(t - durMin);
       return {
         bedMin,
         wakeMin: clampMin(bedMin + durMin),

@@ -386,13 +386,14 @@ export function computeSleepScore2(
   });
 
   const available = components.filter(
-    (c): c is SleepScoreComponent & { value: number } => c.value !== null,
+    (c): c is SleepScoreComponent & { value: number } => c.value !== null && Number.isFinite(c.value),
   );
   const totalWeight = available.reduce((s, c) => s + c.weight, 0);
-  const value =
+  const raw =
     totalWeight > 0
       ? clamp(Math.round(available.reduce((s, c) => s + c.value * c.weight, 0) / totalWeight))
       : 0;
+  const value = Number.isFinite(raw) ? raw : 0;
 
   let confidence: Confidence = 'to_confirm';
   if (available.length >= 4) confidence = 'high';
