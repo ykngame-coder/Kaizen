@@ -65,7 +65,7 @@ export function ProgressionScreen(): React.JSX.Element {
     { title: 'Records', subtitle: '1RM, meilleurs temps, distances', icon: '🏆', path: '/records' },
     { title: 'Badges', subtitle: 'Récompenses gagnées sur tes données', icon: '🏅', soon: true },
     { title: 'Comparaisons', subtitle: 'Périodes et références', icon: '⚖', soon: true },
-    { title: 'Photos d’évolution', subtitle: 'Avant / après dans le temps', icon: '📷', soon: true },
+    { title: 'Photos d’évolution', subtitle: 'Avant / après dans le temps', icon: '📷', path: '/photos' },
   ];
 
   return (

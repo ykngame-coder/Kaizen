@@ -38,7 +38,13 @@
           "cameraPermission": "Kaizen Supotsu utilise la caméra pour scanner les codes-barres des aliments."
         }
       ],
-      "expo-web-browser"
+      "expo-web-browser",
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Kaizen Supotsu accède à tes photos pour ajouter des photos d'évolution (avant/après)."
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": false
