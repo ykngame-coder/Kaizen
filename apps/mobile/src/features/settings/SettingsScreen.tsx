@@ -129,6 +129,11 @@ export function SettingsScreen(): React.JSX.Element {
       </Group>
 
       {/* À propos */}
+      <GroupTitle>AIDE</GroupTitle>
+      <Group>
+        <ListRow icon="🛟" iconColor="rgba(45,127,249,0.18)" title="Aide & Support" subtitle="FAQ, guides, diagnostic, contact" onPress={() => router.push('/support')} />
+      </Group>
+
       <GroupTitle>À PROPOS</GroupTitle>
       <Group>
         <ListRow icon="ℹ️" iconColor="rgba(116,128,146,0.22)" title="Version" value="1.0.0" divider />
