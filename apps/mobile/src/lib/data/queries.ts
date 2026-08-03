@@ -292,6 +292,16 @@ export function useMuscleSessions() {
   });
 }
 
+export function useMuscleWork() {
+  const { user } = useAuth();
+  const repo = useRepository();
+  return useQuery({
+    queryKey: ['muscleWork', user?.id],
+    enabled: !!user,
+    queryFn: () => repo.listMuscleWork(user!.id),
+  });
+}
+
 export function useAthleteProfile() {
   const { user } = useAuth();
   const repo = useRepository();

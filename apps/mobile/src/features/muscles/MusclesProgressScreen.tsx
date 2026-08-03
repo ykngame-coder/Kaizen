@@ -6,7 +6,7 @@ import { Badge, Button, Card, ProgressRing, Screen, SegmentedControl, Sparkline,
 import { radii, spacing } from '@supotsu/design-system';
 import type { ActivityType, MuscleGroup } from '@supotsu/core';
 import { computeMuscleStates } from '@supotsu/engines';
-import { useActivities, useMuscleSessions, useRecords } from '@/lib/data/queries';
+import { useActivities, useMuscleSessions, useMuscleWork, useRecords } from '@/lib/data/queries';
 import { formatDate } from '@/lib/format';
 import { MuscleBody } from './MuscleBody';
 
@@ -93,40 +93,59 @@ export function MusclesProgressScreen(): React.JSX.Element {
   const days = PERIODS.find((p) => p.key === period)!.days;
   const [selected, setSelected] = useState<MuscleGroup | null>(null);
 
+  const { data: work = [] } = useMuscleWork();
   const states = useMemo(() => computeMuscleStates(sessions, asOf), [sessions, asOf]);
   const stateOf = (m: MuscleGroup) => states.find((s) => s.muscle === m);
 
-  // Per-muscle progression index from training frequency in the window.
-  const { index, hits, inWindow, weeks } = useMemo(() => {
+  // Real per-muscle progression: training volume (reps × load) trend, recent vs
+  // older half of the window. Volume → index → colour.
+  const { index, stats, sessionCount, weeks } = useMemo(() => {
     const since = now.getTime() - days * DAY_MS;
-    const win = sessions.filter((s) => new Date(s.trainedAt).getTime() >= since);
+    const mid = now.getTime() - (days / 2) * DAY_MS;
     const wk = Math.max(1, days / 7);
-    const h = new Map<MuscleGroup, number>();
-    for (const s of win) {
-      for (const m of s.primaryMuscles) h.set(m, (h.get(m) ?? 0) + 1);
-      for (const m of s.secondaryMuscles) h.set(m, (h.get(m) ?? 0) + 0.5);
+    const per = new Map<MuscleGroup, { recent: number; older: number; total: number; maxW: number }>();
+    for (const m of MUSCLES) per.set(m, { recent: 0, older: 0, total: 0, maxW: 0 });
+    const dates = new Set<string>();
+    for (const w of work) {
+      const t = new Date(w.trainedAt).getTime();
+      if (t < since) continue;
+      dates.add(w.trainedAt.slice(0, 10));
+      const e = per.get(w.muscle);
+      if (!e) continue;
+      e.total += w.volume;
+      if (t >= mid) e.recent += w.volume; else e.older += w.volume;
+      if (w.weightKg != null) e.maxW = Math.max(e.maxW, w.weightKg);
     }
     const idx = new Map<MuscleGroup, number>();
-    for (const m of MUSCLES) idx.set(m, clamp(30 + ((h.get(m) ?? 0) / wk) * 22));
-    return { index: idx, hits: h, inWindow: win, weeks: wk };
-  }, [sessions, now, days]);
+    const st = new Map<MuscleGroup, { progPct: number | null; total: number; maxW: number }>();
+    for (const m of MUSCLES) {
+      const e = per.get(m)!;
+      const progPct = e.older > 0 ? ((e.recent - e.older) / e.older) * 100 : e.recent > 0 ? 40 : null;
+      const index = e.total === 0 ? 32 : clamp(58 + (progPct ?? 0) * 1.6);
+      idx.set(m, index);
+      st.set(m, { progPct, total: e.total, maxW: e.maxW });
+    }
+    return { index: idx, stats: st, sessionCount: dates.size, weeks: wk };
+  }, [work, now, days]);
 
   const globalIndex = Math.round(MUSCLES.reduce((s, m) => s + (index.get(m) ?? 0), 0) / MUSCLES.length);
 
   const colorFor = (m: MuscleGroup): string => progColor(index.get(m) ?? 30);
 
-  // Weekly hit counts (evolution chart).
+  // Weekly training volume (evolution chart).
   const evolution = useMemo(() => {
     const buckets = Math.min(12, Math.max(4, Math.round(days / 7)));
     const arr = new Array(buckets).fill(0) as number[];
     const span = days / buckets;
-    for (const s of inWindow) {
-      const age = (now.getTime() - new Date(s.trainedAt).getTime()) / DAY_MS;
-      const b = buckets - 1 - Math.floor(age / span);
-      if (b >= 0 && b < buckets) arr[b] += s.primaryMuscles.length + s.secondaryMuscles.length * 0.5;
+    const since = now.getTime() - days * DAY_MS;
+    for (const w of work) {
+      const t = new Date(w.trainedAt).getTime();
+      if (t < since) continue;
+      const b = buckets - 1 - Math.floor(((now.getTime() - t) / DAY_MS) / span);
+      if (b >= 0 && b < buckets) arr[b] += w.volume;
     }
     return arr;
-  }, [inWindow, now, days]);
+  }, [work, now, days]);
 
   // Radar balance.
   const meanIdx = (ms: MuscleGroup[]): number => ms.reduce((s, m) => s + (index.get(m) ?? 0), 0) / ms.length;
@@ -156,7 +175,7 @@ export function MusclesProgressScreen(): React.JSX.Element {
   if ((index.get(worst) ?? 0) < 55) tips.push(`${MUSCLE_LABEL[worst]} est en retard — ajoute une séance ciblée.`);
   if ((index.get('core') ?? 0) < 55) tips.push('Le core est sous-entraîné — intègre davantage de gainage.');
 
-  const detail = selected ? { m: selected, idx: index.get(selected) ?? 30, st: stateOf(selected), n: hits.get(selected) ?? 0 } : null;
+  const detail = selected ? { m: selected, idx: index.get(selected) ?? 30, st: stateOf(selected), s: stats.get(selected) } : null;
 
   return (
     <Screen scroll>
@@ -173,7 +192,7 @@ export function MusclesProgressScreen(): React.JSX.Element {
             <Text variant="heading">Indice de progression</Text>
             <Text variant="body" style={{ color: progColor(globalIndex), fontWeight: '700', marginTop: 2 }}>{progLabel(globalIndex)}</Text>
             <Text variant="caption" color="textMuted" style={{ marginTop: spacing[2], lineHeight: 18 }}>
-              {inWindow.length > 0 ? `${inWindow.length} séance(s) musculaires sur la période.` : 'Enregistre des séances de musculation pour suivre ta progression par muscle.'}
+              {sessionCount > 0 ? `${sessionCount} séance(s) musculaires sur la période — progression basée sur le volume (reps × charge).` : 'Enregistre des séances (avec reps × charge) pour suivre ta progression réelle par muscle.'}
             </Text>
           </View>
         </View>
@@ -199,7 +218,9 @@ export function MusclesProgressScreen(): React.JSX.Element {
           <SectionTitle right={<Text variant="caption" color="textSubtle" onPress={() => setSelected(null)}>Fermer</Text>}>{MUSCLE_LABEL[detail.m]}</SectionTitle>
           <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: spacing[4] }}>
             <Metric label="Indice" value={`${Math.round(detail.idx)}`} color={progColor(detail.idx)} />
-            <Metric label="Séances" value={`${Math.round(detail.n)}`} />
+            <Metric label="Progression" value={detail.s?.progPct != null ? `${detail.s.progPct > 0 ? '+' : ''}${Math.round(detail.s.progPct)} %` : '—'} color={detail.s?.progPct != null ? progColor(detail.idx) : undefined} />
+            <Metric label="Volume" value={detail.s && detail.s.total > 0 ? `${Math.round(detail.s.total).toLocaleString('fr-FR')}` : '—'} />
+            <Metric label="Charge max" value={detail.s && detail.s.maxW > 0 ? `${detail.s.maxW} kg` : '—'} />
             <Metric label="Récupération" value={detail.st ? `${detail.st.freshness} %` : '—'} />
             <Metric label="Dernière séance" value={detail.st?.lastTrainedDaysAgo != null ? (detail.st.lastTrainedDaysAgo === 0 ? "Aujourd'hui" : `il y a ${detail.st.lastTrainedDaysAgo} j`) : '—'} />
           </View>
@@ -234,7 +255,7 @@ export function MusclesProgressScreen(): React.JSX.Element {
             <View key={m} style={{ flexDirection: 'row', alignItems: 'center', gap: spacing[3] }}>
               <View style={{ flex: 1 }}>
                 <Text variant="body">{MUSCLE_LABEL[m]}</Text>
-                <Text variant="caption" color="textSubtle">Indice {Math.round(index.get(m) ?? 0)} · {(hits.get(m) ?? 0) < 1 ? 'ajoute 2 séances/sem.' : 'augmente le volume'}</Text>
+                <Text variant="caption" color="textSubtle">Indice {Math.round(index.get(m) ?? 0)} · {(stats.get(m)?.total ?? 0) === 0 ? 'commence à travailler ce muscle' : 'augmente le volume'}</Text>
               </View>
               <Button label="Exercices" variant="secondary" onPress={() => router.push('/exercises')} />
             </View>
@@ -273,7 +294,7 @@ export function MusclesProgressScreen(): React.JSX.Element {
       <Card>
         <SectionTitle>Projection</SectionTitle>
         <Text variant="body" color="textMuted" style={{ lineHeight: 21 }}>
-          {inWindow.length >= 3 ? `En conservant ce rythme (${(inWindow.length / weeks).toFixed(1)} séance(s)/sem.), ton indice devrait dépasser ${Math.min(100, globalIndex + 5)} d'ici quelques semaines.` : 'Ajoute quelques séances pour obtenir une projection fiable.'}
+          {sessionCount >= 3 ? `En conservant ce rythme (${(sessionCount / weeks).toFixed(1)} séance(s)/sem.), ton indice devrait dépasser ${Math.min(100, globalIndex + 5)} d'ici quelques semaines.` : 'Ajoute quelques séances pour obtenir une projection fiable.'}
         </Text>
       </Card>
 

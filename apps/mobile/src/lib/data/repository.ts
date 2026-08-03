@@ -5,6 +5,7 @@ import type {
   HealthMetric,
   Habit,
   HabitLog,
+  MuscleGroup,
   NutritionEntry,
   PersonalRecord,
   Program,
@@ -110,6 +111,8 @@ export interface DataRepository {
   listSleepSessions(userId: string): Promise<SleepSession[]>;
   listRecords(userId: string): Promise<PersonalRecord[]>;
   listMuscleSessions(userId: string): Promise<MuscleSession[]>;
+  /** Per-muscle training volume over time (real progression). */
+  listMuscleWork(userId: string): Promise<MuscleWork[]>;
   /** The most recent logged session's sets per exercise (progressive overload). */
   lastSessionSetsByExercise(userId: string): Promise<Record<string, SetEntry[]>>;
   listWellnessCheckins(userId: string): Promise<WellnessCheckin[]>;
@@ -383,6 +386,30 @@ function buildMuscleSessions(
   return out;
 }
 
+/** One muscle's training work from a single logged set (for real progression). */
+export interface MuscleWork {
+  trainedAt: string;
+  muscle: MuscleGroup;
+  /** Training volume: reps × load (tonnage), or reps for bodyweight sets. */
+  volume: number;
+  weightKg: number | null;
+}
+
+/** Expand logged sets into per-muscle volume entries (primary full, secondary half). */
+function buildMuscleWork(dates: Map<string, string>, sets: LoggedSetRow[]): MuscleWork[] {
+  const out: MuscleWork[] = [];
+  for (const s of sets) {
+    const exercise = EXERCISE_BY_ID.get(s.exerciseId);
+    const trainedAt = dates.get(s.workoutId);
+    if (!exercise || !trainedAt) continue;
+    const reps = s.reps ?? 1;
+    const vol = reps * (s.weightKg ?? 1);
+    for (const m of exercise.primaryMuscles) out.push({ trainedAt, muscle: m, volume: vol, weightKg: s.weightKg });
+    for (const m of exercise.secondaryMuscles) out.push({ trainedAt, muscle: m, volume: vol * 0.5, weightKg: s.weightKg });
+  }
+  return out;
+}
+
 interface LoggedSetRow {
   workoutId: string;
   exerciseId: string;
@@ -597,6 +624,11 @@ function createDemoRepository(): DataRepository {
       const rows = await readJson<LoggedSetRow & { date: string }>(setKey(userId));
       const dates = new Map(rows.map((r) => [r.workoutId, r.date]));
       return buildMuscleSessions(dates, rows);
+    },
+    async listMuscleWork(userId) {
+      const rows = await readJson<LoggedSetRow & { date: string }>(setKey(userId));
+      const dates = new Map(rows.map((r) => [r.workoutId, r.date]));
+      return buildMuscleWork(dates, rows);
     },
     async lastSessionSetsByExercise(userId) {
       const rows = await readJson<LoggedSetRow & { date: string }>(setKey(userId));
@@ -871,6 +903,12 @@ function createSupabaseRepository(
       const dates = new Map(workouts.map((w) => [w.id, w.completed_at ?? w.created_at]));
       const sets = await listWorkoutSetsForUser(client, userId);
       return buildMuscleSessions(dates, sets);
+    },
+    async listMuscleWork(userId) {
+      const workouts = await listWorkoutsDb(client, userId);
+      const dates = new Map(workouts.map((w) => [w.id, w.completed_at ?? w.created_at]));
+      const sets = await listLoggedSetsDb(client, userId);
+      return buildMuscleWork(dates, sets);
     },
     async lastSessionSetsByExercise(userId) {
       const workouts = await listWorkoutsDb(client, userId);
