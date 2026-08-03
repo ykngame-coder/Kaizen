@@ -102,14 +102,13 @@ export function aggregateHealthKitSleep(samples: HKSleepSample[]): ImportedHealt
 const WORKOUT_MAP: Record<number, ActivityType> = {
   37: 'running', // HKWorkoutActivityTypeRunning
   52: 'walking', // Walking
-  24: 'swimming', // Swimming (46) / handled below too
-  46: 'swimming',
+  46: 'swimming', // Swimming
   13: 'cycling', // Cycling
   50: 'strength', // TraditionalStrengthTraining
   20: 'strength', // FunctionalStrengthTraining
-  63: 'yoga', // Yoga
-  16: 'cross_training', // CrossTraining
-  35: 'cross_training', // HighIntensityIntervalTraining
+  57: 'yoga', // Yoga
+  11: 'cross_training', // CrossTraining
+  63: 'cross_training', // HighIntensityIntervalTraining
 };
 
 export function mapHealthKitWorkoutType(activityType: number | undefined): ActivityType {

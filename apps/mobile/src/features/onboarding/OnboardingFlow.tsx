@@ -156,7 +156,7 @@ export function OnboardingFlow(): React.JSX.Element {
       {step === 0 ? (
         <Card>
           <Text variant="body" color="textMuted">
-            Quelques questions pour que Kaizen Supotsu comprenne ton point de départ et personnalise ton
+            Quelques questions pour que Supotsu comprenne ton point de départ et personnalise ton
             accompagnement. Tu pourras tout modifier plus tard.
           </Text>
         </Card>
