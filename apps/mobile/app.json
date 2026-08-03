@@ -44,6 +44,13 @@
         {
           "photosPermission": "Kaizen Supotsu accède à tes photos pour ajouter des photos d'évolution (avant/après)."
         }
+      ],
+      [
+        "@kingstinct/react-native-healthkit",
+        {
+          "NSHealthShareUsageDescription": "Kaizen Supotsu lit tes données Apple Santé (sommeil, fréquence cardiaque, HRV, poids, composition corporelle) pour tes analyses.",
+          "background": false
+        }
       ]
     ],
     "experiments": {

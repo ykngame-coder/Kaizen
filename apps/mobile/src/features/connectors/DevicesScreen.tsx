@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View } from 'react-native';
+import { Platform, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Badge, Button, Card, Screen, Text, useTheme, type BadgeTone } from '@supotsu/ui';
@@ -7,6 +7,7 @@ import { radii, spacing } from '@supotsu/design-system';
 import { CONNECTORS } from '@supotsu/connectors';
 import type { DataSource, HealthMetricType } from '@supotsu/core';
 import { useHealthMetrics, useSyncConnector } from '@/lib/data/queries';
+import { healthKitAvailable, syncHealthKit } from './healthKitClient';
 import {
   disconnectGarmin,
   fetchGarminStatus,
@@ -336,6 +337,57 @@ function RenphoCard(): React.JSX.Element {
 }
 
 /** "Mes appareils connectés" (Master Prompt P9.13, P22.14). */
+/** Native Apple HealthKit (iOS build only) — reads Health directly on-device. */
+function HealthKitCard(): React.JSX.Element {
+  const qc = useQueryClient();
+  const isIos = Platform.OS === 'ios';
+  const available = isIos && healthKitAvailable();
+  const [busy, setBusy] = useState(false);
+  const [note, setNote] = useState<string | null>(null);
+
+  const sync = async (): Promise<void> => {
+    setNote(null);
+    setBusy(true);
+    try {
+      const { ingested } = await syncHealthKit();
+      setNote(ingested > 0 ? `${ingested} donnée(s) importée(s) depuis Apple Santé.` : 'Aucune nouvelle donnée (autorise l’accès aux catégories dans Réglages → Santé).');
+      qc.invalidateQueries({ queryKey: ['health'] });
+    } catch (e) {
+      setNote(e instanceof Error ? e.message : 'Synchronisation impossible.');
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <Card>
+      <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+        <View style={{ flex: 1 }}>
+          <Text variant="subtitle">Apple Santé (HealthKit)</Text>
+          <Text variant="caption" color="textMuted">
+            Lecture directe sur l’iPhone — sommeil, FC, HRV, poids, composition
+          </Text>
+        </View>
+        <Badge label={available ? 'Natif iOS' : 'App iOS requise'} tone={available ? 'success' : 'neutral'} />
+      </View>
+      {available ? (
+        <View style={{ flexDirection: 'row', gap: spacing[2], marginTop: spacing[1] }}>
+          <Button label={busy ? '…' : 'Autoriser & synchroniser'} onPress={sync} disabled={busy} />
+        </View>
+      ) : (
+        <Text variant="caption" color="textMuted">
+          Disponible dans l’app iOS (build natif). Sur le web, utilise Apple Santé via Health Auto Export ci-dessous.
+        </Text>
+      )}
+      {note ? (
+        <Text variant="caption" color="textSubtle" style={{ marginTop: spacing[1] }}>
+          {note}
+        </Text>
+      ) : null}
+    </Card>
+  );
+}
+
 export function DevicesScreen(): React.JSX.Element {
   const router = useRouter();
   const { colors } = useTheme();
@@ -402,6 +454,7 @@ export function DevicesScreen(): React.JSX.Element {
       <Text variant="heading" style={{ marginTop: spacing[2] }}>
         Applications & appareils
       </Text>
+      <HealthKitCard />
       <AppleHealthCard />
       <RenphoCard />
       <GarminCard />
