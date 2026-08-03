@@ -9,7 +9,7 @@ import type {
   NutritionEntryInput,
   WellnessCheckinInput,
 } from '@supotsu/shared';
-import type { Challenge } from '@supotsu/core';
+import type { Challenge, Workout } from '@supotsu/core';
 import {
   getConnector,
   importFromConnector,
@@ -20,7 +20,7 @@ import {
   type ImportedSleepSession,
 } from '@supotsu/connectors';
 import { useAuth } from '@/features/auth/AuthProvider';
-import { createDataRepository, type NewWorkout } from './repository';
+import { createDataRepository, type NewWorkout, type PlannedInput } from './repository';
 
 /** Single repository instance for the app session. */
 function useRepository() {
@@ -411,6 +411,57 @@ export function useAddWorkout() {
       qc.invalidateQueries({ queryKey: ['workouts', user?.id] });
       qc.invalidateQueries({ queryKey: ['muscleSessions', user?.id] });
       qc.invalidateQueries({ queryKey: ['exerciseHistory', user?.id] });
+    },
+  });
+}
+
+export function usePlannedWorkouts() {
+  const { user } = useAuth();
+  const repo = useRepository();
+  return useQuery({
+    queryKey: ['plannedWorkouts', user?.id],
+    enabled: !!user,
+    queryFn: () => repo.listPlannedWorkouts(user!.id),
+  });
+}
+
+export function useAddPlannedWorkout() {
+  const { user } = useAuth();
+  const repo = useRepository();
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (input: PlannedInput) => repo.addPlannedWorkout(user!.id, input),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['plannedWorkouts', user?.id] });
+    },
+  });
+}
+
+export function useSetWorkoutStatus() {
+  const { user } = useAuth();
+  const repo = useRepository();
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (input: {
+      workoutId: string;
+      status: Workout['status'];
+      completedAt?: string | null;
+    }) => repo.setWorkoutStatus(user!.id, input.workoutId, input.status, input.completedAt),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['plannedWorkouts', user?.id] });
+      qc.invalidateQueries({ queryKey: ['workouts', user?.id] });
+    },
+  });
+}
+
+export function useDeletePlannedWorkout() {
+  const { user } = useAuth();
+  const repo = useRepository();
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (workoutId: string) => repo.deletePlannedWorkout(user!.id, workoutId),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['plannedWorkouts', user?.id] });
     },
   });
 }

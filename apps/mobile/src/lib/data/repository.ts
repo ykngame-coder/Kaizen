@@ -38,6 +38,10 @@ import {
   upsertActivities,
   listActivities as listActivitiesDb,
   insertWorkout,
+  insertPlannedWorkout,
+  listPlannedWorkouts as listPlannedWorkoutsDb,
+  updateWorkoutStatus as updateWorkoutStatusDb,
+  deleteWorkout as deleteWorkoutDb,
   listWorkouts as listWorkoutsDb,
   listWorkoutSetsForUser,
   listLoggedSets as listLoggedSetsDb,
@@ -90,6 +94,14 @@ export interface NewWorkout {
   sets: Omit<SetEntry, 'id' | 'workoutId'>[];
 }
 
+/** A future training session to schedule (no sets yet). */
+export interface PlannedInput {
+  name: string;
+  /** ISO date (YYYY-MM-DD) the session is planned for. */
+  plannedFor: string;
+  notes?: string;
+}
+
 export interface ImportPayload {
   activities: ImportedActivity[];
   healthMetrics: ImportedHealthMetric[];
@@ -107,6 +119,19 @@ export interface DataRepository {
   addActivity(userId: string, input: ActivityInput): Promise<Activity>;
   listWorkouts(userId: string): Promise<Workout[]>;
   addWorkout(userId: string, workout: NewWorkout): Promise<Workout>;
+  /** The user's planned (not-yet-done) sessions, soonest first. */
+  listPlannedWorkouts(userId: string): Promise<Workout[]>;
+  /** Schedule a future session. */
+  addPlannedWorkout(userId: string, input: PlannedInput): Promise<Workout>;
+  /** Change a session's status (mark a planned one done or skipped). */
+  setWorkoutStatus(
+    userId: string,
+    workoutId: string,
+    status: Workout['status'],
+    completedAt?: string | null,
+  ): Promise<Workout>;
+  /** Remove a planned session. */
+  deletePlannedWorkout(userId: string, workoutId: string): Promise<void>;
   listHealthMetrics(userId: string): Promise<HealthMetric[]>;
   listSleepSessions(userId: string): Promise<SleepSession[]>;
   listRecords(userId: string): Promise<PersonalRecord[]>;
@@ -607,6 +632,53 @@ function createDemoRepository(): DataRepository {
         await writeJson(setKey(userId), [...added, ...rows]);
       }
       return created;
+    },
+    async listPlannedWorkouts(userId) {
+      const items = await readJson<Workout>(wkKey(userId));
+      return items
+        .filter((w) => w.status === 'planned')
+        .sort((a, b) => (a.plannedFor ?? '').localeCompare(b.plannedFor ?? ''));
+    },
+    async addPlannedWorkout(userId, input) {
+      const now = new Date().toISOString();
+      const created: Workout = {
+        id: randomId(),
+        userId,
+        name: input.name,
+        status: 'planned',
+        plannedFor: input.plannedFor,
+        notes: input.notes,
+        createdAt: now,
+        updatedAt: now,
+      };
+      const items = await readJson<Workout>(wkKey(userId));
+      await writeJson(wkKey(userId), [created, ...items]);
+      return created;
+    },
+    async setWorkoutStatus(userId, workoutId, status, completedAt) {
+      const items = await readJson<Workout>(wkKey(userId));
+      const now = new Date().toISOString();
+      let updated: Workout | undefined;
+      const next = items.map((w) => {
+        if (w.id !== workoutId) return w;
+        updated = {
+          ...w,
+          status,
+          completedAt: completedAt === undefined ? w.completedAt : completedAt ?? undefined,
+          updatedAt: now,
+        };
+        return updated;
+      });
+      await writeJson(wkKey(userId), next);
+      if (!updated) throw new Error('Séance introuvable.');
+      return updated;
+    },
+    async deletePlannedWorkout(userId, workoutId) {
+      const items = await readJson<Workout>(wkKey(userId));
+      await writeJson(
+        wkKey(userId),
+        items.filter((w) => w.id !== workoutId),
+      );
     },
     async listHealthMetrics(userId) {
       const items = await readJson<HealthMetric>(hmKey(userId));
@@ -1136,6 +1208,25 @@ function createSupabaseRepository(
         })),
       );
       return rowToWorkout(row);
+    },
+    async listPlannedWorkouts(userId) {
+      return (await listPlannedWorkoutsDb(client, userId)).map(rowToWorkout);
+    },
+    async addPlannedWorkout(userId, input) {
+      const row = await insertPlannedWorkout(client, {
+        user_id: userId,
+        name: input.name,
+        planned_for: input.plannedFor,
+        notes: input.notes ?? null,
+      });
+      return rowToWorkout(row);
+    },
+    async setWorkoutStatus(_userId, workoutId, status, completedAt) {
+      const row = await updateWorkoutStatusDb(client, workoutId, status, completedAt);
+      return rowToWorkout(row);
+    },
+    async deletePlannedWorkout(_userId, workoutId) {
+      await deleteWorkoutDb(client, workoutId);
     },
   };
 }

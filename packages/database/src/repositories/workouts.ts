@@ -68,3 +68,57 @@ export async function listWorkouts(client: SupotsuClient, userId: string): Promi
   if (error) throw error;
   return data ?? [];
 }
+
+/** Insert a single planned session (no sets yet); returns the created row. */
+export async function insertPlannedWorkout(
+  client: SupotsuClient,
+  input: Omit<WorkoutInsertRow, 'status'>,
+): Promise<WorkoutRow> {
+  const { data, error } = await client
+    .from('workouts')
+    .insert({ ...input, status: 'planned' })
+    .select('*')
+    .single();
+  if (error) throw error;
+  return data;
+}
+
+/** The user's planned sessions, soonest first (past-due planned included). */
+export async function listPlannedWorkouts(
+  client: SupotsuClient,
+  userId: string,
+): Promise<WorkoutRow[]> {
+  const { data, error } = await client
+    .from('workouts')
+    .select('*')
+    .eq('user_id', userId)
+    .eq('status', 'planned')
+    .order('planned_for', { ascending: true, nullsFirst: false });
+  if (error) throw error;
+  return data ?? [];
+}
+
+/** Update a workout's status (e.g. mark a planned session done or skipped). */
+export async function updateWorkoutStatus(
+  client: SupotsuClient,
+  workoutId: string,
+  status: WorkoutRow['status'],
+  completedAt?: string | null,
+): Promise<WorkoutRow> {
+  const patch: Database['public']['Tables']['workouts']['Update'] = { status };
+  if (completedAt !== undefined) patch.completed_at = completedAt;
+  const { data, error } = await client
+    .from('workouts')
+    .update(patch)
+    .eq('id', workoutId)
+    .select('*')
+    .single();
+  if (error) throw error;
+  return data;
+}
+
+/** Delete a workout (RLS scopes to the owner). */
+export async function deleteWorkout(client: SupotsuClient, workoutId: string): Promise<void> {
+  const { error } = await client.from('workouts').delete().eq('id', workoutId);
+  if (error) throw error;
+}
