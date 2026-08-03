@@ -51,7 +51,7 @@ export function BarcodeScanScreen(): React.JSX.Element {
       <Screen scroll>
         <Text variant="title">Autoriser la caméra</Text>
         <Text variant="body" color="textMuted">
-          Supotsu a besoin de la caméra pour scanner les codes-barres des aliments. Aucune image
+          Kaizen Supotsu a besoin de la caméra pour scanner les codes-barres des aliments. Aucune image
           n'est enregistrée.
         </Text>
         <Button label="Autoriser la caméra" onPress={requestPermission} />

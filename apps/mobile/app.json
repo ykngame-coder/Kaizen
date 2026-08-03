@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "Supotsu",
+    "name": "Kaizen Supotsu",
     "slug": "supotsu",
     "version": "0.1.0",
     "orientation": "portrait",
@@ -35,20 +35,20 @@
       [
         "expo-camera",
         {
-          "cameraPermission": "Supotsu utilise la caméra pour scanner les codes-barres des aliments."
+          "cameraPermission": "Kaizen Supotsu utilise la caméra pour scanner les codes-barres des aliments."
         }
       ],
       "expo-web-browser",
       [
         "expo-image-picker",
         {
-          "photosPermission": "Supotsu accède à tes photos pour ajouter des photos d'évolution (avant/après)."
+          "photosPermission": "Kaizen Supotsu accède à tes photos pour ajouter des photos d'évolution (avant/après)."
         }
       ],
       [
         "@kingstinct/react-native-healthkit",
         {
-          "NSHealthShareUsageDescription": "Supotsu lit tes données Apple Santé (sommeil, fréquence cardiaque, HRV, poids, composition corporelle) pour tes analyses.",
+          "NSHealthShareUsageDescription": "Kaizen Supotsu lit tes données Apple Santé (sommeil, fréquence cardiaque, HRV, poids, composition corporelle) pour tes analyses.",
           "background": false
         }
       ]
