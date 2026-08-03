@@ -6,7 +6,7 @@ import { Badge, Button, Card, Screen, Text, useTheme, type BadgeTone } from '@su
 import { radii, spacing } from '@supotsu/design-system';
 import { CONNECTORS } from '@supotsu/connectors';
 import type { DataSource, HealthMetricType } from '@supotsu/core';
-import { useHealthMetrics, useSyncConnector } from '@/lib/data/queries';
+import { useHealthMetrics, useImportHealth, useSyncConnector } from '@/lib/data/queries';
 import { healthKitAvailable, syncHealthKit } from './healthKitClient';
 import {
   disconnectGarmin,
@@ -339,7 +339,7 @@ function RenphoCard(): React.JSX.Element {
 /** "Mes appareils connectés" (Master Prompt P9.13, P22.14). */
 /** Native Apple HealthKit (iOS build only) — reads Health directly on-device. */
 function HealthKitCard(): React.JSX.Element {
-  const qc = useQueryClient();
+  const importHealth = useImportHealth();
   const isIos = Platform.OS === 'ios';
   const available = isIos && healthKitAvailable();
   const [busy, setBusy] = useState(false);
@@ -349,9 +349,13 @@ function HealthKitCard(): React.JSX.Element {
     setNote(null);
     setBusy(true);
     try {
-      const { ingested } = await syncHealthKit();
-      setNote(ingested > 0 ? `${ingested} donnée(s) importée(s) depuis Apple Santé.` : 'Aucune nouvelle donnée (autorise l’accès aux catégories dans Réglages → Santé).');
-      qc.invalidateQueries({ queryKey: ['health'] });
+      const { activities, healthMetrics } = await syncHealthKit();
+      if (activities.length + healthMetrics.length === 0) {
+        setNote('Aucune nouvelle donnée (autorise l’accès aux catégories dans Réglages → Santé).');
+      } else {
+        await importHealth.mutateAsync({ activities, healthMetrics, records: [], sleepSessions: [] });
+        setNote(`Importé : ${activities.length} activité(s), ${healthMetrics.length} donnée(s) santé.`);
+      }
     } catch (e) {
       setNote(e instanceof Error ? e.message : 'Synchronisation impossible.');
     } finally {

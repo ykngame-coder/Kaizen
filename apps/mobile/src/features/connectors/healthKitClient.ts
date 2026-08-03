@@ -1,3 +1,5 @@
+import type { ImportedActivity, ImportedHealthMetric } from '@supotsu/connectors';
+
 /**
  * Default (web / Android) stub for the native HealthKit client. The real
  * implementation lives in `healthKitClient.ios.ts` and is only bundled on iOS,
@@ -7,6 +9,9 @@ export function healthKitAvailable(): boolean {
   return false;
 }
 
-export async function syncHealthKit(): Promise<{ ingested: number }> {
+export async function syncHealthKit(): Promise<{
+  activities: ImportedActivity[];
+  healthMetrics: ImportedHealthMetric[];
+}> {
   throw new Error('HealthKit est disponible uniquement sur iOS (build natif).');
 }
