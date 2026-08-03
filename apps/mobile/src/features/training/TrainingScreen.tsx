@@ -17,7 +17,8 @@ const MUSCLE_INLINE: Partial<Record<MuscleGroup, string>> = {
 };
 
 const NAV: { title: string; subtitle: string; icon: string; path?: Href; soon?: boolean }[] = [
-  { title: 'Calendrier', subtitle: 'Tes séances et événements', icon: '🗓', path: '/calendar' },
+  { title: 'Planification', subtitle: 'Programme tes séances + prévision récup', icon: '🗓', path: '/planning' },
+  { title: 'Calendrier', subtitle: 'Tes séances et événements', icon: '📅', path: '/calendar' },
   { title: 'Programmes', subtitle: 'Programmes structurés et recommandés', icon: '📋', path: '/marketplace' },
   { title: 'Récupération musculaire', subtitle: 'Muscles fatigués vs prêts à travailler', icon: '💪', path: '/muscles' },
   { title: 'Records', subtitle: '1RM, meilleurs temps, distances', icon: '🏆', path: '/records' },

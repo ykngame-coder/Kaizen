@@ -17,11 +17,25 @@ import {
   sumDay,
   weightTrend,
 } from '@supotsu/engines';
-import { useActivities, useHabitLogs, useHabits, useHealthMetrics, useNutritionEntries } from '@/lib/data/queries';
+import { useActivities, useHabitLogs, useHabits, useHealthMetrics, useNutritionEntries, usePlannedWorkouts } from '@/lib/data/queries';
 import { useAuth } from '@/features/auth/AuthProvider';
 import { MuscleBody } from '@/features/muscles/MuscleBody';
 
 const DAY_MS = 86_400_000;
+
+/** "Aujourd'hui" / "Demain" / "Lun. 12 août" from a planned_for date. */
+function planLabel(plannedFor?: string): string {
+  if (!plannedFor) return 'Date à définir';
+  const key = plannedFor.slice(0, 10);
+  const todayKey = new Date().toISOString().slice(0, 10);
+  if (key === todayKey) return "Aujourd'hui";
+  const [y, m, d] = key.split('-').map(Number);
+  const date = new Date(y, m - 1, d);
+  const tomorrow = new Date();
+  tomorrow.setDate(tomorrow.getDate() + 1);
+  if (key === tomorrow.toISOString().slice(0, 10)) return 'Demain';
+  return date.toLocaleDateString('fr-FR', { weekday: 'short', day: 'numeric', month: 'short' });
+}
 
 const BAND_INFO: Record<string, { label: string; advice: string }> = {
   excellent: { label: 'Excellent', advice: 'Ta récupération est excellente. Journée idéale pour une séance intensive.' },
@@ -108,8 +122,16 @@ export function DashboardScreen(): React.JSX.Element {
   const { data: nutrition = [] } = useNutritionEntries();
   const { data: habits = [] } = useHabits();
   const { data: habitLogs = [] } = useHabitLogs();
+  const { data: planned = [] } = usePlannedWorkouts();
   const asOf = useMemo(() => new Date().toISOString(), []);
   const now = useMemo(() => new Date(asOf), [asOf]);
+
+  const nextPlanned = useMemo(() => {
+    const todayKey = new Date().toISOString().slice(0, 10);
+    return [...planned]
+      .filter((w) => (w.plannedFor ?? '').slice(0, 10) >= todayKey)
+      .sort((a, b) => (a.plannedFor ?? '').localeCompare(b.plannedFor ?? ''))[0];
+  }, [planned]);
 
   const recovery = useMemo(() => {
     const today = computeRecoveryScore(health, asOf);
@@ -264,16 +286,25 @@ export function DashboardScreen(): React.JSX.Element {
 
         {/* Prochaine séance */}
         <Card>
-          <SectionTitle>Prochaine séance</SectionTitle>
+          <SectionTitle right={<Pressable onPress={() => router.push('/planning')}><Text variant="caption" color="primary">Planning ›</Text></Pressable>}>Prochaine séance</SectionTitle>
           <View style={{ flexDirection: 'row', gap: spacing[4], alignItems: 'center' }}>
             <View style={{ width: 64, height: 64, borderRadius: radii.lg, backgroundColor: colors.surfaceElevated, alignItems: 'center', justifyContent: 'center' }}><Text style={{ fontSize: 28 }}>🏋️</Text></View>
             <View style={{ flex: 1 }}>
-              <Text variant="body" style={{ fontWeight: '700' }}>Planifie ta prochaine séance</Text>
-              <Text variant="caption" color="textSubtle" style={{ marginTop: 2 }}>{chargeState ? `Charge ${chargeState.t.toLowerCase()} · adapte l'intensité` : 'Choisis un focus selon ta récupération'}</Text>
+              {nextPlanned ? (
+                <>
+                  <Text variant="body" style={{ fontWeight: '700' }}>{nextPlanned.name}</Text>
+                  <Text variant="caption" color="textSubtle" style={{ marginTop: 2 }}>{planLabel(nextPlanned.plannedFor)}{nextPlanned.notes ? ` · ${nextPlanned.notes}` : ''}</Text>
+                </>
+              ) : (
+                <>
+                  <Text variant="body" style={{ fontWeight: '700' }}>Planifie ta prochaine séance</Text>
+                  <Text variant="caption" color="textSubtle" style={{ marginTop: 2 }}>{chargeState ? `Charge ${chargeState.t.toLowerCase()} · adapte l'intensité` : 'Choisis un focus selon ta récupération'}</Text>
+                </>
+              )}
             </View>
           </View>
-          <Pressable onPress={() => router.push('/workout/new')} style={({ pressed }) => ({ marginTop: spacing[3], height: 46, borderRadius: radii.xl, backgroundColor: colors.surfaceElevated, borderWidth: 1, borderColor: colors.border, alignItems: 'center', justifyContent: 'center', transform: [{ scale: pressed ? 0.98 : 1 }] })}>
-            <Text variant="body" style={{ fontWeight: '600' }}>Créer une séance ›</Text>
+          <Pressable onPress={() => router.push(nextPlanned ? '/planning' : '/workout/new')} style={({ pressed }) => ({ marginTop: spacing[3], height: 46, borderRadius: radii.xl, backgroundColor: colors.surfaceElevated, borderWidth: 1, borderColor: colors.border, alignItems: 'center', justifyContent: 'center', transform: [{ scale: pressed ? 0.98 : 1 }] })}>
+            <Text variant="body" style={{ fontWeight: '600' }}>{nextPlanned ? 'Voir le planning ›' : 'Créer une séance ›'}</Text>
           </Pressable>
         </Card>
 
