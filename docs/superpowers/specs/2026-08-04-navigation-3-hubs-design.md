@@ -128,13 +128,52 @@ est déjà présent (dépendance transitive d'`expo`), aucun package à ajouter 
 Teinte dynamique actif/inactif conservée (mêmes couleurs `colors.primary`/`colors.textSubtle`
 qu'aujourd'hui, passées en prop `color` aux composants d'icône).
 
+## Navigation par jour (les 3 hubs)
+
+Chaque mini-accueil doit pouvoir se recontextualiser sur un jour précis (passé, aujourd'hui, ou
+jusqu'à 7 jours dans le futur — pour voir une séance/un repas déjà planifié), pas seulement
+"aujourd'hui" en dur.
+
+**Bonne nouvelle côté faisabilité :** les fonctions de `@supotsu/engines` prennent déjà un
+paramètre `asOf: ISODateString` presque partout (61 occurrences dans 19 fichiers du package) —
+`sleepTrend`, `computeRecoveryScore`, `computeNutritionScore`, `computeAcwr`, `entriesForDay`,
+etc. ne sont pas câblées sur "maintenant" en dur, elles acceptent déjà n'importe quelle date de
+référence. Ce n'est donc pas un chantier de calcul — c'est du câblage d'état côté écran : au lieu
+de `const asOf = new Date().toISOString();` (aujourd'hui, codé partout), chaque hub utilise
+`const asOf = selectedDate;` piloté par le nouveau composant de navigation.
+
+**Nouveau composant partagé** `DayNav` (ex. `src/features/navigation/DayNav.tsx`) : un en-tête
+compact `‹ [Aujourd'hui / Hier / date formatée] ›`, plus léger que le sélecteur semaine de
+`PlanningScreen` (qui reste tel quel, c'est un besoin différent). État `selectedDate` local à
+l'écran (pas persisté) :
+
+- Bornes : passé illimité, futur limité à **+7 jours**.
+- Réinitialisé à aujourd'hui à chaque montage de l'écran (changement d'onglet puis retour =
+  on revient sur aujourd'hui, pas sur le dernier jour consulté).
+- Quand `selectedDate` n'est pas aujourd'hui, un indicateur visuel + un raccourci pour revenir
+  directement à aujourd'hui (éviter de rester "perdu" sur un jour passé sans s'en rendre compte).
+
+**Ce qui change avec le jour sélectionné, par hub :**
+
+- **Cartes "instantané"** (nuit/séance/repas du jour, stats rapides, phases de sommeil) :
+  recontextualisées sur `selectedDate` — déjà le comportement naturel une fois `asOf` branché.
+- **Cartes "tendance"** (7 derniers jours / 7 dernières nuits) : la fenêtre glisse pour se
+  terminer sur `selectedDate` au lieu d'aujourd'hui — déjà le comportement des fonctions
+  `*Trend`/`*sums` existantes une fois `asOf` branché, aucun changement de leur signature.
+- **Cartes outils/liens** (Respiration, Recettes, Comprendre, Objectifs) : ne dépendent d'aucune
+  date, inchangées quel que soit `selectedDate`.
+- **Sport — "Séance prévue"** : en navigant vers un jour futur, montre la séance planifiée de ce
+  jour-là (réutilise la même logique que `byDay`/`usePlannedWorkouts` de `PlanningScreen`) au
+  lieu de toujours celle d'aujourd'hui.
+
 ## Contenu du mini-accueil Sport
 
 Base : `TrainingScreen` existant, réordonné et complété (aucune réécriture from scratch).
+`DayNav` en haut de page, sous le titre (voir section Navigation par jour).
 
-1. **Séance prévue aujourd'hui** — même donnée que la carte "Prochaine séance" de l'Accueil
-   (workout planifié le plus proche), reformulée pour le jour même, avec action principale
-   Commencer / Planifier.
+1. **Séance du jour sélectionné** (titre "Séance prévue aujourd'hui" par défaut) — même donnée
+   que la carte "Prochaine séance" de l'Accueil (workout planifié le plus proche du jour affiché
+   par `DayNav`), avec action principale Commencer / Planifier.
 2. **État du corps** — ring de récupération globale (`computeRecoveryScore`, déjà présent) **+**
    silhouette `MuscleBody` colorée par muscle (réutilise le `colorFor` déjà utilisé sur
    `/sport/muscles`), côte à côte.
@@ -152,6 +191,8 @@ Base : `TrainingScreen` existant, réordonné et complété (aucune réécriture
 
 Base : `SleepScreen` existant, promu en page d'accueil du hub, réordonné, complété avec les
 signaux qui vivaient dans "Santé" (stress, bien-être mental) et les outils de relaxation.
+`DayNav` en haut de page, sous le titre (voir section Navigation par jour) — remplace le
+`asOf = new Date().toISOString()` codé en dur de `SleepScreen`.
 
 Ordre final :
 
@@ -188,7 +229,9 @@ ce champ). Tests unitaires à ajouter dans `appleHealth.test.ts`, même style qu
 
 ## Contenu du mini-accueil Nutrition
 
-Base : `NutritionScreen` existant, un seul ajout.
+Base : `NutritionScreen` existant, plus l'ajout ci-dessous. `DayNav` en haut de page, sous le
+titre (voir section Navigation par jour) — les repas affichés (`entriesForDay`), le ring de
+calories et les tendances suivent le jour sélectionné au lieu d'être figés sur aujourd'hui.
 
 - Nouvelle carte **Poids & composition** (poids, masse grasse, masse musculaire + variation 7
   jours — même données que la carte "Corps & récupération" de l'Accueil) insérée après la carte
@@ -241,6 +284,10 @@ projet, je n'y touche pas.
 
 ## Risques & validation
 
+- **`DayNav`** : QA manuelle des bornes (pas de navigation au-delà de +7 jours, pas de blocage
+  côté passé), du reset à "aujourd'hui" au changement d'onglet, et du raccourci de retour à
+  aujourd'hui. Pas de nouveau test unitaire d'engine nécessaire — c'est du câblage d'état, la
+  logique `asOf` est déjà couverte côté `packages/engines`.
 - **`typedRoutes` activé** (`app.json` : `experiments.typedRoutes: true`) spécifiquement parce
   que ce refactor déplace ~30 fichiers et touche toutes les chaînes `router.push`/`Href` qui les
   ciblent (Accueil, Support, chaque hub, etc.) — sans ça, un lien cassé ne se voit qu'en cliquant
