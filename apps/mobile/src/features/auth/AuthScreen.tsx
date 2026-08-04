@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Image, View } from 'react-native';
-import { Link } from 'expo-router';
+import { Link, type Href } from 'expo-router';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Badge, Button, Input, Screen, Text, useTheme } from '@supotsu/ui';
@@ -14,7 +14,7 @@ type Mode = 'signIn' | 'signUp';
 
 const COPY: Record<
   Mode,
-  { title: string; cta: string; alt: string; altHref: string; altLabel: string }
+  { title: string; cta: string; alt: string; altHref: Href; altLabel: string }
 > = {
   signIn: {
     title: 'Content de te revoir',
