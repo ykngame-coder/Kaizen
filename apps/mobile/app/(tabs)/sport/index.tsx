@@ -1,6 +1,6 @@
 import React from 'react';
-import { TrainingScreen } from '@/features/training/TrainingScreen';
+import { SportScreen } from '@/features/sport/SportScreen';
 
-export default function TrainingTab(): React.JSX.Element {
-  return <TrainingScreen />;
+export default function SportTab(): React.JSX.Element {
+  return <SportScreen />;
 }

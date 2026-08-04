@@ -9,10 +9,10 @@ import {
   overallReadiness,
   suggestNextMuscles,
   type MuscleState,
-  type MuscleStatus,
 } from '@supotsu/engines';
 import { useMuscleSessions } from '@/lib/data/queries';
 import { MuscleBody } from './MuscleBody';
+import { MUSCLE_STATE_LABEL, MUSCLE_STATE_TONE, muscleColorFor } from './muscleColor';
 
 /** French display names for each muscle group. */
 const MUSCLE_LABEL: Record<MuscleGroup, string> = {
@@ -44,20 +44,6 @@ const MUSCLE_INLINE: Record<MuscleGroup, string> = {
   full_body: 'corps entier',
 };
 
-/** Recovery states, in the mockup's vocabulary (#5). */
-const STATE_LABEL: Record<MuscleState, string> = {
-  fatigued: 'Fatigué',
-  worked: 'Modéré',
-  fresh: 'Bon',
-  rested: 'Prêt',
-};
-const STATE_TONE: Record<MuscleState, 'success' | 'info' | 'warning' | 'error'> = {
-  fatigued: 'error',
-  worked: 'warning',
-  fresh: 'success',
-  rested: 'info',
-};
-
 /** Join French labels: "a, b et c". */
 function joinFr(labels: string[]): string {
   if (labels.length === 0) return '';
@@ -75,18 +61,8 @@ export function MusclesScreen(): React.JSX.Element {
     () => computeMuscleStates(sessions, new Date().toISOString()),
     [sessions],
   );
-  const byMuscle = useMemo(
-    () => new Map<MuscleGroup, MuscleStatus>(statuses.map((s) => [s.muscle, s])),
-    [statuses],
-  );
-
-  const stateColor = (state: MuscleState): string => colors[STATE_TONE[state]];
-  const colorFor = (muscle: MuscleGroup): string => {
-    const status = byMuscle.get(muscle);
-    // Never trained in the window → transparent so the blue base body shows.
-    if (!status || status.lastTrainedDaysAgo === null) return 'transparent';
-    return stateColor(status.state);
-  };
+  const stateColor = (state: MuscleState): string => colors[MUSCLE_STATE_TONE[state]];
+  const colorFor = useMemo(() => muscleColorFor(statuses, colors), [statuses, colors]);
 
   const readiness = useMemo(() => overallReadiness(statuses), [statuses]);
   const fresh = useMemo(() => suggestNextMuscles(statuses, 3), [statuses]);
@@ -160,7 +136,7 @@ export function MusclesScreen(): React.JSX.Element {
                 >
                   <View style={{ width: 10, height: 10, borderRadius: 5, backgroundColor: stateColor(state) }} />
                   <Text variant="caption" color="textMuted">
-                    {STATE_LABEL[state]}
+                    {MUSCLE_STATE_LABEL[state]}
                   </Text>
                 </View>
               ))}
@@ -173,7 +149,7 @@ export function MusclesScreen(): React.JSX.Element {
                 Aucune séance récente. Enregistre une séance de musculation pour colorer tes muscles travaillés et voir ceux au repos.
               </Text>
               <View style={{ alignItems: 'flex-start', marginTop: spacing[2] }}>
-                <Button label="Créer une séance" onPress={() => router.push('/workout/new')} />
+                <Button label="Créer une séance" onPress={() => router.push('/sport/workout/new')} />
               </View>
             </Card>
           ) : (
@@ -189,7 +165,7 @@ export function MusclesScreen(): React.JSX.Element {
                   >
                     <Text variant="body">{MUSCLE_LABEL[s.muscle]}</Text>
                     <Text variant="subtitle" style={{ color: stateColor(s.state) }}>
-                      {STATE_LABEL[s.state]}
+                      {MUSCLE_STATE_LABEL[s.state]}
                     </Text>
                   </View>
                   <Meter value={s.freshness} color={stateColor(s.state)} height={6} />
@@ -207,7 +183,7 @@ export function MusclesScreen(): React.JSX.Element {
               {coaching.text}
             </Text>
             <View style={{ alignItems: 'flex-start', marginTop: spacing[3] }}>
-              <Button label="Planifier une séance" onPress={() => router.push('/workout/new')} />
+              <Button label="Planifier une séance" onPress={() => router.push('/sport/workout/new')} />
             </View>
           </Card>
           </>
