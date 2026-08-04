@@ -49,3 +49,6 @@ Thumbs.db
 
 # Test coverage
 coverage/
+
+# Visual brainstorming companion (local mockups, not part of the app)
+.superpowers/
