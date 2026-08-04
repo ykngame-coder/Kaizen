@@ -5,21 +5,21 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '@supotsu/ui';
 import { useAuth } from '@/features/auth/AuthProvider';
 import { useOnboarding } from '@/features/onboarding/OnboardingProvider';
+import { TabIcon } from './TabIcon';
 
 interface TabDef {
   key: string;
   label: string;
-  icon: string;
   path: Href;
 }
 
-/** The five main sections (architecture: APP → Application). Always reachable. */
+/** The five hubs (architecture: APP → Application). Always reachable. */
 const TABS: TabDef[] = [
-  { key: 'index', label: 'Accueil', icon: '◎', path: '/' },
-  { key: 'training', label: 'Entraînements', icon: '⚡', path: '/training' },
-  { key: 'sante', label: 'Santé', icon: '♥', path: '/sante' },
-  { key: 'progression', label: 'Progression', icon: '↗', path: '/progression' },
-  { key: 'profile', label: 'Profil', icon: '☰', path: '/profile' },
+  { key: 'index', label: 'Accueil', path: '/' },
+  { key: 'sport', label: 'Sport', path: '/sport' },
+  { key: 'sommeil', label: 'Sommeil', path: '/sommeil' },
+  { key: 'nutrition', label: 'Nutrition', path: '/nutrition' },
+  { key: 'profile', label: 'Profil', path: '/profile' },
 ];
 
 /**
@@ -64,7 +64,11 @@ export function AppTabBar(): React.JSX.Element | null {
             onPress={() => router.navigate(tab.path)}
             style={{ flex: 1, alignItems: 'center', gap: 2 }}
           >
-            <Text style={{ color: tint, fontSize: 18 }}>{tab.icon}</Text>
+            {tab.key === 'profile' ? (
+              <Text style={{ color: tint, fontSize: 18 }}>☰</Text>
+            ) : (
+              <TabIcon route={tab.key} color={tint} size={20} />
+            )}
             <Text style={{ color: tint, fontSize: 10, fontWeight: active ? '700' : '500' }}>
               {tab.label}
             </Text>

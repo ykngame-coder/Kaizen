@@ -2,17 +2,7 @@ import React from 'react';
 import { Text } from 'react-native';
 import { Tabs } from 'expo-router';
 import { useTheme } from '@supotsu/ui';
-
-const ICONS: Record<string, string> = {
-  index: '◎',
-  training: '⚡',
-  sante: '♥',
-  progression: '↗',
-  activities: '≋',
-  nutrition: '◍',
-  coach: '✦',
-  profile: '☰',
-};
+import { TabIcon } from '@/features/navigation/TabIcon';
 
 /** Bottom tab navigation — the five main sections (Master Prompt P7.2, P28.12). */
 export default function TabsLayout(): React.JSX.Element {
@@ -31,20 +21,21 @@ export default function TabsLayout(): React.JSX.Element {
           backgroundColor: colors.surface,
           borderTopColor: colors.border,
         },
-        tabBarIcon: ({ color }) => (
-          <Text style={{ color, fontSize: 18 }}>{ICONS[route.name] ?? '•'}</Text>
-        ),
+        tabBarIcon: ({ color }) =>
+          route.name === 'profile' ? (
+            <Text style={{ color, fontSize: 18 }}>☰</Text>
+          ) : (
+            <TabIcon route={route.name} color={color} size={18} />
+          ),
       })}
     >
-      {/* The 5 sections shown in the persistent AppTabBar */}
+      {/* The 5 hubs shown in the persistent AppTabBar */}
       <Tabs.Screen name="index" options={{ title: 'Accueil' }} />
-      <Tabs.Screen name="training" options={{ title: 'Entraînements' }} />
-      <Tabs.Screen name="sante" options={{ title: 'Santé' }} />
-      <Tabs.Screen name="progression" options={{ title: 'Progression' }} />
+      <Tabs.Screen name="sport" options={{ title: 'Sport' }} />
+      <Tabs.Screen name="sommeil" options={{ title: 'Sommeil' }} />
+      <Tabs.Screen name="nutrition" options={{ title: 'Nutrition' }} />
       <Tabs.Screen name="profile" options={{ title: 'Profil' }} />
       {/* Still routable (linked from hubs/Accueil), not shown in the bar */}
-      <Tabs.Screen name="activities" options={{ title: 'Activités' }} />
-      <Tabs.Screen name="nutrition" options={{ title: 'Nutrition' }} />
       <Tabs.Screen name="coach" options={{ title: 'Coach IA' }} />
     </Tabs>
   );
