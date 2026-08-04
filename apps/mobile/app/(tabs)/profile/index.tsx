@@ -63,10 +63,23 @@ export default function ProfileTab(): React.JSX.Element {
         Compte & données
       </Text>
       <Group>
-        <ListRow icon="⚖" iconColor="rgba(45,127,249,0.18)" title="Appareils & synchronisation" subtitle="Garmin, Apple Santé, Renpho…" onPress={() => router.push('/connectors')} divider />
-        <ListRow icon="🎯" iconColor="rgba(43,227,139,0.18)" title="Objectifs" subtitle="Cibles et progression" onPress={() => router.push('/goals')} divider />
-        <ListRow icon="🔔" iconColor="rgba(245,183,66,0.18)" title="Notifications" subtitle="Rappels et alertes" onPress={() => router.push('/notifications')} divider />
-        <ListRow icon="🔗" iconColor="rgba(139,92,246,0.18)" title="Données & intégrations" subtitle="Export, connexions tierces" onPress={() => router.push('/integrations')} />
+        <ListRow icon="⚖" iconColor="rgba(45,127,249,0.18)" title="Appareils & synchronisation" subtitle="Garmin, Apple Santé, Renpho…" onPress={() => router.push('/profile/connectors')} divider />
+        <ListRow icon="🎯" iconColor="rgba(43,227,139,0.18)" title="Objectifs" subtitle="Cibles et progression" onPress={() => router.push('/profile/goals')} divider />
+        <ListRow icon="🔔" iconColor="rgba(245,183,66,0.18)" title="Notifications" subtitle="Rappels et alertes" onPress={() => router.push('/profile/notifications')} divider />
+        <ListRow icon="🔗" iconColor="rgba(139,92,246,0.18)" title="Données & intégrations" subtitle="Export, connexions tierces" onPress={() => router.push('/profile/integrations')} divider />
+        <ListRow icon="📋" iconColor="rgba(139,92,246,0.18)" title="Qualité des données" subtitle="Complétude et fiabilité de tes sources" onPress={() => router.push('/profile/data-quality')} divider />
+        <ListRow icon="📥" iconColor="rgba(139,92,246,0.18)" title="Importer un fichier" subtitle="Export Garmin / Apple Santé (JSON)" onPress={() => router.push('/profile/import')} />
+      </Group>
+
+      {/* Bilan & communauté */}
+      <Text variant="heading" style={{ marginTop: spacing[2] }}>
+        Bilan & communauté
+      </Text>
+      <Group>
+        <ListRow icon="📊" iconColor="rgba(45,127,249,0.18)" title="Bilan & badges" subtitle="Tendances, statistiques, récompenses" onPress={() => router.push('/profile/progression')} divider />
+        <ListRow icon="✓" iconColor="rgba(43,227,139,0.18)" title="Habitudes & discipline" subtitle="Check-list, séries, régularité" onPress={() => router.push('/profile/habits')} divider />
+        <ListRow icon="👥" iconColor="rgba(245,183,66,0.18)" title="Communauté" subtitle="Défis, entraide" onPress={() => router.push('/profile/community')} divider />
+        <ListRow icon="🛒" iconColor="rgba(245,183,66,0.18)" title="Marketplace" subtitle="Programmes structurés" onPress={() => router.push('/profile/marketplace')} />
       </Group>
 
       {/* Préférences */}
@@ -74,9 +87,10 @@ export default function ProfileTab(): React.JSX.Element {
         Préférences
       </Text>
       <Group>
-        <ListRow icon="⚙️" iconColor="rgba(116,128,146,0.22)" title="Réglages" subtitle="Unités, thème, confidentialité, sécurité" onPress={() => router.push('/settings')} divider />
+        <ListRow icon="⚙️" iconColor="rgba(116,128,146,0.22)" title="Réglages" subtitle="Unités, thème, confidentialité, sécurité" onPress={() => router.push('/profile/settings')} divider />
         <ListRow icon="🌗" iconColor="rgba(116,128,146,0.22)" title="Thème" value={name === 'dark' ? 'Sombre' : 'Clair'} onPress={toggle} divider />
-        <ListRow icon="🖥" iconColor="rgba(116,128,146,0.22)" title="Suivre le système" onPress={() => setPreference('system')} />
+        <ListRow icon="🖥" iconColor="rgba(116,128,146,0.22)" title="Suivre le système" onPress={() => setPreference('system')} divider />
+        <ListRow icon="💬" iconColor="rgba(116,128,146,0.22)" title="Support" subtitle="Aide et contact" onPress={() => router.push('/profile/support')} />
       </Group>
 
       <View style={{ alignItems: 'flex-start', marginTop: spacing[2] }}>

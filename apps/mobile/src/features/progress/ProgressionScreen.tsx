@@ -57,22 +57,21 @@ export function ProgressionScreen(): React.JSX.Element {
     };
   }, [activities, health, asOf]);
 
+  // Cross-pillar only — per-pillar trends (objectifs, records, photos) live in
+  // their own hub now (Sport/Sommeil/Nutrition mini-accueils).
   const sections: Section[] = [
-    { title: 'Rapport hebdomadaire', subtitle: 'Ton bilan de la semaine, expliqué', icon: '📄', path: '/report' },
-    { title: 'Statistiques', subtitle: 'Vue d’ensemble sur la période', icon: '📊', path: '/analytics' },
-    { title: 'Tendances & corrélations', subtitle: 'Ce qui influence ta forme (IA)', icon: '📈', path: '/analytics' },
-    { title: 'Objectifs', subtitle: 'Cibles mesurables et progression', icon: '🎯', path: '/goals' },
-    { title: 'Records', subtitle: '1RM, meilleurs temps, distances', icon: '🏆', path: '/records' },
+    { title: 'Rapport hebdomadaire', subtitle: 'Ton bilan de la semaine, expliqué', icon: '📄', path: '/profile/report' },
+    { title: 'Statistiques', subtitle: 'Vue d’ensemble sur la période', icon: '📊', path: '/profile/analytics' },
+    { title: 'Tendances & corrélations', subtitle: 'Ce qui influence ta forme (IA)', icon: '📈', path: '/profile/analytics' },
     { title: 'Badges', subtitle: 'Récompenses gagnées sur tes données', icon: '🏅', soon: true },
     { title: 'Comparaisons', subtitle: 'Périodes et références', icon: '⚖', soon: true },
-    { title: 'Photos d’évolution', subtitle: 'Avant / après dans le temps', icon: '📷', path: '/photos' },
   ];
 
   return (
     <Screen scroll>
-      <Text variant="title">Progression</Text>
+      <Text variant="title">Bilan & badges</Text>
       <Text variant="caption" color="textMuted">
-        Tes tendances, tes records et tes objectifs dans le temps.
+        Tes tendances et tes récompenses, tous piliers confondus.
       </Text>
 
       {/* Bilan de la semaine */}
