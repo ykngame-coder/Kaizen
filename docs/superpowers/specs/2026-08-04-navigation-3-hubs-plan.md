@@ -5,6 +5,11 @@ le travail en phases séquentielles, chacune vérifiable indépendamment (`typec
 après chaque phase plutôt qu'une seule fois à la fin), pour limiter le risque sur un refactor qui
 déplace ~30 fichiers.
 
+**Ordre d'exécution** (demandé explicitement) : Sport → Nutrition → Profil/Progression →
+**Sommeil en dernier** des phases de contenu (au lieu de premier) — Sommeil reste le plus gros
+morceau (promotion de `SleepScreen` + extension pipeline HealthKit), traité une fois les 3 autres
+hubs stabilisés.
+
 Convention : utiliser `git mv` pour chaque déplacement de fichier (préserve l'historique), jamais
 `rm` + `Write` d'un nouveau fichier avec le même contenu.
 
@@ -34,7 +39,9 @@ Pas encore de déplacement de fichiers à cette étape — juste la structure vi
 
 ## Phase 2 — Déplacement des fichiers de route (par hub, un hub à la fois)
 
-Pour chaque hub, dans cet ordre (Sport, Sommeil, Nutrition, Profil) :
+Pour chaque hub, dans cet ordre (Sport, Sommeil, Nutrition, Profil — l'ordre de *déplacement des
+fichiers* n'est pas lié à l'ordre de *rédaction du contenu* plus bas ; les 4 dossiers doivent
+exister avant la phase 3 barre du bas) :
 
 1. `git mv` chaque fichier listé dans la spec (section "Arborescence cible") vers son nouvel
    emplacement.
@@ -56,7 +63,9 @@ Pour chaque hub, dans cet ordre (Sport, Sommeil, Nutrition, Profil) :
 **Détail Sommeil** — vers `app/(tabs)/sommeil/` :
 `breathing.tsx`, `circadian.tsx`, `neuro-recovery.tsx`, `bilateral.tsx`, `sound.tsx`,
 `wellness.tsx`, et `sleep.tsx` → renommé `index.tsx`. **Supprimer** `app/(tabs)/sante.tsx` et
-`src/features/health/SanteScreen.tsx` (contenu absorbé ailleurs, voir phases suivantes).
+`src/features/health/SanteScreen.tsx` (contenu absorbé ailleurs, voir phases suivantes) — la
+suppression peut attendre la phase 8 (contenu Sommeil) si un écran encore non migré y fait
+référence entre-temps ; sinon la faire ici.
 
 **Détail Nutrition** — vers `app/(tabs)/nutrition/` :
 `weight.tsx`, `journal.tsx`, `food/search.tsx`, `food/scan.tsx`, `meal/new.tsx`, et
@@ -73,7 +82,7 @@ Pour chaque hub, dans cet ordre (Sport, Sommeil, Nutrition, Profil) :
 
 **Vérification après chaque hub** : `pnpm --filter @supotsu/mobile typecheck` — avec
 `typedRoutes` actif, chaque `router.push`/`Href` pointant vers un fichier qui vient de bouger
-remonte maintenant comme erreur de type. Ne pas corriger les appelants tout de suite (phase 6) —
+remonte maintenant comme erreur de type. Ne pas corriger les appelants tout de suite (phase 9) —
 juste confirmer que le nombre d'erreurs correspond à ce qui est attendu (des `Href` vers les
 anciens chemins), pas à une erreur de structure.
 
@@ -103,11 +112,64 @@ sur un écran de détail imbriqué (ex. `/sport/muscles` doit surligner Sport).
    'fr-FR'). Si `value` ≠ aujourd'hui, afficher un petit indicateur/bouton "Aujourd'hui" pour
    revenir directement.
 2. Pas de test unitaire dédié nécessaire (logique de calcul déjà couverte côté engines) — QA
-   manuelle en phase 8.
+   manuelle en phase 10.
 
 **Vérification** : `pnpm --filter @supotsu/mobile typecheck && pnpm --filter @supotsu/mobile lint`.
 
-## Phase 5 — Contenu du hub Sommeil (le plus gros morceau)
+## Phase 5 — Contenu du hub Sport
+
+1. `src/features/training/TrainingScreen.tsx` → renommer en `src/features/sport/SportScreen.tsx`
+   (fonction exportée `SportScreen`). `app/(tabs)/sport/index.tsx` l'importe.
+2. Ajouter `DayNav` + état `selectedDate`, remplacer `const asOf = new Date().toISOString();`.
+3. Réordonner : carte "Séance du jour sélectionné" en premier (réutilise la logique
+   `usePlannedWorkouts`/`nextPlanned` déjà utilisée dans `DashboardScreen.tsx`, adaptée pour
+   filtrer sur `selectedDate` au lieu de "la plus proche à venir").
+4. Carte "État du corps" : ajouter `MuscleBody` avec le `colorFor` réutilisé depuis
+   `MusclesScreen.tsx` (extraire cette fonction dans un utilitaire partagé si elle n'est pas déjà
+   exportable proprement, pour éviter de dupliquer la logique de couleur).
+5. Élargir la liste "Dernières séances" à "3 dernières activités" fusionnant `workouts` +
+   `activities` triés par date, lien vers `/sport/activities` pour l'historique complet.
+6. Ajouter les tuiles compactes **Charge (ACWR)** (`computeAcwr`, déjà importé) et **VO2 Max**
+   (dernière valeur via `latestOf`-style lookup sur les health metrics, si disponible — sinon
+   état "—" comme les autres champs optionnels du fichier).
+7. Ajouter les cartes **Comprendre** (pilier `performance`) et **Objectifs** (types
+   performance/strength/endurance), même mécanisme de filtrage décrit dans la spec.
+
+**Vérification** : `pnpm --filter @supotsu/mobile typecheck && pnpm --filter @supotsu/mobile lint`.
+QA manuelle de l'écran Sport.
+
+## Phase 6 — Contenu du hub Nutrition
+
+1. `src/features/nutrition/NutritionScreen.tsx` : ajouter `DayNav` + `selectedDate`, remplacer
+   `const asOf = new Date().toISOString();`.
+2. Ajouter la carte **Poids & composition** après la carte Nutrition Score : réutiliser le calcul
+   déjà présent dans `DashboardScreen.tsx` (poids/masse grasse/masse musculaire + variation 7j)
+   plutôt que de le réécrire — envisager d'extraire un petit hook/util partagé si la duplication
+   devient gênante. Lien vers `/nutrition/weight`.
+3. Ajouter la carte **Comprendre** contextuelle (pilier `nutrition`).
+4. L'"Objectifs" existant de `NutritionScreen` ne change pas.
+
+**Vérification** : `pnpm --filter @supotsu/mobile typecheck && pnpm --filter @supotsu/mobile lint`.
+QA manuelle de l'écran Nutrition.
+
+## Phase 7 — Profil + Progression allégée
+
+1. `app/(tabs)/profile/index.tsx` (ex-`ProfileScreen`) : mettre à jour les chemins existants
+   (`/connectors`→`/profile/connectors`, `/goals`→`/profile/goals`, `/notifications`→
+   `/profile/notifications`, `/integrations`→`/profile/integrations`, `/settings`→
+   `/profile/settings`), ajouter les nouvelles `ListRow` : Communauté, Marketplace, Habitudes &
+   discipline, Bilan & badges, Support, Qualité des données, Importer un fichier — avec icônes
+   cohérentes avec le style `ListRow` existant (voir les icônes déjà utilisées dans ce fichier
+   pour le ton/palette).
+2. `src/features/progress/ProgressionScreen.tsx` (déplacé vers `app/(tabs)/profile/progression.tsx`) :
+   retirer les sections Objectifs, Records, Photos d'évolution de la liste `sections`. Garder
+   Rapport hebdomadaire, Statistiques, Tendances & corrélations, Badges, Comparaisons, et le
+   bilan 7 jours.
+
+**Vérification** : `pnpm --filter @supotsu/mobile typecheck && pnpm --filter @supotsu/mobile lint`.
+QA manuelle de l'écran Profil (tous les nouveaux liens s'ouvrent correctement).
+
+## Phase 8 — Contenu du hub Sommeil (le plus gros morceau, traité en dernier)
 
 1. Renommer/déplacer la logique : `src/features/wellbeing/SleepScreen.tsx` devient la base de
    `src/features/sommeil/SommeilScreen.tsx` (nouveau nom de fonction exportée, ex.
@@ -128,9 +190,9 @@ sur un écran de détail imbriqué (ex. `/sport/muscles` doit surligner Sport).
 7. Ajouter la carte **Objectifs** contextuelle (point 10) : lire les goals via le hook existant
    (`useGoals` si présent, sinon vérifier le hook exact dans `queries.ts`) filtrés sur le type
    `health` + métrique cible liée au sommeil/HRV/stress, lien vers `/profile/goals`.
-8. Supprimer `src/features/health/SanteScreen.tsx` (son contenu est maintenant réparti — voir
-   phases 6/7/9 pour les morceaux qui vont ailleurs : nutrition→déjà dans NutritionScreen,
-   habitudes/bien-être→pas dupliqués, weight→phase 6).
+8. Supprimer `src/features/health/SanteScreen.tsx` et `app/(tabs)/sante.tsx` si ce n'est pas
+   déjà fait en phase 2 (son contenu est maintenant réparti entre Sommeil, Sport, Nutrition et
+   Profil, tous déjà en place à ce stade puisque cette phase passe en dernier).
 
 ### Extension pipeline HealthKit (sous-partie de cette phase)
 
@@ -149,59 +211,6 @@ sur un écran de détail imbriqué (ex. `/sport/muscles` doit surligner Sport).
 
 **Vérification** : `pnpm --filter @supotsu/connectors test`, puis `pnpm --filter @supotsu/mobile
 typecheck`. QA manuelle de l'écran Sommeil (web ou simulateur) avec des données de démo/import.
-
-## Phase 6 — Contenu du hub Sport
-
-1. `src/features/training/TrainingScreen.tsx` → renommer en `src/features/sport/SportScreen.tsx`
-   (fonction exportée `SportScreen`). `app/(tabs)/sport/index.tsx` l'importe.
-2. Ajouter `DayNav` + état `selectedDate`, remplacer `const asOf = new Date().toISOString();`.
-3. Réordonner : carte "Séance du jour sélectionné" en premier (réutilise la logique
-   `usePlannedWorkouts`/`nextPlanned` déjà utilisée dans `DashboardScreen.tsx`, adaptée pour
-   filtrer sur `selectedDate` au lieu de "la plus proche à venir").
-4. Carte "État du corps" : ajouter `MuscleBody` avec le `colorFor` réutilisé depuis
-   `MusclesScreen.tsx` (extraire cette fonction dans un utilitaire partagé si elle n'est pas déjà
-   exportable proprement, pour éviter de dupliquer la logique de couleur).
-5. Élargir la liste "Dernières séances" à "3 dernières activités" fusionnant `workouts` +
-   `activities` triés par date, lien vers `/sport/activities` pour l'historique complet.
-6. Ajouter les tuiles compactes **Charge (ACWR)** (`computeAcwr`, déjà importé) et **VO2 Max**
-   (dernière valeur via `latestOf`-style lookup sur les health metrics, si disponible — sinon
-   état "—" comme les autres champs optionnels du fichier).
-7. Ajouter les cartes **Comprendre** (pilier `performance`) et **Objectifs** (types
-   performance/strength/endurance), même mécanisme que la phase 5.
-
-**Vérification** : `pnpm --filter @supotsu/mobile typecheck && pnpm --filter @supotsu/mobile lint`.
-QA manuelle de l'écran Sport.
-
-## Phase 7 — Contenu du hub Nutrition
-
-1. `src/features/nutrition/NutritionScreen.tsx` : ajouter `DayNav` + `selectedDate`, remplacer
-   `const asOf = new Date().toISOString();`.
-2. Ajouter la carte **Poids & composition** après la carte Nutrition Score : réutiliser le calcul
-   déjà présent dans `DashboardScreen.tsx` (poids/masse grasse/masse musculaire + variation 7j)
-   plutôt que de le réécrire — envisager d'extraire un petit hook/util partagé si la duplication
-   devient gênante. Lien vers `/nutrition/weight`.
-3. Ajouter la carte **Comprendre** contextuelle (pilier `nutrition`).
-4. L'"Objectifs" existant de `NutritionScreen` ne change pas.
-
-**Vérification** : `pnpm --filter @supotsu/mobile typecheck && pnpm --filter @supotsu/mobile lint`.
-QA manuelle de l'écran Nutrition.
-
-## Phase 8 — Profil + Progression allégée
-
-1. `app/(tabs)/profile/index.tsx` (ex-`ProfileScreen`) : mettre à jour les chemins existants
-   (`/connectors`→`/profile/connectors`, `/goals`→`/profile/goals`, `/notifications`→
-   `/profile/notifications`, `/integrations`→`/profile/integrations`, `/settings`→
-   `/profile/settings`), ajouter les nouvelles `ListRow` : Communauté, Marketplace, Habitudes &
-   discipline, Bilan & badges, Support, Qualité des données, Importer un fichier — avec icônes
-   cohérentes avec le style `ListRow` existant (voir les icônes déjà utilisées dans ce fichier
-   pour le ton/palette).
-2. `src/features/progress/ProgressionScreen.tsx` (déplacé vers `app/(tabs)/profile/progression.tsx`) :
-   retirer les sections Objectifs, Records, Photos d'évolution de la liste `sections`. Garder
-   Rapport hebdomadaire, Statistiques, Tendances & corrélations, Badges, Comparaisons, et le
-   bilan 7 jours.
-
-**Vérification** : `pnpm --filter @supotsu/mobile typecheck && pnpm --filter @supotsu/mobile lint`.
-QA manuelle de l'écran Profil (tous les nouveaux liens s'ouvrent correctement).
 
 ## Phase 9 — Audit des liens dans le reste de l'app
 
@@ -240,9 +249,9 @@ QA manuelle de l'écran Profil (tous les nouveaux liens s'ouvrent correctement).
 ## Notes de portée
 
 - Aucune modification du modèle de données `HealthMetricType` (`@supotsu/core`) — l'extension
-  de cette phase 5 produit des `SleepSession`, un type qui existe déjà.
-- Le mécanisme Comprendre/Objectifs éclaté (phases 5-7) ne crée aucune nouvelle UI de gestion,
-  seulement des cartes de lecture filtrées renvoyant vers les écrans partagés existants.
+  de la phase 8 produit des `SleepSession`, un type qui existe déjà.
+- Le mécanisme Comprendre/Objectifs éclaté (phases 5, 6, 8) ne crée aucune nouvelle UI de
+  gestion, seulement des cartes de lecture filtrées renvoyant vers les écrans partagés existants.
 - Si `typedRoutes: true` fait remonter des erreurs `Href` préexistantes sans rapport avec ce
   refactor (phase 0), les lister séparément et décider avec l'utilisateur si elles se corrigent
   dans ce projet ou dans un ticket séparé — ne pas les laisser bloquer la phase 10 sans un choix
