@@ -369,7 +369,7 @@ function HealthKitCard(): React.JSX.Element {
         <View style={{ flex: 1 }}>
           <Text variant="subtitle">Apple Santé (HealthKit)</Text>
           <Text variant="caption" color="textMuted">
-            Lecture directe sur l’iPhone — sommeil, FC, HRV, poids, composition
+            Lecture directe sur l’iPhone — sommeil, FC, HRV, poids, composition (jusqu’à 3 ans d’historique)
           </Text>
         </View>
         <Badge label={available ? 'Natif iOS' : 'App iOS requise'} tone={available ? 'success' : 'neutral'} />

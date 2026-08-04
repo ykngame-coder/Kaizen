@@ -34,8 +34,15 @@ const QUANTITY_TYPES: { id: QuantityTypeIdentifier; unit: string }[] = [
 const SLEEP_TYPE = 'HKCategoryTypeIdentifierSleepAnalysis' as const;
 const WORKOUT_TYPE = 'HKWorkoutTypeIdentifier' as const;
 
-/** How far back to read on each sync — enough to backfill a fresh install without a slow first sync. */
-const LOOKBACK_DAYS = 120;
+/**
+ * How far back to read on each sync. 3 years — HealthKit itself has no real
+ * history limit (as far back as the Watch/Health app has data), so this is a
+ * free, native alternative to Health Auto Export's paid-after-trial export
+ * for historical backfill. The first sync on a large history can take a
+ * while (thousands of samples); subsequent syncs re-read the same window but
+ * `persistImport` dedupes, so nothing new is added twice.
+ */
+const LOOKBACK_DAYS = 365 * 3;
 
 export function healthKitAvailable(): boolean {
   try {
