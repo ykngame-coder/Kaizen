@@ -1,5 +1,5 @@
 import type { ActivityType, HealthMetricType } from '@supotsu/core';
-import type { ImportedActivity, ImportedHealthMetric } from './types';
+import type { ImportedActivity, ImportedHealthMetric, ImportedSleepSession } from './types';
 
 /**
  * Apple Health (HealthKit) normalization (Master Prompt P22, P38). Pure functions
@@ -96,6 +96,77 @@ export function aggregateHealthKitSleep(samples: HKSleepSample[]): ImportedHealt
     reliability: 'high' as const,
     measuredAt: new Date(n.end).toISOString(),
   }));
+}
+
+interface NightAccumulator {
+  start: string;
+  end: string;
+  deepMin: number;
+  lightMin: number;
+  remMin: number;
+  awakeMin: number;
+  inBedMin: number;
+  hasInBed: boolean;
+}
+
+/**
+ * Aggregate sleep-stage samples into one `ImportedSleepSession` per night —
+ * same grouping as `aggregateHealthKitSleep` (by the night's end date) but
+ * keeping the per-stage breakdown instead of collapsing to a single
+ * duration, so the native HealthKit sync path can feed the same
+ * Phases-de-sommeil card the file-import path (Health Auto Export) already
+ * does. `asleepUnspecified` (value 1) — sources that don't report stage
+ * detail — folds into `lightMin`, the least specific default stage; no
+ * `segments` (minute-by-minute hypnogram), matching the file-import path's
+ * "never fabricate what the source didn't provide" rule.
+ */
+export function aggregateHealthKitSleepSessions(samples: HKSleepSample[]): ImportedSleepSession[] {
+  const perNight = new Map<string, NightAccumulator>();
+  for (const s of samples) {
+    const minutes = (new Date(s.endDate).getTime() - new Date(s.startDate).getTime()) / 60000;
+    if (minutes <= 0) continue;
+    const key = nightKey(s.endDate);
+    const acc = perNight.get(key) ?? {
+      start: s.startDate,
+      end: s.endDate,
+      deepMin: 0,
+      lightMin: 0,
+      remMin: 0,
+      awakeMin: 0,
+      inBedMin: 0,
+      hasInBed: false,
+    };
+    acc.start = s.startDate < acc.start ? s.startDate : acc.start;
+    acc.end = s.endDate > acc.end ? s.endDate : acc.end;
+    switch (s.value) {
+      case 4: acc.deepMin += minutes; break;
+      case 5: acc.remMin += minutes; break;
+      case 3: case 1: acc.lightMin += minutes; break;
+      case 2: acc.awakeMin += minutes; break;
+      case 0: acc.inBedMin += minutes; acc.hasInBed = true; break;
+      default: break;
+    }
+    perNight.set(key, acc);
+  }
+
+  const out: ImportedSleepSession[] = [];
+  for (const n of perNight.values()) {
+    const asleepMin = n.deepMin + n.lightMin + n.remMin;
+    if (asleepMin <= 0) continue;
+    out.push({
+      source: 'apple_health',
+      reliability: 'high',
+      startedAt: new Date(n.start).toISOString(),
+      endedAt: new Date(n.end).toISOString(),
+      deepMin: Math.round(n.deepMin),
+      lightMin: Math.round(n.lightMin),
+      remMin: Math.round(n.remMin),
+      awakeMin: Math.round(n.awakeMin),
+      asleepMin: Math.round(asleepMin),
+      inBedMin: Math.round(n.hasInBed ? n.inBedMin : asleepMin + n.awakeMin),
+    });
+  }
+  return out;
 }
 
 /** HealthKit workout activity type (numeric enum) → Supotsu ActivityType. */

@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   aggregateHealthKitSleep,
+  aggregateHealthKitSleepSessions,
   mapHealthKitWorkoutType,
   normalizeHealthKitSample,
   normalizeHealthKitSamples,
@@ -57,6 +58,54 @@ describe('aggregateHealthKitSleep', () => {
     expect(night?.type).toBe('sleep_duration');
     expect(night?.value).toBe(7); // 3h + 4h, awake excluded
     expect(night?.source).toBe('apple_health');
+  });
+});
+
+describe('aggregateHealthKitSleepSessions', () => {
+  it('splits stage minutes per night, awake tracked separately from asleep', () => {
+    const [night] = aggregateHealthKitSleepSessions([
+      { value: 3, startDate: '2026-07-20T23:00:00Z', endDate: '2026-07-21T02:00:00Z' }, // 3h core (light)
+      { value: 2, startDate: '2026-07-21T02:00:00Z', endDate: '2026-07-21T02:30:00Z' }, // 30 min awake
+      { value: 5, startDate: '2026-07-21T02:30:00Z', endDate: '2026-07-21T05:00:00Z' }, // 2.5h REM
+      { value: 4, startDate: '2026-07-21T05:00:00Z', endDate: '2026-07-21T06:30:00Z' }, // 1.5h deep
+    ]);
+    expect(night?.source).toBe('apple_health');
+    expect(night?.lightMin).toBe(180);
+    expect(night?.remMin).toBe(150);
+    expect(night?.deepMin).toBe(90);
+    expect(night?.awakeMin).toBe(30);
+    expect(night?.asleepMin).toBe(180 + 150 + 90);
+    // No explicit inBed sample -> falls back to asleep + awake.
+    expect(night?.inBedMin).toBe(180 + 150 + 90 + 30);
+    expect(night?.startedAt).toBe('2026-07-20T23:00:00.000Z');
+    expect(night?.endedAt).toBe('2026-07-21T06:30:00.000Z');
+    expect(night?.segments).toBeUndefined();
+  });
+
+  it('folds asleepUnspecified (value 1) into lightMin — sources without stage detail', () => {
+    const [night] = aggregateHealthKitSleepSessions([
+      { value: 1, startDate: '2026-07-20T23:00:00Z', endDate: '2026-07-21T06:00:00Z' }, // 7h generic asleep
+    ]);
+    expect(night?.lightMin).toBe(420);
+    expect(night?.deepMin).toBe(0);
+    expect(night?.remMin).toBe(0);
+    expect(night?.asleepMin).toBe(420);
+  });
+
+  it('uses an explicit inBed sample instead of the asleep+awake fallback when present', () => {
+    const [night] = aggregateHealthKitSleepSessions([
+      { value: 0, startDate: '2026-07-20T22:30:00Z', endDate: '2026-07-21T06:30:00Z' }, // 8h in bed
+      { value: 4, startDate: '2026-07-20T23:00:00Z', endDate: '2026-07-21T06:00:00Z' }, // 7h deep
+    ]);
+    expect(night?.inBedMin).toBe(480);
+    expect(night?.asleepMin).toBe(420);
+  });
+
+  it('drops a night with no actual sleep (only awake/inBed samples)', () => {
+    const out = aggregateHealthKitSleepSessions([
+      { value: 2, startDate: '2026-07-21T02:00:00Z', endDate: '2026-07-21T02:30:00Z' },
+    ]);
+    expect(out).toHaveLength(0);
   });
 });
 

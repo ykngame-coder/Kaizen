@@ -1,6 +1,6 @@
 import React from 'react';
-import { SleepScreen } from '@/features/wellbeing/SleepScreen';
+import { SommeilScreen } from '@/features/sommeil/SommeilScreen';
 
-export default function Sleep(): React.JSX.Element {
-  return <SleepScreen />;
+export default function SommeilTab(): React.JSX.Element {
+  return <SommeilScreen />;
 }

@@ -1,22 +1,27 @@
 import React, { useMemo } from 'react';
-import { View } from 'react-native';
-import { useRouter } from 'expo-router';
+import { Pressable, View } from 'react-native';
+import { useRouter, type Href } from 'expo-router';
 import { Badge, Button, Card, EmptyState, ProgressRing, Screen, Text, useTheme } from '@supotsu/ui';
-import { spacing } from '@supotsu/design-system';
+import { radii, spacing } from '@supotsu/design-system';
 import type { HealthMetric, SleepSession } from '@supotsu/core';
 import {
   averageSleepHours,
   computeAcwr,
   computeCircadianProfile,
   computeSleepScore2,
+  computeWellnessIndex,
   predictNextDayEnergy,
   sleepBand,
   sleepCoaching,
   sleepTrend,
+  wellnessBand,
   type FatigueRisk,
   type SleepBand,
 } from '@supotsu/engines';
-import { useActivities, useHealthMetrics, useSleepSessions } from '@/lib/data/queries';
+import { useActivities, useHealthMetrics, useSleepSessions, useWellnessCheckins } from '@/lib/data/queries';
+import { DayNav, useSelectedDay } from '@/features/navigation/DayNav';
+import { ComprendreCard } from '@/features/knowledge/ComprendreCard';
+import { ObjectifsCard } from '@/features/goals/ObjectifsCard';
 
 const RISK_TONE: Record<FatigueRisk, 'success' | 'warning' | 'error'> = {
   faible: 'success',
@@ -85,6 +90,33 @@ const fmtHM = (min: number): string => {
   const m = Math.round(min % 60);
   return h > 0 ? `${h} h ${String(m).padStart(2, '0')}` : `${m} min`;
 };
+
+/** Compact quick-glance stat tile (Stress / Bien-être). */
+function QuickStat({ icon, value, label }: { icon: string; value: string; label: string }): React.JSX.Element {
+  const { colors } = useTheme();
+  return (
+    <View style={{ flex: 1, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border, borderRadius: radii.lg, padding: spacing[3], alignItems: 'center' }}>
+      <Text style={{ fontSize: 15 }}>{icon}</Text>
+      <Text variant="subtitle" style={{ marginTop: spacing[1] }}>{value}</Text>
+      <Text variant="caption" color="textSubtle" style={{ marginTop: 2 }}>{label}</Text>
+    </View>
+  );
+}
+
+/** Recovery-tool link tile (grille outils). */
+function ToolTile({ icon, label, path }: { icon: string; label: string; path: Href }): React.JSX.Element {
+  const router = useRouter();
+  const { colors } = useTheme();
+  return (
+    <Pressable
+      onPress={() => router.push(path)}
+      style={({ pressed }) => ({ flex: 1, minWidth: '45%', opacity: pressed ? 0.6 : 1, backgroundColor: colors.surfaceElevated, borderRadius: radii.lg, padding: spacing[3] })}
+    >
+      <Text style={{ fontSize: 16 }}>{icon}</Text>
+      <Text variant="body" style={{ marginTop: spacing[1] }}>{label}</Text>
+    </Pressable>
+  );
+}
 
 /**
  * Sleep-phase breakdown for one night. A proportional stacked bar shows the
@@ -155,18 +187,20 @@ function PhasesCard({ session }: { session: SleepSession }): React.JSX.Element {
 }
 
 /**
- * Sleep pillar (Sleep Suite). Explainable Sleep Score 2.0 decomposed into its
- * components, natural-language coaching, recovery signals and a weekly trend.
- * Every component shows its own rationale; missing ones say what's needed
- * rather than being silently zeroed (explicabilité obligatoire).
+ * Sommeil hub (was Sleep Suite, promu mini-accueil — absorbe sommeil,
+ * récupération mentale, HRV et respiration de l'ancien "Santé"). Score de
+ * sommeil, stress/bien-être, phases, coucher optimal, conseil, puis le détail
+ * plus analytique (composantes du score, prévision) et les outils.
  */
-export function SleepScreen(): React.JSX.Element {
+export function SommeilScreen(): React.JSX.Element {
   const router = useRouter();
   const { colors } = useTheme();
   const { data: metrics = [], isLoading } = useHealthMetrics();
   const { data: activities = [] } = useActivities();
   const { data: sessions = [] } = useSleepSessions();
-  const asOf = new Date().toISOString();
+  const { data: checkins = [] } = useWellnessCheckins();
+  const [selectedDate, setSelectedDate] = useSelectedDay();
+  const asOf = selectedDate;
 
   const lastSession = sessions[0];
   const score = useMemo(
@@ -190,6 +224,7 @@ export function SleepScreen(): React.JSX.Element {
       }),
     [metrics, asOf],
   );
+  const wellness = useMemo(() => computeWellnessIndex(checkins, asOf), [checkins, asOf]);
   // Show the screen as soon as we have any sleep night (any source), even if the
   // full quality score can't be computed yet.
   const hasData = trend.length > 0 || lastSession != null;
@@ -216,6 +251,7 @@ export function SleepScreen(): React.JSX.Element {
       <Text variant="caption" color="textMuted">
         Ta dernière nuit, ton score et tes horaires optimaux.
       </Text>
+      <DayNav value={selectedDate} onChange={setSelectedDate} />
 
       {isLoading ? (
         <Text variant="body" color="textMuted">
@@ -227,10 +263,11 @@ export function SleepScreen(): React.JSX.Element {
           title="Pas encore de données de sommeil"
           message="Synchronise Apple Santé (Health Auto Export) ou importe un export pour suivre tes nuits — toute source est prise en compte."
           actionLabel="Importer / connecter"
-          onAction={() => router.push('/import')}
+          onAction={() => router.push('/profile/import')}
         />
       ) : (
         <>
+          {/* 1. Score de sommeil */}
           <Card>
             <View style={{ alignItems: 'center', gap: spacing[1] }}>
               <ProgressRing value={score.value} segments={zones} caption="/100" size={116} />
@@ -270,7 +307,17 @@ export function SleepScreen(): React.JSX.Element {
             )}
           </Card>
 
-          {/* Weekly sleep bar chart (mockup #4) */}
+          {/* 2. Stress + Bien-être mental */}
+          <View style={{ flexDirection: 'row', gap: spacing[3] }}>
+            <QuickStat icon="🌬" value={stress ? `${Math.round(stress.value)}/100` : '—'} label="Stress" />
+            <QuickStat
+              icon="🙂"
+              value={wellness.confidence !== 'to_confirm' ? `${wellness.value}/100` : '—'}
+              label={wellness.confidence !== 'to_confirm' ? `Bien-être · ${wellnessBand(wellness.value)}` : 'Bien-être'}
+            />
+          </View>
+
+          {/* 3. 7 dernières nuits */}
           {chrono.length > 0 && (
             <Card>
               <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'baseline' }}>
@@ -303,7 +350,10 @@ export function SleepScreen(): React.JSX.Element {
             </Card>
           )}
 
-          {/* Optimal bedtime */}
+          {/* 4. Phases de sommeil */}
+          {lastSession && <PhasesCard session={lastSession} />}
+
+          {/* 5. Coucher optimal */}
           {circadian.value && (
             <Card>
               <Text variant="caption" color="textMuted">
@@ -319,7 +369,7 @@ export function SleepScreen(): React.JSX.Element {
             </Card>
           )}
 
-          {/* Advice */}
+          {/* 6. Conseil du jour */}
           {coaching && (
             <Card>
               <Text variant="heading">Conseil</Text>
@@ -335,7 +385,7 @@ export function SleepScreen(): React.JSX.Element {
             </Card>
           )}
 
-          {/* --- Détails --- */}
+          {/* 7. Détail — plus analytique, repoussé en fin */}
           <Card>
             <Text variant="heading">Détail du score</Text>
             <Text variant="caption" color="textSubtle">
@@ -366,8 +416,6 @@ export function SleepScreen(): React.JSX.Element {
             </View>
           </Card>
 
-          {lastSession && <PhasesCard session={lastSession} />}
-
           {prediction.value && prediction.explanation && (
             <Card>
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing[2] }}>
@@ -389,20 +437,6 @@ export function SleepScreen(): React.JSX.Element {
             </Card>
           )}
 
-          <Card>
-            <Text variant="heading">Rythme circadien</Text>
-            <Text variant="caption" color="textMuted">
-              Découvre ton chronotype et tes horaires optimaux (coucher, caféine, sport, lumière).
-            </Text>
-            <View style={{ alignItems: 'flex-start', marginTop: spacing[2] }}>
-              <Button
-                label="Voir mes horaires optimaux"
-                variant="gradient"
-                onPress={() => router.push('/circadian')}
-              />
-            </View>
-          </Card>
-
           {signals.length > 0 && (
             <Card>
               <Text variant="heading">Signaux de récupération</Text>
@@ -420,12 +454,37 @@ export function SleepScreen(): React.JSX.Element {
               </View>
             </Card>
           )}
+
+          {/* 8. Rythme circadien */}
+          <Card>
+            <Text variant="heading">Rythme circadien</Text>
+            <Text variant="caption" color="textMuted">
+              Découvre ton chronotype et tes horaires optimaux (coucher, caféine, sport, lumière).
+            </Text>
+            <View style={{ alignItems: 'flex-start', marginTop: spacing[2] }}>
+              <Button
+                label="Voir mes horaires optimaux"
+                variant="gradient"
+                onPress={() => router.push('/sommeil/circadian')}
+              />
+            </View>
+          </Card>
+
+          {/* 9. Outils de récupération */}
+          <Text variant="heading" style={{ marginTop: spacing[2] }}>
+            Outils de récupération
+          </Text>
+          <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: spacing[3] }}>
+            <ToolTile icon="🌬" label="Respiration" path="/sommeil/breathing" />
+            <ToolTile icon="🧩" label="Neuro-récupération" path="/sommeil/neuro-recovery" />
+            <ToolTile icon="🎧" label="Sons" path="/sommeil/sound" />
+          </View>
+
+          {/* 10. Comprendre + Objectifs */}
+          <ComprendreCard pillars={['sleep', 'recovery', 'understanding']} />
+          <ObjectifsCard types={['health']} />
         </>
       )}
-
-      <View style={{ alignItems: 'flex-start' }}>
-        <Button label="Retour" variant="secondary" onPress={() => router.back()} />
-      </View>
     </Screen>
   );
 }

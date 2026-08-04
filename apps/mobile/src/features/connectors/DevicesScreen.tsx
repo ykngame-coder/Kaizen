@@ -349,11 +349,11 @@ function HealthKitCard(): React.JSX.Element {
     setNote(null);
     setBusy(true);
     try {
-      const { activities, healthMetrics } = await syncHealthKit();
-      if (activities.length + healthMetrics.length === 0) {
+      const { activities, healthMetrics, sleepSessions } = await syncHealthKit();
+      if (activities.length + healthMetrics.length + sleepSessions.length === 0) {
         setNote('Aucune nouvelle donnée (autorise l’accès aux catégories dans Réglages → Santé).');
       } else {
-        await importHealth.mutateAsync({ activities, healthMetrics, records: [], sleepSessions: [] });
+        await importHealth.mutateAsync({ activities, healthMetrics, records: [], sleepSessions });
         setNote(`Importé : ${activities.length} activité(s), ${healthMetrics.length} donnée(s) santé.`);
       }
     } catch (e) {
@@ -557,7 +557,7 @@ export function DevicesScreen(): React.JSX.Element {
           Centralise un export Garmin / Apple Santé (JSON). Gratuit, sans compte tiers.
         </Text>
         <View style={{ alignItems: 'flex-start' }}>
-          <Button label="Importer un fichier" onPress={() => router.push('/import')} />
+          <Button label="Importer un fichier" onPress={() => router.push('/profile/import')} />
         </View>
       </Card>
 

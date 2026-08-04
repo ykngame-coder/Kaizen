@@ -3,12 +3,14 @@ import type { QuantityTypeIdentifier } from '@kingstinct/react-native-healthkit'
 import {
   normalizeHealthKitSamples,
   aggregateHealthKitSleep,
+  aggregateHealthKitSleepSessions,
   normalizeHealthKitWorkout,
   type HKQuantitySample,
   type HKSleepSample,
   type HKWorkout,
   type ImportedActivity,
   type ImportedHealthMetric,
+  type ImportedSleepSession,
 } from '@supotsu/connectors';
 
 /**
@@ -47,6 +49,7 @@ export function healthKitAvailable(): boolean {
 export async function syncHealthKit(): Promise<{
   activities: ImportedActivity[];
   healthMetrics: ImportedHealthMetric[];
+  sleepSessions: ImportedSleepSession[];
 }> {
   await HealthKit.requestAuthorization({
     toRead: [...QUANTITY_TYPES.map((q) => q.id), SLEEP_TYPE, WORKOUT_TYPE],
@@ -120,11 +123,12 @@ export async function syncHealthKit(): Promise<{
     ...normalizeHealthKitSamples(quantitySamples),
     ...aggregateHealthKitSleep(sleepSamples),
   ];
+  const sleepSessions = aggregateHealthKitSleepSessions(sleepSamples);
   const activities: ImportedActivity[] = [];
   for (const w of workoutSamples) {
     const a = normalizeHealthKitWorkout(w);
     if (a) activities.push(a);
   }
 
-  return { activities, healthMetrics };
+  return { activities, healthMetrics, sleepSessions };
 }

@@ -1,4 +1,4 @@
-import type { ImportedActivity, ImportedHealthMetric } from '@supotsu/connectors';
+import type { ImportedActivity, ImportedHealthMetric, ImportedSleepSession } from '@supotsu/connectors';
 
 /**
  * Default (web / Android) stub for the native HealthKit client. The real
@@ -12,6 +12,7 @@ export function healthKitAvailable(): boolean {
 export async function syncHealthKit(): Promise<{
   activities: ImportedActivity[];
   healthMetrics: ImportedHealthMetric[];
+  sleepSessions: ImportedSleepSession[];
 }> {
   throw new Error('HealthKit est disponible uniquement sur iOS (build natif).');
 }
