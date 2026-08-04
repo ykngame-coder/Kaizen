@@ -16,7 +16,6 @@ import type {
  */
 
 export type ConnectorProvider =
-  | 'demo'
   | 'apple_health'
   | 'garmin'
   | 'strava'

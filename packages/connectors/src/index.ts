@@ -2,7 +2,6 @@ export * from './types';
 export * from './quality';
 export * from './dedup';
 export * from './pipeline';
-export { demoConnector } from './demoConnector';
 export * from './garmin';
 export * from './strava';
 export * from './appleHealth';

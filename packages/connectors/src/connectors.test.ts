@@ -2,8 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { validateActivity, validateHealthMetric } from './quality';
 import { dedupActivities } from './dedup';
 import { importFromConnector } from './pipeline';
-import { demoConnector } from './demoConnector';
-import type { ImportedActivity } from './types';
+import type { Connector, ImportedActivity } from './types';
 
 const ASOF = '2026-07-20T12:00:00.000Z';
 
@@ -46,8 +45,22 @@ describe('dedup', () => {
 });
 
 describe('importFromConnector', () => {
-  it('runs the demo connector through validation + dedup', async () => {
-    const outcome = await importFromConnector(demoConnector, [], ASOF);
+  it('runs a connector through validation + dedup', async () => {
+    const stubConnector: Connector = {
+      provider: 'apple_health',
+      name: 'Stub',
+      available: true,
+      capabilities: ['activities', 'health'],
+      async sync() {
+        return {
+          healthMetrics: [
+            { type: 'resting_heart_rate', value: 48, unit: 'bpm', source: 'apple_health', measuredAt: ASOF },
+          ],
+          activities: [base, { ...base, type: 'strength', startedAt: '2026-07-20T18:00:00.000Z' }],
+        };
+      },
+    };
+    const outcome = await importFromConnector(stubConnector, [], ASOF);
     expect(outcome.healthMetrics.length).toBeGreaterThan(0);
     expect(outcome.activities.length).toBe(2);
     expect(outcome.rejected).toHaveLength(0);

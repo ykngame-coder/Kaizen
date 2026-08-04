@@ -6,7 +6,7 @@ import { Badge, Button, Card, Screen, Text, useTheme, type BadgeTone } from '@su
 import { radii, spacing } from '@supotsu/design-system';
 import { CONNECTORS } from '@supotsu/connectors';
 import type { DataSource, HealthMetricType } from '@supotsu/core';
-import { useHealthMetrics, useImportHealth, useSyncConnector } from '@/lib/data/queries';
+import { useHealthMetrics, useImportHealth } from '@/lib/data/queries';
 import { healthKitAvailable, syncHealthKit } from './healthKitClient';
 import {
   disconnectGarmin,
@@ -395,9 +395,7 @@ function HealthKitCard(): React.JSX.Element {
 export function DevicesScreen(): React.JSX.Element {
   const router = useRouter();
   const { colors } = useTheme();
-  const sync = useSyncConnector();
   const { data: health = [] } = useHealthMetrics();
-  const [message, setMessage] = useState<string | null>(null);
 
   // Real breakdown of imported data by source.
   const bySource = React.useMemo(() => {
@@ -424,20 +422,6 @@ export function DevicesScreen(): React.JSX.Element {
     return `il y a ${Math.round(h / 24)} j`;
   };
 
-  const runSync = async (provider: 'demo'): Promise<void> => {
-    setMessage(null);
-    try {
-      const res = await sync.mutateAsync(provider);
-      setMessage(
-        res.activities + res.health === 0
-          ? 'Déjà à jour — aucune nouvelle donnée.'
-          : `Importé : ${res.activities} activité(s), ${res.health} donnée(s) santé.`,
-      );
-    } catch (e) {
-      setMessage(e instanceof Error ? e.message : 'Synchronisation impossible.');
-    }
-  };
-
   return (
     <Screen scroll>
       <Text variant="title">Appareils & capteurs</Text>
@@ -452,8 +436,6 @@ export function DevicesScreen(): React.JSX.Element {
         <KpiCell value={lastSync ? fmtAgo(lastSync) : '—'} label="Dernière donnée" small />
         <KpiCell value={health.length > 0 ? 'Actif' : 'En attente'} label="État général" small color={health.length > 0 ? colors.accentData : colors.textMuted} />
       </View>
-
-      {message ? <Badge label={message} tone="info" /> : null}
 
       <Text variant="heading" style={{ marginTop: spacing[2] }}>
         Applications & appareils
@@ -482,15 +464,7 @@ export function DevicesScreen(): React.JSX.Element {
                   {c.capabilities.includes('health') ? 'Santé' : ''}
                 </Text>
               </View>
-              {c.available ? (
-                <Button
-                  label={sync.isPending ? '…' : 'Synchroniser'}
-                  onPress={() => runSync('demo')}
-                  disabled={sync.isPending}
-                />
-              ) : (
-                <Badge label="À venir" tone="neutral" />
-              )}
+              <Badge label="À venir" tone="neutral" />
             </View>
           </Card>
         ))}
