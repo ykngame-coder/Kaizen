@@ -188,10 +188,7 @@ export function SportScreen(): React.JSX.Element {
         <Card style={{ marginTop: spacing[3] }}>
           <Text variant="heading">État du corps</Text>
           <View style={{ flexDirection: 'row', gap: spacing[4], alignItems: 'center', marginTop: spacing[3] }}>
-            <View style={{ alignItems: 'center', gap: spacing[2] }}>
-              <ProgressRing value={recovery ?? 0} size={72} thickness={8} gradient centerLabel={recovery != null ? `${recovery}` : '—'} />
-              <MuscleBody colorFor={colorFor} width={100} />
-            </View>
+            <ProgressRing value={recovery ?? 0} size={72} thickness={8} gradient centerLabel={recovery != null ? `${recovery}` : '—'} />
             <View style={{ flex: 1 }}>
               <Text variant="caption" color="textMuted">
                 Récupération globale
@@ -221,6 +218,19 @@ export function SportScreen(): React.JSX.Element {
                 </Pressable>
               </View>
             </View>
+          </View>
+        </Card>
+
+        {/* Récupération musculaire — silhouette en grand, carte à part */}
+        <Card>
+          <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'baseline' }}>
+            <Text variant="heading">Récupération musculaire</Text>
+            <Pressable onPress={() => router.push('/sport/muscles')}>
+              <Text variant="caption" color="primary">Voir ›</Text>
+            </Pressable>
+          </View>
+          <View style={{ alignItems: 'center', marginTop: spacing[3] }}>
+            <MuscleBody colorFor={colorFor} width={260} />
           </View>
         </Card>
 
