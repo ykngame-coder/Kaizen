@@ -7,6 +7,7 @@ import { radii, spacing } from '@supotsu/design-system';
 import type { HealthMetricType } from '@supotsu/core';
 import {
   badgeDefinition,
+  buildDailySnapshot,
   computeAcwr,
   computeRecoveryScore,
   computeStreak,
@@ -139,6 +140,10 @@ export function DashboardScreen(): React.JSX.Element {
     return { value: today.value, band: recoveryBand(today.value) };
   }, [health, asOf]);
 
+  const snapshot = useMemo(() => buildDailySnapshot(activities, [], asOf, health), [activities, health, asOf]);
+  const hasScoreData = activities.length > 0;
+  const kaizenBand = recoveryBand(snapshot.value.overall);
+
   const nights = useMemo(() => [...sleepTrend(health, asOf, 7)].sort((a, b) => a.date.localeCompare(b.date)), [health, asOf]);
   const lastNight = nights.at(-1);
   const prevNight = nights.at(-2);
@@ -247,6 +252,28 @@ export function DashboardScreen(): React.JSX.Element {
             </View>
           </View>
         </Gradient>
+
+        {/* Score Kaizen */}
+        <View style={{ borderRadius: radii.lg, overflow: 'hidden' }}>
+          <Gradient style={{ padding: spacing[5] }}>
+            <Text variant="caption" color="onPrimary" style={{ opacity: 0.85 }}>
+              SCORE KAIZEN
+            </Text>
+            <View style={{ flexDirection: 'row', alignItems: 'flex-end', gap: spacing[3], marginTop: spacing[1] }}>
+              <Text variant="display" color="onPrimary">
+                {hasScoreData ? snapshot.value.overall : '—'}
+              </Text>
+              <Text variant="subtitle" color="onPrimary" style={{ opacity: 0.85, marginBottom: spacing[2] }}>
+                / 100
+              </Text>
+            </View>
+            <Text variant="caption" color="onPrimary" style={{ opacity: 0.9, marginTop: spacing[1] }}>
+              {hasScoreData
+                ? `${BAND_INFO[kaizenBand]?.label ?? ''} · performance et régularité combinées.`
+                : 'Ajoute une activité pour calibrer ton score.'}
+            </Text>
+          </Gradient>
+        </View>
 
         {/* État du jour */}
         <Card>
