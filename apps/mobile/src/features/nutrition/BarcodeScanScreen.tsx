@@ -20,7 +20,7 @@ export function BarcodeScanScreen(): React.JSX.Element {
     const code = result.data?.replace(/\D/g, '');
     if (!code) return;
     scannedRef.current = true;
-    router.replace(`/food/search?barcode=${code}`);
+    router.replace(`/nutrition/food/search?barcode=${code}`);
   };
 
   if (Platform.OS === 'web') {
@@ -31,7 +31,7 @@ export function BarcodeScanScreen(): React.JSX.Element {
           Le scan caméra est disponible sur mobile (Expo Go). Sur le web, saisis le numéro dans la
           recherche d'aliments.
         </Text>
-        <Button label="Aller à la recherche" onPress={() => router.replace('/food/search')} />
+        <Button label="Aller à la recherche" onPress={() => router.replace('/nutrition/food/search')} />
       </Screen>
     );
   }
@@ -56,7 +56,7 @@ export function BarcodeScanScreen(): React.JSX.Element {
         </Text>
         <Button label="Autoriser la caméra" onPress={requestPermission} />
         <View style={{ alignItems: 'flex-start' }}>
-          <Button label="Saisir le numéro à la place" variant="secondary" onPress={() => router.replace('/food/search')} />
+          <Button label="Saisir le numéro à la place" variant="secondary" onPress={() => router.replace('/nutrition/food/search')} />
         </View>
       </Screen>
     );

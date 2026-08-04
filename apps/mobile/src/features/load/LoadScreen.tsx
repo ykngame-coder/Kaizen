@@ -59,7 +59,7 @@ export function LoadScreen(): React.JSX.Element {
           title="Pas encore assez d'activités"
           message="Enregistre tes séances sur quelques semaines pour calculer ta charge et ton risque."
           actionLabel="Ajouter une activité"
-          onAction={() => router.push('/activity/new')}
+          onAction={() => router.push('/sport/activity/new')}
         />
       ) : (
         <>

@@ -13,12 +13,12 @@ const REPO_URL = 'https://github.com/ykngame-coder/Kaizen';
 const APP_VERSION = (Constants.expoConfig?.version as string | undefined) ?? '1.0.0';
 
 const QUICK: { icon: string; label: string; path: Href }[] = [
-  { icon: '📱', label: 'Configurer un appareil', path: '/connectors' },
-  { icon: '🔄', label: 'Problème de synchronisation', path: '/integrations' },
-  { icon: '🏋', label: 'Ajouter un entraînement', path: '/workout/new' },
+  { icon: '📱', label: 'Configurer un appareil', path: '/profile/connectors' },
+  { icon: '🔄', label: 'Problème de synchronisation', path: '/profile/integrations' },
+  { icon: '🏋', label: 'Ajouter un entraînement', path: '/sport/workout/new' },
   { icon: '🍽', label: 'Utiliser la nutrition', path: '/nutrition' },
-  { icon: '❤️', label: 'Comprendre mes données santé', path: '/sante' },
-  { icon: '⚙', label: 'Paramètres', path: '/settings' },
+  { icon: '❤️', label: 'Comprendre mes données santé', path: '/sommeil' },
+  { icon: '⚙', label: 'Paramètres', path: '/profile/settings' },
 ];
 
 const GUIDES: { title: string; minutes: number; level: string; steps: string[] }[] = [

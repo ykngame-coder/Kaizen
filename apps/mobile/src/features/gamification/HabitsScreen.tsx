@@ -189,7 +189,7 @@ export function HabitsScreen(): React.JSX.Element {
           </Card>
         ) : null}
       </Screen>
-      <Fab icon="+" accessibilityLabel="Nouvelle habitude" onPress={() => router.push('/habit/new')} />
+      <Fab icon="+" accessibilityLabel="Nouvelle habitude" onPress={() => router.push('/profile/habit/new')} />
     </View>
   );
 }

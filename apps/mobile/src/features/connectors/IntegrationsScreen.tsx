@@ -188,7 +188,7 @@ export function IntegrationsScreen(): React.JSX.Element {
       <Card>
         <Text variant="heading">Import & export</Text>
         <View style={{ flexDirection: 'row', gap: spacing[2], marginTop: spacing[2], flexWrap: 'wrap' }}>
-          <Button label="Importer un fichier" onPress={() => router.push('/import')} />
+          <Button label="Importer un fichier" onPress={() => router.push('/profile/import')} />
           <Button
             label={exportState === 'working' ? 'Export…' : exportState === 'done' ? 'Exporté ✓' : 'Exporter mes données'}
             variant="secondary"
@@ -207,7 +207,7 @@ export function IntegrationsScreen(): React.JSX.Element {
       <Card>
         <Text variant="heading">Ajouter une intégration</Text>
         <View style={{ alignItems: 'flex-start', marginTop: spacing[2] }}>
-          <Button label="Gérer les appareils & connexions" onPress={() => router.push('/connectors')} />
+          <Button label="Gérer les appareils & connexions" onPress={() => router.push('/profile/connectors')} />
         </View>
       </Card>
 

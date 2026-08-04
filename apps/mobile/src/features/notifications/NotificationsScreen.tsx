@@ -94,7 +94,7 @@ export function NotificationsScreen(): React.JSX.Element {
     const doneToday = new Set(habitLogs.filter((l) => dayKey(new Date(l.completedAt)) === todayKey).map((l) => l.habitId));
     const pending = habits.filter((h) => !h.archivedAt && !doneToday.has(h.id));
     if (pending.length > 0) {
-      out.push({ id: 'habits', category: 'important', icon: '✓', title: pending.length === 1 ? `Habitude à valider : ${pending[0]!.name}` : `${pending.length} habitudes à valider`, when: "Aujourd'hui", action: { label: 'Valider', path: '/habits', primary: true } });
+      out.push({ id: 'habits', category: 'important', icon: '✓', title: pending.length === 1 ? `Habitude à valider : ${pending[0]!.name}` : `${pending.length} habitudes à valider`, when: "Aujourd'hui", action: { label: 'Valider', path: '/profile/habits', primary: true } });
     }
 
     // Nutrition — remaining protein / hydration from real targets
@@ -112,37 +112,37 @@ export function NotificationsScreen(): React.JSX.Element {
 
     // Santé — recovery, HRV vs baseline, RHR vs baseline, bedtime, sleep
     if (recovery) {
-      out.push({ id: 'recovery', category: 'sante', icon: '✅', title: `Recovery Score : ${recovery.value} — ${recovery.band === 'excellent' ? 'excellent' : recovery.band === 'correct' ? 'bon' : recovery.band}.`, when: "Aujourd'hui", path: '/analytics' });
+      out.push({ id: 'recovery', category: 'sante', icon: '✅', title: `Recovery Score : ${recovery.value} — ${recovery.band === 'excellent' ? 'excellent' : recovery.band === 'correct' ? 'bon' : recovery.band}.`, when: "Aujourd'hui", path: '/profile/analytics' });
     }
     const hrv = latest(health, 'hrv');
     const hrvBase = meanExcludingLast(health, 'hrv');
     if (hrv != null && hrvBase != null && hrvBase > 0) {
       const pct = Math.round(((hrv - hrvBase) / hrvBase) * 100);
-      if (Math.abs(pct) >= 3) out.push({ id: 'hrv', category: 'sante', icon: '📈', title: `Ta HRV est ${pct >= 0 ? 'en hausse' : 'en baisse'} de ${Math.abs(pct)} % vs ta moyenne.`, when: "Aujourd'hui", path: '/analytics' });
+      if (Math.abs(pct) >= 3) out.push({ id: 'hrv', category: 'sante', icon: '📈', title: `Ta HRV est ${pct >= 0 ? 'en hausse' : 'en baisse'} de ${Math.abs(pct)} % vs ta moyenne.`, when: "Aujourd'hui", path: '/profile/analytics' });
     }
     const rhr = latest(health, 'resting_heart_rate');
     const rhrBase = meanExcludingLast(health, 'resting_heart_rate');
     if (rhr != null && rhrBase != null) {
       const diff = Math.round(rhr - rhrBase);
-      if (diff >= 3) out.push({ id: 'rhr', category: 'sante', icon: '❤️', title: `FC de repos supérieure à ta moyenne (+${diff} bpm).`, when: "Aujourd'hui", path: '/analytics' });
+      if (diff >= 3) out.push({ id: 'rhr', category: 'sante', icon: '❤️', title: `FC de repos supérieure à ta moyenne (+${diff} bpm).`, when: "Aujourd'hui", path: '/profile/analytics' });
     }
     const circadian = computeCircadianProfile(health, asOf, { tzOffsetMinutes: -new Date().getTimezoneOffset() });
-    if (circadian.value) out.push({ id: 'bedtime', category: 'sante', icon: '🌙', title: `Heure de coucher optimale : ${hhmmWindow(circadian.value.idealBedtime)}.`, when: "Aujourd'hui", path: '/circadian' });
+    if (circadian.value) out.push({ id: 'bedtime', category: 'sante', icon: '🌙', title: `Heure de coucher optimale : ${hhmmWindow(circadian.value.idealBedtime)}.`, when: "Aujourd'hui", path: '/sommeil/circadian' });
     const lastNight = [...sessions].sort((a, b) => b.endedAt.localeCompare(a.endedAt))[0];
     if (lastNight) {
       const h = Math.floor(lastNight.asleepMin / 60);
       const m = String(Math.round(lastNight.asleepMin % 60)).padStart(2, '0');
-      out.push({ id: 'sleep', category: 'sante', icon: '😴', title: `Nuit enregistrée : ${h}h${m} de sommeil.`, when: relative(lastNight.endedAt), path: '/sleep' });
+      out.push({ id: 'sleep', category: 'sante', icon: '😴', title: `Nuit enregistrée : ${h}h${m} de sommeil.`, when: relative(lastNight.endedAt), path: '/sommeil' });
     }
 
     // Succès — last record + habits all done
     const lastRecord = [...records].sort((a, b) => b.achievedAt.localeCompare(a.achievedAt))[0];
-    if (lastRecord) out.push({ id: 'record', category: 'succes', icon: '🏆', title: `Record : ${lastRecord.label} — ${lastRecord.value} ${lastRecord.unit}.`, when: relative(lastRecord.achievedAt), path: '/records' });
-    if (habits.length > 0 && pending.length === 0) out.push({ id: 'habits-done', category: 'succes', icon: '🔥', title: 'Toutes tes habitudes du jour sont validées !', when: "Aujourd'hui", path: '/habits' });
+    if (lastRecord) out.push({ id: 'record', category: 'succes', icon: '🏆', title: `Record : ${lastRecord.label} — ${lastRecord.value} ${lastRecord.unit}.`, when: relative(lastRecord.achievedAt), path: '/sport/records' });
+    if (habits.length > 0 && pending.length === 0) out.push({ id: 'habits-done', category: 'succes', icon: '🔥', title: 'Toutes tes habitudes du jour sont validées !', when: "Aujourd'hui", path: '/profile/habits' });
 
     // Appareils — Renpho pesée, latest sync
     const renpho = health.filter((m) => m.source === 'renpho' && m.type === 'weight').sort((a, b) => a.measuredAt.localeCompare(b.measuredAt)).at(-1);
-    if (renpho) out.push({ id: 'renpho', category: 'appareils', icon: '⚖', title: `Nouvelle pesée Renpho détectée · ${renpho.value.toFixed(1)} kg.`, when: relative(renpho.measuredAt), path: '/integrations' });
+    if (renpho) out.push({ id: 'renpho', category: 'appareils', icon: '⚖', title: `Nouvelle pesée Renpho détectée · ${renpho.value.toFixed(1)} kg.`, when: relative(renpho.measuredAt), path: '/profile/integrations' });
 
     return out;
   }, [health, records, sessions, habits, habitLogs, nutrition, recovery, asOf]);
@@ -190,7 +190,7 @@ export function NotificationsScreen(): React.JSX.Element {
               {recovery.value >= 70 ? 'Une séance intensive est recommandée aujourd’hui.' : 'Privilégie une séance légère et un bon sommeil.'}
             </Text>
             <View style={{ alignItems: 'flex-start', marginTop: spacing[3] }}>
-              <Button label="Voir les recommandations" onPress={() => router.push('/analytics')} />
+              <Button label="Voir les recommandations" onPress={() => router.push('/profile/analytics')} />
             </View>
           </View>
         </Gradient>
@@ -255,9 +255,9 @@ export function NotificationsScreen(): React.JSX.Element {
 
       {/* Paramètres */}
       <Card style={{ paddingVertical: spacing[1] }}>
-        <ListRow icon="🌙" iconColor="rgba(45,127,249,0.18)" title="Heures de silence" value="22:30 – 07:00" onPress={() => router.push('/settings')} divider />
-        <ListRow icon="📋" iconColor="rgba(43,227,139,0.18)" title="Résumé quotidien" value="08:00" onPress={() => router.push('/settings')} divider />
-        <ListRow icon="📊" iconColor="rgba(139,92,246,0.18)" title="Résumé hebdomadaire" value="Dimanche" onPress={() => router.push('/report')} />
+        <ListRow icon="🌙" iconColor="rgba(45,127,249,0.18)" title="Heures de silence" value="22:30 – 07:00" onPress={() => router.push('/profile/settings')} divider />
+        <ListRow icon="📋" iconColor="rgba(43,227,139,0.18)" title="Résumé quotidien" value="08:00" onPress={() => router.push('/profile/settings')} divider />
+        <ListRow icon="📊" iconColor="rgba(139,92,246,0.18)" title="Résumé hebdomadaire" value="Dimanche" onPress={() => router.push('/profile/report')} />
       </Card>
 
       <View style={{ flexDirection: 'row', gap: spacing[2] }}>

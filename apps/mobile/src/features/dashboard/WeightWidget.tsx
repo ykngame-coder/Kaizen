@@ -35,7 +35,7 @@ export function WeightWidget(): React.JSX.Element {
   const span = max - min || 1;
 
   return (
-    <Pressable onPress={() => router.push('/analytics')} style={{ flex: 1 }}>
+    <Pressable onPress={() => router.push('/profile/analytics')} style={{ flex: 1 }}>
       <Card>
         {latest === undefined ? (
           <View style={{ gap: spacing[1] }}>

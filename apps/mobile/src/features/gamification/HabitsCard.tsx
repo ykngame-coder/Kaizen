@@ -57,7 +57,7 @@ export function HabitsCard(): React.JSX.Element {
         </View>
       )}
       <View style={{ alignItems: 'flex-start', marginTop: spacing[2] }}>
-        <Button label="Nouvelle habitude" variant="secondary" onPress={() => router.push('/habit/new')} />
+        <Button label="Nouvelle habitude" variant="secondary" onPress={() => router.push('/profile/habit/new')} />
       </View>
       <Text variant="caption" style={{ color: colors.textMuted, marginTop: spacing[1] }}>
         Chaque validation nourrit ta série et tes badges.

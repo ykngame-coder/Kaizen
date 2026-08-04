@@ -57,7 +57,7 @@ export function CircadianScreen(): React.JSX.Element {
           title="Encore un peu de patience"
           message="Il faut au moins 4 nuits enregistrées pour établir ton rythme. Continue à synchroniser tes données."
           actionLabel="Importer / connecter"
-          onAction={() => router.push('/import')}
+          onAction={() => router.push('/profile/import')}
         />
       ) : (
         <>

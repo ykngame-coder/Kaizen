@@ -80,9 +80,9 @@ export function SettingsScreen(): React.JSX.Element {
       <Group>
         <ListRow icon="👤" iconColor="rgba(45,127,249,0.18)" title="Profil sportif" subtitle="Poids, taille, niveau, disponibilités" onPress={() => router.push('/profile/edit')} divider />
         <ListRow icon="⭐" iconColor="rgba(245,183,66,0.18)" title="Abonnement" accessory={<Badge label="Gratuit" tone="neutral" />} divider />
-        <ListRow icon="🎯" iconColor="rgba(43,227,139,0.18)" title="Objectifs" onPress={() => router.push('/goals')} divider />
-        <ListRow icon="⚖" iconColor="rgba(139,92,246,0.18)" title="Appareils & synchronisation" onPress={() => router.push('/connectors')} divider />
-        <ListRow icon="🔗" iconColor="rgba(59,203,255,0.18)" title="Données & intégrations" onPress={() => router.push('/integrations')} />
+        <ListRow icon="🎯" iconColor="rgba(43,227,139,0.18)" title="Objectifs" onPress={() => router.push('/profile/goals')} divider />
+        <ListRow icon="⚖" iconColor="rgba(139,92,246,0.18)" title="Appareils & synchronisation" onPress={() => router.push('/profile/connectors')} divider />
+        <ListRow icon="🔗" iconColor="rgba(59,203,255,0.18)" title="Données & intégrations" onPress={() => router.push('/profile/integrations')} />
       </Group>
 
       {/* Préférences */}
@@ -107,14 +107,14 @@ export function SettingsScreen(): React.JSX.Element {
       <Group>
         <ToggleRow icon="📋" tint="rgba(43,227,139,0.18)" label="Bilan du jour" value={preferences.dailyBriefing} onValueChange={(v) => setPreference('dailyBriefing', v)} divider />
         <ToggleRow icon="🔔" tint="rgba(245,183,66,0.18)" label="Rappels (habitudes, check-in)" value={preferences.reminders} onValueChange={(v) => setPreference('reminders', v)} divider />
-        <ListRow icon="⚙️" iconColor="rgba(116,128,146,0.22)" title="Configurer par catégorie" onPress={() => router.push('/notifications')} />
+        <ListRow icon="⚙️" iconColor="rgba(116,128,146,0.22)" title="Configurer par catégorie" onPress={() => router.push('/profile/notifications')} />
       </Group>
 
       {/* Confidentialité */}
       <GroupTitle>CONFIDENTIALITÉ & DONNÉES</GroupTitle>
       <Group>
         <ListRow icon="⬇️" iconColor="rgba(45,127,249,0.18)" title={exportState === 'working' ? 'Export en cours…' : 'Exporter mes données (JSON)'} subtitle="Toutes tes données, format RGPD" onPress={onExport} divider />
-        <ListRow icon="🔎" iconColor="rgba(59,203,255,0.18)" title="Qualité & provenance" onPress={() => router.push('/data-quality')} divider />
+        <ListRow icon="🔎" iconColor="rgba(59,203,255,0.18)" title="Qualité & provenance" onPress={() => router.push('/profile/data-quality')} divider />
         <ToggleRow icon="🧠" tint="rgba(139,92,246,0.18)" label="Consentement analyses IA" value={aiConsent} onValueChange={setAiConsent} divider />
         <ToggleRow icon="🏆" tint="rgba(245,183,66,0.18)" label="Apparaître dans les classements" value={preferences.shareInLeaderboards} onValueChange={(v) => setPreference('shareInLeaderboards', v)} />
       </Group>
@@ -131,7 +131,7 @@ export function SettingsScreen(): React.JSX.Element {
       {/* À propos */}
       <GroupTitle>AIDE</GroupTitle>
       <Group>
-        <ListRow icon="🛟" iconColor="rgba(45,127,249,0.18)" title="Aide & Support" subtitle="FAQ, guides, diagnostic, contact" onPress={() => router.push('/support')} />
+        <ListRow icon="🛟" iconColor="rgba(45,127,249,0.18)" title="Aide & Support" subtitle="FAQ, guides, diagnostic, contact" onPress={() => router.push('/profile/support')} />
       </Group>
 
       <GroupTitle>À PROPOS</GroupTitle>

@@ -52,7 +52,7 @@ export function MuscleWidget(): React.JSX.Element {
   };
 
   return (
-    <Pressable onPress={() => router.push('/muscles')} style={{ flex: 1 }}>
+    <Pressable onPress={() => router.push('/sport/muscles')} style={{ flex: 1 }}>
       <Card>
         <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'baseline' }}>
           <Text variant="heading">Muscles</Text>

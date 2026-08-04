@@ -227,7 +227,7 @@ export function DashboardScreen(): React.JSX.Element {
           </View>
           <View style={{ flexDirection: 'row', gap: spacing[2] }}>
             <IconBtn icon="🔍" onPress={() => router.push('/search')} />
-            <IconBtn icon="🔔" onPress={() => router.push('/notifications')} />
+            <IconBtn icon="🔔" onPress={() => router.push('/profile/notifications')} />
             <Pressable onPress={() => router.push('/profile')}>
               <View style={{ width: 38, height: 38, borderRadius: 19, overflow: 'hidden', alignItems: 'center', justifyContent: 'center' }}>
                 <Gradient fill />
@@ -286,7 +286,7 @@ export function DashboardScreen(): React.JSX.Element {
 
         {/* Prochaine séance */}
         <Card>
-          <SectionTitle right={<Pressable onPress={() => router.push('/planning')}><Text variant="caption" color="primary">Planning ›</Text></Pressable>}>Prochaine séance</SectionTitle>
+          <SectionTitle right={<Pressable onPress={() => router.push('/sport/planning')}><Text variant="caption" color="primary">Planning ›</Text></Pressable>}>Prochaine séance</SectionTitle>
           <View style={{ flexDirection: 'row', gap: spacing[4], alignItems: 'center' }}>
             <View style={{ width: 64, height: 64, borderRadius: radii.lg, backgroundColor: colors.surfaceElevated, alignItems: 'center', justifyContent: 'center' }}><Text style={{ fontSize: 28 }}>🏋️</Text></View>
             <View style={{ flex: 1 }}>
@@ -303,14 +303,14 @@ export function DashboardScreen(): React.JSX.Element {
               )}
             </View>
           </View>
-          <Pressable onPress={() => router.push(nextPlanned ? '/planning' : '/workout/new')} style={({ pressed }) => ({ marginTop: spacing[3], height: 46, borderRadius: radii.xl, backgroundColor: colors.surfaceElevated, borderWidth: 1, borderColor: colors.border, alignItems: 'center', justifyContent: 'center', transform: [{ scale: pressed ? 0.98 : 1 }] })}>
+          <Pressable onPress={() => router.push(nextPlanned ? '/sport/planning' : '/sport/workout/new')} style={({ pressed }) => ({ marginTop: spacing[3], height: 46, borderRadius: radii.xl, backgroundColor: colors.surfaceElevated, borderWidth: 1, borderColor: colors.border, alignItems: 'center', justifyContent: 'center', transform: [{ scale: pressed ? 0.98 : 1 }] })}>
             <Text variant="body" style={{ fontWeight: '600' }}>{nextPlanned ? 'Voir le planning ›' : 'Créer une séance ›'}</Text>
           </Pressable>
         </Card>
 
         {/* Corps & récupération */}
         <Card>
-          <SectionTitle right={<Pressable onPress={() => router.push('/muscles')}><Text variant="caption" color="primary">Voir ›</Text></Pressable>}>Corps & récupération</SectionTitle>
+          <SectionTitle right={<Pressable onPress={() => router.push('/sport/muscles')}><Text variant="caption" color="primary">Voir ›</Text></Pressable>}>Corps & récupération</SectionTitle>
           <View style={{ flexDirection: 'row', gap: spacing[4] }}>
             <View style={{ alignItems: 'center' }}><MuscleBody colorFor={() => 'transparent'} width={132} /></View>
             <View style={{ flex: 1, justifyContent: 'center' }}>
@@ -337,7 +337,7 @@ export function DashboardScreen(): React.JSX.Element {
 
         {/* Habitudes */}
         <Card>
-          <SectionTitle right={<Pressable onPress={() => router.push('/habits')}><Text variant="caption" color="primary">Voir ›</Text></Pressable>}>Habitudes</SectionTitle>
+          <SectionTitle right={<Pressable onPress={() => router.push('/profile/habits')}><Text variant="caption" color="primary">Voir ›</Text></Pressable>}>Habitudes</SectionTitle>
           <View style={{ flexDirection: 'row', justifyContent: 'space-around', marginBottom: spacing[4] }}>
             <MiniStat value={`${activeHabits.length - pendingHabits.length}/${activeHabits.length || 0}`} label="Aujourd'hui" />
             <MiniStat value={`${streak} j`} label="Série active" color={colors.accentData} />
@@ -376,7 +376,7 @@ export function DashboardScreen(): React.JSX.Element {
         {/* Badges récents */}
         {badges.length > 0 ? (
           <View>
-            <SectionTitle right={<Pressable onPress={() => router.push('/progression')}><Text variant="caption" color="primary">Tout voir ›</Text></Pressable>}>Badges récents</SectionTitle>
+            <SectionTitle right={<Pressable onPress={() => router.push('/profile/progression')}><Text variant="caption" color="primary">Tout voir ›</Text></Pressable>}>Badges récents</SectionTitle>
             <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: spacing[3] }}>
               {badges.map((b) => {
                 const def = badgeDefinition(b.id);
@@ -411,13 +411,13 @@ export function DashboardScreen(): React.JSX.Element {
 
 const QUICK_LINKS: { label: string; icon: string; path: Href }[] = [
   { label: 'Repas', icon: '🍽', path: '/nutrition' },
-  { label: 'Séance', icon: '▶️', path: '/workout/new' },
-  { label: 'Pesée', icon: '⚖', path: '/weight' },
-  { label: 'Habitude', icon: '✓', path: '/habits' },
-  { label: 'Objectif', icon: '🎯', path: '/goals' },
-  { label: 'Sommeil', icon: '😴', path: '/sleep' },
+  { label: 'Séance', icon: '▶️', path: '/sport/workout/new' },
+  { label: 'Pesée', icon: '⚖', path: '/nutrition/weight' },
+  { label: 'Habitude', icon: '✓', path: '/profile/habits' },
+  { label: 'Objectif', icon: '🎯', path: '/profile/goals' },
+  { label: 'Sommeil', icon: '😴', path: '/sommeil' },
   { label: 'Coach IA', icon: '✦', path: '/coach' },
-  { label: 'Stats', icon: '📊', path: '/analytics' },
+  { label: 'Stats', icon: '📊', path: '/profile/analytics' },
 ];
 
 function IconBtn({ icon, onPress }: { icon: string; onPress: () => void }): React.JSX.Element {

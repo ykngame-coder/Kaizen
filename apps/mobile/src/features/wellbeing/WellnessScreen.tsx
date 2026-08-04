@@ -174,7 +174,7 @@ export function WellnessScreen(): React.JSX.Element {
           <Button
             label="Ouvrir les outils"
             variant="secondary"
-            onPress={() => router.push('/neuro-recovery')}
+            onPress={() => router.push('/sommeil/neuro-recovery')}
           />
         </View>
       </Card>

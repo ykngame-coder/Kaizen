@@ -228,7 +228,7 @@ export function MusclesProgressScreen(): React.JSX.Element {
             {detail.idx >= 70 ? 'Bonne stimulation — poursuis la surcharge progressive.' : detail.idx >= 55 ? 'Stimulation correcte — un peu plus de fréquence aiderait.' : 'Sous-stimulé — ajoute 1 à 2 séances ciblées par semaine.'}
           </Text>
           <View style={{ alignItems: 'flex-start', marginTop: spacing[2] }}>
-            <Button label="Voir des exercices" variant="secondary" onPress={() => router.push('/exercises')} />
+            <Button label="Voir des exercices" variant="secondary" onPress={() => router.push('/sport/exercises')} />
           </View>
         </Card>
       ) : null}
@@ -257,7 +257,7 @@ export function MusclesProgressScreen(): React.JSX.Element {
                 <Text variant="body">{MUSCLE_LABEL[m]}</Text>
                 <Text variant="caption" color="textSubtle">Indice {Math.round(index.get(m) ?? 0)} · {(stats.get(m)?.total ?? 0) === 0 ? 'commence à travailler ce muscle' : 'augmente le volume'}</Text>
               </View>
-              <Button label="Exercices" variant="secondary" onPress={() => router.push('/exercises')} />
+              <Button label="Exercices" variant="secondary" onPress={() => router.push('/sport/exercises')} />
             </View>
           ))}
         </View>
@@ -298,7 +298,7 @@ export function MusclesProgressScreen(): React.JSX.Element {
         </Text>
       </Card>
 
-      <Button label="Planifier la prochaine séance" onPress={() => router.push('/workout/new')} />
+      <Button label="Planifier la prochaine séance" onPress={() => router.push('/sport/workout/new')} />
     </Screen>
   );
 }

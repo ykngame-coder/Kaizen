@@ -58,7 +58,7 @@ export function AddMealScreen(): React.JSX.Element {
       <Button
         label="Chercher dans Open Food Facts"
         variant="secondary"
-        onPress={() => router.replace('/food/search')}
+        onPress={() => router.replace('/nutrition/food/search')}
       />
 
       <View style={{ gap: spacing[2] }}>

@@ -25,7 +25,7 @@ export function ActivitiesScreen(): React.JSX.Element {
     <Screen scroll>
       <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
         <Text variant="title">Activités</Text>
-        <Button label="+ Ajouter" onPress={() => router.push('/activity/new')} />
+        <Button label="+ Ajouter" onPress={() => router.push('/sport/activity/new')} />
       </View>
 
       <View style={{ flexDirection: 'row', gap: spacing[4] }}>
@@ -47,7 +47,7 @@ export function ActivitiesScreen(): React.JSX.Element {
           title="Aucune activité"
           message="Ajoute ta première activité pour suivre ta progression et calibrer ton score Kaizen."
           actionLabel="Ajouter une activité"
-          onAction={() => router.push('/activity/new')}
+          onAction={() => router.push('/sport/activity/new')}
         />
       ) : (
         <View style={{ gap: spacing[2] }}>

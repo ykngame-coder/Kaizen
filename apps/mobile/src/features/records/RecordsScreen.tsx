@@ -68,7 +68,7 @@ export function RecordsScreen(): React.JSX.Element {
           title="Pas encore de record"
           message="Importe ton export Garmin pour voir tes 1RM et tes meilleurs temps."
           actionLabel="Importer un fichier"
-          onAction={() => router.push('/import')}
+          onAction={() => router.push('/profile/import')}
         />
       ) : (
         groups.map(([category, list]) => (

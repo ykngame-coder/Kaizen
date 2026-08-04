@@ -71,21 +71,21 @@ export function NeuroRecoveryScreen(): React.JSX.Element {
         title="Respiration guidée"
         description="Carré, 4-7-8 ou cohérence cardiaque — suis le cercle qui respire avec toi."
         actionLabel="Ouvrir"
-        onPress={() => router.push('/breathing')}
+        onPress={() => router.push('/sommeil/breathing')}
       />
 
       <ToolCard
         title="Stimulation bilatérale"
         description="Un point qui se déplace de gauche à droite ; suis-le des yeux pour te détendre. Outil de relaxation, pas une thérapie."
         actionLabel="Ouvrir"
-        onPress={() => router.push('/bilateral')}
+        onPress={() => router.push('/sommeil/bilateral')}
       />
 
       <ToolCard
         title="Sons apaisants"
         description="Pluie, vagues, vent, bruits colorés — ou tes propres sons — avec minuterie et fondu de sortie."
         actionLabel="Ouvrir"
-        onPress={() => router.push('/sound')}
+        onPress={() => router.push('/sommeil/sound')}
       />
 
       <View style={{ alignItems: 'flex-start', marginTop: spacing[2] }}>

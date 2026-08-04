@@ -124,7 +124,7 @@ export function FoodSearchScreen(): React.JSX.Element {
         <Button label="Chercher" variant="secondary" onPress={() => lookupBarcode(barcode)} disabled={loading} />
       </View>
 
-      <Button label="📷 Scanner un code-barres" onPress={() => router.push('/food/scan')} fullWidth />
+      <Button label="📷 Scanner un code-barres" onPress={() => router.push('/nutrition/food/scan')} fullWidth />
 
       {error ? <Badge label={error} tone="warning" /> : null}
 

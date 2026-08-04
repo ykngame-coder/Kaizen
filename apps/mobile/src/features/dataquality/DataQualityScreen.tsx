@@ -84,7 +84,7 @@ export function DataQualityScreen(): React.JSX.Element {
           title="Aucune donnée à évaluer"
           message="Connecte un appareil ou importe un export pour voir la provenance et la fiabilité de tes données."
           actionLabel="Mes appareils"
-          onAction={() => router.push('/connectors')}
+          onAction={() => router.push('/profile/connectors')}
         />
       ) : (
         <>

@@ -99,7 +99,7 @@ export function CommunityScreen(): React.JSX.Element {
     <Screen scroll>
       <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
         <Text variant="title">Communauté</Text>
-        <Button label="+ Défi" onPress={() => router.push('/challenge/new')} />
+        <Button label="+ Défi" onPress={() => router.push('/profile/challenge/new')} />
       </View>
       <Text variant="caption" style={{ color: colors.textMuted }}>
         Des défis simples et transparents : chaque classement se lit dans les faits.
@@ -115,7 +115,7 @@ export function CommunityScreen(): React.JSX.Element {
           title="Aucun défi pour l'instant"
           message="Crée le premier défi et invite tes amis à te rejoindre."
           actionLabel="Créer un défi"
-          onAction={() => router.push('/challenge/new')}
+          onAction={() => router.push('/profile/challenge/new')}
         />
       ) : (
         <View style={{ gap: spacing[3] }}>
