@@ -12,8 +12,17 @@ import {
   sumDay,
 } from '@supotsu/engines';
 import type { TrendPoint } from '@supotsu/engines';
+import type { HealthMetricType } from '@supotsu/core';
 import { useAddNutritionEntry, useHealthMetrics, useNutritionEntries } from '@/lib/data/queries';
 import { usePreferences } from '@/lib/preferences';
+import { DayNav, useSelectedDay } from '@/features/navigation/DayNav';
+import { ComprendreCard } from '@/features/knowledge/ComprendreCard';
+
+const DAY_MS = 86_400_000;
+
+function latestMetric(m: { type: HealthMetricType; value: number; measuredAt: string }[], type: HealthMetricType): number | undefined {
+  return m.filter((x) => x.type === type).sort((a, b) => a.measuredAt.localeCompare(b.measuredAt)).at(-1)?.value;
+}
 
 const MEAL_ORDER = ['breakfast', 'lunch', 'dinner', 'snack'] as const;
 const MEAL_LABEL: Record<string, string> = { breakfast: 'Petit-déjeuner', lunch: 'Déjeuner', dinner: 'Dîner', snack: 'Collation' };
@@ -79,13 +88,22 @@ export function NutritionScreen(): React.JSX.Element {
   const { data: entries = [] } = useNutritionEntries();
   const { data: health = [] } = useHealthMetrics();
   const addEntry = useAddNutritionEntry();
-  const asOf = new Date().toISOString();
+  const [selectedDate, setSelectedDate] = useSelectedDay();
+  const asOf = selectedDate;
 
   const addWater = (ml: number): void => {
     addEntry.mutate({ mealType: 'snack', description: 'Eau', kcal: 0, hydrationMl: ml, source: 'manual', loggedAt: new Date().toISOString() });
   };
 
-  const latestWeight = useMemo(() => health.filter((m) => m.type === 'weight').sort((a, b) => b.measuredAt.localeCompare(a.measuredAt))[0]?.value, [health]);
+  const asOfMetrics = useMemo(() => health.filter((m) => new Date(m.measuredAt).getTime() <= new Date(asOf).getTime()), [health, asOf]);
+  const latestWeight = useMemo(() => latestMetric(asOfMetrics, 'weight'), [asOfMetrics]);
+  const bodyFat = useMemo(() => latestMetric(asOfMetrics, 'body_fat'), [asOfMetrics]);
+  const muscleMass = useMemo(() => latestMetric(asOfMetrics, 'muscle_mass'), [asOfMetrics]);
+  const weightDelta = useMemo(() => {
+    const cutoff = new Date(asOf).getTime() - 7 * DAY_MS;
+    const weekAgo = latestMetric(asOfMetrics.filter((m) => new Date(m.measuredAt).getTime() <= cutoff), 'weight');
+    return latestWeight != null && weekAgo != null ? latestWeight - weekAgo : null;
+  }, [asOfMetrics, latestWeight, asOf]);
   const { preferences, setPreference } = usePreferences();
   const targets = useMemo(() => estimateTargets({ weightKg: latestWeight }, asOf), [latestWeight, asOf]);
   const goals = preferences.nutritionGoals ?? targets.value;
@@ -141,6 +159,7 @@ export function NutritionScreen(): React.JSX.Element {
             <View style={{ width: 38, height: 38, borderRadius: 19, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border, alignItems: 'center', justifyContent: 'center' }}><Text style={{ fontSize: 16 }}>🔍</Text></View>
           </Pressable>
         </View>
+        <DayNav value={selectedDate} onChange={setSelectedDate} />
 
         {/* Main kcal ring + balance */}
         <Card style={{ alignItems: 'center' }}>
@@ -187,8 +206,8 @@ export function NutritionScreen(): React.JSX.Element {
             </View>
           ))}
           <View style={{ flexDirection: 'row', gap: spacing[2], marginTop: spacing[3] }}>
-            <Button label="Chercher un aliment" onPress={() => router.push('/food/search')} />
-            <Button label="Saisie manuelle" variant="secondary" onPress={() => router.push('/meal/new')} />
+            <Button label="Chercher un aliment" onPress={() => router.push('/nutrition/food/search')} />
+            <Button label="Saisie manuelle" variant="secondary" onPress={() => router.push('/nutrition/meal/new')} />
           </View>
         </Card>
 
@@ -201,6 +220,21 @@ export function NutritionScreen(): React.JSX.Element {
               <Text variant="body">{hasData ? (score.value >= 80 ? 'Très bonne qualité nutritionnelle.' : score.value >= 60 ? 'Qualité correcte, à affiner.' : 'Qualité à améliorer.') : 'Ajoute un repas pour calculer ton score.'}</Text>
               <Text variant="caption" color="textSubtle" style={{ marginTop: spacing[2], lineHeight: 18 }}>Basé sur : calories, protéines, équilibre des macros et hydratation.</Text>
             </View>
+          </View>
+        </Card>
+
+        {/* Poids & composition */}
+        <Card>
+          <SectionTitle right={<Pressable onPress={() => router.push('/nutrition/weight')}><Text variant="caption" color="primary">Voir ›</Text></Pressable>}>Poids & composition</SectionTitle>
+          <View style={{ flexDirection: 'row', justifyContent: 'space-around' }}>
+            <Balance label="Poids" value={latestWeight != null ? `${latestWeight.toFixed(1)} kg` : '—'} />
+            <Balance label="Masse grasse" value={bodyFat != null ? `${bodyFat.toFixed(1)} %` : '—'} />
+            <Balance label="Masse musc." value={muscleMass != null ? `${muscleMass.toFixed(1)} kg` : '—'} />
+            <Balance
+              label="Variation 7 j"
+              value={weightDelta != null ? `${weightDelta > 0 ? '+' : ''}${weightDelta.toFixed(1)} kg` : '—'}
+              color={weightDelta != null && weightDelta <= 0 ? colors.accentData : undefined}
+            />
           </View>
         </Card>
 
@@ -244,8 +278,10 @@ export function NutritionScreen(): React.JSX.Element {
           <SectionTitle>Micronutriments</SectionTitle>
           <Text variant="body" color="textMuted" style={{ lineHeight: 21 }}>Le suivi détaillé (vitamines, fer, magnésium, oméga-3…) arrive bientôt. Il nécessite une base alimentaire enrichie (Open Food Facts) que nous intégrons.</Text>
         </Card>
+
+        <ComprendreCard pillars={['nutrition']} />
       </Screen>
-      <Fab icon="+" accessibilityLabel="Ajouter un aliment" onPress={() => router.push('/food/search')} />
+      <Fab icon="+" accessibilityLabel="Ajouter un aliment" onPress={() => router.push('/nutrition/food/search')} />
     </View>
   );
 }
