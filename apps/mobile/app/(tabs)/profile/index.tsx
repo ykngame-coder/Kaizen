@@ -1,10 +1,12 @@
-import React from 'react';
-import { View } from 'react-native';
+import React, { useEffect, useState } from 'react';
+import { Image, Platform, Pressable, View } from 'react-native';
 import { useRouter } from 'expo-router';
+import * as ImagePicker from 'expo-image-picker';
 import { Badge, Button, Card, Gradient, ListRow, Screen, Text, useTheme } from '@supotsu/ui';
 import { radii, spacing } from '@supotsu/design-system';
 import { useAuth } from '@/features/auth/AuthProvider';
 import { useWorkouts } from '@/lib/data/queries';
+import { clearAvatarUri, loadAvatarUri, setAvatarUri } from '@/lib/profileAvatar';
 
 /** A grouped section of ListRows on a card (iOS Settings style). */
 function Group({ children }: { children: React.ReactNode }): React.JSX.Element {
@@ -17,11 +19,46 @@ export default function ProfileTab(): React.JSX.Element {
   const { user, mode, signOut } = useAuth();
   const router = useRouter();
   const { data: workouts = [] } = useWorkouts();
+  const [avatarUri, setAvatarUriState] = useState<string | null>(null);
+  const [avatarBusy, setAvatarBusy] = useState(false);
+  const [avatarError, setAvatarError] = useState<string | null>(null);
+
+  useEffect(() => {
+    void loadAvatarUri().then(setAvatarUriState);
+  }, []);
 
   const email = user?.email ?? '';
   const firstName = email.includes('@') ? email.split('@')[0]!.replace(/[._-]+/g, ' ').trim() : '';
   const displayName = firstName ? firstName.charAt(0).toUpperCase() + firstName.slice(1) : 'Mon compte';
   const initial = user ? email.charAt(0).toUpperCase() : '?';
+
+  const pickAvatar = async (from: 'camera' | 'library'): Promise<void> => {
+    setAvatarError(null);
+    setAvatarBusy(true);
+    try {
+      const perm = from === 'camera' ? await ImagePicker.requestCameraPermissionsAsync() : await ImagePicker.requestMediaLibraryPermissionsAsync();
+      if (!perm.granted) {
+        setAvatarError('Autorisation refusée. Active l’accès à l’appareil photo / aux photos dans les réglages.');
+        return;
+      }
+      const opts = { quality: 0.6, base64: Platform.OS === 'web', allowsEditing: true, aspect: [1, 1] as [number, number] } as const;
+      const res = from === 'camera' ? await ImagePicker.launchCameraAsync(opts) : await ImagePicker.launchImageLibraryAsync(opts);
+      if (res.canceled || !res.assets?.[0]) return;
+      const asset = res.assets[0];
+      const srcUri = Platform.OS === 'web' && asset.base64 ? `data:image/jpeg;base64,${asset.base64}` : asset.uri;
+      setAvatarUriState(await setAvatarUri(srcUri));
+    } catch (e) {
+      setAvatarError(e instanceof Error ? e.message : 'Impossible de changer la photo.');
+    } finally {
+      setAvatarBusy(false);
+    }
+  };
+
+  const removeAvatar = async (): Promise<void> => {
+    setAvatarError(null);
+    await clearAvatarUri();
+    setAvatarUriState(null);
+  };
 
   return (
     <Screen scroll>
@@ -30,12 +67,20 @@ export default function ProfileTab(): React.JSX.Element {
       {/* Account header */}
       <Card>
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing[4] }}>
-          <View style={{ width: 64, height: 64, borderRadius: 32, overflow: 'hidden', alignItems: 'center', justifyContent: 'center' }}>
-            <Gradient fill />
-            <Text variant="title" color="onPrimary">
-              {initial}
-            </Text>
-          </View>
+          <Pressable onPress={() => pickAvatar('library')} disabled={avatarBusy}>
+            <View style={{ width: 64, height: 64, borderRadius: 32, overflow: 'hidden', alignItems: 'center', justifyContent: 'center' }}>
+              {avatarUri ? (
+                <Image source={{ uri: avatarUri }} style={{ width: 64, height: 64 }} resizeMode="cover" />
+              ) : (
+                <>
+                  <Gradient fill />
+                  <Text variant="title" color="onPrimary">
+                    {initial}
+                  </Text>
+                </>
+              )}
+            </View>
+          </Pressable>
           <View style={{ flex: 1 }}>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing[2] }}>
               <Text variant="subtitle">{displayName}</Text>
@@ -44,8 +89,23 @@ export default function ProfileTab(): React.JSX.Element {
             <Text variant="caption" color="textMuted" style={{ marginTop: 2 }}>
               {email}
             </Text>
+            <View style={{ flexDirection: 'row', gap: spacing[3], marginTop: spacing[2] }}>
+              <Pressable onPress={() => pickAvatar('camera')} disabled={avatarBusy}>
+                <Text variant="caption" color="primary">{avatarBusy ? '…' : '📷 Prendre une photo'}</Text>
+              </Pressable>
+              {avatarUri ? (
+                <Pressable onPress={removeAvatar} disabled={avatarBusy}>
+                  <Text variant="caption" color="error">Supprimer</Text>
+                </Pressable>
+              ) : null}
+            </View>
           </View>
         </View>
+        {avatarError ? (
+          <Text variant="caption" color="error" style={{ marginTop: spacing[2] }}>
+            {avatarError}
+          </Text>
+        ) : null}
         <View style={{ alignItems: 'flex-start', marginTop: spacing[3] }}>
           <Button label="Modifier le profil" onPress={() => router.push('/profile/edit')} />
         </View>

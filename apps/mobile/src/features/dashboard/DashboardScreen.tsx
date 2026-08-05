@@ -1,5 +1,5 @@
-import React, { useMemo, useState } from 'react';
-import { Pressable, ScrollView, View } from 'react-native';
+import React, { useEffect, useMemo, useState } from 'react';
+import { Image, Pressable, ScrollView, View } from 'react-native';
 import { useRouter, type Href } from 'expo-router';
 import { useQueryClient } from '@tanstack/react-query';
 import { Card, Fab, Gradient, ProgressRing, Screen, Sparkline, Text, useTheme } from '@supotsu/ui';
@@ -21,6 +21,7 @@ import {
 import { useActivities, useHabitLogs, useHabits, useHealthMetrics, useNutritionEntries, usePlannedWorkouts } from '@/lib/data/queries';
 import { useAuth } from '@/features/auth/AuthProvider';
 import { MuscleBody } from '@/features/muscles/MuscleBody';
+import { loadAvatarUri } from '@/lib/profileAvatar';
 
 const DAY_MS = 86_400_000;
 
@@ -209,6 +210,11 @@ export function DashboardScreen(): React.JSX.Element {
   const [refreshing, setRefreshing] = useState(false);
   const onRefresh = async (): Promise<void> => { setRefreshing(true); await qc.invalidateQueries(); setRefreshing(false); };
 
+  const [avatarUri, setAvatarUri] = useState<string | null>(null);
+  useEffect(() => {
+    void loadAvatarUri().then(setAvatarUri);
+  }, []);
+
   const firstName = greetingName(user?.email);
   const initial = (firstName || user?.email || 'K').charAt(0).toUpperCase();
   const focusMsg = recovery ? BAND_INFO[recovery.band]?.advice ?? '' : 'Importe tes données de santé pour débloquer ton focus du jour.';
@@ -235,8 +241,14 @@ export function DashboardScreen(): React.JSX.Element {
             <IconBtn icon="🔔" onPress={() => router.push('/profile/notifications')} />
             <Pressable onPress={() => router.push('/profile')}>
               <View style={{ width: 38, height: 38, borderRadius: 19, overflow: 'hidden', alignItems: 'center', justifyContent: 'center' }}>
-                <Gradient fill />
-                <Text variant="body" color="onPrimary" style={{ fontWeight: '700' }}>{initial}</Text>
+                {avatarUri ? (
+                  <Image source={{ uri: avatarUri }} style={{ width: 38, height: 38 }} resizeMode="cover" />
+                ) : (
+                  <>
+                    <Gradient fill />
+                    <Text variant="body" color="onPrimary" style={{ fontWeight: '700' }}>{initial}</Text>
+                  </>
+                )}
               </View>
             </Pressable>
           </View>
