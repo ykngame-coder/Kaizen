@@ -23,6 +23,7 @@ export interface Database {
           locale: string;
           theme: 'system' | 'light' | 'dark';
           notifications_enabled: boolean;
+          avatar_url: string | null;
           created_at: string;
           last_connection_at: string | null;
         };
@@ -34,6 +35,7 @@ export interface Database {
           locale?: string;
           theme?: 'system' | 'light' | 'dark';
           notifications_enabled?: boolean;
+          avatar_url?: string | null;
         };
         Update: Partial<Database['public']['Tables']['profiles']['Insert']>;
         Relationships: [];

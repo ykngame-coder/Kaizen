@@ -7,6 +7,7 @@ import { Badge, Button, Card, Screen, Text } from '@supotsu/ui';
 import { spacing } from '@supotsu/design-system';
 import { parseImportFile } from '@supotsu/connectors';
 import { useImportHealth } from '@/lib/data/queries';
+import { readFileBytes } from '@/lib/fileBytes';
 
 /** Read a picked file's text, cross-platform (web blob vs native file uri). */
 async function readFileText(uri: string): Promise<string> {
@@ -16,19 +17,6 @@ async function readFileText(uri: string): Promise<string> {
   }
   const { readAsStringAsync } = await import('expo-file-system/legacy');
   return readAsStringAsync(uri);
-}
-
-/** Read a picked file's raw bytes (for zip archives). */
-async function readFileBytes(uri: string): Promise<Uint8Array> {
-  if (Platform.OS === 'web') {
-    return new Uint8Array(await (await fetch(uri)).arrayBuffer());
-  }
-  const { readAsStringAsync, EncodingType } = await import('expo-file-system/legacy');
-  const b64 = await readAsStringAsync(uri, { encoding: EncodingType.Base64 });
-  const bin = atob(b64);
-  const bytes = new Uint8Array(bin.length);
-  for (let i = 0; i < bin.length; i += 1) bytes[i] = bin.charCodeAt(i);
-  return bytes;
 }
 
 /**

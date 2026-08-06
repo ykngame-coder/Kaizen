@@ -21,7 +21,7 @@ import {
 import { useActivities, useHabitLogs, useHabits, useHealthMetrics, useNutritionEntries, usePlannedWorkouts } from '@/lib/data/queries';
 import { useAuth } from '@/features/auth/AuthProvider';
 import { MuscleBody } from '@/features/muscles/MuscleBody';
-import { loadAvatarUri } from '@/lib/profileAvatar';
+import { getCloudAvatarUrl, loadAvatarUri } from '@/lib/profileAvatar';
 
 const DAY_MS = 86_400_000;
 
@@ -118,7 +118,7 @@ function TrendCard({ label, value, up, series, color }: { label: string; value: 
 export function DashboardScreen(): React.JSX.Element {
   const router = useRouter();
   const { colors } = useTheme();
-  const { user } = useAuth();
+  const { user, mode } = useAuth();
   const { data: activities = [] } = useActivities();
   const { data: health = [] } = useHealthMetrics();
   const { data: nutrition = [] } = useNutritionEntries();
@@ -212,8 +212,9 @@ export function DashboardScreen(): React.JSX.Element {
 
   const [avatarUri, setAvatarUri] = useState<string | null>(null);
   useEffect(() => {
-    void loadAvatarUri().then(setAvatarUri);
-  }, []);
+    if (mode !== 'demo' && user) void getCloudAvatarUrl(user.id).then(setAvatarUri);
+    else void loadAvatarUri().then(setAvatarUri);
+  }, [mode, user?.id]);
 
   const firstName = greetingName(user?.email);
   const initial = (firstName || user?.email || 'K').charAt(0).toUpperCase();

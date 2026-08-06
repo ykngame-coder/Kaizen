@@ -6,7 +6,14 @@ import { Badge, Button, Card, Gradient, ListRow, Screen, Text, useTheme } from '
 import { radii, spacing } from '@supotsu/design-system';
 import { useAuth } from '@/features/auth/AuthProvider';
 import { useWorkouts } from '@/lib/data/queries';
-import { clearAvatarUri, loadAvatarUri, setAvatarUri } from '@/lib/profileAvatar';
+import {
+  clearAvatarUri,
+  getCloudAvatarUrl,
+  loadAvatarUri,
+  removeCloudAvatar,
+  setAvatarUri,
+  uploadAvatarToCloud,
+} from '@/lib/profileAvatar';
 
 /** A grouped section of ListRows on a card (iOS Settings style). */
 function Group({ children }: { children: React.ReactNode }): React.JSX.Element {
@@ -23,9 +30,12 @@ export default function ProfileTab(): React.JSX.Element {
   const [avatarBusy, setAvatarBusy] = useState(false);
   const [avatarError, setAvatarError] = useState<string | null>(null);
 
+  const cloudBacked = mode !== 'demo' && !!user;
+
   useEffect(() => {
-    void loadAvatarUri().then(setAvatarUriState);
-  }, []);
+    if (cloudBacked) void getCloudAvatarUrl(user!.id).then(setAvatarUriState);
+    else void loadAvatarUri().then(setAvatarUriState);
+  }, [cloudBacked, user?.id]);
 
   const email = user?.email ?? '';
   const firstName = email.includes('@') ? email.split('@')[0]!.replace(/[._-]+/g, ' ').trim() : '';
@@ -46,7 +56,7 @@ export default function ProfileTab(): React.JSX.Element {
       if (res.canceled || !res.assets?.[0]) return;
       const asset = res.assets[0];
       const srcUri = Platform.OS === 'web' && asset.base64 ? `data:image/jpeg;base64,${asset.base64}` : asset.uri;
-      setAvatarUriState(await setAvatarUri(srcUri));
+      setAvatarUriState(cloudBacked ? await uploadAvatarToCloud(user!.id, srcUri) : await setAvatarUri(srcUri));
     } catch (e) {
       setAvatarError(e instanceof Error ? e.message : 'Impossible de changer la photo.');
     } finally {
@@ -56,7 +66,8 @@ export default function ProfileTab(): React.JSX.Element {
 
   const removeAvatar = async (): Promise<void> => {
     setAvatarError(null);
-    await clearAvatarUri();
+    if (cloudBacked) await removeCloudAvatar(user!.id);
+    else await clearAvatarUri();
     setAvatarUriState(null);
   };
 

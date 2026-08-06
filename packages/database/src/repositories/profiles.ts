@@ -15,6 +15,22 @@ export async function getProfile(
   return data;
 }
 
+/** Set (or clear, passing null) the account's avatar URL. */
+export async function updateProfileAvatar(
+  client: SupotsuClient,
+  userId: string,
+  avatarUrl: string | null,
+): Promise<ProfileRow> {
+  const { data, error } = await client
+    .from('profiles')
+    .update({ avatar_url: avatarUrl })
+    .eq('id', userId)
+    .select('*')
+    .single();
+  if (error) throw error;
+  return data;
+}
+
 /** Fetch the sport profile; its presence marks onboarding as complete. */
 export async function getAthleteProfile(
   client: SupotsuClient,
