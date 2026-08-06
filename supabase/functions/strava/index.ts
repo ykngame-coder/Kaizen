@@ -17,6 +17,17 @@
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.47.10';
 
+// The web build calls /sync, /disconnect (and friends) with fetch(), so the
+// browser sends a CORS preflight (OPTIONS) before the real request — without
+// these headers on every response, the browser blocks it before it ever
+// reaches this function ("Failed to fetch", no other detail). Native callers
+// ignore CORS entirely, so this is a no-op for them.
+const CORS_HEADERS = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+};
+
 const env = (k: string): string => {
   const v = Deno.env.get(k);
   if (!v) throw new Error(`Missing env ${k}`);
@@ -27,7 +38,10 @@ const admin = () =>
     auth: { persistSession: false },
   });
 const json = (body: unknown, status = 200): Response =>
-  new Response(JSON.stringify(body), { status, headers: { 'content-type': 'application/json' } });
+  new Response(JSON.stringify(body), {
+    status,
+    headers: { 'content-type': 'application/json', ...CORS_HEADERS },
+  });
 
 async function userFromJwt(jwt: string | undefined): Promise<string | null> {
   if (!jwt) return null;
@@ -201,6 +215,7 @@ async function handleDisconnect(req: Request): Promise<Response> {
 }
 
 Deno.serve(async (req) => {
+  if (req.method === 'OPTIONS') return new Response('ok', { headers: CORS_HEADERS });
   const url = new URL(req.url);
   const path = url.pathname.replace(/.*\/strava/, '') || '/';
   try {
