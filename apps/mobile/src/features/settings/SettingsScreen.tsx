@@ -74,44 +74,49 @@ export function SettingsScreen(): React.JSX.Element {
   const [deleteBusy, setDeleteBusy] = useState(false);
   const [deleteError, setDeleteError] = useState<string | null>(null);
 
+  const runDeleteAccount = (): void => {
+    void (async (): Promise<void> => {
+      setDeleteBusy(true);
+      try {
+        if (mode === 'demo') {
+          await signOut();
+        } else {
+          await deleteAccount();
+          // The account is already gone server-side at this point, so
+          // a failure here (e.g. the server-side signOut call erroring
+          // against an already-deleted user) isn't a real problem —
+          // don't surface it as a deletion failure.
+          try {
+            await signOut();
+          } catch {
+            /* account is already deleted; local session will clear regardless */
+          }
+        }
+      } catch (e) {
+        setDeleteError(e instanceof Error ? e.message : 'Suppression impossible.');
+      } finally {
+        setDeleteBusy(false);
+      }
+    })();
+  };
+
   const confirmDeleteAccount = (): void => {
     setDeleteError(null);
-    Alert.alert(
-      'Supprimer définitivement ton compte ?',
-      'Toutes tes données — séances, santé, sommeil, nutrition, objectifs — seront supprimées immédiatement et de façon irréversible.',
-      [
-        { text: 'Annuler', style: 'cancel' },
-        {
-          text: 'Supprimer',
-          style: 'destructive',
-          onPress: () => {
-            void (async (): Promise<void> => {
-              setDeleteBusy(true);
-              try {
-                if (mode === 'demo') {
-                  await signOut();
-                } else {
-                  await deleteAccount();
-                  // The account is already gone server-side at this point, so
-                  // a failure here (e.g. the server-side signOut call erroring
-                  // against an already-deleted user) isn't a real problem —
-                  // don't surface it as a deletion failure.
-                  try {
-                    await signOut();
-                  } catch {
-                    /* account is already deleted; local session will clear regardless */
-                  }
-                }
-              } catch (e) {
-                setDeleteError(e instanceof Error ? e.message : 'Suppression impossible.');
-              } finally {
-                setDeleteBusy(false);
-              }
-            })();
-          },
-        },
-      ],
-    );
+    const title = 'Supprimer définitivement ton compte ?';
+    const message = 'Toutes tes données — séances, santé, sommeil, nutrition, objectifs — seront supprimées immédiatement et de façon irréversible.';
+
+    // Alert.alert's multi-button form is a no-op on web (react-native-web
+    // doesn't implement it) — the confirmation would silently never show and
+    // the button would appear to do nothing. window.confirm is the web
+    // equivalent; native keeps the proper Alert with a destructive style.
+    if (Platform.OS === 'web') {
+      if (window.confirm(`${title}\n\n${message}`)) runDeleteAccount();
+      return;
+    }
+    Alert.alert(title, message, [
+      { text: 'Annuler', style: 'cancel' },
+      { text: 'Supprimer', style: 'destructive', onPress: runDeleteAccount },
+    ]);
   };
 
   return (
