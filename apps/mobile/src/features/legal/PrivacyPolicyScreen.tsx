@@ -1,8 +1,8 @@
 import React from 'react';
 import { View } from 'react-native';
 import { useRouter } from 'expo-router';
-import { Button, Screen, Text } from '@supotsu/ui';
-import { spacing } from '@supotsu/design-system';
+import { Badge, Button, Screen, Text } from '@supotsu/ui';
+import { radii, spacing } from '@supotsu/design-system';
 
 const SUPPORT_EMAIL = 'support@kaizen-supotsu.app';
 const LAST_UPDATED = '6 août 2026';
@@ -24,6 +24,28 @@ function P({ children }: { children: React.ReactNode }): React.JSX.Element {
   );
 }
 
+/** Highlighted callout for the medical-disclaimer and health-data-consent sections. */
+function Callout({ icon, title, children }: { icon: string; title: string; children: React.ReactNode }): React.JSX.Element {
+  return (
+    <View
+      style={{
+        marginTop: spacing[4],
+        borderRadius: radii.xl,
+        borderWidth: 1,
+        borderColor: 'rgba(245,183,66,0.3)',
+        backgroundColor: 'rgba(245,183,66,0.08)',
+        padding: spacing[4],
+        gap: spacing[2],
+      }}
+    >
+      <Text variant="body" style={{ fontWeight: '700' }}>
+        {icon} {title}
+      </Text>
+      {children}
+    </View>
+  );
+}
+
 /** Politique de confidentialité — reachable while signed out (App Store Connect "Privacy Policy URL"). */
 export function PrivacyPolicyScreen(): React.JSX.Element {
   const router = useRouter();
@@ -31,106 +53,193 @@ export function PrivacyPolicyScreen(): React.JSX.Element {
   return (
     <Screen scroll>
       <Text variant="title">Politique de confidentialité</Text>
-      <Text variant="caption" color="textSubtle">Dernière mise à jour : {LAST_UPDATED}</Text>
+      <Text variant="caption" color="textSubtle">Kaizen Supotsu · Dernière mise à jour : {LAST_UPDATED}</Text>
+      <View style={{ alignItems: 'flex-start', marginTop: spacing[2] }}>
+        <Badge label="Version Bêta · Développeur indépendant" tone="warning" />
+      </View>
 
-      <Section title="Qui nous sommes">
+      <Callout icon="⚠️" title="Avertissement important — absence de conseil médical">
         <P>
-          Kaizen Supotsu ("l'app", "nous") centralise et explique tes données de santé et de sport
-          — sommeil, fréquence cardiaque, variabilité cardiaque (HRV), poids, composition
-          corporelle, séances d'entraînement, nutrition — pour t'aider à comprendre ta forme et ta
-          progression. Cette politique décrit quelles données nous traitons, pourquoi, et comment
-          tu gardes le contrôle dessus.
+          Kaizen Supotsu n'est pas un dispositif médical et ne fournit aucun conseil, diagnostic ou
+          traitement médical.
+        </P>
+        <P>
+          Les analyses, données, indicateurs et scores (récupération, sommeil, charge de travail,
+          HRV, etc.) générés par l'application sont fournis à titre purement indicatif, informatif
+          et éducatif.
+        </P>
+        <P>
+          Ils ne remplacent en aucun cas l'avis, le diagnostic ou le suivi d'un médecin ou d'un
+          professionnel de santé qualifié.
+        </P>
+        <P>
+          Ne modifie jamais un traitement médical ou un programme d'entraînement intensif sans
+          demander l'avis préalable de ton médecin.
+        </P>
+        <P>
+          En cas de malaise, douleur ou doute sur ton état de santé, consulte immédiatement un
+          professionnel de santé.
+        </P>
+      </Callout>
+
+      <Callout icon="🔒" title="Consentement explicite et traitement des données de santé (RGPD)">
+        <P>
+          Conformément à l'article 9 du Règlement Général sur la Protection des Données (RGPD), les
+          données relatives à l'activité physique, au sommeil et à la physiologie (fréquence
+          cardiaque, HRV, composition corporelle) constituent des données de santé à caractère
+          personnel.
+        </P>
+        <P>
+          <Text style={{ fontWeight: '700' }}>Ton consentement préalable</Text> : nous ne collectons
+          et ne traitons ces données qu'avec ton consentement explicite, recueilli lors de la
+          création de ton compte et via les pop-ups d'autorisation (HealthKit, Garmin, Strava).
+        </P>
+        <P>
+          <Text style={{ fontWeight: '700' }}>Contrôle total</Text> : tu peux retirer ce consentement
+          à tout moment en révoquant les accès dans les Réglages de ton téléphone ou en supprimant
+          ton compte. Le retrait de ce consentement entraînera l'impossibilité d'utiliser les
+          fonctionnalités d'analyse de l'app.
+        </P>
+      </Callout>
+
+      <Section title="1. Qui nous sommes">
+        <P>
+          L'application Kaizen Supotsu ("l'app", "nous") est développée et éditée par un
+          développeur indépendant (particulier).
+        </P>
+        <P>
+          Kaizen Supotsu centralise et explique tes données de santé, de forme et de sport —
+          sommeil, fréquence cardiaque, variabilité cardiaque (HRV), poids, composition corporelle,
+          séances d'entraînement, nutrition — pour t'aider à comprendre ta forme et ta progression.
+        </P>
+        <P>
+          Cette politique décrit quelles données nous traitons, pourquoi, et comment tu gardes le
+          contrôle dessus.
+        </P>
+        <P>
+          Pour toute question concernant tes données, tu peux contacter le responsable de
+          traitement à : {SUPPORT_EMAIL}.
         </P>
       </Section>
 
-      <Section title="Données que nous collectons">
-        <P>• Compte : adresse e-mail, mot de passe (chiffré, jamais lisible par nous).</P>
+      <Section title="2. Données que nous collectons">
         <P>
-          • Données de santé : lues depuis Apple Santé (HealthKit) — sommeil et ses phases,
-          fréquence cardiaque de repos, HRV, poids, masse grasse, masse musculaire — uniquement si
-          tu autorises explicitement chaque catégorie depuis l'app iOS Réglages ou lors de la
-          demande d'autorisation.
+          Le traitement de tes données repose sur ton consentement explicite et sur le bon
+          fonctionnement des services de l'app :
         </P>
         <P>
-          • Activités et séances : celles que tu enregistres dans l'app, ou synchronisées depuis
-          Garmin Connect / Strava si tu connectes ces comptes.
+          • Compte utilisateur : adresse e-mail, mot de passe (chiffré de manière sécurisée et
+          jamais lisible par nous).
         </P>
-        <P>• Nutrition : les repas et l'hydratation que tu saisis toi-même.</P>
-        <P>• Photo de profil : si tu en ajoutes une, stockée de façon sécurisée et liée à ton compte.</P>
         <P>
-          • Données techniques minimales nécessaires au fonctionnement (identifiant de compte,
-          horodatages).
+          • Données de santé et de forme : lues depuis Apple Santé (HealthKit) — sommeil et ses
+          phases, fréquence cardiaque de repos, HRV, poids, masse grasse, masse musculaire —
+          uniquement si tu autorises explicitement chaque catégorie depuis l'app ou dans les
+          Réglages iOS.
         </P>
-      </Section>
-
-      <Section title="Comment nous utilisons ces données">
         <P>
-          Uniquement pour t'offrir le service : calculer tes scores (récupération, sommeil,
-          charge), générer des recommandations et explications, afficher tes tendances, et faire
-          fonctionner les fonctionnalités communautaires que tu choisis d'utiliser (défis,
-          classements). Nous ne vendons jamais tes données à des tiers, et nous ne les utilisons
-          pas à des fins publicitaires.
+          • Activités et séances : données enregistrées dans l'app ou synchronisées depuis des
+          services tiers que tu choisis de connecter (Garmin Connect, Strava).
+        </P>
+        <P>• Nutrition : repas et hydratation que tu saisis toi-même.</P>
+        <P>• Profil : photo de profil (si tu en ajoutes une, stockée de façon sécurisée).</P>
+        <P>
+          • Données techniques minimales : identifiant de compte, horodatages et logs de connexion
+          indispensables au fonctionnement et à la sécurité.
         </P>
       </Section>
 
-      <Section title="Partage avec des tiers">
+      <Section title="3. Comment nous utilisons tes données">
+        <P>Tes données sont utilisées uniquement pour t'offrir le service :</P>
+        <P>• Calculer tes scores (récupération, sommeil, charge de travail) ;</P>
+        <P>• Générer des recommandations, synthèses et explications sur ta progression ;</P>
+        <P>• Afficher tes tendances graphiques ;</P>
+        <P>
+          • Faire fonctionner les fonctionnalités communautaires que tu choisis d'utiliser (défis,
+          classements).
+        </P>
+        <P>
+          <Text style={{ fontWeight: '700' }}>Engagement strict</Text> : nous ne vendons jamais tes
+          données à des tiers, nous ne les louons pas et nous ne les utilisons pas à des fins
+          publicitaires. Les données obtenues via Apple HealthKit ne seront en aucun cas utilisées
+          à des fins de marketing ou de publicité.
+        </P>
+      </Section>
+
+      <Section title="4. Partage et sous-traitants">
         <P>
           Tes données sont hébergées chez Supabase (base de données et authentification), notre
-          seul sous-traitant technique. Si tu connectes Garmin, Strava ou Apple Santé, l'app
-          échange des données avec ces services selon les autorisations que tu leur accordes
-          directement — nous ne recevons que ce que tu as explicitement autorisé.
+          sous-traitant technique. Les serveurs de Supabase garantissent un niveau de sécurité
+          adéquat et conforme au RGPD.
+        </P>
+        <P>
+          Si tu connectes Garmin, Strava ou Apple Santé, l'app échange des données avec ces
+          services selon les autorisations que tu leur accordes directement — nous ne recevons que
+          ce que tu as explicitement autorisé.
         </P>
       </Section>
 
-      <Section title="Sécurité">
+      <Section title="5. Sécurité et avertissement Bêta">
         <P>
-          L'accès à tes données est restreint à ton compte uniquement (règles de sécurité au
-          niveau des lignes de la base de données — personne d'autre, y compris un autre
-          utilisateur de l'app, ne peut lire tes données). Les échanges avec nos serveurs sont
-          chiffrés (HTTPS).
+          <Text style={{ fontWeight: '700' }}>Sécurité</Text> : l'accès à tes données est strictement
+          restreint à ton compte (règles de sécurité Row Level Security au niveau de la base de
+          données). Les échanges avec nos serveurs sont chiffrés en HTTPS (TLS).
+        </P>
+        <P>
+          <Text style={{ fontWeight: '700' }}>Version Bêta</Text> : l'application est actuellement
+          proposée en version de test ("Bêta"). Malgré le soin apporté à la sécurité, tu es informé
+          que des bugs, interruptions ou pertes temporaires de données peuvent survenir durant
+          cette phase.
         </P>
       </Section>
 
-      <Section title="Tes droits">
+      <Section title="6. Tes droits (RGPD)">
+        <P>Tu restes le seul propriétaire de tes données. Tu peux à tout moment :</P>
         <P>
-          Tu peux à tout moment :
+          • <Text style={{ fontWeight: '700' }}>Exporter tes données</Text> : obtenir une copie
+          intégrale de tes données au format JSON depuis l'application via Réglages → Exporter mes
+          données.
         </P>
         <P>
-          • Exporter toutes tes données au format JSON, depuis Réglages → "Exporter mes données".
+          • <Text style={{ fontWeight: '700' }}>Supprimer ton compte</Text> : supprimer
+          définitivement ton compte et toutes les données associées depuis Réglages → Supprimer mon
+          compte. Cette action est irréversible et immédiate.
         </P>
         <P>
-          • Supprimer définitivement ton compte et toutes les données associées, depuis Réglages →
-          "Supprimer mon compte" — cette action est irréversible et immédiate.
+          • <Text style={{ fontWeight: '700' }}>Exercer tes droits</Text> : retirer ton consentement
+          ou demander la rectification de tes données en nous écrivant à {SUPPORT_EMAIL}.
         </P>
         <P>
-          • Nous contacter à {SUPPORT_EMAIL} pour toute question sur tes données, une rectification,
-          ou l'exercice de tout autre droit prévu par le RGPD.
-        </P>
-      </Section>
-
-      <Section title="Conservation des données">
-        <P>
-          Tes données sont conservées tant que ton compte existe. Elles sont supprimées
-          définitivement et immédiatement à la suppression de ton compte.
-        </P>
-      </Section>
-
-      <Section title="Mineurs">
-        <P>
-          L'app ne s'adresse pas aux enfants de moins de 16 ans et ne collecte pas
-          consciemment leurs données.
+          • <Text style={{ fontWeight: '700' }}>Réclamation</Text> : tu disposes du droit
+          d'introduire une réclamation auprès de la CNIL (cnil.fr) si tu estimes que tes droits ne
+          sont pas respectés.
         </P>
       </Section>
 
-      <Section title="Modifications">
+      <Section title="7. Conservation des données">
         <P>
-          Si cette politique change de façon significative, nous t'en informerons dans l'app avant
-          l'entrée en vigueur des changements.
+          Tes données sont conservées tant que ton compte est actif. En cas de suppression de
+          compte, toutes tes données sont effacées définitivement et immédiatement de nos serveurs
+          principaux.
         </P>
       </Section>
 
-      <Section title="Contact">
-        <P>{SUPPORT_EMAIL}</P>
+      <Section title="8. Mineurs">
+        <P>
+          L'application ne s'adresse pas aux mineurs de moins de 16 ans et nous ne collectons pas
+          sciemment leurs données.
+        </P>
+      </Section>
+
+      <Section title="9. Modifications de cette politique">
+        <P>
+          Si cette politique change de façon significative, nous t'en informerons dans l'app ou par
+          e-mail avant l'entrée en vigueur des changements.
+        </P>
+      </Section>
+
+      <Section title="10. Contact">
+        <P>Pour toute question : {SUPPORT_EMAIL}</P>
       </Section>
 
       <View style={{ alignItems: 'flex-start', marginTop: spacing[5] }}>
