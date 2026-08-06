@@ -32,9 +32,13 @@ function RouteGuard({ children }: { children: React.ReactNode }): React.JSX.Elem
     const group = segments[0];
     const inAuth = group === '(auth)';
     const inOnboarding = group === '(onboarding)';
+    // Terms/Privacy Policy must stay reachable while signed out — they're
+    // also the app's public web URLs (App Store Connect requires a working
+    // Privacy Policy URL, reachable without an account).
+    const inLegal = group === '(legal)';
 
     if (authStatus === 'unauthenticated') {
-      if (!inAuth) router.replace('/(auth)/sign-in');
+      if (!inAuth && !inLegal) router.replace('/(auth)/sign-in');
       return;
     }
     // authenticated

@@ -358,8 +358,8 @@ export function SupportScreen(): React.JSX.Element {
         <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: spacing[2] }}>
           <Button label="📩 Support" onPress={() => mail('Demande de support Kaizen')} />
           <Button label="⭐ Évaluer l’app" variant="secondary" onPress={() => openUrl(REPO_URL)} />
-          <Button label="📄 Confidentialité" variant="secondary" onPress={() => openUrl(REPO_URL)} />
-          <Button label="⚖ Conditions" variant="secondary" onPress={() => openUrl(REPO_URL)} />
+          <Button label="📄 Confidentialité" variant="secondary" onPress={() => router.push('/privacy')} />
+          <Button label="⚖ Conditions" variant="secondary" onPress={() => router.push('/terms')} />
         </View>
       </Section>
 

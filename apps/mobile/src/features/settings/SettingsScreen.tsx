@@ -1,11 +1,12 @@
 import React, { useState } from 'react';
-import { Platform, Share, View } from 'react-native';
+import { Alert, Platform, Share, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Badge, Button, Card, ListRow, Screen, SegmentedControl, Text, Toggle, useTheme } from '@supotsu/ui';
 import { spacing } from '@supotsu/design-system';
 import { useAuth } from '@/features/auth/AuthProvider';
 import { usePreferences, type UnitSystem } from '@/lib/preferences';
 import { createDataRepository, exportUserData } from '@/lib/data/repository';
+import { deleteAccount } from '@/features/auth/accountClient';
 
 const UNIT_OPTIONS: { value: UnitSystem; label: string }[] = [
   { value: 'metric', label: 'Métrique (kg, km)' },
@@ -70,6 +71,49 @@ export function SettingsScreen(): React.JSX.Element {
     }
   };
 
+  const [deleteBusy, setDeleteBusy] = useState(false);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
+
+  const confirmDeleteAccount = (): void => {
+    setDeleteError(null);
+    Alert.alert(
+      'Supprimer définitivement ton compte ?',
+      'Toutes tes données — séances, santé, sommeil, nutrition, objectifs — seront supprimées immédiatement et de façon irréversible.',
+      [
+        { text: 'Annuler', style: 'cancel' },
+        {
+          text: 'Supprimer',
+          style: 'destructive',
+          onPress: () => {
+            void (async (): Promise<void> => {
+              setDeleteBusy(true);
+              try {
+                if (mode === 'demo') {
+                  await signOut();
+                } else {
+                  await deleteAccount();
+                  // The account is already gone server-side at this point, so
+                  // a failure here (e.g. the server-side signOut call erroring
+                  // against an already-deleted user) isn't a real problem —
+                  // don't surface it as a deletion failure.
+                  try {
+                    await signOut();
+                  } catch {
+                    /* account is already deleted; local session will clear regardless */
+                  }
+                }
+              } catch (e) {
+                setDeleteError(e instanceof Error ? e.message : 'Suppression impossible.');
+              } finally {
+                setDeleteBusy(false);
+              }
+            })();
+          },
+        },
+      ],
+    );
+  };
+
   return (
     <Screen scroll>
       <Text variant="title">Réglages</Text>
@@ -125,8 +169,10 @@ export function SettingsScreen(): React.JSX.Element {
       <GroupTitle>SÉCURITÉ</GroupTitle>
       <Group>
         <ToggleRow icon="🔐" tint="rgba(43,227,139,0.18)" label="Verrouillage biométrique" value={faceId} onValueChange={setFaceId} divider />
-        <ListRow icon="🚪" iconColor="rgba(255,77,103,0.18)" title="Se déconnecter" destructive onPress={signOut} />
+        <ListRow icon="🚪" iconColor="rgba(255,77,103,0.18)" title="Se déconnecter" destructive onPress={signOut} divider />
+        <ListRow icon="🗑" iconColor="rgba(255,77,103,0.18)" title={deleteBusy ? 'Suppression…' : 'Supprimer mon compte'} destructive onPress={confirmDeleteAccount} />
       </Group>
+      {deleteError ? <Text variant="caption" color="error">{deleteError}</Text> : null}
 
       {/* À propos */}
       <GroupTitle>AIDE</GroupTitle>
@@ -137,8 +183,8 @@ export function SettingsScreen(): React.JSX.Element {
       <GroupTitle>À PROPOS</GroupTitle>
       <Group>
         <ListRow icon="ℹ️" iconColor="rgba(116,128,146,0.22)" title="Version" value="1.0.0" divider />
-        <ListRow icon="📄" iconColor="rgba(116,128,146,0.22)" title="Conditions d'utilisation" chevron divider />
-        <ListRow icon="🔒" iconColor="rgba(116,128,146,0.22)" title="Politique de confidentialité" chevron />
+        <ListRow icon="📄" iconColor="rgba(116,128,146,0.22)" title="Conditions d'utilisation" chevron onPress={() => router.push('/terms')} divider />
+        <ListRow icon="🔒" iconColor="rgba(116,128,146,0.22)" title="Politique de confidentialité" chevron onPress={() => router.push('/privacy')} />
       </Group>
 
       {mode === 'demo' ? <Text variant="caption" color="textSubtle" style={{ marginTop: spacing[3] }}>Mode démo : tes données restent sur cet appareil.</Text> : null}

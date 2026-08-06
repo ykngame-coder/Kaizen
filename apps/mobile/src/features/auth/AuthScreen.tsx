@@ -124,6 +124,24 @@ export function AuthScreen({ mode }: { mode: Mode }): React.JSX.Element {
         )}
       />
 
+      {mode === 'signUp' ? (
+        <Text variant="caption" color="textMuted" style={{ lineHeight: 18 }}>
+          En créant un compte, tu acceptes nos{' '}
+          <Link href="/terms">
+            <Text variant="caption" color="primary">
+              Conditions d'utilisation
+            </Text>
+          </Link>{' '}
+          et notre{' '}
+          <Link href="/privacy">
+            <Text variant="caption" color="primary">
+              Politique de confidentialité
+            </Text>
+          </Link>
+          .
+        </Text>
+      ) : null}
+
       {submitError ? (
         <Text variant="caption" style={{ color: colors.error }}>
           {submitError}
