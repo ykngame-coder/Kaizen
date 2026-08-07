@@ -3,6 +3,7 @@ import { Animated, Pressable, View } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { gradients } from '@supotsu/design-system';
 import { useTheme } from './theme';
+import { triggerHaptic } from './haptics';
 
 export interface ToggleProps {
   value: boolean;
@@ -34,7 +35,14 @@ export function Toggle({ value, onValueChange, disabled = false }: ToggleProps):
     <Pressable
       accessibilityRole="switch"
       accessibilityState={{ checked: value, disabled }}
-      onPress={disabled ? undefined : () => onValueChange?.(!value)}
+      onPress={
+        disabled
+          ? undefined
+          : () => {
+              triggerHaptic();
+              onValueChange?.(!value);
+            }
+      }
       style={{ opacity: disabled ? 0.4 : 1 }}
       hitSlop={8}
     >

@@ -13,6 +13,7 @@ import {
   useRecords,
   useSleepSessions,
 } from '@/lib/data/queries';
+import { formatClock, usePreferences, type TimeFormat } from '@/lib/preferences';
 
 type Category = 'important' | 'sante' | 'nutrition' | 'entrainement' | 'succes' | 'appareils';
 
@@ -34,13 +35,13 @@ function relative(iso: string): string {
   if (days === 1) return 'Hier';
   return `Il y a ${days} j`;
 }
-function hhmmWindow(hhmm: string): string {
+function hhmmWindow(hhmm: string, timeFormat: TimeFormat): string {
   const [h, m] = hhmm.split(':').map(Number);
   if (h === undefined || m === undefined) return hhmm;
   const base = h * 60 + m;
   const fmt = (min: number): string => {
     const mm = ((min % 1440) + 1440) % 1440;
-    return `${String(Math.floor(mm / 60)).padStart(2, '0')}:${String(mm % 60).padStart(2, '0')}`;
+    return formatClock(Math.floor(mm / 60), mm % 60, timeFormat);
   };
   return `${fmt(base - 15)} – ${fmt(base + 15)}`;
 }
@@ -71,6 +72,7 @@ const GROUPS: { key: Category; header: string; color: (c: ReturnType<typeof useT
 export function NotificationsScreen(): React.JSX.Element {
   const router = useRouter();
   const { colors } = useTheme();
+  const { preferences } = usePreferences();
   const { data: health = [] } = useHealthMetrics();
   const { data: records = [] } = useRecords();
   const { data: sessions = [] } = useSleepSessions();
@@ -127,7 +129,7 @@ export function NotificationsScreen(): React.JSX.Element {
       if (diff >= 3) out.push({ id: 'rhr', category: 'sante', icon: '❤️', title: `FC de repos supérieure à ta moyenne (+${diff} bpm).`, when: "Aujourd'hui", path: '/profile/analytics' });
     }
     const circadian = computeCircadianProfile(health, asOf, { tzOffsetMinutes: -new Date().getTimezoneOffset() });
-    if (circadian.value) out.push({ id: 'bedtime', category: 'sante', icon: '🌙', title: `Heure de coucher optimale : ${hhmmWindow(circadian.value.idealBedtime)}.`, when: "Aujourd'hui", path: '/sommeil/circadian' });
+    if (circadian.value) out.push({ id: 'bedtime', category: 'sante', icon: '🌙', title: `Heure de coucher optimale : ${hhmmWindow(circadian.value.idealBedtime, preferences.timeFormat)}.`, when: "Aujourd'hui", path: '/sommeil/circadian' });
     const lastNight = [...sessions].sort((a, b) => b.endedAt.localeCompare(a.endedAt))[0];
     if (lastNight) {
       const h = Math.floor(lastNight.asleepMin / 60);
@@ -145,7 +147,7 @@ export function NotificationsScreen(): React.JSX.Element {
     if (renpho) out.push({ id: 'renpho', category: 'appareils', icon: '⚖', title: `Nouvelle pesée Renpho détectée · ${renpho.value.toFixed(1)} kg.`, when: relative(renpho.measuredAt), path: '/profile/integrations' });
 
     return out;
-  }, [health, records, sessions, habits, habitLogs, nutrition, recovery, asOf]);
+  }, [health, records, sessions, habits, habitLogs, nutrition, recovery, asOf, preferences.timeFormat]);
 
   const visible = notifs.filter((n) => enabled[n.category]);
   const hasAny = visible.length > 0;

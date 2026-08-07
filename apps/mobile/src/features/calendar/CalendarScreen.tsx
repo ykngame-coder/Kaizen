@@ -7,6 +7,7 @@ import type { ActivityType } from '@supotsu/core';
 import { computeAcwr, computeRecoveryScore, sleepTrend, sumDay } from '@supotsu/engines';
 import { useActivities, useChallenges, useGoals, useHealthMetrics, useNutritionEntries } from '@/lib/data/queries';
 import { formatDate } from '@/lib/format';
+import { formatClockFromIso, usePreferences } from '@/lib/preferences';
 
 const DAY_MS = 86_400_000;
 const FR_MONTHS = ['Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin', 'Juillet', 'Août', 'Septembre', 'Octobre', 'Novembre', 'Décembre'];
@@ -24,7 +25,6 @@ const ACT_LABEL: Record<ActivityType, string> = {
 };
 const MEAL_ICON: Record<string, string> = { breakfast: '🥣', lunch: '🍗', dinner: '🍝', snack: '🍎' };
 const dayKey = (d: Date): string => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
-const hhmm = (iso: string): string => { const d = new Date(iso); return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`; };
 const mean = (xs: number[]): number => (xs.length ? xs.reduce((s, x) => s + x, 0) / xs.length : 0);
 
 function SectionTitle({ children, right }: { children: React.ReactNode; right?: React.ReactNode }): React.JSX.Element {
@@ -49,6 +49,7 @@ function Kpi({ label, value, color }: { label: string; value: string; color?: st
 export function CalendarScreen(): React.JSX.Element {
   const router = useRouter();
   const { colors } = useTheme();
+  const { preferences } = usePreferences();
   const { data: activities = [] } = useActivities();
   const { data: nutrition = [] } = useNutritionEntries();
   const { data: goals = [] } = useGoals();
@@ -91,10 +92,10 @@ export function CalendarScreen(): React.JSX.Element {
   // Timeline for the currently selected day (defaults to today).
   const timeline = useMemo(() => {
     const items: { time: string; icon: string; label: string; sort: number }[] = [];
-    for (const a of activities) if (dayKey(new Date(a.startedAt)) === selectedKey) items.push({ time: hhmm(a.startedAt), icon: ACT_ICON[a.type], label: `${ACT_LABEL[a.type]} · ${Math.round(a.durationSec / 60)} min`, sort: new Date(a.startedAt).getTime() });
-    for (const e of nutrition) if (dayKey(new Date(e.loggedAt)) === selectedKey) items.push({ time: hhmm(e.loggedAt), icon: MEAL_ICON[e.mealType] ?? '🍽', label: `${e.description} · ${Math.round(e.kcal)} kcal`, sort: new Date(e.loggedAt).getTime() });
+    for (const a of activities) if (dayKey(new Date(a.startedAt)) === selectedKey) items.push({ time: formatClockFromIso(a.startedAt, preferences.timeFormat), icon: ACT_ICON[a.type], label: `${ACT_LABEL[a.type]} · ${Math.round(a.durationSec / 60)} min`, sort: new Date(a.startedAt).getTime() });
+    for (const e of nutrition) if (dayKey(new Date(e.loggedAt)) === selectedKey) items.push({ time: formatClockFromIso(e.loggedAt, preferences.timeFormat), icon: MEAL_ICON[e.mealType] ?? '🍽', label: `${e.description} · ${Math.round(e.kcal)} kcal`, sort: new Date(e.loggedAt).getTime() });
     return items.sort((a, b) => a.sort - b.sort);
-  }, [activities, nutrition, selectedKey]);
+  }, [activities, nutrition, selectedKey, preferences.timeFormat]);
 
   const deadlines = useMemo(() => {
     const items: { icon: string; label: string; date: string }[] = [];

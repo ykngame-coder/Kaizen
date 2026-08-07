@@ -11,6 +11,7 @@ import { AuthProvider, useAuth } from '@/features/auth/AuthProvider';
 import { OnboardingProvider, useOnboarding } from '@/features/onboarding/OnboardingProvider';
 import { PreferencesProvider } from '@/lib/preferences';
 import { AppTabBar } from '@/features/navigation/AppTabBar';
+import { BiometricGate } from '@/features/security/BiometricGate';
 
 /**
  * Central route gate: sends users to auth, onboarding or the app depending on
@@ -70,12 +71,14 @@ export default function RootLayout(): React.JSX.Element {
               <OnboardingProvider>
                 <StatusBar style="auto" />
                 <RouteGuard>
-                  <View style={{ flex: 1 }}>
+                  <BiometricGate>
                     <View style={{ flex: 1 }}>
-                      <Slot />
+                      <View style={{ flex: 1 }}>
+                        <Slot />
+                      </View>
+                      <AppTabBar />
                     </View>
-                    <AppTabBar />
-                  </View>
+                  </BiometricGate>
                 </RouteGuard>
               </OnboardingProvider>
             </AuthProvider>

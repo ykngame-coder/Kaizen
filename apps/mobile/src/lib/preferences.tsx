@@ -1,7 +1,9 @@
 import React, { createContext, useContext, useEffect, useMemo, useState } from 'react';
+import { setHapticsEnabled } from '@supotsu/ui';
 import { secureStorage } from '@/lib/secure-storage';
 
 export type UnitSystem = 'metric' | 'imperial';
+export type TimeFormat = '24h' | '12h';
 
 /** Device-level app preferences (Master Prompt P17 réglages, P15 confidentialité). */
 export interface Preferences {
@@ -16,6 +18,12 @@ export interface Preferences {
   primaryGoal?: string;
   /** Manual nutrition targets — override the auto-estimated ones when set. */
   nutritionGoals?: { kcal: number; proteinG: number; hydrationMl: number };
+  /** How times are displayed throughout the app. */
+  timeFormat: TimeFormat;
+  /** Haptic feedback on buttons and toggles (native only). */
+  haptics: boolean;
+  /** Require Face ID / Touch ID to open the app (native only). */
+  biometricLock: boolean;
 }
 
 const DEFAULTS: Preferences = {
@@ -24,6 +32,9 @@ const DEFAULTS: Preferences = {
   reminders: true,
   shareInLeaderboards: true,
   primaryGoal: 'fat_loss',
+  timeFormat: '24h',
+  haptics: true,
+  biometricLock: false,
 };
 
 const STORAGE_KEY = 'supotsu.preferences';
@@ -66,6 +77,10 @@ export function PreferencesProvider({ children }: { children: React.ReactNode })
     });
   };
 
+  useEffect(() => {
+    setHapticsEnabled(preferences.haptics);
+  }, [preferences.haptics]);
+
   const value = useMemo(() => ({ preferences, setPreference, ready }), [preferences, ready]);
   return <PreferencesContext.Provider value={value}>{children}</PreferencesContext.Provider>;
 }
@@ -88,4 +103,19 @@ export function formatWeight(kg: number, units: UnitSystem): string {
 export function formatDistance(metres: number, units: UnitSystem): string {
   const km = metres / 1000;
   return units === 'imperial' ? `${(km * KM_TO_MI).toFixed(1)} mi` : `${km.toFixed(1)} km`;
+}
+
+/** Format an hour:minute pair (24h wall-clock values, minute can wrap) according to the time preference. */
+export function formatClock(hour: number, minute: number, timeFormat: TimeFormat): string {
+  const h = ((Math.floor(hour) % 24) + 24) % 24;
+  const m = String(Math.floor(minute)).padStart(2, '0');
+  if (timeFormat === '24h') return `${String(h).padStart(2, '0')}:${m}`;
+  const h12 = h % 12 === 0 ? 12 : h % 12;
+  return `${h12}:${m} ${h < 12 ? 'AM' : 'PM'}`;
+}
+
+/** Format an ISO timestamp's clock time according to the time preference. */
+export function formatClockFromIso(iso: string, timeFormat: TimeFormat): string {
+  const d = new Date(iso);
+  return formatClock(d.getHours(), d.getMinutes(), timeFormat);
 }

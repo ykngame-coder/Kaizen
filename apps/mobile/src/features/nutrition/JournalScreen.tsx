@@ -5,12 +5,11 @@ import { Badge, Button, Card, Fab, ProgressRing, Screen, Sparkline, Text, useThe
 import { radii, spacing } from '@supotsu/design-system';
 import { dailySums, entriesForDay, estimateTargets, sumDay, type TrendPoint } from '@supotsu/engines';
 import { useAddNutritionEntry, useHealthMetrics, useNutritionEntries } from '@/lib/data/queries';
-import { usePreferences } from '@/lib/preferences';
+import { formatClockFromIso, usePreferences } from '@/lib/preferences';
 
 const DAY_MS = 86_400_000;
 const MEAL_ICON: Record<string, string> = { breakfast: '🥣', lunch: '🍗', dinner: '🍝', snack: '🍎' };
 const MEAL_LABEL: Record<string, string> = { breakfast: 'Petit-déjeuner', lunch: 'Déjeuner', dinner: 'Dîner', snack: 'Collation' };
-const hhmm = (iso: string): string => { const d = new Date(iso); return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`; };
 
 function SectionTitle({ children, right }: { children: React.ReactNode; right?: React.ReactNode }): React.JSX.Element {
   return (
@@ -178,7 +177,7 @@ export function JournalScreen(): React.JSX.Element {
                 </View>
                 <View style={{ alignItems: 'flex-end' }}>
                   <Text variant="body" style={{ fontWeight: '700' }}>{Math.round(e.kcal)}</Text>
-                  <Text variant="caption" color="textSubtle">{hhmm(e.loggedAt)}</Text>
+                  <Text variant="caption" color="textSubtle">{formatClockFromIso(e.loggedAt, preferences.timeFormat)}</Text>
                 </View>
               </View>
             ))}

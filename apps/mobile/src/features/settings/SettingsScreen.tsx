@@ -1,12 +1,13 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Alert, Platform, Share, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Badge, Button, Card, ListRow, Screen, SegmentedControl, Text, Toggle, useTheme } from '@supotsu/ui';
 import { spacing } from '@supotsu/design-system';
 import { useAuth } from '@/features/auth/AuthProvider';
-import { usePreferences, type UnitSystem } from '@/lib/preferences';
+import { usePreferences, type TimeFormat, type UnitSystem } from '@/lib/preferences';
 import { createDataRepository, exportUserData } from '@/lib/data/repository';
 import { deleteAccount } from '@/features/auth/accountClient';
+import { isBiometricSupported } from '@/lib/biometric-lock';
 
 const UNIT_OPTIONS: { value: UnitSystem; label: string }[] = [
   { value: 'metric', label: 'Métrique (kg, km)' },
@@ -17,7 +18,7 @@ const THEME_OPTIONS = [
   { value: 'light' as const, label: 'Clair' },
   { value: 'system' as const, label: 'Auto' },
 ];
-const TIME_OPTIONS = [
+const TIME_OPTIONS: { value: TimeFormat; label: string }[] = [
   { value: '24h', label: '24 h' },
   { value: '12h', label: '12 h' },
 ];
@@ -28,8 +29,8 @@ function GroupTitle({ children }: { children: React.ReactNode }): React.JSX.Elem
 function Group({ children }: { children: React.ReactNode }): React.JSX.Element {
   return <Card style={{ paddingVertical: spacing[1] }}>{children}</Card>;
 }
-function ToggleRow({ icon, tint, label, value, onValueChange, divider }: { icon: string; tint: string; label: string; value: boolean; onValueChange: (v: boolean) => void; divider?: boolean }): React.JSX.Element {
-  return <ListRow icon={icon} iconColor={tint} title={label} accessory={<Toggle value={value} onValueChange={onValueChange} />} divider={divider} />;
+function ToggleRow({ icon, tint, label, subtitle, value, onValueChange, divider, disabled }: { icon: string; tint: string; label: string; subtitle?: string; value: boolean; onValueChange: (v: boolean) => void; divider?: boolean; disabled?: boolean }): React.JSX.Element {
+  return <ListRow icon={icon} iconColor={tint} title={label} subtitle={subtitle} accessory={<Toggle value={value} onValueChange={onValueChange} disabled={disabled} />} divider={divider} />;
 }
 
 /** Réglages (mockup #16) — grouped preferences, notifications, privacy, security, about. */
@@ -39,12 +40,15 @@ export function SettingsScreen(): React.JSX.Element {
   const { preferences, setPreference } = usePreferences();
   const { user, mode, signOut } = useAuth();
   const [exportState, setExportState] = useState<'idle' | 'working' | 'done' | 'error'>('idle');
-  // Presentational (session) toggles — persistence/behaviour wired later.
-  const [timeFormat, setTimeFormat] = useState('24h');
-  const [animations, setAnimations] = useState(true);
-  const [haptics, setHaptics] = useState(true);
+  // Not wired to a real behaviour yet — kept as a session-only preference
+  // until AI-generated analyses ship.
   const [aiConsent, setAiConsent] = useState(true);
-  const [faceId, setFaceId] = useState(false);
+  const [biometricSupported, setBiometricSupported] = useState(Platform.OS !== 'web');
+
+  useEffect(() => {
+    if (Platform.OS === 'web') return;
+    void isBiometricSupported().then(setBiometricSupported);
+  }, []);
 
   const onExport = async (): Promise<void> => {
     if (!user) return;
@@ -143,12 +147,11 @@ export function SettingsScreen(): React.JSX.Element {
         <Text variant="body" style={{ fontWeight: '600', marginTop: spacing[4], marginBottom: spacing[2] }}>Unités</Text>
         <SegmentedControl options={UNIT_OPTIONS} value={preferences.units} onChange={(v) => setPreference('units', v)} />
         <Text variant="body" style={{ fontWeight: '600', marginTop: spacing[4], marginBottom: spacing[2] }}>Format horaire</Text>
-        <SegmentedControl options={TIME_OPTIONS} value={timeFormat} onChange={setTimeFormat} />
+        <SegmentedControl options={TIME_OPTIONS} value={preferences.timeFormat} onChange={(v) => setPreference('timeFormat', v)} />
       </Card>
       <Group>
         <ListRow icon="🌐" iconColor="rgba(116,128,146,0.22)" title="Langue" value="Français" divider />
-        <ToggleRow icon="✨" tint="rgba(139,92,246,0.18)" label="Animations" value={animations} onValueChange={setAnimations} divider />
-        <ToggleRow icon="📳" tint="rgba(59,203,255,0.18)" label="Retour haptique" value={haptics} onValueChange={setHaptics} />
+        <ToggleRow icon="📳" tint="rgba(59,203,255,0.18)" label="Retour haptique" value={preferences.haptics} onValueChange={(v) => setPreference('haptics', v)} />
       </Group>
 
       {/* Notifications */}
@@ -173,7 +176,18 @@ export function SettingsScreen(): React.JSX.Element {
       {/* Sécurité */}
       <GroupTitle>SÉCURITÉ</GroupTitle>
       <Group>
-        <ToggleRow icon="🔐" tint="rgba(43,227,139,0.18)" label="Verrouillage biométrique" value={faceId} onValueChange={setFaceId} divider />
+        {Platform.OS !== 'web' ? (
+          <ToggleRow
+            icon="🔐"
+            tint="rgba(43,227,139,0.18)"
+            label="Verrouillage biométrique"
+            subtitle={biometricSupported ? undefined : 'Aucun Face ID / Touch ID configuré sur cet appareil'}
+            value={preferences.biometricLock}
+            onValueChange={(v) => setPreference('biometricLock', v)}
+            disabled={!biometricSupported}
+            divider
+          />
+        ) : null}
         <ListRow icon="🚪" iconColor="rgba(255,77,103,0.18)" title="Se déconnecter" destructive onPress={signOut} divider />
         <ListRow icon="🗑" iconColor="rgba(255,77,103,0.18)" title={deleteBusy ? 'Suppression…' : 'Supprimer mon compte'} destructive onPress={confirmDeleteAccount} />
       </Group>

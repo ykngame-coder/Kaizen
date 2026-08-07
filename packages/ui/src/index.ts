@@ -1,4 +1,5 @@
 export { ThemeProvider, useTheme } from './theme';
+export { setHapticsEnabled, triggerHaptic } from './haptics';
 export { Text } from './Text';
 export type { TextProps } from './Text';
 export { Screen } from './Screen';

@@ -4,6 +4,7 @@ import { radii, spacing } from '@supotsu/design-system';
 import { Text } from './Text';
 import { Gradient } from './Gradient';
 import { useTheme } from './theme';
+import { triggerHaptic } from './haptics';
 
 export type ButtonVariant = 'primary' | 'secondary' | 'quick' | 'danger' | 'gradient';
 
@@ -19,6 +20,7 @@ export function Button({
   variant = 'primary',
   fullWidth = false,
   disabled,
+  onPress,
   ...rest
 }: ButtonProps): React.JSX.Element {
   const { colors } = useTheme();
@@ -69,6 +71,10 @@ export function Button({
       accessibilityRole="button"
       disabled={disabled}
       style={{ alignSelf: fullWidth ? 'stretch' : 'flex-start' }}
+      onPress={(e) => {
+        triggerHaptic();
+        onPress?.(e);
+      }}
       {...rest}
     >
       {({ pressed }) => {

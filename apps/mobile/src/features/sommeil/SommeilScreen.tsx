@@ -19,6 +19,7 @@ import {
   type SleepBand,
 } from '@supotsu/engines';
 import { useActivities, useHealthMetrics, useSleepSessions, useWellnessCheckins } from '@/lib/data/queries';
+import { formatClock, formatClockFromIso, usePreferences, type TimeFormat } from '@/lib/preferences';
 import { DayNav, useSelectedDay } from '@/features/navigation/DayNav';
 import { ComprendreCard } from '@/features/knowledge/ComprendreCard';
 import { ObjectifsCard } from '@/features/goals/ObjectifsCard';
@@ -69,19 +70,17 @@ function ScoreBar({
   );
 }
 
-const fmtClock = (iso: string): string =>
-  new Date(iso).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
 const weekdayLetter = (iso: string): string =>
   new Date(iso).toLocaleDateString('fr-FR', { weekday: 'narrow' }).toUpperCase();
 
 /** "22:30" → a ±15 min window "22:15 – 22:45". */
-function bedtimeWindow(hhmm: string): string {
+function bedtimeWindow(hhmm: string, timeFormat: TimeFormat): string {
   const [h, m] = hhmm.split(':').map(Number);
   if (h === undefined || m === undefined) return hhmm;
   const base = h * 60 + m;
   const fmt = (min: number): string => {
     const mm = ((min % 1440) + 1440) % 1440;
-    return `${String(Math.floor(mm / 60)).padStart(2, '0')}:${String(mm % 60).padStart(2, '0')}`;
+    return formatClock(Math.floor(mm / 60), mm % 60, timeFormat);
   };
   return `${fmt(base - 15)} – ${fmt(base + 15)}`;
 }
@@ -125,7 +124,7 @@ function ToolTile({ icon, label, path }: { icon: string; label: string; path: Hr
  * segments — a nightly-aggregated import doesn't, so we say so rather than
  * drawing a fabricated timeline (Master Prompt : pas de boîte noire).
  */
-function PhasesCard({ session }: { session: SleepSession }): React.JSX.Element {
+function PhasesCard({ session, timeFormat }: { session: SleepSession; timeFormat: TimeFormat }): React.JSX.Element {
   const { colors } = useTheme();
   const stages = [
     { key: 'deep', label: 'Profond', min: session.deepMin, color: colors.primary },
@@ -140,7 +139,7 @@ function PhasesCard({ session }: { session: SleepSession }): React.JSX.Element {
     <Card>
       <Text variant="heading">Phases de sommeil</Text>
       <Text variant="caption" color="textSubtle">
-        {fmtClock(session.startedAt)} → {fmtClock(session.endedAt)} · {fmtHM(session.inBedMin)} au
+        {formatClockFromIso(session.startedAt, timeFormat)} → {formatClockFromIso(session.endedAt, timeFormat)} · {fmtHM(session.inBedMin)} au
         lit, {fmtHM(session.asleepMin)} dormies
       </Text>
 
@@ -195,6 +194,7 @@ function PhasesCard({ session }: { session: SleepSession }): React.JSX.Element {
 export function SommeilScreen(): React.JSX.Element {
   const router = useRouter();
   const { colors } = useTheme();
+  const { preferences } = usePreferences();
   const { data: metrics = [], isLoading } = useHealthMetrics();
   const { data: activities = [] } = useActivities();
   const { data: sessions = [] } = useSleepSessions();
@@ -351,7 +351,7 @@ export function SommeilScreen(): React.JSX.Element {
           )}
 
           {/* 4. Phases de sommeil */}
-          {lastSession && <PhasesCard session={lastSession} />}
+          {lastSession && <PhasesCard session={lastSession} timeFormat={preferences.timeFormat} />}
 
           {/* 5. Coucher optimal */}
           {circadian.value && (
@@ -360,7 +360,7 @@ export function SommeilScreen(): React.JSX.Element {
                 Heure de coucher optimale
               </Text>
               <Text variant="display" color="primary" style={{ marginTop: spacing[1] }}>
-                {bedtimeWindow(circadian.value.idealBedtime)}
+                {bedtimeWindow(circadian.value.idealBedtime, preferences.timeFormat)}
               </Text>
               <Text variant="caption" color="textSubtle">
                 Estimation basée sur ton rythme et ta récupération (chronotype{' '}
