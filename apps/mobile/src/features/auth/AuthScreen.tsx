@@ -1,10 +1,11 @@
 import React, { useState } from 'react';
-import { Image, View } from 'react-native';
+import { Image, Platform, View } from 'react-native';
+import * as AppleAuthentication from 'expo-apple-authentication';
 import { Link, type Href } from 'expo-router';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Badge, Button, Input, Screen, Text, useTheme } from '@supotsu/ui';
-import { spacing } from '@supotsu/design-system';
+import { radii, spacing } from '@supotsu/design-system';
 import { useAuth } from './AuthProvider';
 import { credentialsSchema, type Credentials } from './authSchema';
 import type { OAuthProvider } from './authClient';
@@ -35,7 +36,7 @@ const COPY: Record<
 /** Shared sign-in / sign-up screen (Master Prompt P17.2 écran 1). */
 export function AuthScreen({ mode }: { mode: Mode }): React.JSX.Element {
   const { signIn, signUp, signInWithOAuth, mode: authMode } = useAuth();
-  const { colors } = useTheme();
+  const { colors, name: themeName } = useTheme();
   const copy = COPY[mode];
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [info, setInfo] = useState<string | null>(null);
@@ -158,13 +159,27 @@ export function AuthScreen({ mode }: { mode: Mode }): React.JSX.Element {
       />
 
       <View style={{ gap: spacing[2] }}>
-        <Button
-          label={oauthPending === 'apple' ? '…' : 'Continuer avec Apple'}
-          variant="secondary"
-          fullWidth
-          disabled={oauthPending !== null}
-          onPress={() => onOAuthPress('apple')}
-        />
+        {Platform.OS === 'ios' ? (
+          <AppleAuthentication.AppleAuthenticationButton
+            buttonType={AppleAuthentication.AppleAuthenticationButtonType.CONTINUE}
+            buttonStyle={
+              themeName === 'dark'
+                ? AppleAuthentication.AppleAuthenticationButtonStyle.WHITE
+                : AppleAuthentication.AppleAuthenticationButtonStyle.BLACK
+            }
+            cornerRadius={radii.md}
+            style={{ width: '100%', height: 48 }}
+            onPress={() => onOAuthPress('apple')}
+          />
+        ) : (
+          <Button
+            label={oauthPending === 'apple' ? '…' : 'Continuer avec Apple'}
+            variant="secondary"
+            fullWidth
+            disabled={oauthPending !== null}
+            onPress={() => onOAuthPress('apple')}
+          />
+        )}
         <Button
           label={oauthPending === 'google' ? '…' : 'Continuer avec Google'}
           variant="secondary"

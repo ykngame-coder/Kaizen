@@ -1,4 +1,5 @@
 import { Platform } from 'react-native';
+import * as AppleAuthentication from 'expo-apple-authentication';
 import * as AuthSession from 'expo-auth-session';
 import * as WebBrowser from 'expo-web-browser';
 import { secureStorage } from '@/lib/secure-storage';
@@ -118,6 +119,33 @@ function createSupabaseBackend(client: NonNullable<ReturnType<typeof getSupabase
       if (error) throw error;
     },
     async signInWithOAuth(provider) {
+      // Apple on iOS: App Store guideline 4.8 requires the native
+      // AuthenticationServices flow (not a browser redirect) whenever another
+      // third-party login — Google here — is offered. `signInWithIdToken`
+      // hands the identity token straight to Supabase, no browser round-trip.
+      if (provider === 'apple' && Platform.OS === 'ios') {
+        let credential: AppleAuthentication.AppleAuthenticationCredential;
+        try {
+          credential = await AppleAuthentication.signInAsync({
+            requestedScopes: [
+              AppleAuthentication.AppleAuthenticationScope.FULL_NAME,
+              AppleAuthentication.AppleAuthenticationScope.EMAIL,
+            ],
+          });
+        } catch (e) {
+          // ERR_REQUEST_CANCELED: the user dismissed the sheet — not an error.
+          if ((e as { code?: string })?.code === 'ERR_REQUEST_CANCELED') return;
+          throw e;
+        }
+        if (!credential.identityToken) throw new Error("Aucun jeton d'identité Apple reçu.");
+        const { error } = await client.auth.signInWithIdToken({
+          provider: 'apple',
+          token: credential.identityToken,
+        });
+        if (error) throw error;
+        return;
+      }
+
       // Web: full-page redirect. A popup + openAuthSessionAsync trips the
       // Cross-Origin-Opener-Policy (can't observe window.closed), so let the
       // browser navigate to the provider and back; detectSessionInUrl (enabled
