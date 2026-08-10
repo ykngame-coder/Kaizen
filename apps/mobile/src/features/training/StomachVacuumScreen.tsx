@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Animated, View } from 'react-native';
 import { useRouter } from 'expo-router';
-import { Button, Card, Screen, SegmentedControl, Text, triggerHaptic, useTheme } from '@supotsu/ui';
+import { Button, Card, Input, Screen, SegmentedControl, Text, triggerHaptic, useTheme } from '@supotsu/ui';
 import { spacing } from '@supotsu/design-system';
 import { useActivities, useAddActivity } from '@/lib/data/queries';
 
@@ -17,17 +17,30 @@ const SETS_OPTIONS = [
   { value: '3', label: '3 séries' },
   { value: '5', label: '5 séries' },
   { value: '8', label: '8 séries' },
+  { value: 'custom', label: 'Perso' },
 ];
 const HOLD_OPTIONS = [
   { value: '15', label: '15 s' },
   { value: '20', label: '20 s' },
   { value: '30', label: '30 s' },
+  { value: 'custom', label: 'Perso' },
 ];
+const MIN_SETS = 1;
+const MAX_SETS = 20;
+const MIN_HOLD_SEC = 5;
+const MAX_HOLD_SEC = 180;
 const EXHALE_SEC = 4;
 const VACUUM_SEC = 2;
 const RELEASE_SEC = 2;
 const REST_SEC = 15;
 const NOTES_PREFIX = 'Stomach vacuum';
+
+/** Clamps free-text numeric input to a sane range; null while invalid/empty. */
+function parseClamped(text: string, min: number, max: number): number | null {
+  const n = Math.floor(Number(text));
+  if (!Number.isFinite(n) || text.trim() === '') return null;
+  return Math.min(max, Math.max(min, n));
+}
 
 type PhaseKey = 'exhale' | 'vacuum' | 'hold' | 'release' | 'rest';
 interface Phase {
@@ -52,14 +65,19 @@ export function StomachVacuumScreen(): React.JSX.Element {
 
   const [setsChoice, setSetsChoice] = useState('3');
   const [holdChoice, setHoldChoice] = useState('20');
+  const [customSets, setCustomSets] = useState('');
+  const [customHold, setCustomHold] = useState('');
   const [screen, setScreen] = useState<'setup' | 'running' | 'done'>('setup');
   const [setIdx, setSetIdx] = useState(0);
   const [phaseIdx, setPhaseIdx] = useState(0);
   const [resting, setResting] = useState(false);
   const [secondsLeft, setSecondsLeft] = useState(0);
 
-  const totalSets = Number(setsChoice);
-  const holdSec = Number(holdChoice);
+  const customSetsValue = parseClamped(customSets, MIN_SETS, MAX_SETS);
+  const customHoldValue = parseClamped(customHold, MIN_HOLD_SEC, MAX_HOLD_SEC);
+  const totalSets = setsChoice === 'custom' ? (customSetsValue ?? 0) : Number(setsChoice);
+  const holdSec = holdChoice === 'custom' ? (customHoldValue ?? 0) : Number(holdChoice);
+  const canStart = totalSets >= MIN_SETS && holdSec >= MIN_HOLD_SEC;
   const scale = useRef(new Animated.Value(1)).current;
   const startedAtRef = useRef<string | null>(null);
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -171,12 +189,33 @@ export function StomachVacuumScreen(): React.JSX.Element {
           <View style={{ marginTop: spacing[2] }}>
             <Text variant="body" style={{ fontWeight: '600', marginBottom: spacing[2] }}>Séries</Text>
             <SegmentedControl options={SETS_OPTIONS} value={setsChoice} onChange={setSetsChoice} />
+            {setsChoice === 'custom' ? (
+              <View style={{ marginTop: spacing[2] }}>
+                <Input
+                  keyboardType="numeric"
+                  placeholder={`Entre ${MIN_SETS} et ${MAX_SETS}`}
+                  value={customSets}
+                  onChangeText={setCustomSets}
+                />
+              </View>
+            ) : null}
+
             <Text variant="body" style={{ fontWeight: '600', marginTop: spacing[4], marginBottom: spacing[2] }}>Durée de tenue</Text>
             <SegmentedControl options={HOLD_OPTIONS} value={holdChoice} onChange={setHoldChoice} />
+            {holdChoice === 'custom' ? (
+              <View style={{ marginTop: spacing[2] }}>
+                <Input
+                  keyboardType="numeric"
+                  placeholder={`En secondes, entre ${MIN_HOLD_SEC} et ${MAX_HOLD_SEC}`}
+                  value={customHold}
+                  onChangeText={setCustomHold}
+                />
+              </View>
+            ) : null}
           </View>
 
           <View style={{ alignItems: 'center', marginTop: spacing[6] }}>
-            <Button label="Commencer" onPress={start} />
+            <Button label="Commencer" onPress={start} disabled={!canStart} />
           </View>
         </>
       ) : null}
