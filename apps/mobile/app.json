@@ -58,7 +58,8 @@
           "NSHealthShareUsageDescription": "Kaizen Supotsu lit tes données Apple Santé (sommeil, fréquence cardiaque, HRV, poids, composition corporelle) pour tes analyses.",
           "background": false
         }
-      ]
+      ],
+      "expo-audio"
     ],
     "experiments": {
       "typedRoutes": true

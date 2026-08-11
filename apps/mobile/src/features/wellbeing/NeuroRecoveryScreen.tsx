@@ -88,6 +88,13 @@ export function NeuroRecoveryScreen(): React.JSX.Element {
         onPress={() => router.push('/sommeil/sound')}
       />
 
+      <ToolCard
+        title="Méditation guidée"
+        description="Séances audio narrées par thème — sommeil, anti-stress, réveil, focus."
+        actionLabel="Ouvrir"
+        onPress={() => router.push('/sommeil/meditation')}
+      />
+
       <View style={{ alignItems: 'flex-start', marginTop: spacing[2] }}>
         <Button label="Retour" variant="secondary" onPress={() => router.back()} />
       </View>

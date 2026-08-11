@@ -29,6 +29,7 @@
     "@tanstack/react-query": "^5.62.7",
     "expo": "~54.0.0",
     "expo-apple-authentication": "~8.0.8",
+    "expo-audio": "~1.1.1",
     "expo-auth-session": "~7.0.11",
     "expo-camera": "~17.0.0",
     "expo-constants": "~18.0.0",

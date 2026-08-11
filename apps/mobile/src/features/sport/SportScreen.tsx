@@ -34,6 +34,7 @@ const NAV: { title: string; subtitle: string; icon: string; path?: Href; soon?: 
   { title: 'Récupération musculaire', subtitle: 'Muscles fatigués vs prêts à travailler', icon: '💪', path: '/sport/muscles' },
   { title: 'Stomach Vacuum', subtitle: 'Gainage du transverse, séance guidée', icon: '🫁', path: '/sport/stomach-vacuum' },
   { title: 'Minuteurs', subtitle: 'Tabata, HIIT, EMOM ou perso', icon: '⏱', path: '/sport/timer' },
+  { title: 'Étirements', subtitle: 'Routine guidée, du jour ou par zone', icon: '🧘‍♂️', path: '/sport/stretching' },
   { title: 'Records', subtitle: '1RM, meilleurs temps, distances', icon: '🏆', path: '/sport/records' },
   { title: 'Exercices', subtitle: 'Bibliothèque, muscles, matériel', icon: '📚', path: '/sport/exercises' },
   { title: 'Progression musculaire', subtitle: 'Évolution par groupe musculaire', icon: '📈', path: '/sport/muscle-progress' },
