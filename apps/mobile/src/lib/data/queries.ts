@@ -410,6 +410,34 @@ export function useCopyProgram() {
   });
 }
 
+/** Fetch a session's exercises and log them as a real workout — "Lancer" a template. */
+export function useLaunchSession() {
+  const { user } = useAuth();
+  const repo = useRepository();
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (session: { id: string; name: string }) => {
+      const exercises = await repo.getSessionExercises(session.id);
+      return repo.addWorkout(user!.id, {
+        name: session.name,
+        sets: exercises.map((e, i) => ({
+          exerciseId: e.exerciseId,
+          order: e.order ?? i,
+          reps: e.reps,
+          weightKg: e.weightKg,
+          durationSec: e.durationSec,
+          restSec: e.restSec,
+        })),
+      });
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['workouts', user?.id] });
+      qc.invalidateQueries({ queryKey: ['muscleSessions', user?.id] });
+      qc.invalidateQueries({ queryKey: ['exerciseHistory', user?.id] });
+    },
+  });
+}
+
 export function useImportHealth() {
   const { user } = useAuth();
   const repo = useRepository();
