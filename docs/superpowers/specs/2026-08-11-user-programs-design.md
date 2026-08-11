@@ -15,11 +15,16 @@ since this is a solo-dev project paying for its own Supabase instance.
 ## Decisions (from brainstorming)
 
 - **Séances are independent of programmes.** A user builds a personal library
-  of up to 10 reusable sessions, and can reference the same session from
+  of up to 50 reusable sessions, and can reference the same session from
   either (or both) of their up to 2 programs, or start it standalone.
-- **Quota: 10 séances / 2 programmes per user**, enforced in the database
+- **Quota: 50 séances / 2 programmes per user**, enforced in the database
   (trigger), not just client-side — a modified client or direct API call must
-  not be able to bypass it.
+  not be able to bypass it. Raised from an initial 10 to cover CrossFit/Hyrox-
+  style programs where sessions vary almost daily rather than repeating a
+  handful of templates across weeks — 50 covers roughly a month of distinct
+  daily sessions shared across both programs, while staying bounded (these
+  are small structured rows, so the storage cost stays negligible either way;
+  the cap is really about abuse, not disk space).
 - **Private by default.** A session/program is only visible to its owner
   until the owner explicitly shares it.
 - **Sharing = copy, not live reference.** When another user finds a public
@@ -91,8 +96,8 @@ create table public.user_program_sessions (
 create or replace function public.enforce_user_sessions_quota()
 returns trigger language plpgsql as $$
 begin
-  if (select count(*) from public.user_sessions where user_id = new.user_id) >= 10 then
-    raise exception 'Limite de 10 séances atteinte.' using errcode = 'P0001';
+  if (select count(*) from public.user_sessions where user_id = new.user_id) >= 50 then
+    raise exception 'Limite de 50 séances atteinte.' using errcode = 'P0001';
   end if;
   return new;
 end;
@@ -134,7 +139,7 @@ today's `addActivity`/`addWorkout` style mutations):
    for 1 more; for a program, count how many of its constituent sessions
    aren't already in the recipient's library (by cloning, so always "all of
    them" since it's a fresh copy) and verify both the program slot (1 of 2)
-   and the session slots (N of 10) are free. If not, block with a clear
+   and the session slots (N of 50) are free. If not, block with a clear
    message ("Il te reste 3 séances de libre, ce programme en a besoin de 5.")
    before writing anything.
 3. Insert fresh rows owned by the current user with new ids — fully
@@ -148,7 +153,7 @@ Extends the existing Marketplace screen (`/profile/marketplace`) with tabs:
 - **Communauté** — public `user_programs`/`user_sessions` from other users,
   each with "Copier dans ma bibliothèque".
 - **Mes créations** — manage your own library: list of sessions (create,
-  edit exercises, delete, toggle share) with a "7/10" counter, same for
+  edit exercises, delete, toggle share) with a "12/50" counter, same for
   programs (create, assign sessions to week/day slots, delete, toggle share)
   with a "1/2" counter. "Lancer" on a session creates the pre-filled workout.
 
