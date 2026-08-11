@@ -7,9 +7,12 @@ import type {
   GoalInput,
   HabitInput,
   NutritionEntryInput,
+  ProgramSessionSlotInput,
+  UserProgramInput,
+  UserSessionInput,
   WellnessCheckinInput,
 } from '@supotsu/shared';
-import type { Challenge, Workout } from '@supotsu/core';
+import type { Challenge, Visibility, Workout } from '@supotsu/core';
 import type {
   ImportedActivity,
   ImportedHealthMetric,
@@ -216,6 +219,193 @@ export function useEnrollProgram() {
     mutationFn: (programId: string) => repo.enrollProgram(user!.id, programId),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['enrollments', user?.id] });
+    },
+  });
+}
+
+// --- user-created séances & programmes -------------------------------------
+export function useUserSessions() {
+  const { user } = useAuth();
+  const repo = useRepository();
+  return useQuery({
+    queryKey: ['userSessions', user?.id],
+    enabled: !!user,
+    queryFn: () => repo.listUserSessions(user!.id),
+  });
+}
+
+export function useCommunitySessions() {
+  const { user } = useAuth();
+  const repo = useRepository();
+  return useQuery({
+    queryKey: ['communitySessions', user?.id],
+    enabled: !!user,
+    queryFn: () => repo.listCommunitySessions(user!.id),
+  });
+}
+
+export function useSessionExercises(sessionId: string | undefined) {
+  const repo = useRepository();
+  return useQuery({
+    queryKey: ['sessionExercises', sessionId],
+    enabled: !!sessionId,
+    queryFn: () => repo.getSessionExercises(sessionId!),
+  });
+}
+
+export function useAddUserSession() {
+  const { user } = useAuth();
+  const repo = useRepository();
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (input: UserSessionInput) => repo.addUserSession(user!.id, input),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['userSessions', user?.id] });
+    },
+  });
+}
+
+export function useSetSessionVisibility() {
+  const { user } = useAuth();
+  const repo = useRepository();
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ sessionId, visibility }: { sessionId: string; visibility: Visibility }) =>
+      repo.setSessionVisibility(user!.id, sessionId, visibility),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['userSessions', user?.id] });
+      qc.invalidateQueries({ queryKey: ['communitySessions'] });
+    },
+  });
+}
+
+export function useDeleteUserSession() {
+  const { user } = useAuth();
+  const repo = useRepository();
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (sessionId: string) => repo.deleteUserSession(user!.id, sessionId),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['userSessions', user?.id] });
+      qc.invalidateQueries({ queryKey: ['programSessions'] });
+    },
+  });
+}
+
+export function useCopySession() {
+  const { user } = useAuth();
+  const repo = useRepository();
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (sourceSessionId: string) => repo.copySession(user!.id, sourceSessionId),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['userSessions', user?.id] });
+    },
+  });
+}
+
+export function useUserPrograms() {
+  const { user } = useAuth();
+  const repo = useRepository();
+  return useQuery({
+    queryKey: ['userPrograms', user?.id],
+    enabled: !!user,
+    queryFn: () => repo.listUserPrograms(user!.id),
+  });
+}
+
+export function useCommunityPrograms() {
+  const { user } = useAuth();
+  const repo = useRepository();
+  return useQuery({
+    queryKey: ['communityPrograms', user?.id],
+    enabled: !!user,
+    queryFn: () => repo.listCommunityPrograms(user!.id),
+  });
+}
+
+export function useProgramSessions(programId: string | undefined) {
+  const repo = useRepository();
+  return useQuery({
+    queryKey: ['programSessions', programId],
+    enabled: !!programId,
+    queryFn: () => repo.getProgramSessions(programId!),
+  });
+}
+
+export function useAddUserProgram() {
+  const { user } = useAuth();
+  const repo = useRepository();
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (input: UserProgramInput) => repo.addUserProgram(user!.id, input),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['userPrograms', user?.id] });
+    },
+  });
+}
+
+export function useSetProgramVisibility() {
+  const { user } = useAuth();
+  const repo = useRepository();
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ programId, visibility }: { programId: string; visibility: Visibility }) =>
+      repo.setProgramVisibility(user!.id, programId, visibility),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['userPrograms', user?.id] });
+      qc.invalidateQueries({ queryKey: ['communityPrograms'] });
+    },
+  });
+}
+
+export function useDeleteUserProgram() {
+  const { user } = useAuth();
+  const repo = useRepository();
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (programId: string) => repo.deleteUserProgram(user!.id, programId),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['userPrograms', user?.id] });
+    },
+  });
+}
+
+export function useAssignProgramSession() {
+  const { user } = useAuth();
+  const repo = useRepository();
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ programId, slot }: { programId: string; slot: ProgramSessionSlotInput }) =>
+      repo.assignProgramSession(user!.id, programId, slot),
+    onSuccess: (_data, { programId }) => {
+      qc.invalidateQueries({ queryKey: ['programSessions', programId] });
+    },
+  });
+}
+
+export function useRemoveProgramSession() {
+  const { user } = useAuth();
+  const repo = useRepository();
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ programSessionId }: { programSessionId: string; programId: string }) =>
+      repo.removeProgramSession(user!.id, programSessionId),
+    onSuccess: (_data, { programId }) => {
+      qc.invalidateQueries({ queryKey: ['programSessions', programId] });
+    },
+  });
+}
+
+export function useCopyProgram() {
+  const { user } = useAuth();
+  const repo = useRepository();
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (sourceProgramId: string) => repo.copyProgram(user!.id, sourceProgramId),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['userPrograms', user?.id] });
+      qc.invalidateQueries({ queryKey: ['userSessions', user?.id] });
     },
   });
 }

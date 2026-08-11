@@ -494,6 +494,92 @@ export interface Database {
         Update: Partial<Database['public']['Tables']['wellness_checkins']['Insert']>;
         Relationships: [];
       };
+      user_sessions: {
+        Row: {
+          id: string;
+          user_id: string;
+          name: string;
+          notes: string | null;
+          visibility: 'private' | 'public';
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          user_id: string;
+          name: string;
+          notes?: string | null;
+          visibility?: 'private' | 'public';
+        };
+        Update: Partial<Database['public']['Tables']['user_sessions']['Insert']>;
+        Relationships: [];
+      };
+      user_session_exercises: {
+        Row: {
+          id: string;
+          session_id: string;
+          exercise_id: string;
+          order: number;
+          reps: number | null;
+          weight_kg: number | null;
+          duration_sec: number | null;
+          rest_sec: number | null;
+        };
+        Insert: {
+          session_id: string;
+          exercise_id: string;
+          order?: number;
+          reps?: number | null;
+          weight_kg?: number | null;
+          duration_sec?: number | null;
+          rest_sec?: number | null;
+        };
+        Update: Partial<Database['public']['Tables']['user_session_exercises']['Insert']>;
+        Relationships: [];
+      };
+      user_programs: {
+        Row: {
+          id: string;
+          user_id: string;
+          title: string;
+          focus: 'strength' | 'endurance' | 'hyrox' | 'weight_loss' | 'mobility' | 'general';
+          level: 'beginner' | 'intermediate' | 'confirmed' | 'advanced';
+          weeks: number;
+          description: string | null;
+          visibility: 'private' | 'public';
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          user_id: string;
+          title: string;
+          focus?: 'strength' | 'endurance' | 'hyrox' | 'weight_loss' | 'mobility' | 'general';
+          level?: 'beginner' | 'intermediate' | 'confirmed' | 'advanced';
+          weeks: number;
+          description?: string | null;
+          visibility?: 'private' | 'public';
+        };
+        Update: Partial<Database['public']['Tables']['user_programs']['Insert']>;
+        Relationships: [];
+      };
+      user_program_sessions: {
+        Row: {
+          id: string;
+          program_id: string;
+          session_id: string;
+          week_number: number;
+          day_index: number;
+          order: number;
+        };
+        Insert: {
+          program_id: string;
+          session_id: string;
+          week_number: number;
+          day_index: number;
+          order?: number;
+        };
+        Update: Partial<Database['public']['Tables']['user_program_sessions']['Insert']>;
+        Relationships: [];
+      };
     };
     Views: Record<string, never>;
     Functions: {

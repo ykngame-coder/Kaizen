@@ -14,3 +14,4 @@ export * from './repositories/community';
 export * from './repositories/marketplace';
 export * from './repositories/records';
 export * from './repositories/wellness';
+export * from './repositories/user-programs';

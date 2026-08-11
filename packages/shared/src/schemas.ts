@@ -148,3 +148,53 @@ export const activityInputSchema = z.object({
   notes: z.string().max(1000).optional(),
 });
 export type ActivityInput = z.infer<typeof activityInputSchema>;
+
+export const programFocusSchema = z.enum([
+  'strength',
+  'endurance',
+  'hyrox',
+  'weight_loss',
+  'mobility',
+  'general',
+]);
+export const visibilitySchema = z.enum(['private', 'public']);
+
+/** One exercise prescription within a user-created session (mirrors workout_sets). */
+export const sessionExerciseInputSchema = z.object({
+  exerciseId: z.string().min(1),
+  order: z.number().int().nonnegative().default(0),
+  reps: z.number().int().positive().max(1000).optional(),
+  weightKg: z.number().nonnegative().max(1000).optional(),
+  durationSec: z.number().int().positive().max(36000).optional(),
+  restSec: z.number().int().nonnegative().max(3600).optional(),
+});
+export type SessionExerciseInput = z.infer<typeof sessionExerciseInputSchema>;
+
+/** A user-created reusable session template (Master Prompt-adjacent: user-generated content). */
+export const userSessionInputSchema = z.object({
+  name: z.string().min(1).max(120),
+  notes: z.string().max(1000).optional(),
+  visibility: visibilitySchema.default('private'),
+  exercises: z.array(sessionExerciseInputSchema).min(1).max(50),
+});
+export type UserSessionInput = z.infer<typeof userSessionInputSchema>;
+
+/** A user-created multi-week program (title/focus/level, no sessions yet — those attach separately). */
+export const userProgramInputSchema = z.object({
+  title: z.string().min(1).max(120),
+  focus: programFocusSchema.default('general'),
+  level: sportLevelSchema.default('beginner'),
+  weeks: z.number().int().positive().max(26),
+  description: z.string().max(1000).optional(),
+  visibility: visibilitySchema.default('private'),
+});
+export type UserProgramInput = z.infer<typeof userProgramInputSchema>;
+
+/** Placing one of the user's sessions at a week/day slot in a program's schedule. */
+export const programSessionSlotInputSchema = z.object({
+  sessionId: z.string().min(1),
+  weekNumber: z.number().int().positive().max(26),
+  dayIndex: z.number().int().min(0).max(6),
+  order: z.number().int().nonnegative().default(0),
+});
+export type ProgramSessionSlotInput = z.infer<typeof programSessionSlotInputSchema>;

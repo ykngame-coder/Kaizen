@@ -12,6 +12,11 @@ import type {
   Workout,
   SetEntry,
   SleepSession,
+  UserProgram,
+  UserProgramSession,
+  UserSession,
+  UserSessionExercise,
+  Visibility,
   WellnessCheckin,
 } from '@supotsu/core';
 import type {
@@ -21,6 +26,9 @@ import type {
   GoalInput,
   HabitInput,
   NutritionEntryInput,
+  ProgramSessionSlotInput,
+  UserProgramInput,
+  UserSessionInput,
   WellnessCheckinInput,
 } from '@supotsu/shared';
 import { computeGoalProgress } from '@supotsu/engines';
@@ -63,6 +71,22 @@ import {
   listPrograms as listProgramsDb,
   listEnrollments as listEnrollmentsDb,
   enrollInProgram,
+  listUserSessions as listUserSessionsDb,
+  listCommunitySessions as listCommunitySessionsDb,
+  getUserSession as getUserSessionDb,
+  listSessionExercises as listSessionExercisesDb,
+  insertUserSession as insertUserSessionDb,
+  updateUserSessionVisibility as updateUserSessionVisibilityDb,
+  deleteUserSession as deleteUserSessionDb,
+  listUserPrograms as listUserProgramsDb,
+  listCommunityPrograms as listCommunityProgramsDb,
+  getUserProgram as getUserProgramDb,
+  listProgramSessions as listProgramSessionsDb,
+  insertUserProgram as insertUserProgramDb,
+  updateUserProgramVisibility as updateUserProgramVisibilityDb,
+  deleteUserProgram as deleteUserProgramDb,
+  insertProgramSession as insertProgramSessionDb,
+  deleteProgramSession as deleteProgramSessionDb,
   upsertRecords,
   listRecords as listRecordsDb,
   insertWellnessCheckin,
@@ -84,6 +108,10 @@ import {
   type RecordRow,
   type WellnessCheckinRow,
   type GoalRow,
+  type UserSessionRow,
+  type UserSessionExerciseRow,
+  type UserProgramRow,
+  type UserProgramSessionRow,
 } from '@supotsu/database';
 import { getSupabase } from '@/lib/supabase';
 import { secureStorage } from '@/lib/secure-storage';
@@ -161,6 +189,33 @@ export interface DataRepository {
   listPrograms(): Promise<Program[]>;
   listEnrolledProgramIds(userId: string): Promise<string[]>;
   enrollProgram(userId: string, programId: string): Promise<void>;
+
+  // --- user-created séances & programmes (docs/superpowers/specs/2026-08-11-user-programs-design.md) ---
+  /** The caller's own reusable session library. */
+  listUserSessions(userId: string): Promise<UserSession[]>;
+  /** Public sessions from other users. */
+  listCommunitySessions(userId: string): Promise<UserSession[]>;
+  getSessionExercises(sessionId: string): Promise<UserSessionExercise[]>;
+  /** Rejects past the 50-session quota (server-enforced too). */
+  addUserSession(userId: string, input: UserSessionInput): Promise<UserSession>;
+  setSessionVisibility(userId: string, sessionId: string, visibility: Visibility): Promise<void>;
+  deleteUserSession(userId: string, sessionId: string): Promise<void>;
+  /** Clone a public (or own) session into the caller's own library, private by default. */
+  copySession(userId: string, sourceSessionId: string): Promise<UserSession>;
+
+  listUserPrograms(userId: string): Promise<UserProgram[]>;
+  listCommunityPrograms(userId: string): Promise<UserProgram[]>;
+  getProgramSessions(programId: string): Promise<UserProgramSession[]>;
+  /** Rejects past the 2-program quota (server-enforced too). */
+  addUserProgram(userId: string, input: UserProgramInput): Promise<UserProgram>;
+  setProgramVisibility(userId: string, programId: string, visibility: Visibility): Promise<void>;
+  deleteUserProgram(userId: string, programId: string): Promise<void>;
+  /** Place one of the caller's own sessions at a week/day slot. */
+  assignProgramSession(userId: string, programId: string, slot: ProgramSessionSlotInput): Promise<UserProgramSession>;
+  removeProgramSession(userId: string, programSessionId: string): Promise<void>;
+  /** Clone a public (or own) program AND its constituent sessions into the caller's own library. */
+  copyProgram(userId: string, sourceProgramId: string): Promise<UserProgram>;
+
   /** Persist a validated connector import; returns how many rows were added. */
   persistImport(
     userId: string,
@@ -310,6 +365,57 @@ function rowToProgram(r: ProgramRow): Program {
     sessionsPerWeek: r.sessions_per_week,
     description: r.description,
     priceCents: r.price_cents,
+  };
+}
+
+function rowToUserSession(r: UserSessionRow): UserSession {
+  return {
+    id: r.id,
+    userId: r.user_id,
+    name: r.name,
+    notes: r.notes ?? undefined,
+    visibility: r.visibility,
+    createdAt: r.created_at,
+    updatedAt: r.updated_at,
+  };
+}
+
+function rowToUserSessionExercise(r: UserSessionExerciseRow): UserSessionExercise {
+  return {
+    id: r.id,
+    sessionId: r.session_id,
+    exerciseId: r.exercise_id,
+    order: r.order,
+    reps: r.reps ?? undefined,
+    weightKg: r.weight_kg ?? undefined,
+    durationSec: r.duration_sec ?? undefined,
+    restSec: r.rest_sec ?? undefined,
+  };
+}
+
+function rowToUserProgram(r: UserProgramRow): UserProgram {
+  return {
+    id: r.id,
+    userId: r.user_id,
+    title: r.title,
+    focus: r.focus,
+    level: r.level,
+    weeks: r.weeks,
+    description: r.description ?? undefined,
+    visibility: r.visibility,
+    createdAt: r.created_at,
+    updatedAt: r.updated_at,
+  };
+}
+
+function rowToUserProgramSession(r: UserProgramSessionRow): UserProgramSession {
+  return {
+    id: r.id,
+    programId: r.program_id,
+    sessionId: r.session_id,
+    weekNumber: r.week_number,
+    dayIndex: r.day_index,
+    order: r.order,
   };
 }
 
@@ -565,6 +671,14 @@ const profKey = (u: string): string => `supotsu.athleteprofile.${u}`;
 const chKey = (u: string): string => `supotsu.challenges.${u}`;
 const chJoinKey = (u: string): string => `supotsu.challengejoins.${u}`;
 const enrollKey = (u: string): string => `supotsu.enrollments.${u}`;
+// Demo mode is single-user (see listChallenges) — all user-created sessions/
+// programs live under one shared local list, same as challenges.
+const usKey = (): string => 'supotsu.usersessions.all';
+const usExKey = (sessionId: string): string => `supotsu.usersessionexercises.${sessionId}`;
+const upKey = (): string => 'supotsu.userprograms.all';
+const upsKey = (programId: string): string => `supotsu.userprogramsessions.${programId}`;
+const SESSIONS_QUOTA = 50;
+const PROGRAMS_QUOTA = 2;
 
 async function readJson<T>(key: string): Promise<T[]> {
   const raw = await secureStorage.getItem(key);
@@ -885,6 +999,207 @@ function createDemoRepository(): DataRepository {
       const ids = await readJson<string>(enrollKey(userId));
       if (!ids.includes(programId)) await writeJson(enrollKey(userId), [programId, ...ids]);
     },
+    async listUserSessions(userId) {
+      const all = await readJson<UserSession>(usKey());
+      return all.filter((s) => s.userId === userId);
+    },
+    async listCommunitySessions(userId) {
+      const all = await readJson<UserSession>(usKey());
+      return all.filter((s) => s.visibility === 'public' && s.userId !== userId);
+    },
+    async getSessionExercises(sessionId) {
+      return readJson<UserSessionExercise>(usExKey(sessionId));
+    },
+    async addUserSession(userId, input) {
+      const all = await readJson<UserSession>(usKey());
+      if (all.filter((s) => s.userId === userId).length >= SESSIONS_QUOTA) {
+        throw new Error(`Limite de ${SESSIONS_QUOTA} séances atteinte.`);
+      }
+      const now = new Date().toISOString();
+      const session: UserSession = {
+        id: randomId(),
+        userId,
+        name: input.name,
+        notes: input.notes,
+        visibility: input.visibility,
+        createdAt: now,
+        updatedAt: now,
+      };
+      await writeJson(usKey(), [session, ...all]);
+      const exercises: UserSessionExercise[] = input.exercises.map((e, i) => ({
+        id: randomId(),
+        sessionId: session.id,
+        exerciseId: e.exerciseId,
+        order: e.order ?? i,
+        reps: e.reps,
+        weightKg: e.weightKg,
+        durationSec: e.durationSec,
+        restSec: e.restSec,
+      }));
+      await writeJson(usExKey(session.id), exercises);
+      return session;
+    },
+    async setSessionVisibility(_userId, sessionId, visibility) {
+      const all = await readJson<UserSession>(usKey());
+      await writeJson(
+        usKey(),
+        all.map((s) => (s.id === sessionId ? { ...s, visibility, updatedAt: new Date().toISOString() } : s)),
+      );
+    },
+    async deleteUserSession(_userId, sessionId) {
+      const all = await readJson<UserSession>(usKey());
+      await writeJson(usKey(), all.filter((s) => s.id !== sessionId));
+    },
+    async copySession(userId, sourceSessionId) {
+      const all = await readJson<UserSession>(usKey());
+      const source = all.find((s) => s.id === sourceSessionId);
+      if (!source) throw new Error('Séance introuvable.');
+      if (all.filter((s) => s.userId === userId).length >= SESSIONS_QUOTA) {
+        throw new Error(`Limite de ${SESSIONS_QUOTA} séances atteinte.`);
+      }
+      const exercises = await readJson<UserSessionExercise>(usExKey(sourceSessionId));
+      const now = new Date().toISOString();
+      const copy: UserSession = {
+        id: randomId(),
+        userId,
+        name: source.name,
+        notes: source.notes,
+        visibility: 'private',
+        createdAt: now,
+        updatedAt: now,
+      };
+      await writeJson(usKey(), [copy, ...all]);
+      await writeJson(
+        usExKey(copy.id),
+        exercises.map((e) => ({ ...e, id: randomId(), sessionId: copy.id })),
+      );
+      return copy;
+    },
+    async listUserPrograms(userId) {
+      const all = await readJson<UserProgram>(upKey());
+      return all.filter((p) => p.userId === userId);
+    },
+    async listCommunityPrograms(userId) {
+      const all = await readJson<UserProgram>(upKey());
+      return all.filter((p) => p.visibility === 'public' && p.userId !== userId);
+    },
+    async getProgramSessions(programId) {
+      return readJson<UserProgramSession>(upsKey(programId));
+    },
+    async addUserProgram(userId, input) {
+      const all = await readJson<UserProgram>(upKey());
+      if (all.filter((p) => p.userId === userId).length >= PROGRAMS_QUOTA) {
+        throw new Error(`Limite de ${PROGRAMS_QUOTA} programmes atteinte.`);
+      }
+      const now = new Date().toISOString();
+      const program: UserProgram = {
+        id: randomId(),
+        userId,
+        title: input.title,
+        focus: input.focus,
+        level: input.level,
+        weeks: input.weeks,
+        description: input.description,
+        visibility: input.visibility,
+        createdAt: now,
+        updatedAt: now,
+      };
+      await writeJson(upKey(), [program, ...all]);
+      return program;
+    },
+    async setProgramVisibility(_userId, programId, visibility) {
+      const all = await readJson<UserProgram>(upKey());
+      await writeJson(
+        upKey(),
+        all.map((p) => (p.id === programId ? { ...p, visibility, updatedAt: new Date().toISOString() } : p)),
+      );
+    },
+    async deleteUserProgram(_userId, programId) {
+      const all = await readJson<UserProgram>(upKey());
+      await writeJson(upKey(), all.filter((p) => p.id !== programId));
+    },
+    async assignProgramSession(_userId, programId, slot) {
+      const existing = await readJson<UserProgramSession>(upsKey(programId));
+      const created: UserProgramSession = {
+        id: randomId(),
+        programId,
+        sessionId: slot.sessionId,
+        weekNumber: slot.weekNumber,
+        dayIndex: slot.dayIndex,
+        order: slot.order ?? existing.length,
+      };
+      await writeJson(upsKey(programId), [...existing, created]);
+      return created;
+    },
+    async removeProgramSession(_userId, programSessionId) {
+      // Slots are keyed by program id in storage but addressed by their own id
+      // here — scan every program's slot list (demo mode has at most a
+      // handful, so this stays cheap).
+      const programs = await readJson<UserProgram>(upKey());
+      for (const p of programs) {
+        const slots = await readJson<UserProgramSession>(upsKey(p.id));
+        if (slots.some((s) => s.id === programSessionId)) {
+          await writeJson(upsKey(p.id), slots.filter((s) => s.id !== programSessionId));
+          return;
+        }
+      }
+    },
+    async copyProgram(userId, sourceProgramId) {
+      const programs = await readJson<UserProgram>(upKey());
+      const source = programs.find((p) => p.id === sourceProgramId);
+      if (!source) throw new Error('Programme introuvable.');
+      if (programs.filter((p) => p.userId === userId).length >= PROGRAMS_QUOTA) {
+        throw new Error(`Limite de ${PROGRAMS_QUOTA} programmes atteinte.`);
+      }
+
+      const slots = await readJson<UserProgramSession>(upsKey(sourceProgramId));
+      const distinctSessionIds = [...new Set(slots.map((s) => s.sessionId))];
+      const allSessions = await readJson<UserSession>(usKey());
+      const mine = allSessions.filter((s) => s.userId === userId).length;
+      if (mine + distinctSessionIds.length > SESSIONS_QUOTA) {
+        throw new Error(
+          `Il te reste ${Math.max(0, SESSIONS_QUOTA - mine)} séance(s) de libre, ce programme en a besoin de ${distinctSessionIds.length}.`,
+        );
+      }
+
+      const now = new Date().toISOString();
+      const idMap = new Map<string, string>();
+      const newSessions: UserSession[] = [];
+      for (const sid of distinctSessionIds) {
+        const src = allSessions.find((s) => s.id === sid);
+        if (!src) continue;
+        const newId = randomId();
+        idMap.set(sid, newId);
+        newSessions.push({ ...src, id: newId, userId, visibility: 'private', createdAt: now, updatedAt: now });
+        const exercises = await readJson<UserSessionExercise>(usExKey(sid));
+        await writeJson(usExKey(newId), exercises.map((e) => ({ ...e, id: randomId(), sessionId: newId })));
+      }
+      await writeJson(usKey(), [...newSessions, ...allSessions]);
+
+      const newProgram: UserProgram = {
+        ...source,
+        id: randomId(),
+        userId,
+        visibility: 'private',
+        createdAt: now,
+        updatedAt: now,
+      };
+      await writeJson(upKey(), [newProgram, ...programs]);
+
+      const newSlots: UserProgramSession[] = slots
+        .filter((s) => idMap.has(s.sessionId))
+        .map((s) => ({
+          id: randomId(),
+          programId: newProgram.id,
+          sessionId: idMap.get(s.sessionId)!,
+          weekNumber: s.weekNumber,
+          dayIndex: s.dayIndex,
+          order: s.order,
+        }));
+      await writeJson(upsKey(newProgram.id), newSlots);
+
+      return newProgram;
+    },
     async persistImport(userId, payload) {
       const existingA = await readJson<Activity>(actKey(userId));
       // Dedup by (start time + source): re-importing an export adds nothing.
@@ -1125,6 +1440,155 @@ function createSupabaseRepository(
     },
     async enrollProgram(userId, programId) {
       await enrollInProgram(client, userId, programId);
+    },
+    async listUserSessions(userId) {
+      return (await listUserSessionsDb(client, userId)).map(rowToUserSession);
+    },
+    async listCommunitySessions(userId) {
+      return (await listCommunitySessionsDb(client, userId)).map(rowToUserSession);
+    },
+    async getSessionExercises(sessionId) {
+      return (await listSessionExercisesDb(client, sessionId)).map(rowToUserSessionExercise);
+    },
+    async addUserSession(userId, input) {
+      const row = await insertUserSessionDb(
+        client,
+        { user_id: userId, name: input.name, notes: input.notes ?? null, visibility: input.visibility },
+        input.exercises.map((e, i) => ({
+          exercise_id: e.exerciseId,
+          order: e.order ?? i,
+          reps: e.reps ?? null,
+          weight_kg: e.weightKg ?? null,
+          duration_sec: e.durationSec ?? null,
+          rest_sec: e.restSec ?? null,
+        })),
+      );
+      return rowToUserSession(row);
+    },
+    async setSessionVisibility(_userId, sessionId, visibility) {
+      await updateUserSessionVisibilityDb(client, sessionId, visibility);
+    },
+    async deleteUserSession(_userId, sessionId) {
+      await deleteUserSessionDb(client, sessionId);
+    },
+    async copySession(userId, sourceSessionId) {
+      const source = await getUserSessionDb(client, sourceSessionId);
+      if (!source) throw new Error('Séance introuvable.');
+      const exercises = await listSessionExercisesDb(client, sourceSessionId);
+      const row = await insertUserSessionDb(
+        client,
+        { user_id: userId, name: source.name, notes: source.notes, visibility: 'private' },
+        exercises.map((e) => ({
+          exercise_id: e.exercise_id,
+          order: e.order,
+          reps: e.reps,
+          weight_kg: e.weight_kg,
+          duration_sec: e.duration_sec,
+          rest_sec: e.rest_sec,
+        })),
+      );
+      return rowToUserSession(row);
+    },
+    async listUserPrograms(userId) {
+      return (await listUserProgramsDb(client, userId)).map(rowToUserProgram);
+    },
+    async listCommunityPrograms(userId) {
+      return (await listCommunityProgramsDb(client, userId)).map(rowToUserProgram);
+    },
+    async getProgramSessions(programId) {
+      return (await listProgramSessionsDb(client, programId)).map(rowToUserProgramSession);
+    },
+    async addUserProgram(userId, input) {
+      const row = await insertUserProgramDb(client, {
+        user_id: userId,
+        title: input.title,
+        focus: input.focus,
+        level: input.level,
+        weeks: input.weeks,
+        description: input.description ?? null,
+        visibility: input.visibility,
+      });
+      return rowToUserProgram(row);
+    },
+    async setProgramVisibility(_userId, programId, visibility) {
+      await updateUserProgramVisibilityDb(client, programId, visibility);
+    },
+    async deleteUserProgram(_userId, programId) {
+      await deleteUserProgramDb(client, programId);
+    },
+    async assignProgramSession(_userId, programId, slot) {
+      const row = await insertProgramSessionDb(client, {
+        program_id: programId,
+        session_id: slot.sessionId,
+        week_number: slot.weekNumber,
+        day_index: slot.dayIndex,
+        order: slot.order ?? 0,
+      });
+      return rowToUserProgramSession(row);
+    },
+    async removeProgramSession(_userId, programSessionId) {
+      await deleteProgramSessionDb(client, programSessionId);
+    },
+    async copyProgram(userId, sourceProgramId) {
+      const source = await getUserProgramDb(client, sourceProgramId);
+      if (!source) throw new Error('Programme introuvable.');
+
+      const [myPrograms, mySessions, slots] = await Promise.all([
+        listUserProgramsDb(client, userId),
+        listUserSessionsDb(client, userId),
+        listProgramSessionsDb(client, sourceProgramId),
+      ]);
+      if (myPrograms.length >= 2) throw new Error('Limite de 2 programmes atteinte.');
+      const distinctSessionIds = [...new Set(slots.map((s) => s.session_id))];
+      if (mySessions.length + distinctSessionIds.length > 50) {
+        throw new Error(
+          `Il te reste ${Math.max(0, 50 - mySessions.length)} séance(s) de libre, ce programme en a besoin de ${distinctSessionIds.length}.`,
+        );
+      }
+
+      const idMap = new Map<string, string>();
+      for (const sid of distinctSessionIds) {
+        const src = await getUserSessionDb(client, sid);
+        if (!src) continue;
+        const exercises = await listSessionExercisesDb(client, sid);
+        const newSession = await insertUserSessionDb(
+          client,
+          { user_id: userId, name: src.name, notes: src.notes, visibility: 'private' },
+          exercises.map((e) => ({
+            exercise_id: e.exercise_id,
+            order: e.order,
+            reps: e.reps,
+            weight_kg: e.weight_kg,
+            duration_sec: e.duration_sec,
+            rest_sec: e.rest_sec,
+          })),
+        );
+        idMap.set(sid, newSession.id);
+      }
+
+      const newProgramRow = await insertUserProgramDb(client, {
+        user_id: userId,
+        title: source.title,
+        focus: source.focus,
+        level: source.level,
+        weeks: source.weeks,
+        description: source.description,
+        visibility: 'private',
+      });
+
+      for (const s of slots) {
+        const newSessionId = idMap.get(s.session_id);
+        if (!newSessionId) continue;
+        await insertProgramSessionDb(client, {
+          program_id: newProgramRow.id,
+          session_id: newSessionId,
+          week_number: s.week_number,
+          day_index: s.day_index,
+          order: s.order,
+        });
+      }
+
+      return rowToUserProgram(newProgramRow);
     },
     async persistImport(userId, payload) {
       await upsertActivities(
