@@ -39,19 +39,26 @@ pnpm typecheck && pnpm lint && pnpm test
 pnpm --filter @supotsu/mobile export:web   # bundling web OK = bundling mobile sain
 ```
 
-## Où on en est (au 12/08/2026)
+## Où on en est (au 13/08/2026)
 
 **Fait et poussé** — engines (muscles/récup, décision, sommeil, bien-être,
 progression, analytics, charge ACWR, qualité de données, surcharge progressive,
 recommandations, base de connaissances) ; écrans Sport / Sommeil / Nutrition /
 Objectifs / Profil / Réglages / Analytics / Comprendre ; design system refondu
 (anneaux multi-segments, silhouette anatomique) ; migrations `0001` → `0014` ;
-OAuth Apple/Google ; déploiement web Vercel ; parseur **Health Auto Export**
-validé sur un vrai export.
+OAuth Apple/Google + **Sign in with Apple natif** ; **lecture HealthKit native**
+(HRV, FC repos, poids, composition, sommeil, séances) en plus de l'import fichier
+Health Auto Export ; déploiement web Vercel ; **pages légales** `/privacy` et
+`/terms` ; **fiche App Store** rédigée (`docs/app-store-listing.md`).
 
 **Objectif courant** : tester l'app sur **2 iPhone distincts** (2 utilisateurs
 test pour révéler les bugs) via **TestFlight**, avec un **vrai backend Supabase**
 branché — un test « comme sur l'App Store ».
+
+**En cours (pages légales)** : corrections mineures confiées au Claude local —
+droit applicable dans les CGU, nom de l'éditeur (responsable de traitement),
+nuance sauvegardes. Domaine acheté : **kaizensupotsu.uk** (à relier dans Vercel
++ héberger `/privacy` et `/terms` pour les URLs App Store Connect).
 
 ## Prochaines actions concrètes sur le Mac
 

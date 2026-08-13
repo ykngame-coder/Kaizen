@@ -59,7 +59,7 @@ OBJECTIFS & ANALYSES
 
 VOS DONNÉES, VOTRE PROPRIÉTÉ
 • Chaque donnée porte sa source, sa date et sa fiabilité — rien n'est écrasé, tout est historisé.
-• Importez vos données santé (Garmin, Apple Santé) via un fichier d'export, sans intermédiaire opaque.
+• Connexion à Apple Santé : sommeil, HRV, fréquence cardiaque de repos, poids et composition corporelle sont lus directement (avec votre autorisation), ou importés par fichier d'export pour vos autres appareils.
 • Conçue hors-ligne d'abord et en mode sombre : rapide, lisible, sans superflu.
 
 SUPOTSU ne cherche pas à vous impressionner avec des chiffres magiques. L'app vous montre pourquoi, vous laisse décider, et respecte vos données. Le progrès, en clair.
@@ -112,15 +112,19 @@ toutes les questions du questionnaire de contenu).
 
 ## App Privacy (questionnaire « nutrition label »)
 À remplir dans App Store Connect → *App Privacy*. Points à déclarer :
-- **Données de santé et forme** : saisies par l'utilisateur / importées
-  (activités, sommeil, HRV) — liées au compte, non utilisées pour le suivi
-  publicitaire.
+- **Données de santé et forme** : **lues via HealthKit** (sommeil, HRV,
+  fréquence cardiaque de repos, poids, masse grasse/maigre), saisies par
+  l'utilisateur (nutrition), ou importées par fichier (Garmin) — liées au
+  compte, **non utilisées pour le suivi publicitaire**.
 - **Coordonnées** : e-mail (compte).
 - **Identifiants** : identifiant utilisateur (compte Supabase).
 - Aucune donnée vendue, aucun tracking tiers.
-> ⚠️ Dès qu'on active la **lecture HealthKit native**, ajouter la justification
-> d'usage des données santé (chaînes `NSHealthShareUsageDescription`) et
-> refléter la lecture HealthKit ici.
+> ✅ **Lecture HealthKit native active** (`healthKitClient.ios.ts`, catégories :
+> HRV SDNN, FC de repos, poids, % masse grasse, masse maigre, analyse du
+> sommeil, séances). Vérifier que le build embarque bien les chaînes
+> `NSHealthShareUsageDescription` (justification d'usage) et l'entitlement
+> HealthKit — Apple les contrôle. Déclarer l'accès HealthKit dans *App
+> Privacy* de façon cohérente avec la politique de confidentialité.
 
 ## Rappels de cohérence
 - Tout ce qui est décrit ci-dessus doit exister dans le build soumis.
