@@ -82,6 +82,7 @@ Suivre, dans l'ordre :
 - `docs/backend.md` — Supabase + injection des clés dans EAS
 - `docs/testflight.md` — build & envoi TestFlight pas à pas
 - `docs/test-checklist.md` — checklist testeurs
+- `docs/app-store-listing.md` — textes de la fiche App Store (promo, description, mots-clés, confidentialité)
 - `docs/health-auto-export.md` — import santé (HRV, sommeil, activités)
 - `docs/apple-health-build.md` — lecture HealthKit native (à venir)
 - `docs/architecture.md` — vue d'ensemble, principes, mapping du cahier des charges
