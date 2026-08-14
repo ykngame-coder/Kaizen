@@ -4,8 +4,8 @@ import { useRouter } from 'expo-router';
 import { Button, Screen, Text } from '@supotsu/ui';
 import { spacing } from '@supotsu/design-system';
 
-const SUPPORT_EMAIL = 'support@kaizen-supotsu.app';
-const LAST_UPDATED = '6 août 2026';
+const SUPPORT_EMAIL = 'support@kaizensupotsu.uk';
+const LAST_UPDATED = '14 août 2026';
 
 function Section({ title, children }: { title: string; children: React.ReactNode }): React.JSX.Element {
   return (
@@ -100,6 +100,15 @@ export function TermsScreen(): React.JSX.Element {
         <P>
           Nous pouvons modifier ces conditions ; toute modification significative te sera
           signalée dans l'app avant son entrée en vigueur.
+        </P>
+      </Section>
+
+      <Section title="Droit applicable">
+        <P>
+          Les présentes conditions sont régies par le droit français. Tout litige relatif à leur
+          interprétation ou leur exécution relève des tribunaux compétents du lieu de résidence de
+          l'éditeur, sans préjudice des droits impératifs dont tu bénéficies en tant que
+          consommateur.
         </P>
       </Section>
 

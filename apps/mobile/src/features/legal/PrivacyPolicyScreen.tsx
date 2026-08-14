@@ -4,8 +4,8 @@ import { useRouter } from 'expo-router';
 import { Badge, Button, Screen, Text } from '@supotsu/ui';
 import { radii, spacing } from '@supotsu/design-system';
 
-const SUPPORT_EMAIL = 'support@kaizen-supotsu.app';
-const LAST_UPDATED = '6 août 2026';
+const SUPPORT_EMAIL = 'support@kaizensupotsu.uk';
+const LAST_UPDATED = '14 août 2026';
 
 function Section({ title, children }: { title: string; children: React.ReactNode }): React.JSX.Element {
   return (
@@ -104,8 +104,9 @@ export function PrivacyPolicyScreen(): React.JSX.Element {
 
       <Section title="1. Qui nous sommes">
         <P>
-          L'application Kaizen Supotsu ("l'app", "nous") est développée et éditée par un
-          développeur indépendant (particulier).
+          L'application Kaizen Supotsu ("l'app", "nous") est développée et éditée par Yannick
+          MPAKA, développeur indépendant (particulier), responsable du traitement des données au
+          sens du RGPD.
         </P>
         <P>
           Kaizen Supotsu centralise et explique tes données de santé, de forme et de sport —
@@ -129,13 +130,15 @@ export function PrivacyPolicyScreen(): React.JSX.Element {
         </P>
         <P>
           • Compte utilisateur : adresse e-mail, mot de passe (chiffré de manière sécurisée et
-          jamais lisible par nous).
+          jamais lisible par nous). Si tu choisis de te connecter avec Apple ou Google, nous
+          recevons uniquement ton adresse e-mail et ton nom depuis ces services — rien d'autre de
+          ton compte Apple ou Google.
         </P>
         <P>
           • Données de santé et de forme : lues depuis Apple Santé (HealthKit) — sommeil et ses
-          phases, fréquence cardiaque de repos, HRV, poids, masse grasse, masse musculaire —
-          uniquement si tu autorises explicitement chaque catégorie depuis l'app ou dans les
-          Réglages iOS.
+          phases, fréquence cardiaque de repos, HRV, poids, masse grasse, masse maigre, séances
+          d'entraînement — uniquement si tu autorises explicitement chaque catégorie depuis l'app
+          ou dans les Réglages iOS.
         </P>
         <P>
           • Activités et séances : données enregistrées dans l'app ou synchronisées depuis des
@@ -176,6 +179,11 @@ export function PrivacyPolicyScreen(): React.JSX.Element {
           Si tu connectes Garmin, Strava ou Apple Santé, l'app échange des données avec ces
           services selon les autorisations que tu leur accordes directement — nous ne recevons que
           ce que tu as explicitement autorisé.
+        </P>
+        <P>
+          Si tu te connectes via Apple ou Google, ces services agissent comme fournisseurs
+          d'identité : ils nous transmettent ton e-mail et ton nom pour créer ton compte, sans que
+          nous accédions à quoi que ce soit d'autre sur ces comptes.
         </P>
       </Section>
 
@@ -220,7 +228,7 @@ export function PrivacyPolicyScreen(): React.JSX.Element {
         <P>
           Tes données sont conservées tant que ton compte est actif. En cas de suppression de
           compte, toutes tes données sont effacées définitivement et immédiatement de nos serveurs
-          principaux.
+          principaux. Les copies de sauvegarde sont purgées sous 30 jours.
         </P>
       </Section>
 
