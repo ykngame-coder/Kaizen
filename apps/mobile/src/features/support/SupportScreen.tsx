@@ -8,7 +8,7 @@ import { useHealthMetrics } from '@/lib/data/queries';
 import { secureStorage } from '@/lib/secure-storage';
 import { addTicket, loadTickets, reopenTicket, type SupportTicket } from './tickets';
 
-const SUPPORT_EMAIL = 'support@kaizen-supotsu.app';
+const SUPPORT_EMAIL = 'support@kaizensupotsu.uk';
 const REPO_URL = 'https://github.com/ykngame-coder/Kaizen';
 const APP_VERSION = (Constants.expoConfig?.version as string | undefined) ?? '1.0.0';
 
