@@ -10,6 +10,17 @@ import type { EngineResult, Explanation } from './result';
 const DAY_MS = 86_400_000;
 const clamp = (n: number, min = 0, max = 100): number => Math.max(min, Math.min(max, n));
 
+/**
+ * Window for the personal HRV/RHR baselines below. 60 days rather than the
+ * training-load windows in scoring.ts (7d acute / 28d chronic, the standard
+ * ACWR ratio — not touched here): a baseline is "what's normal for you", and
+ * a longer window makes it both more stable (less swayed by a single rough
+ * week) and, now that HealthKit import brings in real history instead of
+ * only what's accumulated since the account was created, actually able to
+ * use it from day one instead of needing a month of live use first.
+ */
+const BASELINE_DAYS = 60;
+
 function within(m: HealthMetric, asOf: ISODateString, days: number): boolean {
   const age = (new Date(asOf).getTime() - new Date(m.measuredAt).getTime()) / DAY_MS;
   return age >= 0 && age < days;
@@ -69,14 +80,14 @@ export function computeRecoveryScore(
   }
 
   const hrv = latest(metrics, 'hrv', asOf);
-  const hrvBase = mean(metrics, 'hrv', asOf, 28);
+  const hrvBase = mean(metrics, 'hrv', asOf, BASELINE_DAYS);
   if (hrv !== undefined && hrvBase) {
     // At/above baseline ⇒ 100; 30% below ⇒ ~40.
     parts.push({ value: clamp(50 + ((hrv - hrvBase) / hrvBase) * 150), weight: 0.3 });
   }
 
   const rhr = latest(metrics, 'resting_heart_rate', asOf);
-  const rhrBase = mean(metrics, 'resting_heart_rate', asOf, 28);
+  const rhrBase = mean(metrics, 'resting_heart_rate', asOf, BASELINE_DAYS);
   if (rhr !== undefined && rhrBase) {
     // Below baseline is good; elevated RHR lowers recovery.
     parts.push({ value: clamp(100 - ((rhr - rhrBase) / rhrBase) * 300), weight: 0.2 });
