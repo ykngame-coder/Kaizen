@@ -15,10 +15,20 @@
       "distribution": "internal"
     },
     "production": {
-      "autoIncrement": true
+      "autoIncrement": true,
+      "ios": {
+        "credentialsSource": "local"
+      }
     }
   },
   "submit": {
-    "production": {}
+    "production": {
+      "ios": {
+        "ascAppId": "6801142789",
+        "ascApiKeyPath": "/Users/YK/Documents/APPCREATION/Secret/Kaizen/AuthKey_794H6FYYB8.p8",
+        "ascApiKeyId": "794H6FYYB8",
+        "ascApiKeyIssuerId": "17e3f9eb-8dc5-4a9a-9b4d-c00c9b4d9f77"
+      }
+    }
   }
 }

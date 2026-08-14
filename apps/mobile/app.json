@@ -2,6 +2,7 @@
   "expo": {
     "name": "Kaizen Supotsu",
     "slug": "supotsu",
+    "owner": "ykn-kaizen",
     "version": "1.0.0",
     "orientation": "portrait",
     "scheme": "supotsu",
@@ -15,14 +16,25 @@
     "newArchEnabled": true,
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.supotsu.app"
+      "bundleIdentifier": "com.supotsu.app",
+      "buildNumber": "4",
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false
+      }
     },
     "android": {
       "package": "com.supotsu.app",
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#000000"
-      }
+      },
+      "permissions": [
+        "android.permission.USE_BIOMETRIC",
+        "android.permission.USE_FINGERPRINT",
+        "android.permission.CAMERA",
+        "android.permission.RECORD_AUDIO",
+        "android.permission.MODIFY_AUDIO_SETTINGS"
+      ]
     },
     "web": {
       "bundler": "metro",
@@ -63,6 +75,12 @@
     ],
     "experiments": {
       "typedRoutes": true
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "b3d1cb6d-7869-4926-8688-776f80d44524"
+      }
     }
   }
 }
