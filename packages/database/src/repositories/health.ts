@@ -1,5 +1,6 @@
 import type { SupotsuClient } from '../client';
 import type { Database } from '../generated/database.types';
+import { fetchAllPages } from '../paginate';
 
 export type HealthMetricRow = Database['public']['Tables']['health_metrics']['Row'];
 export type HealthMetricInsertRow = Database['public']['Tables']['health_metrics']['Insert'];
@@ -23,11 +24,12 @@ export async function listHealthMetrics(
   client: SupotsuClient,
   userId: string,
 ): Promise<HealthMetricRow[]> {
-  const { data, error } = await client
-    .from('health_metrics')
-    .select('*')
-    .eq('user_id', userId)
-    .order('measured_at', { ascending: false });
-  if (error) throw error;
-  return data ?? [];
+  return fetchAllPages((from, to) =>
+    client
+      .from('health_metrics')
+      .select('*')
+      .eq('user_id', userId)
+      .order('measured_at', { ascending: false })
+      .range(from, to),
+  );
 }

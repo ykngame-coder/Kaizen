@@ -1,5 +1,6 @@
 import type { SupotsuClient } from '../client';
 import type { Database } from '../generated/database.types';
+import { fetchAllPages } from '../paginate';
 
 export type SleepSessionRow = Database['public']['Tables']['sleep_sessions']['Row'];
 export type SleepSessionInsertRow = Database['public']['Tables']['sleep_sessions']['Insert'];
@@ -21,11 +22,12 @@ export async function listSleepSessions(
   client: SupotsuClient,
   userId: string,
 ): Promise<SleepSessionRow[]> {
-  const { data, error } = await client
-    .from('sleep_sessions')
-    .select('*')
-    .eq('user_id', userId)
-    .order('started_at', { ascending: false });
-  if (error) throw error;
-  return data ?? [];
+  return fetchAllPages((from, to) =>
+    client
+      .from('sleep_sessions')
+      .select('*')
+      .eq('user_id', userId)
+      .order('started_at', { ascending: false })
+      .range(from, to),
+  );
 }

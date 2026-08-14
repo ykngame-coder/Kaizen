@@ -1,5 +1,6 @@
 import type { SupotsuClient } from '../client';
 import type { Database } from '../generated/database.types';
+import { fetchAllPages } from '../paginate';
 
 export type ActivityRow = Database['public']['Tables']['activities']['Row'];
 export type ActivityInsertRow = Database['public']['Tables']['activities']['Insert'];
@@ -46,11 +47,12 @@ export async function listActivities(
   client: SupotsuClient,
   userId: string,
 ): Promise<ActivityRow[]> {
-  const { data, error } = await client
-    .from('activities')
-    .select('*')
-    .eq('user_id', userId)
-    .order('started_at', { ascending: false });
-  if (error) throw error;
-  return data ?? [];
+  return fetchAllPages((from, to) =>
+    client
+      .from('activities')
+      .select('*')
+      .eq('user_id', userId)
+      .order('started_at', { ascending: false })
+      .range(from, to),
+  );
 }
