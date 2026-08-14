@@ -1,6 +1,6 @@
 import '../global.css';
 import React, { useEffect } from 'react';
-import { ActivityIndicator, View } from 'react-native';
+import { ActivityIndicator, Platform, View } from 'react-native';
 import { Slot, useRouter, useSegments } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
@@ -37,9 +37,13 @@ function RouteGuard({ children }: { children: React.ReactNode }): React.JSX.Elem
     // also the app's public web URLs (App Store Connect requires a working
     // Privacy Policy URL, reachable without an account).
     const inLegal = group === '(legal)';
+    // Root ('/') on web is the marketing landing page for signed-out
+    // visitors (kaizensupotsu.uk) — the native app has no use for it and
+    // keeps going straight to sign-in.
+    const atWebRoot = Platform.OS === 'web' && group === undefined;
 
     if (authStatus === 'unauthenticated') {
-      if (!inAuth && !inLegal) router.replace('/(auth)/sign-in');
+      if (!inAuth && !inLegal && !atWebRoot) router.replace('/(auth)/sign-in');
       return;
     }
     // authenticated
