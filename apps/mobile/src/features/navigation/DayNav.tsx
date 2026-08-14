@@ -3,6 +3,7 @@ import { Pressable, View } from 'react-native';
 import { Text, useTheme } from '@supotsu/ui';
 import { radii, spacing } from '@supotsu/design-system';
 import type { ISODateString } from '@supotsu/core';
+import { DatePickerModal } from './DatePickerModal';
 
 const DAY_MS = 86_400_000;
 
@@ -47,6 +48,7 @@ export interface DayNavProps {
  */
 export function DayNav({ value, onChange, maxDaysFuture = 7 }: DayNavProps): React.JSX.Element {
   const { colors } = useTheme();
+  const [pickerOpen, setPickerOpen] = useState(false);
   const now = new Date();
   const todayKey = dayKey(now.toISOString());
   const isToday = dayKey(value) === todayKey;
@@ -75,13 +77,14 @@ export function DayNav({ value, onChange, maxDaysFuture = 7 }: DayNavProps): Rea
       </Pressable>
 
       <Pressable
-        onPress={() => onChange(endOfDayIso(now))}
-        disabled={isToday}
+        onPress={() => setPickerOpen(true)}
         style={{ flexDirection: 'row', alignItems: 'center', gap: spacing[2] }}
       >
         <Text variant="subtitle">{labelFor(value, todayKey)}</Text>
         {!isToday ? (
-          <View
+          <Pressable
+            onPress={() => onChange(endOfDayIso(now))}
+            hitSlop={6}
             style={{
               paddingHorizontal: 8,
               paddingVertical: 2,
@@ -94,7 +97,7 @@ export function DayNav({ value, onChange, maxDaysFuture = 7 }: DayNavProps): Rea
             <Text variant="caption" color="primary">
               Aujourd'hui
             </Text>
-          </View>
+          </Pressable>
         ) : null}
       </Pressable>
 
@@ -106,6 +109,14 @@ export function DayNav({ value, onChange, maxDaysFuture = 7 }: DayNavProps): Rea
       >
         <Text variant="heading">›</Text>
       </Pressable>
+
+      <DatePickerModal
+        visible={pickerOpen}
+        value={value}
+        onSelect={onChange}
+        onClose={() => setPickerOpen(false)}
+        maxDaysFuture={maxDaysFuture}
+      />
     </View>
   );
 }
