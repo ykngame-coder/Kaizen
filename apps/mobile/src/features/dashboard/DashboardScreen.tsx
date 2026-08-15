@@ -22,6 +22,8 @@ import { useActivities, useHabitLogs, useHabits, useHealthMetrics, useNutritionE
 import { useAuth } from '@/features/auth/AuthProvider';
 import { MuscleBody } from '@/features/muscles/MuscleBody';
 import { getCloudAvatarUrl, loadAvatarUri } from '@/lib/profileAvatar';
+import { usePreferences } from '@/lib/preferences';
+import { resolveDashboardCardOrder } from './dashboardCards';
 
 const DAY_MS = 86_400_000;
 
@@ -119,6 +121,8 @@ export function DashboardScreen(): React.JSX.Element {
   const router = useRouter();
   const { colors } = useTheme();
   const { user, mode } = useAuth();
+  const { preferences } = usePreferences();
+  const cardOrder = useMemo(() => resolveDashboardCardOrder(preferences.dashboardCards), [preferences.dashboardCards]);
   const { data: activities = [] } = useActivities();
   const { data: health = [] } = useHealthMetrics();
   const { data: nutrition = [] } = useNutritionEntries();
@@ -227,6 +231,165 @@ export function DashboardScreen(): React.JSX.Element {
     { done: !!lastNight && lastNight.hours >= 7.75, label: lastNight ? `Sommeil ${fmtSleep(lastNight.hours)} (cible 7 h 45)` : 'Enregistrer ta nuit' },
   ];
 
+  // One node per customizable card (see dashboardCards.ts) — order/visibility
+  // applied where they're rendered, below.
+  const cardNodes: Record<string, React.ReactNode> = {
+    'etat-du-jour': (
+      <Card>
+        <Text variant="heading">État du jour</Text>
+        <View style={{ flexDirection: 'row', gap: spacing[5], alignItems: 'center', marginTop: spacing[3] }}>
+          <ProgressRing value={recovery?.value ?? 0} size={104} thickness={10} gradient centerLabel={recovery ? `${recovery.value}` : '—'} caption="Recovery" />
+          <View style={{ flex: 1, gap: spacing[3] }}>
+            <StateRow label="Énergie" value={energie?.t ?? '—'} color={energie?.c} />
+            <StateRow label="Charge" value={chargeState?.t ?? 'À calibrer'} color={chargeState?.c} />
+            <StateRow label="Fatigue" value={fatigue?.t ?? '—'} color={fatigue?.c} />
+          </View>
+        </View>
+        <View style={{ marginTop: spacing[4], paddingTop: spacing[3], borderTopWidth: 1, borderTopColor: colors.border }}>
+          <Text variant="caption" color="textMuted" style={{ lineHeight: 20 }}>{recovery ? BAND_INFO[recovery.band]?.advice : 'Aucune donnée de récupération pour aujourd’hui.'}</Text>
+        </View>
+      </Card>
+    ),
+    kpis: (
+      <View style={{ gap: spacing[3] }}>
+        <View style={{ flexDirection: 'row', gap: spacing[3] }}>
+          <KpiTile icon="💤" value={lastNight ? fmtSleep(lastNight.hours) : '—'} delta={sleepDelta != null ? `${sleepDelta >= 0 ? '▲ +' : '▼ '}${Math.abs(sleepDelta)} min` : undefined} deltaTone={sleepDelta != null && sleepDelta >= 0 ? 'up' : 'down'} label="Sommeil" />
+          <KpiTile icon="📈" value={hrv != null ? `${Math.round(hrv)} ms` : '—'} label="HRV" />
+          <KpiTile icon="❤️" value={rhr != null ? `${Math.round(rhr)}` : '—'} label="FC repos" />
+        </View>
+        <View style={{ flexDirection: 'row', gap: spacing[3] }}>
+          <KpiTile icon="⚖" value={weight != null ? weight.toFixed(1) : '—'} delta={weightDelta != null ? `${weightDelta <= 0 ? '▼ ' : '▲ +'}${Math.abs(weightDelta).toFixed(1)}` : undefined} deltaTone={weightDelta != null && weightDelta <= 0 ? 'up' : 'down'} label="Poids (kg)" />
+          <KpiTile icon="📉" value={nutrition.length > 0 ? `${deficit}` : '—'} label="Déficit kcal" />
+          <KpiTile icon="💧" value={`${(totals.hydrationMl / 1000).toFixed(1)}`} label={`/ ${(targets.hydrationMl / 1000).toFixed(1)} L`} />
+        </View>
+      </View>
+    ),
+    priorites: (
+      <Card>
+        <SectionTitle>Priorités du jour</SectionTitle>
+        {priorities.map((p, i) => (<CheckRow key={i} done={p.done} label={p.label} last={i === priorities.length - 1} />))}
+      </Card>
+    ),
+    'prochaine-seance': (
+      <Card>
+        <SectionTitle right={<Pressable onPress={() => router.push('/sport/planning')}><Text variant="caption" color="primary">Planning ›</Text></Pressable>}>Prochaine séance</SectionTitle>
+        <View style={{ flexDirection: 'row', gap: spacing[4], alignItems: 'center' }}>
+          <View style={{ width: 64, height: 64, borderRadius: radii.lg, backgroundColor: colors.surfaceElevated, alignItems: 'center', justifyContent: 'center' }}><Text style={{ fontSize: 28 }}>🏋️</Text></View>
+          <View style={{ flex: 1 }}>
+            {nextPlanned ? (
+              <>
+                <Text variant="body" style={{ fontWeight: '700' }}>{nextPlanned.name}</Text>
+                <Text variant="caption" color="textSubtle" style={{ marginTop: 2 }}>{planLabel(nextPlanned.plannedFor)}{nextPlanned.notes ? ` · ${nextPlanned.notes}` : ''}</Text>
+              </>
+            ) : (
+              <>
+                <Text variant="body" style={{ fontWeight: '700' }}>Planifie ta prochaine séance</Text>
+                <Text variant="caption" color="textSubtle" style={{ marginTop: 2 }}>{chargeState ? `Charge ${chargeState.t.toLowerCase()} · adapte l'intensité` : 'Choisis un focus selon ta récupération'}</Text>
+              </>
+            )}
+          </View>
+        </View>
+        <Pressable onPress={() => router.push(nextPlanned ? '/sport/planning' : '/sport/workout/new')} style={({ pressed }) => ({ marginTop: spacing[3], height: 46, borderRadius: radii.xl, backgroundColor: colors.surfaceElevated, borderWidth: 1, borderColor: colors.border, alignItems: 'center', justifyContent: 'center', transform: [{ scale: pressed ? 0.98 : 1 }] })}>
+          <Text variant="body" style={{ fontWeight: '600' }}>{nextPlanned ? 'Voir le planning ›' : 'Créer une séance ›'}</Text>
+        </Pressable>
+      </Card>
+    ),
+    'corps-recuperation': (
+      <Card>
+        <SectionTitle right={<Pressable onPress={() => router.push('/sport/muscles')}><Text variant="caption" color="primary">Voir ›</Text></Pressable>}>Corps & récupération</SectionTitle>
+        <View style={{ flexDirection: 'row', gap: spacing[4] }}>
+          <View style={{ alignItems: 'center' }}><MuscleBody colorFor={() => 'transparent'} width={132} /></View>
+          <View style={{ flex: 1, justifyContent: 'center' }}>
+            <BodyStat label="Poids" value={weight != null ? `${weight.toFixed(1)} kg` : '—'} />
+            <BodyStat label="Masse grasse" value={bodyFat != null ? `${bodyFat.toFixed(1)} %` : '—'} />
+            <BodyStat label="Masse musculaire" value={muscleMass != null ? `${muscleMass.toFixed(1)} kg` : '—'} />
+            <BodyStat label="Variation 7 j" value={weightDelta != null ? `${weightDelta > 0 ? '+' : ''}${weightDelta.toFixed(1)} kg` : '—'} color={weightDelta != null && weightDelta <= 0 ? colors.accentData : undefined} last />
+          </View>
+        </View>
+      </Card>
+    ),
+    nutrition: (
+      <Card>
+        <SectionTitle right={<Pressable onPress={() => router.push('/nutrition')}><Text variant="caption" color="primary">Ouvrir ›</Text></Pressable>}>Nutrition</SectionTitle>
+        <View style={{ flexDirection: 'row', gap: spacing[5], alignItems: 'center' }}>
+          <ProgressRing value={kcalPct} size={96} thickness={9} gradient centerLabel={nutrition.length > 0 ? `${Math.round(totals.kcal)}` : '—'} caption={`/ ${Math.round(targets.kcal)}`} />
+          <View style={{ flex: 1, gap: spacing[2] }}>
+            <StateRow label="Déficit" value={nutrition.length > 0 ? `${deficit} kcal` : '—'} color={deficit >= 0 ? colors.accentData : colors.error} />
+            <StateRow label="Protéines" value={`${Math.round(totals.proteinG)} / ${Math.round(targets.proteinG)} g`} />
+            <StateRow label="Hydratation" value={`${(totals.hydrationMl / 1000).toFixed(1)} / ${(targets.hydrationMl / 1000).toFixed(1)} L`} />
+          </View>
+        </View>
+      </Card>
+    ),
+    habitudes: (
+      <Card>
+        <SectionTitle right={<Pressable onPress={() => router.push('/profile/habits')}><Text variant="caption" color="primary">Voir ›</Text></Pressable>}>Habitudes</SectionTitle>
+        <View style={{ flexDirection: 'row', justifyContent: 'space-around', marginBottom: spacing[4] }}>
+          <MiniStat value={`${activeHabits.length - pendingHabits.length}/${activeHabits.length || 0}`} label="Aujourd'hui" />
+          <MiniStat value={`${streak} j`} label="Série active" color={colors.accentData} />
+          <MiniStat value={`${weekDays.filter((d) => d.done).length}/7`} label="Cette semaine" />
+        </View>
+        <View style={{ flexDirection: 'row', gap: 6 }}>
+          {weekDays.map((d, i) => (
+            <View key={i} style={{ flex: 1, alignItems: 'center', gap: 4 }}>
+              <Text variant="caption" color="textSubtle">{d.label}</Text>
+              <View style={{ height: 30, width: '100%', borderRadius: 9, alignItems: 'center', justifyContent: 'center', backgroundColor: d.done ? 'rgba(43,227,139,0.18)' : colors.surfaceElevated, borderWidth: d.today ? 1.5 : 0, borderColor: colors.primary }}>
+                {d.done ? <Text style={{ color: colors.accentData, fontSize: 12 }}>✓</Text> : null}
+              </View>
+            </View>
+          ))}
+        </View>
+      </Card>
+    ),
+    tendances: (
+      <View>
+        <SectionTitle right={<Text variant="caption" color="textSubtle">30 jours</Text>}>Tendances</SectionTitle>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: spacing[3] }}>
+          <TrendCard label="Poids" value={weightSeries.length >= 2 ? `${(weightSeries.at(-1)! - weightSeries[0]!).toFixed(1)}` : '—'} up={weightSeries.length >= 2 ? weightSeries.at(-1)! <= weightSeries[0]! : true} series={weightSeries} color="#ff7a8a" />
+          <TrendCard label="Recovery" value={recoverySeries.length >= 2 ? `${recoverySeries.at(-1)! - recoverySeries[0]! >= 0 ? '+' : ''}${recoverySeries.at(-1)! - recoverySeries[0]!}` : '—'} up={recoverySeries.length >= 2 ? recoverySeries.at(-1)! >= recoverySeries[0]! : true} series={recoverySeries} color={colors.accentData} />
+          <TrendCard label="HRV" value={hrvSeries.length >= 2 ? `${Math.round(hrvSeries.at(-1)! - hrvSeries[0]!)}` : '—'} up={hrvSeries.length >= 2 ? hrvSeries.at(-1)! >= hrvSeries[0]! : true} series={hrvSeries} color={colors.accentEndurance} />
+        </ScrollView>
+      </View>
+    ),
+    analyse: (
+      <View style={{ borderRadius: radii.xl, borderWidth: 1, borderColor: 'rgba(45,127,249,0.25)', backgroundColor: 'rgba(45,127,249,0.08)', padding: spacing[5] }}>
+        <View style={{ flexDirection: 'row', gap: spacing[2], alignItems: 'center' }}><Text style={{ fontSize: 20 }}>🧠</Text><Text variant="heading">Analyse du jour</Text></View>
+        <Text variant="body" color="textMuted" style={{ marginTop: spacing[2], lineHeight: 22 }}>
+          {recovery ? `${BAND_INFO[recovery.band]?.advice} ${hrvSeries.length >= 2 && hrvSeries.at(-1)! >= hrvSeries[0]! ? 'Ta HRV progresse — bon signe de récupération.' : ''}` : 'Ajoute des données (sommeil, HRV, activités) pour une analyse personnalisée.'}
+        </Text>
+      </View>
+    ),
+    badges: badges.length > 0 ? (
+      <View>
+        <SectionTitle right={<Pressable onPress={() => router.push('/profile/progression')}><Text variant="caption" color="primary">Tout voir ›</Text></Pressable>}>Badges récents</SectionTitle>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: spacing[3] }}>
+          {badges.map((b) => {
+            const def = badgeDefinition(b.id);
+            return (
+              <View key={b.id} style={{ width: 92, alignItems: 'center' }}>
+                <View style={{ width: 60, height: 60, borderRadius: 30, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.surfaceElevated, borderWidth: 1, borderColor: colors.border }}><Text style={{ fontSize: 24 }}>🏅</Text></View>
+                <Text variant="caption" color="textMuted" style={{ marginTop: 6, textAlign: 'center' }}>{def?.label ?? b.id}</Text>
+              </View>
+            );
+          })}
+        </ScrollView>
+      </View>
+    ) : null,
+    'acces-rapides': (
+      <Card>
+        <SectionTitle>Accès rapides</SectionTitle>
+        <View style={{ flexDirection: 'row', flexWrap: 'wrap' }}>
+          {QUICK_LINKS.map((l) => (
+            <Pressable key={l.label} onPress={() => router.push(l.path)} style={({ pressed }) => ({ width: '25%', alignItems: 'center', gap: 6, paddingVertical: spacing[2], opacity: pressed ? 0.6 : 1 })}>
+              <View style={{ width: 52, height: 52, borderRadius: radii.lg, backgroundColor: colors.surfaceElevated, borderWidth: 1, borderColor: colors.border, alignItems: 'center', justifyContent: 'center' }}><Text style={{ fontSize: 22 }}>{l.icon}</Text></View>
+              <Text variant="caption" color="textMuted" style={{ textAlign: 'center' }}>{l.label}</Text>
+            </Pressable>
+          ))}
+        </View>
+      </Card>
+    ),
+  };
+
   return (
     <View style={{ flex: 1 }}>
       <Screen scroll onRefresh={onRefresh} refreshing={refreshing}>
@@ -239,6 +402,7 @@ export function DashboardScreen(): React.JSX.Element {
           </View>
           <View style={{ flexDirection: 'row', gap: spacing[2] }}>
             <IconBtn icon="🔍" onPress={() => router.push('/search')} />
+            <IconBtn icon="🎛" onPress={() => router.push('/dashboard-customize')} />
             <IconBtn icon="🔔" onPress={() => router.push('/profile/notifications')} />
             <Pressable onPress={() => router.push('/profile')}>
               <View style={{ width: 38, height: 38, borderRadius: 19, overflow: 'hidden', alignItems: 'center', justifyContent: 'center' }}>
@@ -288,161 +452,10 @@ export function DashboardScreen(): React.JSX.Element {
           </Gradient>
         </View>
 
-        {/* État du jour */}
-        <Card>
-          <Text variant="heading">État du jour</Text>
-          <View style={{ flexDirection: 'row', gap: spacing[5], alignItems: 'center', marginTop: spacing[3] }}>
-            <ProgressRing value={recovery?.value ?? 0} size={104} thickness={10} gradient centerLabel={recovery ? `${recovery.value}` : '—'} caption="Recovery" />
-            <View style={{ flex: 1, gap: spacing[3] }}>
-              <StateRow label="Énergie" value={energie?.t ?? '—'} color={energie?.c} />
-              <StateRow label="Charge" value={chargeState?.t ?? 'À calibrer'} color={chargeState?.c} />
-              <StateRow label="Fatigue" value={fatigue?.t ?? '—'} color={fatigue?.c} />
-            </View>
-          </View>
-          <View style={{ marginTop: spacing[4], paddingTop: spacing[3], borderTopWidth: 1, borderTopColor: colors.border }}>
-            <Text variant="caption" color="textMuted" style={{ lineHeight: 20 }}>{recovery ? BAND_INFO[recovery.band]?.advice : 'Aucune donnée de récupération pour aujourd’hui.'}</Text>
-          </View>
-        </Card>
-
-        {/* KPI 3×2 */}
-        <View style={{ gap: spacing[3] }}>
-          <View style={{ flexDirection: 'row', gap: spacing[3] }}>
-            <KpiTile icon="💤" value={lastNight ? fmtSleep(lastNight.hours) : '—'} delta={sleepDelta != null ? `${sleepDelta >= 0 ? '▲ +' : '▼ '}${Math.abs(sleepDelta)} min` : undefined} deltaTone={sleepDelta != null && sleepDelta >= 0 ? 'up' : 'down'} label="Sommeil" />
-            <KpiTile icon="📈" value={hrv != null ? `${Math.round(hrv)} ms` : '—'} label="HRV" />
-            <KpiTile icon="❤️" value={rhr != null ? `${Math.round(rhr)}` : '—'} label="FC repos" />
-          </View>
-          <View style={{ flexDirection: 'row', gap: spacing[3] }}>
-            <KpiTile icon="⚖" value={weight != null ? weight.toFixed(1) : '—'} delta={weightDelta != null ? `${weightDelta <= 0 ? '▼ ' : '▲ +'}${Math.abs(weightDelta).toFixed(1)}` : undefined} deltaTone={weightDelta != null && weightDelta <= 0 ? 'up' : 'down'} label="Poids (kg)" />
-            <KpiTile icon="📉" value={nutrition.length > 0 ? `${deficit}` : '—'} label="Déficit kcal" />
-            <KpiTile icon="💧" value={`${(totals.hydrationMl / 1000).toFixed(1)}`} label={`/ ${(targets.hydrationMl / 1000).toFixed(1)} L`} />
-          </View>
-        </View>
-
-        {/* Priorités du jour */}
-        <Card>
-          <SectionTitle>Priorités du jour</SectionTitle>
-          {priorities.map((p, i) => (<CheckRow key={i} done={p.done} label={p.label} last={i === priorities.length - 1} />))}
-        </Card>
-
-        {/* Prochaine séance */}
-        <Card>
-          <SectionTitle right={<Pressable onPress={() => router.push('/sport/planning')}><Text variant="caption" color="primary">Planning ›</Text></Pressable>}>Prochaine séance</SectionTitle>
-          <View style={{ flexDirection: 'row', gap: spacing[4], alignItems: 'center' }}>
-            <View style={{ width: 64, height: 64, borderRadius: radii.lg, backgroundColor: colors.surfaceElevated, alignItems: 'center', justifyContent: 'center' }}><Text style={{ fontSize: 28 }}>🏋️</Text></View>
-            <View style={{ flex: 1 }}>
-              {nextPlanned ? (
-                <>
-                  <Text variant="body" style={{ fontWeight: '700' }}>{nextPlanned.name}</Text>
-                  <Text variant="caption" color="textSubtle" style={{ marginTop: 2 }}>{planLabel(nextPlanned.plannedFor)}{nextPlanned.notes ? ` · ${nextPlanned.notes}` : ''}</Text>
-                </>
-              ) : (
-                <>
-                  <Text variant="body" style={{ fontWeight: '700' }}>Planifie ta prochaine séance</Text>
-                  <Text variant="caption" color="textSubtle" style={{ marginTop: 2 }}>{chargeState ? `Charge ${chargeState.t.toLowerCase()} · adapte l'intensité` : 'Choisis un focus selon ta récupération'}</Text>
-                </>
-              )}
-            </View>
-          </View>
-          <Pressable onPress={() => router.push(nextPlanned ? '/sport/planning' : '/sport/workout/new')} style={({ pressed }) => ({ marginTop: spacing[3], height: 46, borderRadius: radii.xl, backgroundColor: colors.surfaceElevated, borderWidth: 1, borderColor: colors.border, alignItems: 'center', justifyContent: 'center', transform: [{ scale: pressed ? 0.98 : 1 }] })}>
-            <Text variant="body" style={{ fontWeight: '600' }}>{nextPlanned ? 'Voir le planning ›' : 'Créer une séance ›'}</Text>
-          </Pressable>
-        </Card>
-
-        {/* Corps & récupération */}
-        <Card>
-          <SectionTitle right={<Pressable onPress={() => router.push('/sport/muscles')}><Text variant="caption" color="primary">Voir ›</Text></Pressable>}>Corps & récupération</SectionTitle>
-          <View style={{ flexDirection: 'row', gap: spacing[4] }}>
-            <View style={{ alignItems: 'center' }}><MuscleBody colorFor={() => 'transparent'} width={132} /></View>
-            <View style={{ flex: 1, justifyContent: 'center' }}>
-              <BodyStat label="Poids" value={weight != null ? `${weight.toFixed(1)} kg` : '—'} />
-              <BodyStat label="Masse grasse" value={bodyFat != null ? `${bodyFat.toFixed(1)} %` : '—'} />
-              <BodyStat label="Masse musculaire" value={muscleMass != null ? `${muscleMass.toFixed(1)} kg` : '—'} />
-              <BodyStat label="Variation 7 j" value={weightDelta != null ? `${weightDelta > 0 ? '+' : ''}${weightDelta.toFixed(1)} kg` : '—'} color={weightDelta != null && weightDelta <= 0 ? colors.accentData : undefined} last />
-            </View>
-          </View>
-        </Card>
-
-        {/* Nutrition */}
-        <Card>
-          <SectionTitle right={<Pressable onPress={() => router.push('/nutrition')}><Text variant="caption" color="primary">Ouvrir ›</Text></Pressable>}>Nutrition</SectionTitle>
-          <View style={{ flexDirection: 'row', gap: spacing[5], alignItems: 'center' }}>
-            <ProgressRing value={kcalPct} size={96} thickness={9} gradient centerLabel={nutrition.length > 0 ? `${Math.round(totals.kcal)}` : '—'} caption={`/ ${Math.round(targets.kcal)}`} />
-            <View style={{ flex: 1, gap: spacing[2] }}>
-              <StateRow label="Déficit" value={nutrition.length > 0 ? `${deficit} kcal` : '—'} color={deficit >= 0 ? colors.accentData : colors.error} />
-              <StateRow label="Protéines" value={`${Math.round(totals.proteinG)} / ${Math.round(targets.proteinG)} g`} />
-              <StateRow label="Hydratation" value={`${(totals.hydrationMl / 1000).toFixed(1)} / ${(targets.hydrationMl / 1000).toFixed(1)} L`} />
-            </View>
-          </View>
-        </Card>
-
-        {/* Habitudes */}
-        <Card>
-          <SectionTitle right={<Pressable onPress={() => router.push('/profile/habits')}><Text variant="caption" color="primary">Voir ›</Text></Pressable>}>Habitudes</SectionTitle>
-          <View style={{ flexDirection: 'row', justifyContent: 'space-around', marginBottom: spacing[4] }}>
-            <MiniStat value={`${activeHabits.length - pendingHabits.length}/${activeHabits.length || 0}`} label="Aujourd'hui" />
-            <MiniStat value={`${streak} j`} label="Série active" color={colors.accentData} />
-            <MiniStat value={`${weekDays.filter((d) => d.done).length}/7`} label="Cette semaine" />
-          </View>
-          <View style={{ flexDirection: 'row', gap: 6 }}>
-            {weekDays.map((d, i) => (
-              <View key={i} style={{ flex: 1, alignItems: 'center', gap: 4 }}>
-                <Text variant="caption" color="textSubtle">{d.label}</Text>
-                <View style={{ height: 30, width: '100%', borderRadius: 9, alignItems: 'center', justifyContent: 'center', backgroundColor: d.done ? 'rgba(43,227,139,0.18)' : colors.surfaceElevated, borderWidth: d.today ? 1.5 : 0, borderColor: colors.primary }}>
-                  {d.done ? <Text style={{ color: colors.accentData, fontSize: 12 }}>✓</Text> : null}
-                </View>
-              </View>
-            ))}
-          </View>
-        </Card>
-
-        {/* Tendances */}
-        <View>
-          <SectionTitle right={<Text variant="caption" color="textSubtle">30 jours</Text>}>Tendances</SectionTitle>
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: spacing[3] }}>
-            <TrendCard label="Poids" value={weightSeries.length >= 2 ? `${(weightSeries.at(-1)! - weightSeries[0]!).toFixed(1)}` : '—'} up={weightSeries.length >= 2 ? weightSeries.at(-1)! <= weightSeries[0]! : true} series={weightSeries} color="#ff7a8a" />
-            <TrendCard label="Recovery" value={recoverySeries.length >= 2 ? `${recoverySeries.at(-1)! - recoverySeries[0]! >= 0 ? '+' : ''}${recoverySeries.at(-1)! - recoverySeries[0]!}` : '—'} up={recoverySeries.length >= 2 ? recoverySeries.at(-1)! >= recoverySeries[0]! : true} series={recoverySeries} color={colors.accentData} />
-            <TrendCard label="HRV" value={hrvSeries.length >= 2 ? `${Math.round(hrvSeries.at(-1)! - hrvSeries[0]!)}` : '—'} up={hrvSeries.length >= 2 ? hrvSeries.at(-1)! >= hrvSeries[0]! : true} series={hrvSeries} color={colors.accentEndurance} />
-          </ScrollView>
-        </View>
-
-        {/* Analyse du jour */}
-        <View style={{ borderRadius: radii.xl, borderWidth: 1, borderColor: 'rgba(45,127,249,0.25)', backgroundColor: 'rgba(45,127,249,0.08)', padding: spacing[5] }}>
-          <View style={{ flexDirection: 'row', gap: spacing[2], alignItems: 'center' }}><Text style={{ fontSize: 20 }}>🧠</Text><Text variant="heading">Analyse du jour</Text></View>
-          <Text variant="body" color="textMuted" style={{ marginTop: spacing[2], lineHeight: 22 }}>
-            {recovery ? `${BAND_INFO[recovery.band]?.advice} ${hrvSeries.length >= 2 && hrvSeries.at(-1)! >= hrvSeries[0]! ? 'Ta HRV progresse — bon signe de récupération.' : ''}` : 'Ajoute des données (sommeil, HRV, activités) pour une analyse personnalisée.'}
-          </Text>
-        </View>
-
-        {/* Badges récents */}
-        {badges.length > 0 ? (
-          <View>
-            <SectionTitle right={<Pressable onPress={() => router.push('/profile/progression')}><Text variant="caption" color="primary">Tout voir ›</Text></Pressable>}>Badges récents</SectionTitle>
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: spacing[3] }}>
-              {badges.map((b) => {
-                const def = badgeDefinition(b.id);
-                return (
-                  <View key={b.id} style={{ width: 92, alignItems: 'center' }}>
-                    <View style={{ width: 60, height: 60, borderRadius: 30, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.surfaceElevated, borderWidth: 1, borderColor: colors.border }}><Text style={{ fontSize: 24 }}>🏅</Text></View>
-                    <Text variant="caption" color="textMuted" style={{ marginTop: 6, textAlign: 'center' }}>{def?.label ?? b.id}</Text>
-                  </View>
-                );
-              })}
-            </ScrollView>
-          </View>
-        ) : null}
-
-        {/* Accès rapides */}
-        <Card>
-          <SectionTitle>Accès rapides</SectionTitle>
-          <View style={{ flexDirection: 'row', flexWrap: 'wrap' }}>
-            {QUICK_LINKS.map((l) => (
-              <Pressable key={l.label} onPress={() => router.push(l.path)} style={({ pressed }) => ({ width: '25%', alignItems: 'center', gap: 6, paddingVertical: spacing[2], opacity: pressed ? 0.6 : 1 })}>
-                <View style={{ width: 52, height: 52, borderRadius: radii.lg, backgroundColor: colors.surfaceElevated, borderWidth: 1, borderColor: colors.border, alignItems: 'center', justifyContent: 'center' }}><Text style={{ fontSize: 22 }}>{l.icon}</Text></View>
-                <Text variant="caption" color="textMuted" style={{ textAlign: 'center' }}>{l.label}</Text>
-              </Pressable>
-            ))}
-          </View>
-        </Card>
+        {/* Customizable cards — order/visibility from Réglages → Personnaliser le dashboard */}
+        {cardOrder
+          .filter((c) => c.visible)
+          .map((c) => <React.Fragment key={c.id}>{cardNodes[c.id]}</React.Fragment>)}
       </Screen>
       <Fab icon="+" accessibilityLabel="Ajouter" onPress={() => router.push('/nutrition')} />
     </View>

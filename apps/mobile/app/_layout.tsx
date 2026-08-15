@@ -4,6 +4,7 @@ import { ActivityIndicator, Platform, View } from 'react-native';
 import { Slot, useRouter, useSegments } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { QueryClientProvider } from '@tanstack/react-query';
 import { ThemeProvider, useTheme } from '@supotsu/ui';
 import { queryClient } from '@/lib/query';
@@ -67,28 +68,30 @@ function RouteGuard({ children }: { children: React.ReactNode }): React.JSX.Elem
 /** App root: theming, data client, auth/onboarding state and route gating. */
 export default function RootLayout(): React.JSX.Element {
   return (
-    <SafeAreaProvider>
-      <QueryClientProvider client={queryClient}>
-        <ThemeProvider initialPreference="dark">
-          <PreferencesProvider>
-            <AuthProvider>
-              <OnboardingProvider>
-                <StatusBar style="auto" />
-                <RouteGuard>
-                  <BiometricGate>
-                    <View style={{ flex: 1 }}>
+    <GestureHandlerRootView style={{ flex: 1 }}>
+      <SafeAreaProvider>
+        <QueryClientProvider client={queryClient}>
+          <ThemeProvider initialPreference="dark">
+            <PreferencesProvider>
+              <AuthProvider>
+                <OnboardingProvider>
+                  <StatusBar style="auto" />
+                  <RouteGuard>
+                    <BiometricGate>
                       <View style={{ flex: 1 }}>
-                        <Slot />
+                        <View style={{ flex: 1 }}>
+                          <Slot />
+                        </View>
+                        <AppTabBar />
                       </View>
-                      <AppTabBar />
-                    </View>
-                  </BiometricGate>
-                </RouteGuard>
-              </OnboardingProvider>
-            </AuthProvider>
-          </PreferencesProvider>
-        </ThemeProvider>
-      </QueryClientProvider>
-    </SafeAreaProvider>
+                    </BiometricGate>
+                  </RouteGuard>
+                </OnboardingProvider>
+              </AuthProvider>
+            </PreferencesProvider>
+          </ThemeProvider>
+        </QueryClientProvider>
+      </SafeAreaProvider>
+    </GestureHandlerRootView>
   );
 }

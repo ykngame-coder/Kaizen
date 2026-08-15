@@ -5,6 +5,12 @@ import { secureStorage } from '@/lib/secure-storage';
 export type UnitSystem = 'metric' | 'imperial';
 export type TimeFormat = '24h' | '12h';
 
+/** One customizable Dashboard card's visibility, in display order. */
+export interface DashboardCardPref {
+  id: string;
+  visible: boolean;
+}
+
 /** Device-level app preferences (Master Prompt P17 réglages, P15 confidentialité). */
 export interface Preferences {
   units: UnitSystem;
@@ -24,6 +30,12 @@ export interface Preferences {
   haptics: boolean;
   /** Require Face ID / Touch ID to open the app (native only). */
   biometricLock: boolean;
+  /**
+   * Dashboard card order + visibility. Undefined until the user customizes
+   * it — DashboardScreen falls back to its own default order/visibility, so
+   * this only needs writing when the user actually changes something.
+   */
+  dashboardCards?: DashboardCardPref[];
 }
 
 const DEFAULTS: Preferences = {
