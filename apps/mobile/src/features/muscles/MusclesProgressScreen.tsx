@@ -177,6 +177,13 @@ export function MusclesProgressScreen(): React.JSX.Element {
 
   const detail = selected ? { m: selected, idx: index.get(selected) ?? 30, st: stateOf(selected), s: stats.get(selected) } : null;
 
+  // Apple Santé only gives a generic "Musculation" session (type + durée),
+  // jamais le détail exercice par exercice — donc rien à en tirer par muscle.
+  // On le signale seulement si ça concerne vraiment l'utilisateur.
+  const hasUntrackedHealthKitStrength = activities.some(
+    (a) => a.type === 'strength' && a.source === 'apple_health',
+  );
+
   return (
     <Screen scroll>
       <Text variant="title">Progression musculaire</Text>
@@ -210,6 +217,13 @@ export function MusclesProgressScreen(): React.JSX.Element {
           ))}
         </View>
         <Text variant="caption" color="textSubtle" style={{ textAlign: 'center', marginTop: spacing[2] }}>Touche un muscle pour le détail.</Text>
+        {hasUntrackedHealthKitStrength ? (
+          <Text variant="caption" color="textSubtle" style={{ textAlign: 'center', marginTop: spacing[3], lineHeight: 17 }}>
+            💡 Apple Santé ne transmet pas le détail des exercices — tes séances de musculation importées
+            n'apparaissent pas ici. Enregistre-les via Sport → Bibliothèque d'exercices pour un suivi précis
+            par muscle.
+          </Text>
+        ) : null}
       </Card>
 
       {/* Muscle detail */}
