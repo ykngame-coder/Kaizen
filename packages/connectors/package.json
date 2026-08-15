@@ -14,7 +14,8 @@
     "test": "vitest run --passWithNoTests"
   },
   "dependencies": {
-    "@supotsu/core": "workspace:*"
+    "@supotsu/core": "workspace:*",
+    "fit-file-parser": "^4.1.0"
   },
   "devDependencies": {
     "typescript": "^5.7.2",

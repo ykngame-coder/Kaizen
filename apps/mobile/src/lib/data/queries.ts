@@ -18,6 +18,7 @@ import type {
   ImportedHealthMetric,
   ImportedRecord,
   ImportedSleepSession,
+  ImportedWorkout,
 } from '@supotsu/connectors';
 import { useAuth } from '@/features/auth/AuthProvider';
 import { createDataRepository, type NewWorkout, type PlannedInput } from './repository';
@@ -448,12 +449,16 @@ export function useImportHealth() {
       healthMetrics: ImportedHealthMetric[];
       records: ImportedRecord[];
       sleepSessions: ImportedSleepSession[];
+      workouts: ImportedWorkout[];
     }) => repo.persistImport(user!.id, payload),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['activities', user?.id] });
       qc.invalidateQueries({ queryKey: ['health', user?.id] });
       qc.invalidateQueries({ queryKey: ['records', user?.id] });
       qc.invalidateQueries({ queryKey: ['sleepSessions', user?.id] });
+      qc.invalidateQueries({ queryKey: ['workouts', user?.id] });
+      qc.invalidateQueries({ queryKey: ['muscleSessions', user?.id] });
+      qc.invalidateQueries({ queryKey: ['muscleWork', user?.id] });
     },
   });
 }

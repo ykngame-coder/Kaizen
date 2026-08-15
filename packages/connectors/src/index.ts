@@ -8,6 +8,7 @@ export * from './appleHealth';
 export * from './healthImport';
 export * from './healthAutoExport';
 export * from './garminExport';
+export * from './garminFit';
 export * from './openFoodFacts';
 export { CONNECTORS, getConnector } from './registry';
 export type { ConnectorInfo } from './registry';

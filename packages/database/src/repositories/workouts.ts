@@ -22,6 +22,33 @@ export async function insertWorkout(
   return data;
 }
 
+/**
+ * Insert an imported workout (e.g. Garmin FIT strength sets) and its sets,
+ * deduped on (user_id, external_id) — re-importing the same export is a
+ * no-op instead of doubling every set's volume. Returns null when the
+ * workout already exists (nothing inserted).
+ */
+export async function upsertImportedWorkout(
+  client: SupotsuClient,
+  input: WorkoutInsertRow & { external_id: string },
+  sets: Omit<WorkoutSetInsertRow, 'workout_id'>[],
+): Promise<WorkoutRow | null> {
+  const { data, error } = await client
+    .from('workouts')
+    .upsert(input, { onConflict: 'user_id,external_id', ignoreDuplicates: true })
+    .select('*');
+  if (error) throw error;
+  const row = data?.[0];
+  if (!row) return null;
+  if (sets.length > 0) {
+    const { error: setError } = await client
+      .from('workout_sets')
+      .insert(sets.map((s) => ({ ...s, workout_id: row.id })));
+    if (setError) throw setError;
+  }
+  return row;
+}
+
 /** The user's logged sets (exercise id + parent workout), for the muscle map. */
 export async function listWorkoutSetsForUser(
   client: SupotsuClient,

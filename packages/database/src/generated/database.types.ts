@@ -147,6 +147,7 @@ export interface Database {
           duration_sec: number | null;
           rpe: number | null;
           notes: string | null;
+          external_id: string | null;
         } & Timestamps;
         Insert: {
           user_id: string;
@@ -157,6 +158,7 @@ export interface Database {
           duration_sec?: number | null;
           rpe?: number | null;
           notes?: string | null;
+          external_id?: string | null;
         };
         Update: Partial<Database['public']['Tables']['workouts']['Insert']>;
         Relationships: [];

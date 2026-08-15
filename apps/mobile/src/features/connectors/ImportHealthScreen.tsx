@@ -5,7 +5,7 @@ import * as DocumentPicker from 'expo-document-picker';
 import { strFromU8, unzipSync } from 'fflate';
 import { Badge, Button, Card, Screen, Text } from '@supotsu/ui';
 import { spacing } from '@supotsu/design-system';
-import { parseImportFile } from '@supotsu/connectors';
+import { parseGarminFitWorkout, parseImportFile, type ImportedWorkout } from '@supotsu/connectors';
 import { useImportHealth } from '@/lib/data/queries';
 import { readFileBytes } from '@/lib/fileBytes';
 
@@ -45,11 +45,16 @@ export function ImportHealthScreen(): React.JSX.Element {
       setBusy(true);
 
       // Merge every selected file. A whole Garmin export .zip is unzipped in-app
-      // and each JSON inside is parsed; individual .json files also work.
+      // and each JSON inside is parsed; individual .json files also work. The
+      // same export also bundles the raw per-activity .fit files (nested one
+      // zip deeper, under DI-Connect-Uploaded-Files/) — those carry exercise
+      // sets (reps/weight/category) no JSON file in the export has, so they're
+      // decoded too and turned into structured workouts for the muscle map.
       const activities: Parameters<typeof importHealth.mutateAsync>[0]['activities'] = [];
       const healthMetrics: Parameters<typeof importHealth.mutateAsync>[0]['healthMetrics'] = [];
       const records: Parameters<typeof importHealth.mutateAsync>[0]['records'] = [];
       const sleepSessions: Parameters<typeof importHealth.mutateAsync>[0]['sleepSessions'] = [];
+      const workouts: ImportedWorkout[] = [];
       let failed = 0;
       const absorb = (text: string): void => {
         const parsed = parseImportFile(JSON.parse(text));
@@ -58,21 +63,51 @@ export function ImportHealthScreen(): React.JSX.Element {
         records.push(...parsed.records);
         sleepSessions.push(...parsed.sleepSessions);
       };
+      const absorbFit = async (bytes: Uint8Array, externalId: string): Promise<void> => {
+        const workout = await parseGarminFitWorkout(bytes, externalId);
+        if (workout) workouts.push({ ...workout, source: 'garmin' });
+      };
 
       for (const asset of res.assets) {
-        const isZip =
-          (asset.name ?? '').toLowerCase().endsWith('.zip') || asset.mimeType === 'application/zip';
+        const name = (asset.name ?? '').toLowerCase();
+        const isZip = name.endsWith('.zip') || asset.mimeType === 'application/zip';
+        const isFit = name.endsWith('.fit');
         try {
           if (isZip) {
             const files = unzipSync(await readFileBytes(asset.uri));
-            for (const [name, data] of Object.entries(files)) {
-              if (!name.toLowerCase().endsWith('.json')) continue;
-              try {
-                absorb(strFromU8(data));
-              } catch {
-                failed += 1;
+            for (const [entryName, data] of Object.entries(files)) {
+              const lower = entryName.toLowerCase();
+              if (lower.endsWith('.json')) {
+                try {
+                  absorb(strFromU8(data));
+                } catch {
+                  failed += 1;
+                }
+              } else if (lower.endsWith('.fit')) {
+                try {
+                  await absorbFit(data, `garmin-fit:${entryName}`);
+                } catch {
+                  failed += 1;
+                }
+              } else if (lower.endsWith('.zip')) {
+                // Garmin nests one more zip level for the raw per-activity .fit files.
+                try {
+                  const nested = unzipSync(data);
+                  for (const [innerName, innerData] of Object.entries(nested)) {
+                    if (!innerName.toLowerCase().endsWith('.fit')) continue;
+                    try {
+                      await absorbFit(innerData, `garmin-fit:${entryName}/${innerName}`);
+                    } catch {
+                      failed += 1;
+                    }
+                  }
+                } catch {
+                  failed += 1;
+                }
               }
             }
+          } else if (isFit) {
+            await absorbFit(await readFileBytes(asset.uri), `garmin-fit:${asset.name}`);
           } else {
             absorb(await readFileText(asset.uri));
           }
@@ -81,19 +116,20 @@ export function ImportHealthScreen(): React.JSX.Element {
         }
       }
 
-      if (activities.length + healthMetrics.length + records.length + sleepSessions.length === 0) {
+      if (activities.length + healthMetrics.length + records.length + sleepSessions.length + workouts.length === 0) {
         setStatus({
           tone: 'error',
           text: failed > 0 ? `Aucune donnée reconnue (${failed} fichier(s) illisible(s)).` : 'Aucune donnée reconnue.',
         });
         return;
       }
-      await importHealth.mutateAsync({ activities, healthMetrics, records, sleepSessions });
+      await importHealth.mutateAsync({ activities, healthMetrics, records, sleepSessions, workouts });
+      const workoutsNote = workouts.length > 0 ? `, ${workouts.length} séance(s) musculation` : '';
       setStatus({
         tone: 'success',
         text:
           `Importé : ${activities.length} activité(s), ${healthMetrics.length} donnée(s) santé, ` +
-          `${sleepSessions.length} nuit(s), ${records.length} record(s)` +
+          `${sleepSessions.length} nuit(s), ${records.length} record(s)${workoutsNote}` +
           (failed > 0 ? ` (${failed} fichier(s) ignoré(s)).` : '.'),
       });
     } catch (e) {
@@ -120,7 +156,8 @@ export function ImportHealthScreen(): React.JSX.Element {
           Trois formats reconnus automatiquement : l'export de l'app{' '}
           <Text variant="body">Health Auto Export</Text> (Apple Santé → sommeil avec phases,
           poids, FC repos, hydratation, activités…), l'archive <Text variant="body">.zip</Text>{' '}
-          d'un export Garmin (dézippée dans l'app), ou des .json Kaizen. Voir
+          d'un export Garmin (dézippée dans l'app, y compris le détail poids/répétitions de tes
+          séances de musculation pour la carte musculaire), ou des .json Kaizen. Voir
           docs/import-format.md.
         </Text>
         <View style={{ alignItems: 'flex-start', marginTop: spacing[2] }}>

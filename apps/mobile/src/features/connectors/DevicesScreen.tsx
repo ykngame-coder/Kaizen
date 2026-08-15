@@ -353,7 +353,7 @@ function HealthKitCard(): React.JSX.Element {
       if (activities.length + healthMetrics.length + sleepSessions.length === 0) {
         setNote('Aucune nouvelle donnée (autorise l’accès aux catégories dans Réglages → Santé).');
       } else {
-        await importHealth.mutateAsync({ activities, healthMetrics, records: [], sleepSessions });
+        await importHealth.mutateAsync({ activities, healthMetrics, records: [], sleepSessions, workouts: [] });
         setNote(`Importé : ${activities.length} activité(s), ${healthMetrics.length} donnée(s) santé.`);
       }
     } catch (e) {

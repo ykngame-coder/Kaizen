@@ -63,6 +63,27 @@ export interface ImportedSleepSession {
   segments?: SleepSegment[];
 }
 
+/** A normalized set from a structured strength workout (Garmin FIT import). */
+export interface ImportedWorkoutSet {
+  exerciseId: string;
+  reps?: number;
+  weightKg?: number;
+}
+
+/**
+ * Normalized structured strength workout — reps/weight per exercise, not just
+ * a session summary (see garminFit.ts). Distinct from ImportedActivity: this
+ * feeds workouts/workout_sets (and therefore the muscle-recovery silhouette),
+ * not the activities table.
+ */
+export interface ImportedWorkout {
+  /** Stable across re-imports of the same export, for dedup. */
+  externalId: string;
+  startedAt: ISODateString;
+  source: DataSource;
+  sets: ImportedWorkoutSet[];
+}
+
 /** Normalized personal record / benchmark. */
 export interface ImportedRecord {
   externalId?: string;

@@ -38,6 +38,7 @@ import type {
   ImportedHealthMetric,
   ImportedRecord,
   ImportedSleepSession,
+  ImportedWorkout,
 } from '@supotsu/connectors';
 import type { MuscleSession } from '@supotsu/engines';
 import { EXERCISE_LIBRARY } from '@supotsu/shared';
@@ -46,6 +47,7 @@ import {
   upsertActivities,
   listActivities as listActivitiesDb,
   insertWorkout,
+  upsertImportedWorkout,
   insertPlannedWorkout,
   listPlannedWorkouts as listPlannedWorkoutsDb,
   updateWorkoutStatus as updateWorkoutStatusDb,
@@ -135,6 +137,7 @@ export interface ImportPayload {
   healthMetrics: ImportedHealthMetric[];
   records: ImportedRecord[];
   sleepSessions: ImportedSleepSession[];
+  workouts: ImportedWorkout[];
 }
 
 /**
@@ -220,7 +223,7 @@ export interface DataRepository {
   persistImport(
     userId: string,
     payload: ImportPayload,
-  ): Promise<{ activities: number; health: number; sleep: number }>;
+  ): Promise<{ activities: number; health: number; sleep: number; workouts: number }>;
 }
 
 // --- mapping helpers (DB row ⇄ core) --------------------------------------
@@ -1245,7 +1248,43 @@ function createDemoRepository(): DataRepository {
         });
       await writeJson(sleepKey(userId), [...newS, ...existingS]);
 
-      return { activities: newA.length, health: newH.length, sleep: newS.length };
+      const importedIdsKey = `supotsu.importedWorkoutIds.${userId}`;
+      const importedIds = new Set(await readJson<string>(importedIdsKey));
+      const newWorkouts = payload.workouts.filter((w) => !importedIds.has(w.externalId));
+      if (newWorkouts.length > 0) {
+        const existingWk = await readJson<Workout>(wkKey(userId));
+        const existingSets = await readJson<LoggedSetRow & { date: string }>(setKey(userId));
+        const createdWk: Workout[] = [];
+        const createdSets: (LoggedSetRow & { date: string })[] = [];
+        for (const w of newWorkouts) {
+          const workout: Workout = {
+            id: randomId(),
+            userId,
+            name: 'Musculation (import Garmin)',
+            status: 'completed',
+            completedAt: w.startedAt,
+            createdAt: w.startedAt,
+            updatedAt: w.startedAt,
+          };
+          createdWk.push(workout);
+          w.sets.forEach((s, i) => {
+            createdSets.push({
+              workoutId: workout.id,
+              exerciseId: s.exerciseId,
+              order: i,
+              reps: s.reps ?? null,
+              weightKg: s.weightKg ?? null,
+              date: w.startedAt,
+            });
+          });
+          importedIds.add(w.externalId);
+        }
+        await writeJson(wkKey(userId), [...createdWk, ...existingWk]);
+        await writeJson(setKey(userId), [...createdSets, ...existingSets]);
+        await writeJson(importedIdsKey, [...importedIds]);
+      }
+
+      return { activities: newA.length, health: newH.length, sleep: newS.length, workouts: newWorkouts.length };
     },
   };
 }
@@ -1648,10 +1687,31 @@ function createSupabaseRepository(
           segments: (s.segments ?? null) as unknown as SleepSessionRow['segments'],
         })),
       );
+      let workoutsAdded = 0;
+      for (const w of payload.workouts) {
+        const created = await upsertImportedWorkout(
+          client,
+          {
+            user_id: userId,
+            external_id: w.externalId,
+            name: 'Musculation (import Garmin)',
+            status: 'completed',
+            completed_at: w.startedAt,
+          },
+          w.sets.map((s, i) => ({
+            exercise_id: s.exerciseId,
+            order: i,
+            reps: s.reps ?? null,
+            weight_kg: s.weightKg ?? null,
+          })),
+        );
+        if (created) workoutsAdded += 1;
+      }
       return {
         activities: payload.activities.length,
         health: payload.healthMetrics.length,
         sleep: payload.sleepSessions.length,
+        workouts: workoutsAdded,
       };
     },
     async addWorkout(userId, workout) {
