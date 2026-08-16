@@ -10,10 +10,17 @@ import type { EngineResult, Explanation } from './result';
 
 const clamp = (n: number, min = 0, max = 100): number => Math.max(min, Math.min(max, n));
 
-/** Whole-day bounds [start, end) for the calendar day of `asOf` (UTC). */
+/**
+ * Whole-day bounds [start, end) for the calendar day of `asOf`, in the
+ * device's local timezone — not UTC. Entries are logged from a phone at the
+ * user's actual location, so "today" must mean their local calendar day: a
+ * UTC-based cutoff misfiles anything logged in the first few hours after
+ * local midnight into the previous day for any positive-UTC-offset timezone
+ * (e.g. Europe), silently dropping it from "today"'s totals.
+ */
 function dayBounds(asOf: ISODateString): [number, number] {
   const d = new Date(asOf);
-  const start = Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate());
+  const start = new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime();
   return [start, start + 86_400_000];
 }
 

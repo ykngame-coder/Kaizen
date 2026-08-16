@@ -3,6 +3,7 @@ import { Pressable, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Card, Fab, Screen, Text, useTheme } from '@supotsu/ui';
 import { radii, spacing } from '@supotsu/design-system';
+import { BackButton } from '@/features/navigation/BackButton';
 import { useHabitLogs, useHabits, useLogHabit } from '@/lib/data/queries';
 
 const DAY_MS = 86_400_000;
@@ -106,6 +107,7 @@ export function HabitsScreen(): React.JSX.Element {
   return (
     <View style={{ flex: 1 }}>
       <Screen scroll>
+        <BackButton />
         <Text variant="title">Habitudes & discipline</Text>
         <Text variant="caption" color="textSubtle">Discipline • Séries • Progression</Text>
 
@@ -162,7 +164,7 @@ export function HabitsScreen(): React.JSX.Element {
         <Card>
           <Text variant="heading">Score discipline</Text>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing[4], marginTop: spacing[2] }}>
-            <Text style={{ fontSize: 48, fontWeight: '800', letterSpacing: -1, color: colors.text }}>{disciplineScore}<Text variant="subtitle" color="textSubtle">/100</Text></Text>
+            <Text style={{ fontSize: 48, fontWeight: '800', letterSpacing: -1, color: colors.text, flexShrink: 0 }}>{disciplineScore}<Text variant="subtitle" color="textSubtle">/100</Text></Text>
             <Text variant="body" color="textMuted" style={{ flex: 1, lineHeight: 20 }}>
               {disciplineScore >= 80 ? 'Excellent — tu es très régulier.' : disciplineScore >= 50 ? 'Bonne régularité, continue sur ta lancée.' : 'Valide tes habitudes du jour pour faire grimper ton score.'}
             </Text>

@@ -104,6 +104,15 @@ function CheckRow({ done, label, last }: { done: boolean; label: string; last?: 
   );
 }
 
+/** Makes an entire card tappable toward its hub — not just the small "Voir ›" link in its header. */
+function TapCard({ onPress, children }: { onPress: () => void; children: React.ReactNode }): React.JSX.Element {
+  return (
+    <Pressable onPress={onPress} style={({ pressed }) => ({ opacity: pressed ? 0.8 : 1 })}>
+      {children}
+    </Pressable>
+  );
+}
+
 function TrendCard({ label, value, up, series, color }: { label: string; value: string; up: boolean; series: number[]; color: string }): React.JSX.Element {
   const { colors } = useTheme();
   return (
@@ -271,75 +280,83 @@ export function DashboardScreen(): React.JSX.Element {
       </Card>
     ),
     'prochaine-seance': (
-      <Card>
-        <SectionTitle right={<Pressable onPress={() => router.push('/sport/planning')}><Text variant="caption" color="primary">Planning ›</Text></Pressable>}>Prochaine séance</SectionTitle>
-        <View style={{ flexDirection: 'row', gap: spacing[4], alignItems: 'center' }}>
-          <View style={{ width: 64, height: 64, borderRadius: radii.lg, backgroundColor: colors.surfaceElevated, alignItems: 'center', justifyContent: 'center' }}><Text style={{ fontSize: 28 }}>🏋️</Text></View>
-          <View style={{ flex: 1 }}>
-            {nextPlanned ? (
-              <>
-                <Text variant="body" style={{ fontWeight: '700' }}>{nextPlanned.name}</Text>
-                <Text variant="caption" color="textSubtle" style={{ marginTop: 2 }}>{planLabel(nextPlanned.plannedFor)}{nextPlanned.notes ? ` · ${nextPlanned.notes}` : ''}</Text>
-              </>
-            ) : (
-              <>
-                <Text variant="body" style={{ fontWeight: '700' }}>Planifie ta prochaine séance</Text>
-                <Text variant="caption" color="textSubtle" style={{ marginTop: 2 }}>{chargeState ? `Charge ${chargeState.t.toLowerCase()} · adapte l'intensité` : 'Choisis un focus selon ta récupération'}</Text>
-              </>
-            )}
+      <TapCard onPress={() => router.push(nextPlanned ? '/sport/planning' : '/sport/workout/new')}>
+        <Card>
+          <SectionTitle right={<Pressable onPress={() => router.push('/sport/planning')}><Text variant="caption" color="primary">Planning ›</Text></Pressable>}>Prochaine séance</SectionTitle>
+          <View style={{ flexDirection: 'row', gap: spacing[4], alignItems: 'center' }}>
+            <View style={{ width: 64, height: 64, borderRadius: radii.lg, backgroundColor: colors.surfaceElevated, alignItems: 'center', justifyContent: 'center' }}><Text style={{ fontSize: 28 }}>🏋️</Text></View>
+            <View style={{ flex: 1 }}>
+              {nextPlanned ? (
+                <>
+                  <Text variant="body" style={{ fontWeight: '700' }}>{nextPlanned.name}</Text>
+                  <Text variant="caption" color="textSubtle" style={{ marginTop: 2 }}>{planLabel(nextPlanned.plannedFor)}{nextPlanned.notes ? ` · ${nextPlanned.notes}` : ''}</Text>
+                </>
+              ) : (
+                <>
+                  <Text variant="body" style={{ fontWeight: '700' }}>Planifie ta prochaine séance</Text>
+                  <Text variant="caption" color="textSubtle" style={{ marginTop: 2 }}>{chargeState ? `Charge ${chargeState.t.toLowerCase()} · adapte l'intensité` : 'Choisis un focus selon ta récupération'}</Text>
+                </>
+              )}
+            </View>
           </View>
-        </View>
-        <Pressable onPress={() => router.push(nextPlanned ? '/sport/planning' : '/sport/workout/new')} style={({ pressed }) => ({ marginTop: spacing[3], height: 46, borderRadius: radii.xl, backgroundColor: colors.surfaceElevated, borderWidth: 1, borderColor: colors.border, alignItems: 'center', justifyContent: 'center', transform: [{ scale: pressed ? 0.98 : 1 }] })}>
-          <Text variant="body" style={{ fontWeight: '600' }}>{nextPlanned ? 'Voir le planning ›' : 'Créer une séance ›'}</Text>
-        </Pressable>
-      </Card>
+          <View style={{ marginTop: spacing[3], height: 46, borderRadius: radii.xl, backgroundColor: colors.surfaceElevated, borderWidth: 1, borderColor: colors.border, alignItems: 'center', justifyContent: 'center' }}>
+            <Text variant="body" style={{ fontWeight: '600' }}>{nextPlanned ? 'Voir le planning ›' : 'Créer une séance ›'}</Text>
+          </View>
+        </Card>
+      </TapCard>
     ),
     'corps-recuperation': (
-      <Card>
-        <SectionTitle right={<Pressable onPress={() => router.push('/sport/muscles')}><Text variant="caption" color="primary">Voir ›</Text></Pressable>}>Corps & récupération</SectionTitle>
-        <View style={{ flexDirection: 'row', gap: spacing[4] }}>
-          <View style={{ alignItems: 'center' }}><MuscleBody colorFor={() => 'transparent'} width={132} /></View>
-          <View style={{ flex: 1, justifyContent: 'center' }}>
-            <BodyStat label="Poids" value={weight != null ? `${weight.toFixed(1)} kg` : '—'} />
-            <BodyStat label="Masse grasse" value={bodyFat != null ? `${bodyFat.toFixed(1)} %` : '—'} />
-            <BodyStat label="Masse musculaire" value={muscleMass != null ? `${muscleMass.toFixed(1)} kg` : '—'} />
-            <BodyStat label="Variation 7 j" value={weightDelta != null ? `${weightDelta > 0 ? '+' : ''}${weightDelta.toFixed(1)} kg` : '—'} color={weightDelta != null && weightDelta <= 0 ? colors.accentData : undefined} last />
+      <TapCard onPress={() => router.push('/sport/muscles')}>
+        <Card>
+          <SectionTitle right={<Pressable onPress={() => router.push('/sport/muscles')}><Text variant="caption" color="primary">Voir ›</Text></Pressable>}>Corps & récupération</SectionTitle>
+          <View style={{ flexDirection: 'row', gap: spacing[4] }}>
+            <View style={{ alignItems: 'center' }}><MuscleBody colorFor={() => 'transparent'} width={132} /></View>
+            <View style={{ flex: 1, justifyContent: 'center' }}>
+              <BodyStat label="Poids" value={weight != null ? `${weight.toFixed(1)} kg` : '—'} />
+              <BodyStat label="Masse grasse" value={bodyFat != null ? `${bodyFat.toFixed(1)} %` : '—'} />
+              <BodyStat label="Masse musculaire" value={muscleMass != null ? `${muscleMass.toFixed(1)} kg` : '—'} />
+              <BodyStat label="Variation 7 j" value={weightDelta != null ? `${weightDelta > 0 ? '+' : ''}${weightDelta.toFixed(1)} kg` : '—'} color={weightDelta != null && weightDelta <= 0 ? colors.accentData : undefined} last />
+            </View>
           </View>
-        </View>
-      </Card>
+        </Card>
+      </TapCard>
     ),
     nutrition: (
-      <Card>
-        <SectionTitle right={<Pressable onPress={() => router.push('/nutrition')}><Text variant="caption" color="primary">Ouvrir ›</Text></Pressable>}>Nutrition</SectionTitle>
-        <View style={{ flexDirection: 'row', gap: spacing[5], alignItems: 'center' }}>
-          <ProgressRing value={kcalPct} size={96} thickness={9} gradient centerLabel={nutrition.length > 0 ? `${Math.round(totals.kcal)}` : '—'} caption={`/ ${Math.round(targets.kcal)}`} />
-          <View style={{ flex: 1, gap: spacing[2] }}>
-            <StateRow label="Déficit" value={nutrition.length > 0 ? `${deficit} kcal` : '—'} color={deficit >= 0 ? colors.accentData : colors.error} />
-            <StateRow label="Protéines" value={`${Math.round(totals.proteinG)} / ${Math.round(targets.proteinG)} g`} />
-            <StateRow label="Hydratation" value={`${(totals.hydrationMl / 1000).toFixed(1)} / ${(targets.hydrationMl / 1000).toFixed(1)} L`} />
+      <TapCard onPress={() => router.push('/nutrition')}>
+        <Card>
+          <SectionTitle right={<Pressable onPress={() => router.push('/nutrition')}><Text variant="caption" color="primary">Ouvrir ›</Text></Pressable>}>Nutrition</SectionTitle>
+          <View style={{ flexDirection: 'row', gap: spacing[5], alignItems: 'center' }}>
+            <ProgressRing value={kcalPct} size={96} thickness={9} gradient centerLabel={nutrition.length > 0 ? `${Math.round(totals.kcal)}` : '—'} caption={`/ ${Math.round(targets.kcal)}`} />
+            <View style={{ flex: 1, gap: spacing[2] }}>
+              <StateRow label="Déficit" value={nutrition.length > 0 ? `${deficit} kcal` : '—'} color={deficit >= 0 ? colors.accentData : colors.error} />
+              <StateRow label="Protéines" value={`${Math.round(totals.proteinG)} / ${Math.round(targets.proteinG)} g`} />
+              <StateRow label="Hydratation" value={`${(totals.hydrationMl / 1000).toFixed(1)} / ${(targets.hydrationMl / 1000).toFixed(1)} L`} />
+            </View>
           </View>
-        </View>
-      </Card>
+        </Card>
+      </TapCard>
     ),
     habitudes: (
-      <Card>
-        <SectionTitle right={<Pressable onPress={() => router.push('/profile/habits')}><Text variant="caption" color="primary">Voir ›</Text></Pressable>}>Habitudes</SectionTitle>
-        <View style={{ flexDirection: 'row', justifyContent: 'space-around', marginBottom: spacing[4] }}>
-          <MiniStat value={`${activeHabits.length - pendingHabits.length}/${activeHabits.length || 0}`} label="Aujourd'hui" />
-          <MiniStat value={`${streak} j`} label="Série active" color={colors.accentData} />
-          <MiniStat value={`${weekDays.filter((d) => d.done).length}/7`} label="Cette semaine" />
-        </View>
-        <View style={{ flexDirection: 'row', gap: 6 }}>
-          {weekDays.map((d, i) => (
-            <View key={i} style={{ flex: 1, alignItems: 'center', gap: 4 }}>
-              <Text variant="caption" color="textSubtle">{d.label}</Text>
-              <View style={{ height: 30, width: '100%', borderRadius: 9, alignItems: 'center', justifyContent: 'center', backgroundColor: d.done ? 'rgba(43,227,139,0.18)' : colors.surfaceElevated, borderWidth: d.today ? 1.5 : 0, borderColor: colors.primary }}>
-                {d.done ? <Text style={{ color: colors.accentData, fontSize: 12 }}>✓</Text> : null}
+      <TapCard onPress={() => router.push('/profile/habits')}>
+        <Card>
+          <SectionTitle right={<Pressable onPress={() => router.push('/profile/habits')}><Text variant="caption" color="primary">Voir ›</Text></Pressable>}>Habitudes</SectionTitle>
+          <View style={{ flexDirection: 'row', justifyContent: 'space-around', marginBottom: spacing[4] }}>
+            <MiniStat value={`${activeHabits.length - pendingHabits.length}/${activeHabits.length || 0}`} label="Aujourd'hui" />
+            <MiniStat value={`${streak} j`} label="Série active" color={colors.accentData} />
+            <MiniStat value={`${weekDays.filter((d) => d.done).length}/7`} label="Cette semaine" />
+          </View>
+          <View style={{ flexDirection: 'row', gap: 6 }}>
+            {weekDays.map((d, i) => (
+              <View key={i} style={{ flex: 1, alignItems: 'center', gap: 4 }}>
+                <Text variant="caption" color="textSubtle">{d.label}</Text>
+                <View style={{ height: 30, width: '100%', borderRadius: 9, alignItems: 'center', justifyContent: 'center', backgroundColor: d.done ? 'rgba(43,227,139,0.18)' : colors.surfaceElevated, borderWidth: d.today ? 1.5 : 0, borderColor: colors.primary }}>
+                  {d.done ? <Text style={{ color: colors.accentData, fontSize: 12 }}>✓</Text> : null}
+                </View>
               </View>
-            </View>
-          ))}
-        </View>
-      </Card>
+            ))}
+          </View>
+        </Card>
+      </TapCard>
     ),
     tendances: (
       <View>
@@ -360,20 +377,22 @@ export function DashboardScreen(): React.JSX.Element {
       </View>
     ),
     badges: badges.length > 0 ? (
-      <View>
-        <SectionTitle right={<Pressable onPress={() => router.push('/profile/progression')}><Text variant="caption" color="primary">Tout voir ›</Text></Pressable>}>Badges récents</SectionTitle>
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: spacing[3] }}>
-          {badges.map((b) => {
-            const def = badgeDefinition(b.id);
-            return (
-              <View key={b.id} style={{ width: 92, alignItems: 'center' }}>
-                <View style={{ width: 60, height: 60, borderRadius: 30, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.surfaceElevated, borderWidth: 1, borderColor: colors.border }}><Text style={{ fontSize: 24 }}>🏅</Text></View>
-                <Text variant="caption" color="textMuted" style={{ marginTop: 6, textAlign: 'center' }}>{def?.label ?? b.id}</Text>
-              </View>
-            );
-          })}
-        </ScrollView>
-      </View>
+      <TapCard onPress={() => router.push('/profile/progression')}>
+        <View>
+          <SectionTitle right={<Pressable onPress={() => router.push('/profile/progression')}><Text variant="caption" color="primary">Tout voir ›</Text></Pressable>}>Badges récents</SectionTitle>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: spacing[3] }}>
+            {badges.map((b) => {
+              const def = badgeDefinition(b.id);
+              return (
+                <View key={b.id} style={{ width: 92, alignItems: 'center' }}>
+                  <View style={{ width: 60, height: 60, borderRadius: 30, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.surfaceElevated, borderWidth: 1, borderColor: colors.border }}><Text style={{ fontSize: 24 }}>🏅</Text></View>
+                  <Text variant="caption" color="textMuted" style={{ marginTop: 6, textAlign: 'center' }}>{def?.label ?? b.id}</Text>
+                </View>
+              );
+            })}
+          </ScrollView>
+        </View>
+      </TapCard>
     ) : null,
     'acces-rapides': (
       <Card>

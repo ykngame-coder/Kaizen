@@ -1,5 +1,5 @@
-import React, { useMemo } from 'react';
-import { Pressable, ScrollView, View } from 'react-native';
+import React, { useMemo, useState } from 'react';
+import { Pressable, ScrollView, TextInput, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Button, Card, Fab, ProgressRing, Screen, Sparkline, Text, useTheme } from '@supotsu/ui';
 import { radii, spacing } from '@supotsu/design-system';
@@ -65,16 +65,56 @@ function GoalBar({ label, current, target, unit, color }: { label: string; curre
   );
 }
 
-/** A label + value with − / + steppers for adjusting a goal. */
-function StepperRow({ label, value, onMinus, onPlus }: { label: string; value: string; onMinus: () => void; onPlus: () => void }): React.JSX.Element {
+/**
+ * A label + value with − / + steppers for adjusting a goal. The value is
+ * also tappable — it turns into a numeric text field so an exact number can
+ * be typed instead of only nudging by the fixed +/- step.
+ */
+function StepperRow({
+  label,
+  rawValue,
+  format,
+  onMinus,
+  onPlus,
+  onSet,
+}: {
+  label: string;
+  rawValue: number;
+  format: (v: number) => string;
+  onMinus: () => void;
+  onPlus: () => void;
+  onSet: (v: number) => void;
+}): React.JSX.Element {
   const { colors } = useTheme();
+  const [editing, setEditing] = useState(false);
+  const [draft, setDraft] = useState('');
   const btn = { width: 34, height: 34, borderRadius: 10, backgroundColor: colors.surfaceElevated, borderWidth: 1, borderColor: colors.border, alignItems: 'center' as const, justifyContent: 'center' as const };
+  const commit = (): void => {
+    const n = Number(draft.replace(',', '.'));
+    if (Number.isFinite(n) && n > 0) onSet(n);
+    setEditing(false);
+  };
   return (
     <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: spacing[3] }}>
       <Text variant="body" style={{ flex: 1 }}>{label}</Text>
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing[3] }}>
         <Pressable onPress={onMinus} style={({ pressed }) => [btn, { opacity: pressed ? 0.6 : 1 }]}><Text variant="subtitle">−</Text></Pressable>
-        <Text variant="body" style={{ fontWeight: '700', minWidth: 84, textAlign: 'center' }}>{value}</Text>
+        {editing ? (
+          <TextInput
+            value={draft}
+            onChangeText={setDraft}
+            onSubmitEditing={commit}
+            onBlur={commit}
+            keyboardType="decimal-pad"
+            autoFocus
+            selectTextOnFocus
+            style={{ minWidth: 84, textAlign: 'center', fontWeight: '700', fontSize: 16, color: colors.text, padding: 0 }}
+          />
+        ) : (
+          <Pressable onPress={() => { setDraft(String(rawValue)); setEditing(true); }}>
+            <Text variant="body" style={{ fontWeight: '700', minWidth: 84, textAlign: 'center' }}>{format(rawValue)}</Text>
+          </Pressable>
+        )}
         <Pressable onPress={onPlus} style={({ pressed }) => [btn, { opacity: pressed ? 0.6 : 1 }]}><Text variant="subtitle">+</Text></Pressable>
       </View>
     </View>
@@ -114,6 +154,14 @@ export function NutritionScreen(): React.JSX.Element {
       kcal: Math.max(800, base.kcal + (patch.kcal ?? 0)),
       proteinG: Math.max(0, base.proteinG + (patch.proteinG ?? 0)),
       hydrationMl: Math.max(0, base.hydrationMl + (patch.hydrationMl ?? 0)),
+    });
+  };
+  const setExact = (patch: Partial<{ kcal: number; proteinG: number; hydrationMl: number }>): void => {
+    const base = preferences.nutritionGoals ?? { kcal: Math.round(goals.kcal), proteinG: Math.round(goals.proteinG), hydrationMl: Math.round(goals.hydrationMl) };
+    setPreference('nutritionGoals', {
+      kcal: patch.kcal != null ? Math.max(800, Math.round(patch.kcal)) : base.kcal,
+      proteinG: patch.proteinG != null ? Math.max(0, Math.round(patch.proteinG)) : base.proteinG,
+      hydrationMl: patch.hydrationMl != null ? Math.max(0, Math.round(patch.hydrationMl)) : base.hydrationMl,
     });
   };
   const totals = useMemo(() => sumDay(entries, asOf), [entries, asOf]);
@@ -268,9 +316,30 @@ export function NutritionScreen(): React.JSX.Element {
           <GoalBar label="Hydratation" current={totals.hydrationMl / 1000} target={goals.hydrationMl / 1000} unit="L" color={colors.accentEndurance} />
 
           <Text variant="caption" color="textSubtle" style={{ marginTop: spacing[4] }}>Ajuster mes objectifs {customized ? '(perso)' : '(auto — modifie pour personnaliser)'}</Text>
-          <StepperRow label="Calories" value={`${Math.round(goals.kcal)} kcal`} onMinus={() => adjust({ kcal: -50 })} onPlus={() => adjust({ kcal: 50 })} />
-          <StepperRow label="Protéines" value={`${Math.round(goals.proteinG)} g`} onMinus={() => adjust({ proteinG: -5 })} onPlus={() => adjust({ proteinG: 5 })} />
-          <StepperRow label="Hydratation" value={`${(goals.hydrationMl / 1000).toFixed(2)} L`} onMinus={() => adjust({ hydrationMl: -250 })} onPlus={() => adjust({ hydrationMl: 250 })} />
+          <StepperRow
+            label="Calories"
+            rawValue={Math.round(goals.kcal)}
+            format={(v) => `${Math.round(v)} kcal`}
+            onMinus={() => adjust({ kcal: -50 })}
+            onPlus={() => adjust({ kcal: 50 })}
+            onSet={(v) => setExact({ kcal: v })}
+          />
+          <StepperRow
+            label="Protéines"
+            rawValue={Math.round(goals.proteinG)}
+            format={(v) => `${Math.round(v)} g`}
+            onMinus={() => adjust({ proteinG: -5 })}
+            onPlus={() => adjust({ proteinG: 5 })}
+            onSet={(v) => setExact({ proteinG: v })}
+          />
+          <StepperRow
+            label="Hydratation"
+            rawValue={Number((goals.hydrationMl / 1000).toFixed(2))}
+            format={(v) => `${v.toFixed(2)} L`}
+            onMinus={() => adjust({ hydrationMl: -250 })}
+            onPlus={() => adjust({ hydrationMl: 250 })}
+            onSet={(v) => setExact({ hydrationMl: v * 1000 })}
+          />
         </Card>
 
         {/* Micronutriments — honest */}

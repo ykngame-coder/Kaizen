@@ -4,6 +4,7 @@ import { useRouter, type Href } from 'expo-router';
 import { Card, Screen, Text, useTheme } from '@supotsu/ui';
 import { radii, spacing } from '@supotsu/design-system';
 import { averageSleepHours, computeRecoveryScore } from '@supotsu/engines';
+import { BackButton } from '@/features/navigation/BackButton';
 import { HubRow } from '@/features/navigation/HubRow';
 import { useActivities, useHealthMetrics } from '@/lib/data/queries';
 
@@ -69,6 +70,7 @@ export function ProgressionScreen(): React.JSX.Element {
 
   return (
     <Screen scroll>
+      <BackButton />
       <Text variant="title">Bilan & badges</Text>
       <Text variant="caption" color="textMuted">
         Tes tendances et tes récompenses, tous piliers confondus.
