@@ -26,7 +26,7 @@ const FEATURES: Feature[] = [
     icon: '🏋️',
     title: 'Sport',
     description:
-      "Bibliothèque de plus de 50 exercices, avec recherche par nom ou muscle, programmes personnalisés, suivi de charge d'entraînement, et une carte de récupération musculaire qui montre quels muscles sont prêts à retravailler.",
+      "Bibliothèque de plus de 800 exercices, avec recherche par nom ou muscle, programmes personnalisés, suivi de charge d'entraînement, et une carte de récupération musculaire qui montre quels muscles sont prêts à retravailler.",
   },
   {
     icon: '😴',
