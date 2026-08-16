@@ -1,19 +1,93 @@
 import React from 'react';
-import { Image, View } from 'react-native';
+import { Image, ScrollView, View } from 'react-native';
 import { useRouter } from 'expo-router';
-import { Badge, Button, Screen, Text } from '@supotsu/ui';
-import { spacing } from '@supotsu/design-system';
+import { Badge, Button, Screen, Text, useTheme } from '@supotsu/ui';
+import { radii, spacing } from '@supotsu/design-system';
 import appIcon from '../../../assets/icon.png';
 
-const FEATURES = [
-  'Sommeil, fréquence cardiaque, HRV, poids — synchronisés depuis Apple Santé, Garmin ou Strava.',
-  'Des scores expliqués (récupération, charge, progression), jamais un chiffre opaque.',
-  'Entraînement, nutrition et habitudes réunis au même endroit.',
+interface Feature {
+  icon: string;
+  title: string;
+  description: string;
+}
+
+const FEATURES: Feature[] = [
+  {
+    icon: '📊',
+    title: 'Score Kaizen',
+    description:
+      "Un score quotidien qui combine récupération, sommeil, charge d'entraînement et régularité — jamais un chiffre opaque : chaque composante est expliquée séparément.",
+  },
+  {
+    icon: '🏋️',
+    title: 'Sport',
+    description:
+      "Bibliothèque de plus de 800 exercices, programmes personnalisés, suivi de charge d'entraînement, et une carte de récupération musculaire qui montre quels muscles sont prêts à retravailler.",
+  },
+  {
+    icon: '😴',
+    title: 'Sommeil',
+    description:
+      'Phases de sommeil, HRV, fréquence cardiaque de repos, stimulation bilatérale, méditation guidée et sons apaisants pour mieux comprendre et améliorer tes nuits.',
+  },
+  {
+    icon: '🍽',
+    title: 'Nutrition',
+    description:
+      "Journal alimentaire avec scan de code-barres, objectifs caloriques et macronutriments personnalisés selon ton profil et ton objectif.",
+  },
+  {
+    icon: '✦',
+    title: 'Coach IA',
+    description:
+      "Des recommandations concrètes et expliquées, générées à partir de tes propres données — pas de conseils génériques.",
+  },
+  {
+    icon: '🔗',
+    title: 'Connecté à ce que tu utilises déjà',
+    description: 'Apple Santé, Garmin et Strava synchronisent automatiquement tes données existantes.',
+  },
 ];
+
+/**
+ * Screenshot filenames expected under assets/marketing/. Empty until real
+ * captures from a populated account are added — the gallery section renders
+ * nothing (not broken placeholders) while this stays empty.
+ */
+const SCREENSHOTS: { source: number; caption: string }[] = [];
+
+function FeatureRow({ icon, title, description }: Feature): React.JSX.Element {
+  const { colors } = useTheme();
+  return (
+    <View style={{ flexDirection: 'row', gap: spacing[4], alignItems: 'flex-start' }}>
+      <View
+        style={{
+          width: 44,
+          height: 44,
+          borderRadius: radii.lg,
+          backgroundColor: colors.surfaceElevated,
+          borderWidth: 1,
+          borderColor: colors.border,
+          alignItems: 'center',
+          justifyContent: 'center',
+        }}
+      >
+        <Text style={{ fontSize: 20 }}>{icon}</Text>
+      </View>
+      <View style={{ flex: 1 }}>
+        <Text variant="body" style={{ fontWeight: '700' }}>{title}</Text>
+        <Text variant="caption" color="textMuted" style={{ marginTop: 2, lineHeight: 19 }}>
+          {description}
+        </Text>
+      </View>
+    </View>
+  );
+}
 
 /** Page d'accueil web (kaizensupotsu.uk) pour un visiteur non connecté — pas la même chose que l'app native, qui va droit à l'écran de connexion. */
 export function LandingScreen(): React.JSX.Element {
   const router = useRouter();
+  const { colors } = useTheme();
 
   return (
     <Screen scroll>
@@ -26,17 +100,40 @@ export function LandingScreen(): React.JSX.Element {
         <Badge label="Bêta privée · Test TestFlight en cours" tone="warning" />
       </View>
 
-      <View style={{ marginTop: spacing[8], gap: spacing[3] }}>
+      <Text
+        variant="body"
+        color="textMuted"
+        style={{ textAlign: 'center', marginTop: spacing[6], lineHeight: 22, maxWidth: 480, alignSelf: 'center' }}
+      >
+        Kaizen Supotsu centralise tes données de sport, sommeil et nutrition — depuis Apple Santé, Garmin,
+        Strava ou saisies à la main — et t'aide à comprendre ta forme au lieu de te noyer sous les chiffres.
+      </Text>
+
+      <View style={{ marginTop: spacing[8], gap: spacing[5] }}>
         {FEATURES.map((f) => (
-          <View
-            key={f}
-            style={{ flexDirection: 'row', gap: spacing[3], alignItems: 'flex-start' }}
-          >
-            <Text variant="body">•</Text>
-            <Text variant="body" color="textMuted" style={{ flex: 1, lineHeight: 21 }}>{f}</Text>
-          </View>
+          <FeatureRow key={f.title} {...f} />
         ))}
       </View>
+
+      {SCREENSHOTS.length > 0 ? (
+        <View style={{ marginTop: spacing[8] }}>
+          <Text variant="heading" style={{ textAlign: 'center', marginBottom: spacing[4] }}>
+            Aperçu de l'app
+          </Text>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: spacing[4], paddingHorizontal: spacing[2] }}>
+            {SCREENSHOTS.map((s) => (
+              <View key={s.caption} style={{ alignItems: 'center', gap: spacing[2] }}>
+                <Image
+                  source={s.source}
+                  style={{ width: 220, height: 476, borderRadius: radii.xl, borderWidth: 1, borderColor: colors.border }}
+                  resizeMode="cover"
+                />
+                <Text variant="caption" color="textSubtle">{s.caption}</Text>
+              </View>
+            ))}
+          </ScrollView>
+        </View>
+      ) : null}
 
       <View style={{ alignItems: 'center', marginTop: spacing[8], gap: spacing[3] }}>
         <Button label="Se connecter" onPress={() => router.push('/(auth)/sign-in')} />
