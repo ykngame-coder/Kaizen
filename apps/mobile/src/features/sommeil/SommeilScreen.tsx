@@ -476,6 +476,7 @@ export function SommeilScreen(): React.JSX.Element {
           </Text>
           <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: spacing[3] }}>
             <ToolTile icon="🌬" label="Respiration" path="/sommeil/breathing" />
+            <ToolTile icon="🫁" label="Stomach Vacuum" path="/sport/stomach-vacuum" />
             <ToolTile icon="🧩" label="Neuro-récupération" path="/sommeil/neuro-recovery" />
             <ToolTile icon="🎧" label="Sons" path="/sommeil/sound" />
           </View>
