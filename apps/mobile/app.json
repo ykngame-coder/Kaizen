@@ -17,7 +17,7 @@
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.supotsu.app",
-      "buildNumber": "5",
+      "buildNumber": "6",
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false
       }
@@ -68,7 +68,7 @@
         "@kingstinct/react-native-healthkit",
         {
           "NSHealthShareUsageDescription": "Kaizen Supotsu lit tes données Apple Santé (sommeil, fréquence cardiaque, HRV, poids, composition corporelle) pour tes analyses.",
-          "background": false
+          "background": true
         }
       ],
       "expo-audio"

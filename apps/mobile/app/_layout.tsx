@@ -13,6 +13,7 @@ import { OnboardingProvider, useOnboarding } from '@/features/onboarding/Onboard
 import { PreferencesProvider } from '@/lib/preferences';
 import { AppTabBar } from '@/features/navigation/AppTabBar';
 import { BiometricGate } from '@/features/security/BiometricGate';
+import { useHealthKitAutoSync } from '@/features/connectors/useHealthKitAutoSync';
 
 /**
  * Central route gate: sends users to auth, onboarding or the app depending on
@@ -24,6 +25,7 @@ function RouteGuard({ children }: { children: React.ReactNode }): React.JSX.Elem
   const segments = useSegments();
   const router = useRouter();
   const { colors } = useTheme();
+  useHealthKitAutoSync();
 
   const authResolving = authStatus === 'loading';
   const onboardingResolving = authStatus === 'authenticated' && onboardingStatus === 'loading';

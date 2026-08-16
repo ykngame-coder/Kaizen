@@ -8,6 +8,7 @@ import { CONNECTORS } from '@supotsu/connectors';
 import type { DataSource, HealthMetricType } from '@supotsu/core';
 import { useHealthMetrics, useImportHealth } from '@/lib/data/queries';
 import { healthKitAvailable, syncHealthKit } from './healthKitClient';
+import { markHealthKitConnected } from './useHealthKitAutoSync';
 import {
   disconnectGarmin,
   fetchGarminStatus,
@@ -350,6 +351,7 @@ function HealthKitCard(): React.JSX.Element {
     setBusy(true);
     try {
       const { activities, healthMetrics, sleepSessions } = await syncHealthKit();
+      await markHealthKitConnected();
       if (activities.length + healthMetrics.length + sleepSessions.length === 0) {
         setNote('Aucune nouvelle donnée (autorise l’accès aux catégories dans Réglages → Santé).');
       } else {
@@ -369,7 +371,9 @@ function HealthKitCard(): React.JSX.Element {
         <View style={{ flex: 1 }}>
           <Text variant="subtitle">Apple Santé (HealthKit)</Text>
           <Text variant="caption" color="textMuted">
-            Lecture directe sur l’iPhone — sommeil, FC, HRV, poids, composition (jusqu’à 3 ans d’historique)
+            Lecture directe sur l’iPhone — sommeil, FC, HRV, poids, composition (jusqu’à 3 ans d’historique).
+            Une fois autorisé, se resynchronise seul à chaque ouverture de l’app et en tâche de fond quand
+            Apple Santé reçoit de nouvelles données.
           </Text>
         </View>
         <Badge label={available ? 'Natif iOS' : 'App iOS requise'} tone={available ? 'success' : 'neutral'} />

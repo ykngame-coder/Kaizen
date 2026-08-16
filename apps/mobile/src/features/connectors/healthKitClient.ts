@@ -16,3 +16,7 @@ export async function syncHealthKit(): Promise<{
 }> {
   throw new Error('HealthKit est disponible uniquement sur iOS (build natif).');
 }
+
+export function subscribeHealthKitChanges(_onChange: () => void): () => void {
+  return () => undefined;
+}

@@ -52,6 +52,36 @@ export function healthKitAvailable(): boolean {
   }
 }
 
+const BACKGROUND_TYPES: (QuantityTypeIdentifier | typeof SLEEP_TYPE | typeof WORKOUT_TYPE)[] = [
+  ...QUANTITY_TYPES.map((q) => q.id),
+  SLEEP_TYPE,
+  WORKOUT_TYPE,
+];
+
+/**
+ * Registers HealthKit background delivery + change observers for the same
+ * types `syncHealthKit` reads, so `onChange` fires — while the app is alive,
+ * foreground or backgrounded, not only when the user opens it — whenever
+ * Apple Health receives new data. Requires the
+ * `com.apple.developer.healthkit.background-delivery` entitlement (the
+ * @kingstinct/react-native-healthkit config plugin adds it unless
+ * `background: false` is set in app.json). iOS treats `updateFrequency` as a
+ * hint, not a guaranteed schedule — `hourly` balances promptness against
+ * battery/network use. Returns an unsubscribe function.
+ */
+export function subscribeHealthKitChanges(onChange: () => void): () => void {
+  const subscriptions: { remove: () => void }[] = [];
+  for (const type of BACKGROUND_TYPES) {
+    void HealthKit.enableBackgroundDelivery(type, HealthKit.UpdateFrequency.hourly).catch(() => undefined);
+    try {
+      subscriptions.push(HealthKit.subscribeToChanges(type, onChange));
+    } catch {
+      /* type not observable / not authorised yet */
+    }
+  }
+  return () => subscriptions.forEach((s) => s.remove());
+}
+
 /** Request read authorization, then pull + normalize recent Health data. No persistence here — the caller persists via `useImportHealth`. */
 export async function syncHealthKit(): Promise<{
   activities: ImportedActivity[];
