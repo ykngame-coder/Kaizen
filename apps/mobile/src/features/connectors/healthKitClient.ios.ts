@@ -12,6 +12,8 @@ import {
   type ImportedHealthMetric,
   type ImportedSleepSession,
 } from '@supotsu/connectors';
+import type { ActivityType } from '@supotsu/core';
+import type { ActivityInput, NutritionEntryInput } from '@supotsu/shared';
 
 /**
  * Native HealthKit client (iOS only — requires a dev build, Expo Go doesn't
@@ -82,14 +84,34 @@ export function subscribeHealthKitChanges(onChange: () => void): () => void {
   return () => subscriptions.forEach((s) => s.remove());
 }
 
+/**
+ * Dietary/activity types we write back to Apple Health — the flip side of
+ * `QUANTITY_TYPES`. Kept separate because reads and writes use different
+ * HealthKit categories (dietary quantities aren't in `QUANTITY_TYPES`, which
+ * is only what `syncHealthKit` reads).
+ */
+const WRITE_TYPES: HealthKit.SampleTypeIdentifierWriteable[] = [
+  'HKQuantityTypeIdentifierDietaryEnergyConsumed',
+  'HKQuantityTypeIdentifierDietaryProtein',
+  'HKQuantityTypeIdentifierDietaryCarbohydrates',
+  'HKQuantityTypeIdentifierDietaryFatTotal',
+  'HKQuantityTypeIdentifierDietaryWater',
+  WORKOUT_TYPE,
+];
+
 /** Request read authorization, then pull + normalize recent Health data. No persistence here — the caller persists via `useImportHealth`. */
 export async function syncHealthKit(): Promise<{
   activities: ImportedActivity[];
   healthMetrics: ImportedHealthMetric[];
   sleepSessions: ImportedSleepSession[];
 }> {
+  // One dialog covers both directions: the same "Autoriser & synchroniser"
+  // tap that grants read access also grants write access for the types
+  // below, so activities/meals/water logged in-app can be mirrored back to
+  // Apple Health without a second, separate prompt later.
   await HealthKit.requestAuthorization({
     toRead: [...QUANTITY_TYPES.map((q) => q.id), SLEEP_TYPE, WORKOUT_TYPE],
+    toShare: WRITE_TYPES,
   });
 
   const since = new Date(Date.now() - LOOKBACK_DAYS * 24 * 60 * 60 * 1000);
@@ -168,4 +190,69 @@ export async function syncHealthKit(): Promise<{
   }
 
   return { activities, healthMetrics, sleepSessions };
+}
+
+/** Kaizen `ActivityType` → HealthKit's own workout-type enum, for writes. */
+const ACTIVITY_TYPE_TO_HK: Record<ActivityType, HealthKit.WorkoutActivityType> = {
+  walking: HealthKit.WorkoutActivityType.walking,
+  running: HealthKit.WorkoutActivityType.running,
+  cycling: HealthKit.WorkoutActivityType.cycling,
+  swimming: HealthKit.WorkoutActivityType.swimming,
+  strength: HealthKit.WorkoutActivityType.traditionalStrengthTraining,
+  cross_training: HealthKit.WorkoutActivityType.crossTraining,
+  hyrox: HealthKit.WorkoutActivityType.highIntensityIntervalTraining,
+  mobility: HealthKit.WorkoutActivityType.flexibility,
+  yoga: HealthKit.WorkoutActivityType.yoga,
+  other: HealthKit.WorkoutActivityType.other,
+};
+
+/** Mirror a manually-logged activity into Apple Health as a workout. Best-effort — errors (not authorised, etc.) are swallowed by the caller. */
+export async function saveActivityToHealthKit(input: ActivityInput): Promise<void> {
+  const start = new Date(input.startedAt);
+  const end = new Date(start.getTime() + input.durationSec * 1000);
+  await HealthKit.saveWorkoutSample(
+    ACTIVITY_TYPE_TO_HK[input.type],
+    [],
+    start,
+    end,
+    {
+      distance: input.distanceM,
+      energyBurned: input.calories,
+    },
+  );
+}
+
+/**
+ * Strength workouts (from the exercise-based logger) don't carry a session
+ * duration the way a cardio ActivityInput does — estimate ~90s/set (work +
+ * rest), the same ballpark a Watch would auto-detect for a lifting session,
+ * rather than write a zero-length workout.
+ */
+export async function saveWorkoutToHealthKit(setCount: number, at: Date = new Date()): Promise<void> {
+  if (setCount <= 0) return;
+  const durationSec = setCount * 90;
+  const start = new Date(at.getTime() - durationSec * 1000);
+  await HealthKit.saveWorkoutSample(HealthKit.WorkoutActivityType.traditionalStrengthTraining, [], start, at);
+}
+
+/** Mirror a manually-logged meal/water entry into Apple Health's dietary quantities. Best-effort. */
+export async function saveNutritionToHealthKit(input: NutritionEntryInput): Promise<void> {
+  const at = new Date(input.loggedAt);
+  const writes: Promise<unknown>[] = [];
+  if (input.kcal > 0) {
+    writes.push(HealthKit.saveQuantitySample('HKQuantityTypeIdentifierDietaryEnergyConsumed', 'kcal', input.kcal, at, at));
+  }
+  if (input.proteinG) {
+    writes.push(HealthKit.saveQuantitySample('HKQuantityTypeIdentifierDietaryProtein', 'g', input.proteinG, at, at));
+  }
+  if (input.carbG) {
+    writes.push(HealthKit.saveQuantitySample('HKQuantityTypeIdentifierDietaryCarbohydrates', 'g', input.carbG, at, at));
+  }
+  if (input.fatG) {
+    writes.push(HealthKit.saveQuantitySample('HKQuantityTypeIdentifierDietaryFatTotal', 'g', input.fatG, at, at));
+  }
+  if (input.hydrationMl) {
+    writes.push(HealthKit.saveQuantitySample('HKQuantityTypeIdentifierDietaryWater', 'ml', input.hydrationMl, at, at));
+  }
+  await Promise.all(writes);
 }

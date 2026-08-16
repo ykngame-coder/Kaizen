@@ -1,4 +1,5 @@
 import { useMemo } from 'react';
+import { Platform } from 'react-native';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import type {
   ActivityInput,
@@ -22,6 +23,24 @@ import type {
 } from '@supotsu/connectors';
 import { useAuth } from '@/features/auth/AuthProvider';
 import { createDataRepository, type NewWorkout, type PlannedInput } from './repository';
+import { isHealthKitConnected } from '@/features/connectors/useHealthKitAutoSync';
+import { saveActivityToHealthKit, saveNutritionToHealthKit, saveWorkoutToHealthKit } from '@/features/connectors/healthKitClient';
+
+/**
+ * Mirrors a manually-logged activity/meal/water/workout into Apple Health,
+ * once HealthKit is connected — same "automatic, no extra toggle" behaviour
+ * as reading. Never throws: writing to HealthKit must not break the actual
+ * in-app log action it's attached to.
+ */
+async function mirrorToHealthKit(write: () => Promise<void>): Promise<void> {
+  if (Platform.OS !== 'ios') return;
+  try {
+    if (!(await isHealthKitConnected())) return;
+    await write();
+  } catch {
+    // Best-effort.
+  }
+}
 
 /** Single repository instance for the app session. */
 function useRepository() {
@@ -44,8 +63,9 @@ export function useAddActivity() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (input: ActivityInput) => repo.addActivity(user!.id, input),
-    onSuccess: () => {
+    onSuccess: (_data, input) => {
       qc.invalidateQueries({ queryKey: ['activities', user?.id] });
+      void mirrorToHealthKit(() => saveActivityToHealthKit(input));
     },
   });
 }
@@ -86,8 +106,9 @@ export function useAddNutritionEntry() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (input: NutritionEntryInput) => repo.addNutritionEntry(user!.id, input),
-    onSuccess: () => {
+    onSuccess: (_data, input) => {
       qc.invalidateQueries({ queryKey: ['nutrition', user?.id] });
+      void mirrorToHealthKit(() => saveNutritionToHealthKit(input));
     },
   });
 }
@@ -598,10 +619,11 @@ export function useAddWorkout() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (workout: NewWorkout) => repo.addWorkout(user!.id, workout),
-    onSuccess: () => {
+    onSuccess: (_data, workout) => {
       qc.invalidateQueries({ queryKey: ['workouts', user?.id] });
       qc.invalidateQueries({ queryKey: ['muscleSessions', user?.id] });
       qc.invalidateQueries({ queryKey: ['exerciseHistory', user?.id] });
+      void mirrorToHealthKit(() => saveWorkoutToHealthKit(workout.sets.length));
     },
   });
 }

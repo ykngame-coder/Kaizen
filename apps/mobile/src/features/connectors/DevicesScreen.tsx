@@ -373,7 +373,8 @@ function HealthKitCard(): React.JSX.Element {
           <Text variant="caption" color="textMuted">
             Lecture directe sur l’iPhone — sommeil, FC, HRV, poids, composition (jusqu’à 3 ans d’historique).
             Une fois autorisé, se resynchronise seul à chaque ouverture de l’app et en tâche de fond quand
-            Apple Santé reçoit de nouvelles données.
+            Apple Santé reçoit de nouvelles données. Tes activités, repas et eau loggés dans Kaizen sont
+            aussi renvoyés vers Apple Santé.
           </Text>
         </View>
         <Badge label={available ? 'Natif iOS' : 'App iOS requise'} tone={available ? 'success' : 'neutral'} />

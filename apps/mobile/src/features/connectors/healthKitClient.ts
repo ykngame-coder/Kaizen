@@ -1,4 +1,5 @@
 import type { ImportedActivity, ImportedHealthMetric, ImportedSleepSession } from '@supotsu/connectors';
+import type { ActivityInput, NutritionEntryInput } from '@supotsu/shared';
 
 /**
  * Default (web / Android) stub for the native HealthKit client. The real
@@ -19,4 +20,16 @@ export async function syncHealthKit(): Promise<{
 
 export function subscribeHealthKitChanges(_onChange: () => void): () => void {
   return () => undefined;
+}
+
+export async function saveActivityToHealthKit(_input: ActivityInput): Promise<void> {
+  /* no-op off iOS */
+}
+
+export async function saveWorkoutToHealthKit(_setCount: number, _at?: Date): Promise<void> {
+  /* no-op off iOS */
+}
+
+export async function saveNutritionToHealthKit(_input: NutritionEntryInput): Promise<void> {
+  /* no-op off iOS */
 }

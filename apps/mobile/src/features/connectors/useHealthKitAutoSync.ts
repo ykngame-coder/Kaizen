@@ -12,7 +12,8 @@ export async function markHealthKitConnected(): Promise<void> {
   await secureStorage.setItem(CONNECTED_KEY, 'true');
 }
 
-async function isHealthKitConnected(): Promise<boolean> {
+/** Whether the user has connected HealthKit at least once — gates both auto-sync and the write-back helpers in queries.ts. */
+export async function isHealthKitConnected(): Promise<boolean> {
   return (await secureStorage.getItem(CONNECTED_KEY)) === 'true';
 }
 
