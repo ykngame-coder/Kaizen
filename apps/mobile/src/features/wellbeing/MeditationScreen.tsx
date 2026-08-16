@@ -3,6 +3,7 @@ import { Pressable, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Badge, Card, Screen, Text } from '@supotsu/ui';
 import { spacing } from '@supotsu/design-system';
+import { BackButton } from '@/features/navigation/BackButton';
 import { MEDITATION_CATALOG, MEDITATION_CATEGORIES } from './meditationCatalog';
 
 function fmtDuration(sec: number): string {
@@ -16,6 +17,7 @@ export function MeditationScreen(): React.JSX.Element {
 
   return (
     <Screen scroll>
+      <BackButton />
       <Text variant="title">Méditation guidée</Text>
       <Text variant="caption" color="textMuted">
         Séances audio narrées, par thème.

@@ -3,7 +3,7 @@ import { Pressable, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Badge, Button, Card, EmptyState, Input, Screen, SegmentedControl, Text, useTheme } from '@supotsu/ui';
 import { radii, spacing } from '@supotsu/design-system';
-import { EXERCISE_LIBRARY } from '@supotsu/shared';
+import { PICKABLE_EXERCISES } from '@supotsu/shared';
 import { useAddUserSession, useUserSessions } from '@/lib/data/queries';
 
 const VISIBILITY_OPTIONS = [
@@ -26,8 +26,14 @@ export function SessionBuilderScreen(): React.JSX.Element {
 
   const [name, setName] = useState('');
   const [visibility, setVisibility] = useState<'private' | 'public'>('private');
+  const [query, setQuery] = useState('');
   const [selected, setSelected] = useState<Record<string, SetDraft>>({});
   const [error, setError] = useState<string | null>(null);
+
+  const q = query.trim().toLowerCase();
+  const visibleExercises = q
+    ? PICKABLE_EXERCISES.filter((ex) => ex.name.toLowerCase().includes(q) || ex.primaryMuscles.some((m) => m.toLowerCase().includes(q)))
+    : PICKABLE_EXERCISES;
 
   const atQuota = sessions.length >= SESSIONS_QUOTA;
 
@@ -100,8 +106,17 @@ export function SessionBuilderScreen(): React.JSX.Element {
       </View>
 
       <Text variant="heading">Bibliothèque d'exercices</Text>
+      <Input
+        label="Rechercher un exercice"
+        placeholder="Ex : développé, quads, curl…"
+        value={query}
+        onChangeText={setQuery}
+      />
+      {visibleExercises.length === 0 ? (
+        <Text variant="caption" color="textSubtle">Aucun exercice ne correspond à "{query}".</Text>
+      ) : null}
       <View style={{ gap: spacing[2] }}>
-        {EXERCISE_LIBRARY.map((ex) => {
+        {visibleExercises.map((ex) => {
           const isSelected = !!selected[ex.id];
           return (
             <Card key={ex.id} elevated={isSelected}>

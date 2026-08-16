@@ -501,10 +501,11 @@ function IconBtn({ icon, onPress }: { icon: string; onPress: () => void }): Reac
   );
 }
 function StateRow({ label, value, color }: { label: string; value: string; color?: string }): React.JSX.Element {
+  const { colors } = useTheme();
   return (
     <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
       <Text variant="body" color="textMuted">{label}</Text>
-      <Text variant="body" style={{ fontWeight: '700', color }}>{value}</Text>
+      <Text variant="body" style={{ fontWeight: '700', color: color ?? colors.text }}>{value}</Text>
     </View>
   );
 }
@@ -513,14 +514,15 @@ function BodyStat({ label, value, color, last }: { label: string; value: string;
   return (
     <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: spacing[2], borderBottomWidth: last ? 0 : 1, borderBottomColor: colors.border }}>
       <Text variant="caption" color="textMuted">{label}</Text>
-      <Text variant="body" style={{ fontWeight: '700', color }}>{value}</Text>
+      <Text variant="body" style={{ fontWeight: '700', color: color ?? colors.text }}>{value}</Text>
     </View>
   );
 }
 function MiniStat({ value, label, color }: { value: string; label: string; color?: string }): React.JSX.Element {
+  const { colors } = useTheme();
   return (
     <View style={{ alignItems: 'center' }}>
-      <Text variant="subtitle" style={{ color }}>{value}</Text>
+      <Text variant="subtitle" style={{ color: color ?? colors.text }}>{value}</Text>
       <Text variant="caption" color="textSubtle" style={{ marginTop: 2 }}>{label}</Text>
     </View>
   );

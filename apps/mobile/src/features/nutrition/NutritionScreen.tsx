@@ -356,10 +356,11 @@ export function NutritionScreen(): React.JSX.Element {
 }
 
 function Balance({ label, value, color }: { label: string; value: string; color?: string }): React.JSX.Element {
+  const { colors } = useTheme();
   return (
     <View style={{ alignItems: 'center' }}>
       <Text variant="caption" color="textSubtle">{label}</Text>
-      <Text variant="body" style={{ fontWeight: '700', color, marginTop: 3 }}>{value}</Text>
+      <Text variant="body" style={{ fontWeight: '700', color: color ?? colors.text, marginTop: 3 }}>{value}</Text>
     </View>
   );
 }

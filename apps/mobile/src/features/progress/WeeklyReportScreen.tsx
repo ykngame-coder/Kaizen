@@ -44,7 +44,7 @@ function KV({ label, value, color, last }: { label: string; value: string; color
   return (
     <View style={{ flexDirection: 'row', justifyContent: 'space-between', paddingVertical: spacing[2], borderBottomWidth: last ? 0 : 1, borderBottomColor: colors.border }}>
       <Text variant="body" color="textMuted">{label}</Text>
-      <Text variant="body" style={{ fontWeight: '700', color }}>{value}</Text>
+      <Text variant="body" style={{ fontWeight: '700', color: color ?? colors.text }}>{value}</Text>
     </View>
   );
 }
