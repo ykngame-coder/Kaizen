@@ -107,6 +107,20 @@ export const habitInputSchema = z.object({
 });
 export type HabitInput = z.infer<typeof habitInputSchema>;
 
+export const muscleGroupSchema = z.enum([
+  'chest', 'back', 'shoulders', 'biceps', 'triceps',
+  'quads', 'hamstrings', 'glutes', 'calves', 'core', 'full_body',
+]);
+
+/** A user-added exercise not covered by the shared catalogue (e.g. home-gym equipment, a personal variant). */
+export const customExerciseInputSchema = z.object({
+  name: z.string().min(1).max(80),
+  primaryMuscle: muscleGroupSchema,
+  secondaryMuscles: z.array(muscleGroupSchema).max(4).default([]),
+  equipment: z.string().max(60).optional(),
+});
+export type CustomExerciseInput = z.infer<typeof customExerciseInputSchema>;
+
 /** Daily mental-wellness check-in (Master Prompt P14 bien-être mental). */
 export const wellnessCheckinInputSchema = z.object({
   mood: z.number().int().min(1).max(5),

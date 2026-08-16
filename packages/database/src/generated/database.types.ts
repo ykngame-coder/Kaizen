@@ -259,13 +259,18 @@ export interface Database {
           common_mistakes: string[];
           variants: string[];
           media_url: string | null;
+          created_by: string | null;
           created_at: string;
         };
         Insert: {
+          id: string;
           name: string;
           category: string;
           primary_muscles?: string[];
+          secondary_muscles?: string[];
+          equipment?: string[];
           level?: 'beginner' | 'intermediate' | 'advanced';
+          created_by?: string | null;
         };
         Update: Partial<Database['public']['Tables']['exercises']['Insert']>;
         Relationships: [];

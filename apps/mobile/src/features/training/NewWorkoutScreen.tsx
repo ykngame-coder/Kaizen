@@ -4,8 +4,8 @@ import { useRouter } from 'expo-router';
 import { Badge, Button, Card, Input, Screen, Text, useTheme } from '@supotsu/ui';
 import { radii, spacing } from '@supotsu/design-system';
 import { suggestProgression } from '@supotsu/engines';
-import { EXERCISES, MUSCLE_LABEL } from '@/features/exercises/catalog';
-import { useAddWorkout, useExerciseHistory } from '@/lib/data/queries';
+import { EXERCISES, MUSCLE_LABEL, toCatalogExercise } from '@/features/exercises/catalog';
+import { useAddWorkout, useCustomExercises, useExerciseHistory } from '@/lib/data/queries';
 
 const LIMIT = 60;
 
@@ -20,22 +20,25 @@ export function NewWorkoutScreen(): React.JSX.Element {
   const { colors } = useTheme();
   const addWorkout = useAddWorkout();
   const { data: history = {} } = useExerciseHistory();
+  const { data: customExercises = [] } = useCustomExercises();
 
   const [name, setName] = useState('');
   const [query, setQuery] = useState('');
   const [selected, setSelected] = useState<Record<string, SetDraft>>({});
   const [error, setError] = useState<string | null>(null);
 
+  const allExercises = [...customExercises.map(toCatalogExercise), ...EXERCISES];
   const q = query.trim().toLowerCase();
   const matched = q
-    ? EXERCISES.filter(
+    ? allExercises.filter(
         (ex) =>
           ex.name.toLowerCase().includes(q) ||
           MUSCLE_LABEL[ex.primary].toLowerCase().includes(q) ||
           ex.equipment.toLowerCase().includes(q),
       )
-    : EXERCISES;
+    : allExercises;
   const visibleExercises = matched.slice(0, LIMIT);
+  const isCustom = (id: string): boolean => id.startsWith('custom-');
 
   const toggle = (id: string): void => {
     setSelected((prev) => {
@@ -88,11 +91,21 @@ export function NewWorkoutScreen(): React.JSX.Element {
         value={query}
         onChangeText={setQuery}
       />
-      <Text variant="caption" color="textSubtle">
-        {matched.length} résultat{matched.length > 1 ? 's' : ''}{matched.length > LIMIT ? ` · affine ta recherche pour voir au-delà des ${LIMIT} premiers` : ''}
-      </Text>
+      <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+        <Text variant="caption" color="textSubtle">
+          {matched.length} résultat{matched.length > 1 ? 's' : ''}{matched.length > LIMIT ? ` · affine ta recherche pour voir au-delà des ${LIMIT} premiers` : ''}
+        </Text>
+        <Text variant="caption" color="primary" onPress={() => router.push('/sport/exercise/new')}>
+          + Exercice perso
+        </Text>
+      </View>
       {matched.length === 0 ? (
-        <Text variant="caption" color="textSubtle">Aucun exercice ne correspond à "{query}".</Text>
+        <Text variant="caption" color="textSubtle">
+          Aucun exercice ne correspond à "{query}". Tu peux{' '}
+          <Text variant="caption" color="primary" onPress={() => router.push('/sport/exercise/new')}>
+            créer un exercice personnalisé
+          </Text>.
+        </Text>
       ) : null}
       <View style={{ gap: spacing[2] }}>
         {visibleExercises.map((ex) => {
@@ -110,7 +123,7 @@ export function NewWorkoutScreen(): React.JSX.Element {
                 <View style={{ flex: 1 }}>
                   <Text variant="subtitle">{ex.name}</Text>
                   <Text variant="caption" color="textMuted">
-                    {[ex.primary, ...ex.secondary].map((m) => MUSCLE_LABEL[m]).join(', ')} · {ex.equipment}
+                    {isCustom(ex.id) ? '✨ Perso · ' : ''}{[ex.primary, ...ex.secondary].map((m) => MUSCLE_LABEL[m]).join(', ')} · {ex.equipment}
                   </Text>
                 </View>
                 <View

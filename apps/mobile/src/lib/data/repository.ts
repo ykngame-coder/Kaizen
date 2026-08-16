@@ -1,6 +1,7 @@
 import type {
   Activity,
   Challenge,
+  Exercise,
   Goal,
   HealthMetric,
   Habit,
@@ -23,6 +24,7 @@ import type {
   ActivityInput,
   AthleteProfileInput,
   ChallengeInput,
+  CustomExerciseInput,
   GoalInput,
   HabitInput,
   NutritionEntryInput,
@@ -65,6 +67,8 @@ import {
   listHabits as listHabitsDb,
   insertHabitLog,
   listHabitLogs as listHabitLogsDb,
+  insertCustomExercise as insertCustomExerciseDb,
+  listCustomExercises as listCustomExercisesDb,
   insertChallenge,
   listChallenges as listChallengesDb,
   listMyParticipations,
@@ -105,6 +109,7 @@ import {
   type NutritionEntryRow,
   type HabitRow,
   type HabitLogRow,
+  type ExerciseRow,
   type ChallengeRow,
   type ProgramRow,
   type RecordRow,
@@ -184,6 +189,9 @@ export interface DataRepository {
   addHabit(userId: string, input: HabitInput): Promise<Habit>;
   listHabitLogs(userId: string): Promise<HabitLog[]>;
   logHabit(userId: string, habitId: string): Promise<HabitLog>;
+  /** The caller's own exercises added on top of the bundled catalogue (e.g. home-gym equipment). */
+  listCustomExercises(userId: string): Promise<Exercise[]>;
+  addCustomExercise(userId: string, input: CustomExerciseInput): Promise<Exercise>;
   listChallenges(): Promise<Challenge[]>;
   createChallenge(userId: string, input: ChallengeInput): Promise<Challenge>;
   listMyChallengeIds(userId: string): Promise<string[]>;
@@ -327,6 +335,18 @@ function rowToHabit(r: HabitRow): Habit {
     archivedAt: r.archived_at ?? undefined,
     createdAt: r.created_at,
     updatedAt: r.updated_at,
+  };
+}
+
+function rowToExercise(r: ExerciseRow): Exercise {
+  return {
+    id: r.id,
+    name: r.name,
+    category: r.category as Exercise['category'],
+    primaryMuscles: r.primary_muscles as MuscleGroup[],
+    secondaryMuscles: r.secondary_muscles as MuscleGroup[],
+    equipment: r.equipment,
+    level: r.level,
   };
 }
 
@@ -667,6 +687,7 @@ const sleepKey = (u: string): string => `supotsu.sleep.${u}`;
 const nutKey = (u: string): string => `supotsu.nutrition.${u}`;
 const habKey = (u: string): string => `supotsu.habits.${u}`;
 const hlogKey = (u: string): string => `supotsu.habitlogs.${u}`;
+const customExKey = (u: string): string => `supotsu.customexercises.${u}`;
 const recKey = (u: string): string => `supotsu.records.${u}`;
 const wcKey = (u: string): string => `supotsu.wellness.${u}`;
 const goalKey = (u: string): string => `supotsu.goals.${u}`;
@@ -936,6 +957,23 @@ function createDemoRepository(): DataRepository {
       const items = await readJson<Habit>(habKey(userId));
       await writeJson(habKey(userId), [...items, habit]);
       return habit;
+    },
+    async listCustomExercises(userId) {
+      return readJson<Exercise>(customExKey(userId));
+    },
+    async addCustomExercise(userId, input) {
+      const exercise: Exercise = {
+        id: `custom-${randomId()}`,
+        name: input.name,
+        category: 'strength',
+        primaryMuscles: [input.primaryMuscle],
+        secondaryMuscles: input.secondaryMuscles,
+        equipment: input.equipment ? [input.equipment] : [],
+        level: 'beginner',
+      };
+      const items = await readJson<Exercise>(customExKey(userId));
+      await writeJson(customExKey(userId), [...items, exercise]);
+      return exercise;
     },
     async listHabitLogs(userId) {
       const items = await readJson<HabitLog>(hlogKey(userId));
@@ -1435,6 +1473,21 @@ function createSupabaseRepository(
         target_per_period: input.targetPerPeriod,
       });
       return rowToHabit(row);
+    },
+    async listCustomExercises(userId) {
+      return (await listCustomExercisesDb(client, userId)).map(rowToExercise);
+    },
+    async addCustomExercise(userId, input) {
+      const row = await insertCustomExerciseDb(client, {
+        id: `custom-${randomId()}`,
+        name: input.name,
+        category: 'strength',
+        primary_muscles: [input.primaryMuscle],
+        secondary_muscles: input.secondaryMuscles,
+        equipment: input.equipment ? [input.equipment] : [],
+        created_by: userId,
+      });
+      return rowToExercise(row);
     },
     async listHabitLogs(userId) {
       return (await listHabitLogsDb(client, userId)).map(rowToHabitLog);

@@ -1,4 +1,4 @@
-import type { MuscleGroup } from '@supotsu/core';
+import type { Exercise as CoreExercise, MuscleGroup } from '@supotsu/core';
 import data from './exercises.data.json';
 
 export type ExerciseCategory = 'force' | 'cardio' | 'mobilité';
@@ -40,3 +40,19 @@ export const MUSCLE_ICON: Record<MuscleGroup, string> = {
   chest: '🫀', back: '🔙', shoulders: '💪', biceps: '💪', triceps: '💪', quads: '🦵', hamstrings: '🦵', glutes: '🍑', calves: '🦵', core: '🧱', full_body: '🏃',
 };
 export const CATEGORY_ICON: Record<ExerciseCategory, string> = { force: '🏋️', cardio: '🏃', mobilité: '🧘' };
+
+/** Adapts a user's custom exercise (packages/core Exercise, from the DB) to this catalogue's display shape, so both can share one pickable list. */
+export function toCatalogExercise(e: CoreExercise): Exercise {
+  return {
+    id: e.id,
+    name: e.name,
+    primary: e.primaryMuscles[0] ?? 'full_body',
+    secondary: e.secondaryMuscles,
+    category: 'force',
+    equipment: e.equipment[0] ?? 'Autre',
+    level: 'Débutant',
+    mechanic: null,
+    instructions: [],
+    image: null,
+  };
+}

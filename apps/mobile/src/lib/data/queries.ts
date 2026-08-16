@@ -5,6 +5,7 @@ import type {
   ActivityInput,
   AthleteProfileInput,
   ChallengeInput,
+  CustomExerciseInput,
   GoalInput,
   HabitInput,
   NutritionEntryInput,
@@ -131,6 +132,28 @@ export function useAddHabit() {
     mutationFn: (input: HabitInput) => repo.addHabit(user!.id, input),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['habits', user?.id] });
+    },
+  });
+}
+
+export function useCustomExercises() {
+  const { user } = useAuth();
+  const repo = useRepository();
+  return useQuery({
+    queryKey: ['customExercises', user?.id],
+    enabled: !!user,
+    queryFn: () => repo.listCustomExercises(user!.id),
+  });
+}
+
+export function useAddCustomExercise() {
+  const { user } = useAuth();
+  const repo = useRepository();
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (input: CustomExerciseInput) => repo.addCustomExercise(user!.id, input),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['customExercises', user?.id] });
     },
   });
 }

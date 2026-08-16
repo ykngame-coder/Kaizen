@@ -1,7 +1,7 @@
 import React, { useMemo } from 'react';
 import { Pressable, View } from 'react-native';
 import { useRouter } from 'expo-router';
-import { Card, Fab, Screen, Text, useTheme } from '@supotsu/ui';
+import { Card, Screen, Text, useTheme } from '@supotsu/ui';
 import { radii, spacing } from '@supotsu/design-system';
 import { BackButton } from '@/features/navigation/BackButton';
 import { useHabitLogs, useHabits, useLogHabit } from '@/lib/data/queries';
@@ -107,7 +107,28 @@ export function HabitsScreen(): React.JSX.Element {
   return (
     <View style={{ flex: 1 }}>
       <Screen scroll>
-        <BackButton />
+        <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+          <BackButton />
+          <Pressable
+            onPress={() => router.push('/profile/habit/new')}
+            accessibilityLabel="Nouvelle habitude"
+            style={({ pressed }) => ({
+              flexDirection: 'row',
+              alignItems: 'center',
+              gap: 6,
+              height: 38,
+              paddingHorizontal: spacing[3],
+              borderRadius: 19,
+              backgroundColor: colors.surface,
+              borderWidth: 1,
+              borderColor: colors.border,
+              opacity: pressed ? 0.7 : 1,
+            })}
+          >
+            <Text variant="body" style={{ fontWeight: '700' }}>+</Text>
+            <Text variant="caption">Habitude</Text>
+          </Pressable>
+        </View>
         <Text variant="title">Habitudes & discipline</Text>
         <Text variant="caption" color="textSubtle">Discipline • Séries • Progression</Text>
 
@@ -191,7 +212,6 @@ export function HabitsScreen(): React.JSX.Element {
           </Card>
         ) : null}
       </Screen>
-      <Fab icon="+" accessibilityLabel="Nouvelle habitude" onPress={() => router.push('/profile/habit/new')} />
     </View>
   );
 }
