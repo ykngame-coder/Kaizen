@@ -4,6 +4,10 @@ import { useRouter } from 'expo-router';
 import { Badge, Button, Screen, Text, useTheme } from '@supotsu/ui';
 import { radii, spacing } from '@supotsu/design-system';
 import appIcon from '../../../assets/icon.png';
+import screenshotDashboard from '../../../assets/marketing/dashboard.png';
+import screenshotSport from '../../../assets/marketing/sport.png';
+import screenshotSommeil from '../../../assets/marketing/sommeil.png';
+import screenshotNutrition from '../../../assets/marketing/nutrition.png';
 
 interface Feature {
   icon: string;
@@ -49,12 +53,12 @@ const FEATURES: Feature[] = [
   },
 ];
 
-/**
- * Screenshot filenames expected under assets/marketing/. Empty until real
- * captures from a populated account are added — the gallery section renders
- * nothing (not broken placeholders) while this stays empty.
- */
-const SCREENSHOTS: { source: number; caption: string }[] = [];
+const SCREENSHOTS: { source: number; caption: string }[] = [
+  { source: screenshotDashboard, caption: 'Accueil — Score Kaizen' },
+  { source: screenshotSport, caption: 'Sport — Récupération musculaire' },
+  { source: screenshotSommeil, caption: 'Sommeil' },
+  { source: screenshotNutrition, caption: 'Nutrition' },
+];
 
 function FeatureRow({ icon, title, description }: Feature): React.JSX.Element {
   const { colors } = useTheme();
