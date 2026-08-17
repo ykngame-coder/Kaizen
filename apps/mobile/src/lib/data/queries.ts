@@ -673,6 +673,35 @@ export function useAddPlannedWorkout() {
   });
 }
 
+/** Reschedule a session (planned, done, or skipped) onto a new date, carrying its exercises along — so "same session again" doesn't mean retyping everything. */
+export function useReprogramWorkout() {
+  const { user } = useAuth();
+  const repo = useRepository();
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (input: { workoutId: string; name: string; notes?: string; plannedFor: string }) => {
+      const sets = await repo.getWorkoutSets(user!.id, input.workoutId);
+      return repo.addPlannedWorkout(user!.id, {
+        name: input.name,
+        plannedFor: input.plannedFor,
+        notes: input.notes,
+        sets: sets.map(({ exerciseId, order, reps, weightKg, restSec, rpe }) => ({
+          exerciseId,
+          order,
+          reps,
+          weightKg,
+          restSec,
+          rpe,
+        })),
+      });
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['plannedWorkouts', user?.id] });
+      qc.invalidateQueries({ queryKey: ['workouts', user?.id] });
+    },
+  });
+}
+
 export function useSetWorkoutStatus() {
   const { user } = useAuth();
   const repo = useRepository();

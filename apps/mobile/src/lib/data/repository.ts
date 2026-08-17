@@ -138,12 +138,14 @@ export interface NewWorkout {
   sets: Omit<SetEntry, 'id' | 'workoutId'>[];
 }
 
-/** A future training session to schedule (no sets yet). */
+/** A future training session to schedule. */
 export interface PlannedInput {
   name: string;
   /** ISO date (YYYY-MM-DD) the session is planned for. */
   plannedFor: string;
   notes?: string;
+  /** Optional exercise list, e.g. when reprogramming a past session or planning from a template. */
+  sets?: Omit<SetEntry, 'id' | 'workoutId'>[];
 }
 
 export interface ImportPayload {
@@ -810,6 +812,19 @@ function createDemoRepository(): DataRepository {
       };
       const items = await readJson<Workout>(wkKey(userId));
       await writeJson(wkKey(userId), [created, ...items]);
+      if (input.sets && input.sets.length > 0) {
+        const rows = await readJson<LoggedSetRow & { date: string }>(setKey(userId));
+        const added = input.sets.map((s) => ({
+          workoutId: created.id,
+          exerciseId: s.exerciseId,
+          order: s.order,
+          reps: s.reps ?? null,
+          weightKg: s.weightKg ?? null,
+          restSec: s.restSec ?? null,
+          date: now,
+        }));
+        await writeJson(setKey(userId), [...added, ...rows]);
+      }
       return created;
     },
     async setWorkoutStatus(userId, workoutId, status, completedAt) {
@@ -1870,12 +1885,31 @@ function createSupabaseRepository(
       return (await listPlannedWorkoutsDb(client, userId)).map(rowToWorkout);
     },
     async addPlannedWorkout(userId, input) {
-      const row = await insertPlannedWorkout(client, {
-        user_id: userId,
-        name: input.name,
-        planned_for: input.plannedFor,
-        notes: input.notes ?? null,
-      });
+      const row = input.sets && input.sets.length > 0
+        ? await insertWorkout(
+            client,
+            {
+              user_id: userId,
+              name: input.name,
+              status: 'planned',
+              planned_for: input.plannedFor,
+              notes: input.notes ?? null,
+            },
+            input.sets.map((s) => ({
+              exercise_id: s.exerciseId,
+              order: s.order,
+              reps: s.reps ?? null,
+              weight_kg: s.weightKg ?? null,
+              rest_sec: s.restSec ?? null,
+              rpe: s.rpe ?? null,
+            })),
+          )
+        : await insertPlannedWorkout(client, {
+            user_id: userId,
+            name: input.name,
+            planned_for: input.plannedFor,
+            notes: input.notes ?? null,
+          });
       return rowToWorkout(row);
     },
     async setWorkoutStatus(_userId, workoutId, status, completedAt) {

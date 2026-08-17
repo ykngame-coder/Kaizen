@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from 'react';
-import { Pressable, View } from 'react-native';
+import { Alert, Pressable, View } from 'react-native';
 import { Swipeable } from 'react-native-gesture-handler';
 import { Button, Card, Input, Screen, Text, useTheme } from '@supotsu/ui';
 import { radii, spacing } from '@supotsu/design-system';
@@ -7,12 +7,18 @@ import type { MuscleGroup, Workout } from '@supotsu/core';
 import { computeMuscleStates } from '@supotsu/engines';
 import {
   useAddPlannedWorkout,
+  useCustomExercises,
   useDeletePlannedWorkout,
   useMuscleSessions,
   usePlannedWorkouts,
+  useReprogramWorkout,
   useSetWorkoutStatus,
+  useWorkoutSets,
   useWorkouts,
 } from '@/lib/data/queries';
+import { EXERCISES, toCatalogExercise } from '@/features/exercises/catalog';
+
+const BUILT_IN_EXERCISE_NAME: Record<string, string> = Object.fromEntries(EXERCISES.map((e) => [e.id, e.name]));
 
 const DAY_MS = 86_400_000;
 
@@ -89,6 +95,20 @@ export function PlanningScreen(): React.JSX.Element {
   const addPlanned = useAddPlannedWorkout();
   const setStatus = useSetWorkoutStatus();
   const removePlanned = useDeletePlannedWorkout();
+  const reprogram = useReprogramWorkout();
+
+  function handleReprogram(w: Workout): void {
+    const base = w.plannedFor ? new Date(`${w.plannedFor.slice(0, 10)}T12:00:00`) : new Date();
+    const nextDate = new Date(base.getTime() + 7 * DAY_MS);
+    const nextKey = dayKey(nextDate);
+    reprogram.mutate(
+      { workoutId: w.id, name: w.name, notes: w.notes, plannedFor: nextKey },
+      {
+        onSuccess: () => Alert.alert('Séance reprogrammée', `« ${w.name} » a été reprogrammée pour le ${longDate(nextKey)}, avec les mêmes exercices.`),
+        onError: () => Alert.alert('Échec', "La séance n'a pas pu être reprogrammée."),
+      },
+    );
+  }
 
   const todayKey = dayKey(new Date());
 
@@ -304,6 +324,7 @@ export function PlanningScreen(): React.JSX.Element {
               onDone={() => setStatus.mutate({ workoutId: w.id, status: 'completed', completedAt: new Date().toISOString() })}
               onSkip={() => setStatus.mutate({ workoutId: w.id, status: 'skipped' })}
               onDelete={() => removePlanned.mutate(w.id)}
+              onReprogram={() => handleReprogram(w)}
             />
           ))}
         </View>
@@ -365,17 +386,26 @@ function SessionCard({
   onDone,
   onSkip,
   onDelete,
+  onReprogram,
 }: {
   workout: Workout;
   sessions: Parameters<typeof computeMuscleStates>[0];
   onDone: () => void;
   onSkip: () => void;
   onDelete: () => void;
+  onReprogram: () => void;
 }): React.JSX.Element {
   const { colors } = useTheme();
   const focus = focusFor(workout.name);
   const k = (workout.plannedFor ?? '').slice(0, 10);
   const notReady = focus ? notReadyOn(k, focus.muscles, sessions) : [];
+  const { data: sets = [] } = useWorkoutSets(workout.id);
+  const { data: customExercises = [] } = useCustomExercises();
+  const exerciseNames = useMemo(() => {
+    const custom = Object.fromEntries(customExercises.map((e) => [e.id, toCatalogExercise(e).name]));
+    const order = [...sets].sort((a, b) => a.order - b.order);
+    return order.map((s) => custom[s.exerciseId] ?? BUILT_IN_EXERCISE_NAME[s.exerciseId] ?? 'Exercice').join(' · ');
+  }, [sets, customExercises]);
   return (
     <Swipeable
       renderRightActions={() => (
@@ -401,6 +431,9 @@ function SessionCard({
           <Text style={{ fontSize: 20 }}>{focus?.icon ?? '🎽'}</Text>
           <View style={{ flex: 1 }}>
             <Text variant="body" style={{ fontWeight: '700' }}>{workout.name}</Text>
+            {exerciseNames ? (
+              <Text variant="caption" color="textMuted" style={{ marginTop: 1 }} numberOfLines={2}>{exerciseNames}</Text>
+            ) : null}
             {workout.notes ? (
               <Text variant="caption" color="textSubtle" style={{ marginTop: 1 }}>{workout.notes}</Text>
             ) : null}
@@ -436,6 +469,17 @@ function SessionCard({
           <View style={{ flex: 1 }}>
             <Button label="Passer" variant="secondary" onPress={onSkip} fullWidth />
           </View>
+          <Pressable
+            onPress={onReprogram}
+            hitSlop={8}
+            accessibilityLabel="Reprogrammer cette séance la semaine prochaine"
+            style={({ pressed }) => ({
+              opacity: pressed ? 0.5 : 1, width: 44, alignItems: 'center', justifyContent: 'center',
+              borderRadius: radii.md, borderWidth: 1, borderColor: colors.border,
+            })}
+          >
+            <Text style={{ fontSize: 16 }}>↻</Text>
+          </Pressable>
           <Pressable
             onPress={onDelete}
             hitSlop={8}
