@@ -69,7 +69,7 @@ interface HaeMetric {
 
 /**
  * Health Auto Export metric name → Supotsu metric. `scale` converts the source
- * unit to our canonical unit. Metrics we don't model (steps, distance, nutrition
+ * unit to our canonical unit. Metrics we don't model (distance, nutrition
  * macros…) are intentionally absent and simply skipped.
  */
 const METRIC_MAP: Record<string, { type: HealthMetricType; unit: string; scale?: number }> = {
@@ -77,6 +77,7 @@ const METRIC_MAP: Record<string, { type: HealthMetricType; unit: string; scale?:
   heart_rate_variability: { type: 'hrv', unit: 'ms' },
   weight_body_mass: { type: 'weight', unit: 'kg' },
   body_fat_percentage: { type: 'body_fat', unit: '%' },
+  step_count: { type: 'steps', unit: 'count' },
   lean_body_mass: { type: 'muscle_mass', unit: 'kg' },
   dietary_water: { type: 'hydration', unit: 'ml' },
 };

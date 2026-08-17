@@ -32,6 +32,7 @@ const QUANTITY_TYPES: { id: QuantityTypeIdentifier; unit: string }[] = [
   { id: 'HKQuantityTypeIdentifierBodyMass', unit: 'kg' },
   { id: 'HKQuantityTypeIdentifierBodyFatPercentage', unit: '%' },
   { id: 'HKQuantityTypeIdentifierLeanBodyMass', unit: 'kg' },
+  { id: 'HKQuantityTypeIdentifierStepCount', unit: 'count' },
 ];
 const SLEEP_TYPE = 'HKCategoryTypeIdentifierSleepAnalysis' as const;
 const WORKOUT_TYPE = 'HKWorkoutTypeIdentifier' as const;

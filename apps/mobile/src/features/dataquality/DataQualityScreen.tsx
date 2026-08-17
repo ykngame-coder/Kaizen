@@ -23,6 +23,7 @@ const METRIC_LABEL: Record<HealthMetricType, string> = {
   body_fat: 'Masse grasse',
   muscle_mass: 'Masse musculaire',
   hydration: 'Hydratation',
+  steps: 'Pas',
 };
 
 const SOURCE_LABEL: Record<DataSource, string> = {

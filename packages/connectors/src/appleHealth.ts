@@ -28,6 +28,7 @@ const METRIC_MAP: Record<string, { type: HealthMetricType; unit: string }> = {
   HKQuantityTypeIdentifierBodyMass: { type: 'weight', unit: 'kg' },
   HKQuantityTypeIdentifierBodyFatPercentage: { type: 'body_fat', unit: '%' },
   HKQuantityTypeIdentifierLeanBodyMass: { type: 'muscle_mass', unit: 'kg' },
+  HKQuantityTypeIdentifierStepCount: { type: 'steps', unit: 'count' },
 };
 
 /** One HealthKit quantity sample → a normalized health metric (or null). */

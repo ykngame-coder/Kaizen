@@ -30,9 +30,15 @@ describe('normalizeHealthKitSample', () => {
     expect(m?.value).toBe(16.2);
   });
 
+  it('maps step count', () => {
+    const m = normalizeHealthKitSample({ quantityType: 'HKQuantityTypeIdentifierStepCount', value: 8000, startDate: '2026-07-20T05:00:00Z' });
+    expect(m).toMatchObject({ type: 'steps', unit: 'count', source: 'apple_health', reliability: 'high' });
+    expect(m?.value).toBe(8000);
+  });
+
   it('drops unmapped quantity types', () => {
     expect(
-      normalizeHealthKitSample({ quantityType: 'HKQuantityTypeIdentifierStepCount', value: 8000, startDate: '2026-07-20T05:00:00Z' }),
+      normalizeHealthKitSample({ quantityType: 'HKQuantityTypeIdentifierActiveEnergyBurned', value: 420, startDate: '2026-07-20T05:00:00Z' }),
     ).toBeNull();
   });
 });
@@ -41,7 +47,7 @@ describe('normalizeHealthKitSamples', () => {
   it('keeps only mapped samples', () => {
     const out = normalizeHealthKitSamples([
       { quantityType: 'HKQuantityTypeIdentifierRestingHeartRate', value: 48, startDate: '2026-07-20T05:00:00Z' },
-      { quantityType: 'HKQuantityTypeIdentifierStepCount', value: 8000, startDate: '2026-07-20T05:00:00Z' },
+      { quantityType: 'HKQuantityTypeIdentifierActiveEnergyBurned', value: 420, startDate: '2026-07-20T05:00:00Z' },
     ]);
     expect(out).toHaveLength(1);
     expect(out[0]?.type).toBe('resting_heart_rate');

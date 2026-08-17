@@ -10,7 +10,8 @@ export type HealthMetricType =
   | 'weight'
   | 'body_fat'
   | 'muscle_mass'
-  | 'hydration';
+  | 'hydration'
+  | 'steps';
 
 /**
  * A single health datapoint. One row per (type, timestamp, source) so history is

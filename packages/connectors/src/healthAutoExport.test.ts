@@ -171,12 +171,12 @@ describe('parseHealthAutoExport', () => {
     const out = parseHealthAutoExport(archive)!;
     const types = out.healthMetrics.map((m) => m.type).sort();
     expect(types).toEqual(
-      ['body_fat', 'hydration', 'muscle_mass', 'resting_heart_rate', 'sleep_duration', 'sleep_efficiency', 'weight'].sort(),
+      ['body_fat', 'hydration', 'muscle_mass', 'resting_heart_rate', 'sleep_duration', 'sleep_efficiency', 'steps', 'weight'].sort(),
     );
-    // step_count is unmodeled → dropped, no throw.
     expect(out.healthMetrics.find((m) => m.type === 'body_fat')?.value).toBe(30.5);
     expect(out.healthMetrics.find((m) => m.type === 'muscle_mass')?.value).toBe(71.39);
     expect(out.healthMetrics.find((m) => m.type === 'hydration')?.value).toBe(3000);
+    expect(out.healthMetrics.find((m) => m.type === 'steps')?.value).toBe(1200);
     expect(out.activities).toHaveLength(1);
   });
 

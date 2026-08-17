@@ -30,6 +30,8 @@ export interface Preferences {
   haptics: boolean;
   /** Require Face ID / Touch ID to open the app (native only). */
   biometricLock: boolean;
+  /** User-chosen daily step target (steps have no auto-estimated goal, unlike nutrition). */
+  dailyStepsGoal: number;
   /**
    * Dashboard card order + visibility. Undefined until the user customizes
    * it — DashboardScreen falls back to its own default order/visibility, so
@@ -47,6 +49,7 @@ const DEFAULTS: Preferences = {
   timeFormat: '24h',
   haptics: true,
   biometricLock: false,
+  dailyStepsGoal: 10_000,
 };
 
 const STORAGE_KEY = 'supotsu.preferences';

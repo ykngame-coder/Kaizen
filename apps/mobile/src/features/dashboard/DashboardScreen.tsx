@@ -192,6 +192,10 @@ export function DashboardScreen(): React.JSX.Element {
 
   // Habits (today + streak + week)
   const todayK = dayKey(now);
+  const stepsToday = useMemo(
+    () => health.filter((m) => m.type === 'steps' && dayKey(new Date(m.measuredAt)) === todayK).reduce((s, m) => s + m.value, 0),
+    [health, todayK],
+  );
   const doneToday = useMemo(() => new Set(habitLogs.filter((l) => dayKey(new Date(l.completedAt)) === todayK).map((l) => l.habitId)), [habitLogs, todayK]);
   const activeHabits = habits.filter((h) => !h.archivedAt);
   const pendingHabits = activeHabits.filter((h) => !doneToday.has(h.id));
@@ -270,6 +274,9 @@ export function DashboardScreen(): React.JSX.Element {
           <KpiTile icon="⚖" value={weight != null ? weight.toFixed(1) : '—'} delta={weightDelta != null ? `${weightDelta <= 0 ? '▼ ' : '▲ +'}${Math.abs(weightDelta).toFixed(1)}` : undefined} deltaTone={weightDelta != null && weightDelta <= 0 ? 'up' : 'down'} label="Poids (kg)" />
           <KpiTile icon="📉" value={nutrition.length > 0 ? `${deficit}` : '—'} label="Déficit kcal" />
           <KpiTile icon="💧" value={`${(totals.hydrationMl / 1000).toFixed(1)}`} label={`/ ${(targets.hydrationMl / 1000).toFixed(1)} L`} />
+        </View>
+        <View style={{ flexDirection: 'row', gap: spacing[3] }}>
+          <KpiTile icon="👣" value={stepsToday > 0 ? stepsToday.toLocaleString('fr-FR') : '—'} label={`/ ${preferences.dailyStepsGoal.toLocaleString('fr-FR')} pas`} />
         </View>
       </View>
     ),

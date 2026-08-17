@@ -39,6 +39,7 @@ const HEALTH_RANGES: Record<HealthMetricType, [number, number]> = {
   body_fat: [2, 70],
   muscle_mass: [10, 120],
   hydration: [0, 10],
+  steps: [0, 100_000],
 };
 
 export function validateHealthMetric(m: ImportedHealthMetric): QualityIssue[] {

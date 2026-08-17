@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Alert, Platform, Share, View } from 'react-native';
 import { useRouter } from 'expo-router';
-import { Badge, Button, Card, ListRow, Screen, SegmentedControl, Text, Toggle, useTheme } from '@supotsu/ui';
+import { Badge, Button, Card, Input, ListRow, Screen, SegmentedControl, Text, Toggle, useTheme } from '@supotsu/ui';
 import { spacing } from '@supotsu/design-system';
 import { useAuth } from '@/features/auth/AuthProvider';
 import { usePreferences, type TimeFormat, type UnitSystem } from '@/lib/preferences';
@@ -146,6 +146,16 @@ export function SettingsScreen(): React.JSX.Element {
         <SegmentedControl options={UNIT_OPTIONS} value={preferences.units} onChange={(v) => setPreference('units', v)} />
         <Text variant="body" style={{ fontWeight: '600', marginTop: spacing[4], marginBottom: spacing[2] }}>Format horaire</Text>
         <SegmentedControl options={TIME_OPTIONS} value={preferences.timeFormat} onChange={(v) => setPreference('timeFormat', v)} />
+        <Text variant="body" style={{ fontWeight: '600', marginTop: spacing[4], marginBottom: spacing[2] }}>Objectif de pas quotidien</Text>
+        <Input
+          value={String(preferences.dailyStepsGoal)}
+          onChangeText={(v) => {
+            const n = Number(v.replace(/[^0-9]/g, ''));
+            if (Number.isFinite(n)) setPreference('dailyStepsGoal', n);
+          }}
+          keyboardType="number-pad"
+          placeholder="10000"
+        />
       </Card>
       <Group>
         <ListRow icon="🌐" iconColor="rgba(116,128,146,0.22)" title="Langue" value="Français" divider />
