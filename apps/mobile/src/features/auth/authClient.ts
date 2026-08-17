@@ -171,8 +171,20 @@ function createSupabaseBackend(client: NonNullable<ReturnType<typeof getSupabase
       const result = await WebBrowser.openAuthSessionAsync(data.url, redirectTo);
       if (result.type !== 'success') return; // user cancelled or dismissed — not an error
 
-      const code = new URL(result.url).searchParams.get('code');
-      if (!code) throw new Error("Réponse d'authentification invalide.");
+      // The PKCE code normally arrives as a query param, but be tolerant of a
+      // hash-fragment redirect too — and surface the provider's own error
+      // (e.g. redirect_uri not allow-listed) instead of a generic message.
+      const resultUrl = new URL(result.url);
+      const hashParams = new URLSearchParams(resultUrl.hash.replace(/^#/, ''));
+      const code = resultUrl.searchParams.get('code') ?? hashParams.get('code');
+      const oauthError =
+        resultUrl.searchParams.get('error_description') ??
+        resultUrl.searchParams.get('error') ??
+        hashParams.get('error_description') ??
+        hashParams.get('error');
+      if (!code) {
+        throw new Error(oauthError ? `Authentification refusée : ${oauthError}` : "Réponse d'authentification invalide.");
+      }
 
       const { error: exchangeError } = await client.auth.exchangeCodeForSession(code);
       if (exchangeError) throw exchangeError;
