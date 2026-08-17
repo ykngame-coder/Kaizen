@@ -146,10 +146,19 @@ export function SportScreen(): React.JSX.Element {
   return (
     <View style={{ flex: 1 }}>
       <Screen scroll>
-        <Text variant="title">Sport</Text>
-        <Text variant="caption" color="textMuted">
-          Prêt pour votre séance ?
-        </Text>
+        <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+          <View style={{ flex: 1 }}>
+            <Text variant="title">Sport</Text>
+            <Text variant="caption" color="textMuted">
+              Prêt pour votre séance ?
+            </Text>
+          </View>
+          <Pressable onPress={() => router.push('/search')} style={({ pressed }) => ({ opacity: pressed ? 0.6 : 1 })}>
+            <View style={{ width: 38, height: 38, borderRadius: 19, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border, alignItems: 'center', justifyContent: 'center' }}>
+              <Text style={{ fontSize: 16 }}>🔍</Text>
+            </View>
+          </Pressable>
+        </View>
         <DayNav value={selectedDate} onChange={setSelectedDate} />
 
         {/* Séance du jour sélectionné */}

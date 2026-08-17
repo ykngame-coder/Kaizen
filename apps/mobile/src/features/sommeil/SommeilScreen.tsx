@@ -247,10 +247,19 @@ export function SommeilScreen(): React.JSX.Element {
 
   return (
     <Screen scroll>
-      <Text variant="title">Sommeil</Text>
-      <Text variant="caption" color="textMuted">
-        Ta dernière nuit, ton score et tes horaires optimaux.
-      </Text>
+      <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+        <View style={{ flex: 1 }}>
+          <Text variant="title">Sommeil</Text>
+          <Text variant="caption" color="textMuted">
+            Ta dernière nuit, ton score et tes horaires optimaux.
+          </Text>
+        </View>
+        <Pressable onPress={() => router.push('/search')} style={({ pressed }) => ({ opacity: pressed ? 0.6 : 1 })}>
+          <View style={{ width: 38, height: 38, borderRadius: 19, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border, alignItems: 'center', justifyContent: 'center' }}>
+            <Text style={{ fontSize: 16 }}>🔍</Text>
+          </View>
+        </Pressable>
+      </View>
       <DayNav value={selectedDate} onChange={setSelectedDate} />
 
       {isLoading ? (
