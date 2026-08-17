@@ -1,7 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import { Pressable, ScrollView, TextInput, View } from 'react-native';
 import { useRouter } from 'expo-router';
-import { Button, Card, Fab, Input, ProgressRing, Screen, Sparkline, Text, useTheme } from '@supotsu/ui';
+import { Button, Card, Fab, FilterChip, Input, ProgressRing, Screen, Sparkline, Text, useTheme } from '@supotsu/ui';
 import { radii, spacing } from '@supotsu/design-system';
 import {
   computeNutritionScore,
@@ -25,6 +25,7 @@ function latestMetric(m: { type: HealthMetricType; value: number; measuredAt: st
 }
 
 const MEAL_ORDER = ['breakfast', 'lunch', 'dinner', 'snack'] as const;
+const WATER_PRESETS = [250, 500, 750];
 const MEAL_LABEL: Record<string, string> = { breakfast: 'Petit-déjeuner', lunch: 'Déjeuner', dinner: 'Dîner', snack: 'Collation' };
 const MEAL_ICON: Record<string, string> = { breakfast: '🥣', lunch: '🍗', dinner: '🍝', snack: '🍎' };
 
@@ -134,6 +135,7 @@ export function NutritionScreen(): React.JSX.Element {
   const addWater = (ml: number): void => {
     addEntry.mutate({ mealType: 'snack', description: 'Eau', kcal: 0, hydrationMl: ml, source: 'manual', loggedAt: new Date().toISOString() });
   };
+  const [waterAmount, setWaterAmount] = useState(250);
   const [customWater, setCustomWater] = useState('');
 
   const asOfMetrics = useMemo(() => health.filter((m) => new Date(m.measuredAt).getTime() <= new Date(asOf).getTime()), [health, asOf]);
@@ -232,13 +234,22 @@ export function NutritionScreen(): React.JSX.Element {
 
         {/* Hydration */}
         <Card>
-          <SectionTitle right={<Text variant="subtitle" style={{ color: colors.accentEndurance }}>{(totals.hydrationMl / 1000).toFixed(2)} / {(goals.hydrationMl / 1000).toFixed(2)} L</Text>}>Hydratation</SectionTitle>
+          <SectionTitle right={<Text variant="subtitle" style={{ color: colors.accentEndurance }}>{(Math.max(0, totals.hydrationMl) / 1000).toFixed(2)} / {(goals.hydrationMl / 1000).toFixed(2)} L</Text>}>Hydratation</SectionTitle>
           <View style={{ height: 10, borderRadius: 6, backgroundColor: colors.surfaceElevated, overflow: 'hidden' }}>
-            <View style={{ width: `${Math.min(100, (totals.hydrationMl / goals.hydrationMl) * 100)}%`, height: 10, backgroundColor: colors.accentEndurance }} />
+            <View style={{ width: `${Math.max(0, Math.min(100, (totals.hydrationMl / goals.hydrationMl) * 100))}%`, height: 10, backgroundColor: colors.accentEndurance }} />
           </View>
-          <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: spacing[2], marginTop: spacing[3] }}>
-            {[250, 500, 750].map((ml) => (<Button key={ml} label={`+${ml} ml`} variant="secondary" onPress={() => addWater(ml)} />))}
-            <Button label="-250 ml" variant="secondary" onPress={() => addWater(-250)} disabled={totals.hydrationMl <= 0} />
+          <View style={{ flexDirection: 'row', gap: spacing[2], marginTop: spacing[3] }}>
+            {WATER_PRESETS.map((ml) => (
+              <FilterChip key={ml} label={`${ml} ml`} active={waterAmount === ml} onPress={() => setWaterAmount(ml)} />
+            ))}
+          </View>
+          <View style={{ flexDirection: 'row', gap: spacing[2], marginTop: spacing[2] }}>
+            <View style={{ flex: 1 }}>
+              <Button label={`− ${waterAmount} ml`} variant="secondary" fullWidth onPress={() => addWater(-waterAmount)} />
+            </View>
+            <View style={{ flex: 1 }}>
+              <Button label={`+ ${waterAmount} ml`} fullWidth onPress={() => addWater(waterAmount)} />
+            </View>
           </View>
           <View style={{ flexDirection: 'row', gap: spacing[2], marginTop: spacing[2], alignItems: 'flex-end' }}>
             <View style={{ flex: 1 }}>
