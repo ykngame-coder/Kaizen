@@ -1,4 +1,4 @@
-import { getAthleteProfile, upsertAthleteProfile, insertGoal } from '@supotsu/database';
+import { ensureProfile, getAthleteProfile, upsertAthleteProfile, insertGoal } from '@supotsu/database';
 import type { AthleteProfileInput, GoalInput } from '@supotsu/shared';
 import { secureStorage } from '@/lib/secure-storage';
 import { getSupabase } from '@/lib/supabase';
@@ -14,7 +14,7 @@ export interface OnboardingData {
  */
 export interface ProfileStore {
   isOnboarded(userId: string): Promise<boolean>;
-  completeOnboarding(userId: string, data: OnboardingData): Promise<void>;
+  completeOnboarding(userId: string, email: string, data: OnboardingData): Promise<void>;
 }
 
 const demoKey = (userId: string): string => `supotsu.onboarded.${userId}`;
@@ -35,7 +35,12 @@ function createSupabaseStore(client: NonNullable<ReturnType<typeof getSupabase>>
     async isOnboarded(userId) {
       return (await getAthleteProfile(client, userId)) !== null;
     },
-    async completeOnboarding(userId, data) {
+    async completeOnboarding(userId, email, data) {
+      // Normally already provisioned by the on_auth_user_created trigger —
+      // this is a self-healing fallback for the accounts where it didn't
+      // fire (athlete_profiles/goals both FK to profiles, so without this
+      // both inserts below fail).
+      await ensureProfile(client, userId, email);
       await upsertAthleteProfile(client, {
         user_id: userId,
         sex: data.profile.sex,

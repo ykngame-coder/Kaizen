@@ -126,7 +126,15 @@ export function OnboardingFlow(): React.JSX.Element {
       });
       // Routing reacts to onboarding status → app tabs.
     } catch (err) {
-      setSubmitError(err instanceof Error ? err.message : 'Enregistrement impossible');
+      // Supabase's PostgrestError isn't an Error instance — fall back to its
+      // .message (still more useful than the generic string) when present.
+      const message =
+        err instanceof Error
+          ? err.message
+          : typeof err === 'object' && err !== null && 'message' in err && typeof err.message === 'string'
+            ? err.message
+            : 'Enregistrement impossible';
+      setSubmitError(message);
     }
   };
 

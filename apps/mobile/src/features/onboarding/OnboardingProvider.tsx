@@ -44,7 +44,7 @@ export function OnboardingProvider({ children }: { children: React.ReactNode }):
       status,
       complete: async (data) => {
         if (!user) return;
-        await store.completeOnboarding(user.id, data);
+        await store.completeOnboarding(user.id, user.email, data);
         setStatus('done');
       },
     }),

@@ -15,6 +15,25 @@ export async function getProfile(
   return data;
 }
 
+/**
+ * Guarantees a profiles row exists for this user. Normally provisioned by
+ * the on_auth_user_created DB trigger right after signup, but that trigger
+ * has been observed to silently not fire for a meaningful share of
+ * signups (any provider) — leaving athlete_profiles/goals inserts (both FK
+ * to profiles) failing at the final onboarding step with no clear error.
+ * ignoreDuplicates means this never overwrites a real existing profile.
+ */
+export async function ensureProfile(
+  client: SupotsuClient,
+  userId: string,
+  email: string,
+): Promise<void> {
+  const { error } = await client
+    .from('profiles')
+    .upsert({ id: userId, email }, { onConflict: 'id', ignoreDuplicates: true });
+  if (error) throw error;
+}
+
 /** Set (or clear, passing null) the account's avatar URL. */
 export async function updateProfileAvatar(
   client: SupotsuClient,
