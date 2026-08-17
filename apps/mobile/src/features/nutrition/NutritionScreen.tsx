@@ -1,7 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import { Pressable, ScrollView, TextInput, View } from 'react-native';
 import { useRouter } from 'expo-router';
-import { Button, Card, Fab, ProgressRing, Screen, Sparkline, Text, useTheme } from '@supotsu/ui';
+import { Button, Card, Fab, Input, ProgressRing, Screen, Sparkline, Text, useTheme } from '@supotsu/ui';
 import { radii, spacing } from '@supotsu/design-system';
 import {
   computeNutritionScore,
@@ -134,6 +134,7 @@ export function NutritionScreen(): React.JSX.Element {
   const addWater = (ml: number): void => {
     addEntry.mutate({ mealType: 'snack', description: 'Eau', kcal: 0, hydrationMl: ml, source: 'manual', loggedAt: new Date().toISOString() });
   };
+  const [customWater, setCustomWater] = useState('');
 
   const asOfMetrics = useMemo(() => health.filter((m) => new Date(m.measuredAt).getTime() <= new Date(asOf).getTime()), [health, asOf]);
   const latestWeight = useMemo(() => latestMetric(asOfMetrics, 'weight'), [asOfMetrics]);
@@ -231,12 +232,33 @@ export function NutritionScreen(): React.JSX.Element {
 
         {/* Hydration */}
         <Card>
-          <SectionTitle right={<Text variant="subtitle" style={{ color: colors.accentEndurance }}>{(totals.hydrationMl / 1000).toFixed(1)} / {(goals.hydrationMl / 1000).toFixed(1)} L</Text>}>Hydratation</SectionTitle>
+          <SectionTitle right={<Text variant="subtitle" style={{ color: colors.accentEndurance }}>{(totals.hydrationMl / 1000).toFixed(2)} / {(goals.hydrationMl / 1000).toFixed(2)} L</Text>}>Hydratation</SectionTitle>
           <View style={{ height: 10, borderRadius: 6, backgroundColor: colors.surfaceElevated, overflow: 'hidden' }}>
             <View style={{ width: `${Math.min(100, (totals.hydrationMl / goals.hydrationMl) * 100)}%`, height: 10, backgroundColor: colors.accentEndurance }} />
           </View>
-          <View style={{ flexDirection: 'row', gap: spacing[2], marginTop: spacing[3] }}>
+          <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: spacing[2], marginTop: spacing[3] }}>
             {[250, 500, 750].map((ml) => (<Button key={ml} label={`+${ml} ml`} variant="secondary" onPress={() => addWater(ml)} />))}
+            <Button label="-250 ml" variant="secondary" onPress={() => addWater(-250)} disabled={totals.hydrationMl <= 0} />
+          </View>
+          <View style={{ flexDirection: 'row', gap: spacing[2], marginTop: spacing[2], alignItems: 'flex-end' }}>
+            <View style={{ flex: 1 }}>
+              <Input
+                label="Quantité (ml)"
+                placeholder="Ex : 330"
+                keyboardType="numeric"
+                value={customWater}
+                onChangeText={setCustomWater}
+              />
+            </View>
+            <Button
+              label="Ajouter"
+              variant="secondary"
+              disabled={!customWater.trim() || Number(customWater) <= 0}
+              onPress={() => {
+                addWater(Number(customWater));
+                setCustomWater('');
+              }}
+            />
           </View>
         </Card>
 
@@ -254,8 +276,12 @@ export function NutritionScreen(): React.JSX.Element {
             </View>
           ))}
           <View style={{ flexDirection: 'row', gap: spacing[2], marginTop: spacing[3] }}>
-            <Button label="Chercher un aliment" onPress={() => router.push('/nutrition/food/search')} />
-            <Button label="Saisie manuelle" variant="secondary" onPress={() => router.push('/nutrition/meal/new')} />
+            <View style={{ flex: 1 }}>
+              <Button label="Chercher un aliment" onPress={() => router.push('/nutrition/food/search')} fullWidth />
+            </View>
+            <View style={{ flex: 1 }}>
+              <Button label="Saisie manuelle" variant="secondary" onPress={() => router.push('/nutrition/meal/new')} fullWidth />
+            </View>
           </View>
         </Card>
 

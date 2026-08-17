@@ -11,6 +11,7 @@ import {
   useMuscleSessions,
   usePlannedWorkouts,
   useSetWorkoutStatus,
+  useWorkouts,
 } from '@/lib/data/queries';
 
 const DAY_MS = 86_400_000;
@@ -83,12 +84,35 @@ function notReadyOn(
 export function PlanningScreen(): React.JSX.Element {
   const { colors } = useTheme();
   const { data: planned = [], isLoading } = usePlannedWorkouts();
+  const { data: allWorkouts = [] } = useWorkouts();
   const { data: muscleSessions = [] } = useMuscleSessions();
   const addPlanned = useAddPlannedWorkout();
   const setStatus = useSetWorkoutStatus();
   const removePlanned = useDeletePlannedWorkout();
 
   const todayKey = dayKey(new Date());
+
+  // Every dated session regardless of status (planned only drops out of view
+  // once done/skipped) — lets the week strip show a done/missed mark instead
+  // of just "has a session".
+  const byDayAnyStatus = useMemo(() => {
+    const map = new Map<string, Workout[]>();
+    for (const w of allWorkouts) {
+      if (!w.plannedFor) continue;
+      const k = w.plannedFor.slice(0, 10);
+      const arr = map.get(k) ?? [];
+      arr.push(w);
+      map.set(k, arr);
+    }
+    return map;
+  }, [allWorkouts]);
+  const dayStatus = (k: string): 'done' | 'missed' | 'pending' | null => {
+    const sessions = byDayAnyStatus.get(k);
+    if (!sessions || sessions.length === 0) return null;
+    if (sessions.every((w) => w.status === 'completed')) return 'done';
+    const missed = sessions.some((w) => w.status === 'skipped') || (k < todayKey && sessions.some((w) => w.status === 'planned'));
+    return missed ? 'missed' : 'pending';
+  };
   const [weekAnchor, setWeekAnchor] = useState(() => mondayOf(new Date()));
   const [selected, setSelected] = useState(todayKey);
   const [adding, setAdding] = useState(false);
@@ -165,7 +189,7 @@ export function PlanningScreen(): React.JSX.Element {
         <View style={{ flexDirection: 'row', gap: spacing[1], marginTop: spacing[3] }}>
           {weekDays.map((d, i) => {
             const k = dayKey(d);
-            const count = (byDay.get(k) ?? []).length;
+            const status = dayStatus(k);
             const isSel = k === selected;
             const isToday = k === todayKey;
             return (
@@ -188,12 +212,18 @@ export function PlanningScreen(): React.JSX.Element {
                 <Text variant="body" style={{ color: isSel ? colors.onPrimary : colors.text, fontWeight: '700', marginTop: 2 }}>
                   {d.getDate()}
                 </Text>
-                <View
-                  style={{
-                    width: 5, height: 5, borderRadius: 3, marginTop: 4,
-                    backgroundColor: count > 0 ? (isSel ? colors.onPrimary : colors.accentData) : 'transparent',
-                  }}
-                />
+                {status === 'done' ? (
+                  <Text style={{ fontSize: 11, marginTop: 3 }}>✅</Text>
+                ) : status === 'missed' ? (
+                  <Text style={{ fontSize: 11, marginTop: 3 }}>🔴</Text>
+                ) : (
+                  <View
+                    style={{
+                      width: 5, height: 5, borderRadius: 3, marginTop: 4,
+                      backgroundColor: status === 'pending' ? (isSel ? colors.onPrimary : colors.accentData) : 'transparent',
+                    }}
+                  />
+                )}
               </Pressable>
             );
           })}

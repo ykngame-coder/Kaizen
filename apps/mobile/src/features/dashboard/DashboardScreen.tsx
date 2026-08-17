@@ -2,7 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { Image, Pressable, ScrollView, View } from 'react-native';
 import { useRouter, type Href } from 'expo-router';
 import { useQueryClient } from '@tanstack/react-query';
-import { Card, Fab, Gradient, ProgressRing, Screen, Sparkline, Text, useTheme } from '@supotsu/ui';
+import { Card, Gradient, ProgressRing, Screen, Sparkline, Text, useTheme } from '@supotsu/ui';
 import { radii, spacing } from '@supotsu/design-system';
 import type { HealthMetricType } from '@supotsu/core';
 import {
@@ -476,7 +476,6 @@ export function DashboardScreen(): React.JSX.Element {
           .filter((c) => c.visible)
           .map((c) => <React.Fragment key={c.id}>{cardNodes[c.id]}</React.Fragment>)}
       </Screen>
-      <Fab icon="+" accessibilityLabel="Ajouter" onPress={() => router.push('/nutrition')} />
     </View>
   );
 }
