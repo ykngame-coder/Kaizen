@@ -171,19 +171,22 @@ function createSupabaseBackend(client: NonNullable<ReturnType<typeof getSupabase
       const result = await WebBrowser.openAuthSessionAsync(data.url, redirectTo);
       if (result.type !== 'success') return; // user cancelled or dismissed — not an error
 
-      // The PKCE code normally arrives as a query param, but be tolerant of a
-      // hash-fragment redirect too — and surface the provider's own error
-      // (e.g. redirect_uri not allow-listed) instead of a generic message.
-      const resultUrl = new URL(result.url);
-      const hashParams = new URLSearchParams(resultUrl.hash.replace(/^#/, ''));
-      const code = resultUrl.searchParams.get('code') ?? hashParams.get('code');
-      const oauthError =
-        resultUrl.searchParams.get('error_description') ??
-        resultUrl.searchParams.get('error') ??
-        hashParams.get('error_description') ??
-        hashParams.get('error');
+      // Extract by regex rather than the URL/URLSearchParams APIs — RN's URL
+      // polyfill is unreliable on non-http(s) custom schemes like ours, so
+      // `new URL('supotsu://...').searchParams` can't be trusted here. Also
+      // surface the provider's own error (e.g. redirect_uri not allow-listed)
+      // instead of a generic message, and the raw URL as a last resort so a
+      // still-unexplained failure is at least diagnosable from what testers see.
+      const param = (key: string): string | null => {
+        const m = result.url.match(new RegExp(`[?&#]${key}=([^&]+)`));
+        return m ? decodeURIComponent(m[1]) : null;
+      };
+      const code = param('code');
+      const oauthError = param('error_description') ?? param('error');
       if (!code) {
-        throw new Error(oauthError ? `Authentification refusée : ${oauthError}` : "Réponse d'authentification invalide.");
+        throw new Error(
+          oauthError ? `Authentification refusée : ${oauthError}` : `Réponse d'authentification invalide : ${result.url}`,
+        );
       }
 
       const { error: exchangeError } = await client.auth.exchangeCodeForSession(code);
