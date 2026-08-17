@@ -133,10 +133,7 @@ export function SettingsScreen(): React.JSX.Element {
       <GroupTitle>COMPTE</GroupTitle>
       <Group>
         <ListRow icon="👤" iconColor="rgba(45,127,249,0.18)" title="Profil sportif" subtitle="Poids, taille, niveau, disponibilités" onPress={() => router.push('/profile/edit')} divider />
-        <ListRow icon="⭐" iconColor="rgba(245,183,66,0.18)" title="Abonnement" accessory={<Badge label="Gratuit" tone="neutral" />} divider />
-        <ListRow icon="🎯" iconColor="rgba(43,227,139,0.18)" title="Objectifs" onPress={() => router.push('/profile/goals')} divider />
-        <ListRow icon="⚖" iconColor="rgba(139,92,246,0.18)" title="Appareils & synchronisation" onPress={() => router.push('/profile/connectors')} divider />
-        <ListRow icon="🔗" iconColor="rgba(59,203,255,0.18)" title="Données & intégrations" onPress={() => router.push('/profile/integrations')} />
+        <ListRow icon="⭐" iconColor="rgba(245,183,66,0.18)" title="Abonnement" accessory={<Badge label="Gratuit" tone="neutral" />} />
       </Group>
 
       {/* Préférences */}
