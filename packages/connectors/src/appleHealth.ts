@@ -200,12 +200,18 @@ export interface HKWorkout {
 /** One HealthKit workout → a normalized activity (or null if unusable). */
 export function normalizeHealthKitWorkout(w: HKWorkout): ImportedActivity | null {
   if (!w.startDate || !w.duration) return null;
+  // Round after the truthiness check, not before: a genuine sub-0.5s HK
+  // workout (e.g. a mis-tapped Watch log) is truthy pre-rounding but rounds
+  // to 0, which the DB's `duration_sec > 0` check then rejects at insert —
+  // reject it here instead so one bad workout doesn't fail the whole sync.
+  const durationSec = Math.round(w.duration);
+  if (durationSec <= 0) return null;
   return {
     externalId: w.uuid ? `applehealth-${w.uuid}` : undefined,
     type: mapHealthKitWorkoutType(w.workoutActivityType),
     source: 'apple_health',
     startedAt: new Date(w.startDate).toISOString(),
-    durationSec: Math.round(w.duration),
+    durationSec,
     distanceM: w.totalDistance !== undefined ? Math.round(w.totalDistance) : undefined,
     calories: w.totalEnergyBurned !== undefined ? Math.round(w.totalEnergyBurned) : undefined,
   };

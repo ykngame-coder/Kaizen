@@ -141,6 +141,11 @@ describe('normalizeHealthKitWorkout', () => {
   it('returns null without start or duration', () => {
     expect(normalizeHealthKitWorkout({ workoutActivityType: 37, duration: 600 })).toBeNull();
   });
+
+  it('returns null for a workout whose duration rounds to 0 (would violate the DB\'s duration_sec > 0 check)', () => {
+    expect(normalizeHealthKitWorkout({ startDate: '2026-07-20T06:00:00Z', duration: 0.3 })).toBeNull();
+    expect(normalizeHealthKitWorkout({ startDate: '2026-07-20T06:00:00Z', duration: -5 })).toBeNull();
+  });
 });
 
 describe('normalizeShortcutHealth', () => {
