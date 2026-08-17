@@ -8,6 +8,7 @@ import type { ActivityType, MuscleGroup } from '@supotsu/core';
 import { computeMuscleStates } from '@supotsu/engines';
 import { useActivities, useMuscleSessions, useMuscleWork, useRecords } from '@/lib/data/queries';
 import { formatDate } from '@/lib/format';
+import { BackButton } from '@/features/navigation/BackButton';
 import { MuscleBody } from './MuscleBody';
 
 const DAY_MS = 86_400_000;
@@ -186,6 +187,7 @@ export function MusclesProgressScreen(): React.JSX.Element {
 
   return (
     <Screen scroll>
+      <BackButton />
       <Text variant="title">Progression musculaire</Text>
       <Text variant="caption" color="textSubtle">Où tu progresses, stagnes, et quoi travailler.</Text>
 
