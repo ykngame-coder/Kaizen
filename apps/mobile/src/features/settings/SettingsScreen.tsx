@@ -8,6 +8,7 @@ import { usePreferences, type TimeFormat, type UnitSystem } from '@/lib/preferen
 import { createDataRepository, exportUserData } from '@/lib/data/repository';
 import { deleteAccount } from '@/features/auth/accountClient';
 import { isBiometricSupported } from '@/lib/biometric-lock';
+import { errorMessage } from '@/lib/errors';
 
 const UNIT_OPTIONS: { value: UnitSystem; label: string }[] = [
   { value: 'metric', label: 'Métrique (kg, km)' },
@@ -97,7 +98,7 @@ export function SettingsScreen(): React.JSX.Element {
           }
         }
       } catch (e) {
-        setDeleteError(e instanceof Error ? e.message : 'Suppression impossible.');
+        setDeleteError(errorMessage(e, 'Suppression impossible.'));
       } finally {
         setDeleteBusy(false);
       }
@@ -188,8 +189,16 @@ export function SettingsScreen(): React.JSX.Element {
             divider
           />
         ) : null}
-        <ListRow icon="🚪" iconColor="rgba(255,77,103,0.18)" title="Se déconnecter" destructive onPress={signOut} divider />
-        <ListRow icon="🗑" iconColor="rgba(255,77,103,0.18)" title={deleteBusy ? 'Suppression…' : 'Supprimer mon compte'} destructive onPress={confirmDeleteAccount} />
+        <ListRow icon="🚪" iconColor="rgba(116,128,146,0.22)" title="Se déconnecter" onPress={signOut} />
+      </Group>
+
+      {/* Zone de danger — deliberately separated from "Se déconnecter" above:
+          the two used to sit in the same group with identical red styling,
+          which risked exactly the accidental-tap-then-confirm-without-reading
+          scenario that caused a tester to lose their data. */}
+      <GroupTitle>ZONE DE DANGER</GroupTitle>
+      <Group>
+        <ListRow icon="🗑" iconColor="rgba(255,77,103,0.18)" title={deleteBusy ? 'Suppression…' : 'Supprimer mon compte'} subtitle="Irréversible — toutes tes données sont effacées immédiatement." destructive onPress={confirmDeleteAccount} />
       </Group>
       {deleteError ? <Text variant="caption" color="error">{deleteError}</Text> : null}
 

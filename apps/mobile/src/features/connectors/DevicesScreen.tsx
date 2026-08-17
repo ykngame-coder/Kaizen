@@ -7,6 +7,7 @@ import { radii, spacing } from '@supotsu/design-system';
 import { CONNECTORS } from '@supotsu/connectors';
 import type { DataSource, HealthMetricType } from '@supotsu/core';
 import { useHealthMetrics, useImportHealth } from '@/lib/data/queries';
+import { errorMessage } from '@/lib/errors';
 import { healthKitAvailable, syncHealthKit } from './healthKitClient';
 import { markHealthKitConnected } from './useHealthKitAutoSync';
 import {
@@ -359,7 +360,7 @@ function HealthKitCard(): React.JSX.Element {
         setNote(`Importé : ${activities.length} activité(s), ${healthMetrics.length} donnée(s) santé.`);
       }
     } catch (e) {
-      setNote(e instanceof Error ? e.message : 'Synchronisation impossible.');
+      setNote(errorMessage(e, 'Synchronisation impossible.'));
     } finally {
       setBusy(false);
     }
