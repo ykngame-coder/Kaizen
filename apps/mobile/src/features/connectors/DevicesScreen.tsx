@@ -168,7 +168,8 @@ function StravaCard(): React.JSX.Element {
     try {
       await fn();
     } catch (e) {
-      setNote(e instanceof Error ? e.message : 'Erreur.');
+      const detail = errorMessage(e, '');
+      setNote(detail ? `Une erreur est survenue. Détail technique (utile si tu le signales) : ${detail}` : 'Une erreur est survenue.');
     } finally {
       setBusy(false);
     }
@@ -360,7 +361,12 @@ function HealthKitCard(): React.JSX.Element {
         setNote(`Importé : ${activities.length} activité(s), ${healthMetrics.length} donnée(s) santé.`);
       }
     } catch (e) {
-      setNote(errorMessage(e, 'Synchronisation impossible.'));
+      const detail = errorMessage(e, '');
+      setNote(
+        detail
+          ? `Synchronisation impossible pour l’instant. Détail technique (utile si tu le signales) : ${detail}`
+          : 'Synchronisation impossible pour l’instant. Réessaie plus tard.',
+      );
     } finally {
       setBusy(false);
     }
