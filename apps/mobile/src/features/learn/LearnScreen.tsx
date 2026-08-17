@@ -133,7 +133,11 @@ export function LearnScreen(): React.JSX.Element {
       </Text>
 
       <View style={{ alignItems: 'flex-start' }}>
-        <Button label="Retour" variant="secondary" onPress={() => router.back()} />
+        <Button
+          label="Retour"
+          variant="secondary"
+          onPress={() => (router.canGoBack() ? router.back() : router.replace('/'))}
+        />
       </View>
     </Screen>
   );
