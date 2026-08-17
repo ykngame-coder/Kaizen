@@ -1,11 +1,11 @@
 import React, { useMemo, useState } from 'react';
 import { View } from 'react-native';
 import { useRouter } from 'expo-router';
-import { Badge, Button, Card, EmptyState, Screen, SegmentedControl, Sparkline, Text, useTheme } from '@supotsu/ui';
+import { Badge, Button, Card, EmptyState, Input, Screen, SegmentedControl, Sparkline, Text, useTheme } from '@supotsu/ui';
 import { radii, spacing } from '@supotsu/design-system';
 import type { HealthMetricType } from '@supotsu/core';
 import { summarizeTrend, weightTrend } from '@supotsu/engines';
-import { useHealthMetrics } from '@/lib/data/queries';
+import { useAddHealthMetric, useHealthMetrics } from '@/lib/data/queries';
 
 const PERIODS = [
   { key: '30', label: '30 j', days: 30 },
@@ -44,9 +44,21 @@ export function WeightScreen(): React.JSX.Element {
   const router = useRouter();
   const { colors } = useTheme();
   const { data: health = [] } = useHealthMetrics();
+  const addMetric = useAddHealthMetric();
   const asOf = new Date().toISOString();
   const [period, setPeriod] = useState<PeriodKey>('90');
   const days = PERIODS.find((p) => p.key === period)!.days;
+  const [adding, setAdding] = useState(false);
+  const [weightInput, setWeightInput] = useState('');
+
+  const submitWeight = (): void => {
+    const value = Number(weightInput.trim().replace(',', '.'));
+    if (!Number.isFinite(value) || value <= 0) return;
+    addMetric.mutate(
+      { type: 'weight', value, unit: 'kg' },
+      { onSuccess: () => { setWeightInput(''); setAdding(false); } },
+    );
+  };
 
   const points = useMemo(() => weightTrend(health, asOf, days), [health, asOf, days]);
   const summary = useMemo(() => summarizeTrend(points), [points]);
@@ -70,8 +82,34 @@ export function WeightScreen(): React.JSX.Element {
 
       <SegmentedControl options={PERIODS.map((p) => ({ value: p.key, label: p.label }))} value={period} onChange={setPeriod} />
 
+      <View style={{ alignItems: 'flex-start' }}>
+        <Button
+          label={adding ? 'Annuler' : '+ Ajouter une pesée'}
+          variant="secondary"
+          onPress={() => setAdding((v) => !v)}
+        />
+      </View>
+      {adding ? (
+        <Card>
+          <Input
+            label="Poids (kg)"
+            placeholder="Ex. 72.5"
+            keyboardType="decimal-pad"
+            value={weightInput}
+            onChangeText={setWeightInput}
+          />
+          <View style={{ marginTop: spacing[3], alignItems: 'flex-start' }}>
+            <Button
+              label={addMetric.isPending ? 'Enregistrement…' : 'Enregistrer'}
+              onPress={submitWeight}
+              disabled={addMetric.isPending || weightInput.trim() === ''}
+            />
+          </View>
+        </Card>
+      ) : null}
+
       {currentWeight == null ? (
-        <EmptyState icon="⚖" title="Aucune pesée" message="Connecte une balance (Renpho via Apple Santé) ou importe tes données pour suivre ton poids." />
+        <EmptyState icon="⚖" title="Aucune pesée" message="Connecte une balance (Renpho via Apple Santé), importe tes données, ou ajoute une pesée manuellement ci-dessus." />
       ) : (
         <>
           {/* Poids courant + tendance */}

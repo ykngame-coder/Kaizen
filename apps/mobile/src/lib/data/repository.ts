@@ -4,6 +4,7 @@ import type {
   Exercise,
   Goal,
   HealthMetric,
+  HealthMetricType,
   Habit,
   HabitLog,
   MuscleGroup,
@@ -148,6 +149,15 @@ export interface PlannedInput {
   sets?: Omit<SetEntry, 'id' | 'workoutId'>[];
 }
 
+/** A hand-entered health metric (no connected device/scale involved). */
+export interface HealthMetricInput {
+  type: HealthMetricType;
+  value: number;
+  unit: string;
+  /** ISO datetime; defaults to now if omitted. */
+  measuredAt?: string;
+}
+
 export interface ImportPayload {
   activities: ImportedActivity[];
   healthMetrics: ImportedHealthMetric[];
@@ -184,6 +194,8 @@ export interface DataRepository {
   /** Edit a session's name/notes and replace its exercise list wholesale. */
   editWorkout(userId: string, workoutId: string, patch: { name: string; notes?: string; sets: Omit<SetEntry, 'id' | 'workoutId'>[] }): Promise<void>;
   listHealthMetrics(userId: string): Promise<HealthMetric[]>;
+  /** Log a single metric by hand (e.g. weight typed in without a connected scale). Always recorded with source "manual". */
+  addHealthMetric(userId: string, input: HealthMetricInput): Promise<HealthMetric>;
   listSleepSessions(userId: string): Promise<SleepSession[]>;
   listRecords(userId: string): Promise<PersonalRecord[]>;
   listMuscleSessions(userId: string): Promise<MuscleSession[]>;
@@ -883,6 +895,23 @@ function createDemoRepository(): DataRepository {
       const items = await readJson<HealthMetric>(hmKey(userId));
       return items.sort((a, b) => b.measuredAt.localeCompare(a.measuredAt));
     },
+    async addHealthMetric(userId, input) {
+      const now = new Date().toISOString();
+      const created: HealthMetric = {
+        id: randomId(),
+        userId,
+        type: input.type,
+        value: input.value,
+        unit: input.unit,
+        source: 'manual',
+        measuredAt: input.measuredAt ?? now,
+        createdAt: now,
+        updatedAt: now,
+      };
+      const items = await readJson<HealthMetric>(hmKey(userId));
+      await writeJson(hmKey(userId), [created, ...items]);
+      return created;
+    },
     async listSleepSessions(userId) {
       const items = await readJson<SleepSession>(sleepKey(userId));
       return items.sort((a, b) => b.startedAt.localeCompare(a.startedAt));
@@ -1435,6 +1464,21 @@ function createSupabaseRepository(
     },
     async listHealthMetrics(userId) {
       return (await listHealthMetricsDb(client, userId)).map(rowToHealthMetric);
+    },
+    async addHealthMetric(userId, input) {
+      const measuredAt = input.measuredAt ?? new Date().toISOString();
+      await insertHealthMetrics(client, [
+        {
+          user_id: userId,
+          type: input.type,
+          value: input.value,
+          unit: input.unit,
+          source: 'manual',
+          measured_at: measuredAt,
+        },
+      ]);
+      const now = new Date().toISOString();
+      return { id: randomId(), userId, type: input.type, value: input.value, unit: input.unit, source: 'manual', measuredAt, createdAt: now, updatedAt: now };
     },
     async listSleepSessions(userId) {
       return (await listSleepSessionsDb(client, userId)).map(rowToSleepSession);

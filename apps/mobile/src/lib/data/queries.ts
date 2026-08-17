@@ -23,7 +23,7 @@ import type {
   ImportedWorkout,
 } from '@supotsu/connectors';
 import { useAuth } from '@/features/auth/AuthProvider';
-import { createDataRepository, type NewWorkout, type PlannedInput } from './repository';
+import { createDataRepository, type HealthMetricInput, type NewWorkout, type PlannedInput } from './repository';
 import { isHealthKitConnected } from '@/features/connectors/useHealthKitAutoSync';
 import { saveActivityToHealthKit, saveNutritionToHealthKit, saveWorkoutToHealthKit } from '@/features/connectors/healthKitClient';
 
@@ -78,6 +78,19 @@ export function useHealthMetrics() {
     queryKey: ['health', user?.id],
     enabled: !!user,
     queryFn: () => repo.listHealthMetrics(user!.id),
+  });
+}
+
+/** Log a single metric by hand — e.g. weight typed in without a connected scale. */
+export function useAddHealthMetric() {
+  const { user } = useAuth();
+  const repo = useRepository();
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (input: HealthMetricInput) => repo.addHealthMetric(user!.id, input),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['health', user?.id] });
+    },
   });
 }
 
