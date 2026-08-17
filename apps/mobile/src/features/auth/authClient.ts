@@ -173,24 +173,34 @@ function createSupabaseBackend(client: NonNullable<ReturnType<typeof getSupabase
 
       // Extract by regex rather than the URL/URLSearchParams APIs — RN's URL
       // polyfill is unreliable on non-http(s) custom schemes like ours, so
-      // `new URL('supotsu://...').searchParams` can't be trusted here. Also
-      // surface the provider's own error (e.g. redirect_uri not allow-listed)
-      // instead of a generic message, and the raw URL as a last resort so a
-      // still-unexplained failure is at least diagnosable from what testers see.
+      // `new URL('supotsu://...').searchParams` can't be trusted here.
       const param = (key: string): string | null => {
         const m = result.url.match(new RegExp(`[?&#]${key}=([^&]+)`));
         return m ? decodeURIComponent(m[1]) : null;
       };
-      const code = param('code');
       const oauthError = param('error_description') ?? param('error');
-      if (!code) {
-        throw new Error(
-          oauthError ? `Authentification refusée : ${oauthError}` : `Réponse d'authentification invalide : ${result.url}`,
-        );
+      if (oauthError) throw new Error(`Authentification refusée : ${oauthError}`);
+
+      const code = param('code');
+      if (code) {
+        const { error: exchangeError } = await client.auth.exchangeCodeForSession(code);
+        if (exchangeError) throw exchangeError;
+        return;
       }
 
-      const { error: exchangeError } = await client.auth.exchangeCodeForSession(code);
-      if (exchangeError) throw exchangeError;
+      // This project's OAuth redirect turns out to be implicit-flow (tokens
+      // straight in the URL fragment: access_token/refresh_token/token_type),
+      // not the PKCE `?code=` the exchangeCodeForSession path above expects —
+      // confirmed from an actual failed redirect URL. Handle both.
+      const accessToken = param('access_token');
+      const refreshToken = param('refresh_token');
+      if (accessToken && refreshToken) {
+        const { error: setError } = await client.auth.setSession({ access_token: accessToken, refresh_token: refreshToken });
+        if (setError) throw setError;
+        return;
+      }
+
+      throw new Error(`Réponse d'authentification invalide : ${result.url}`);
     },
     async signOut() {
       const { error } = await client.auth.signOut();
