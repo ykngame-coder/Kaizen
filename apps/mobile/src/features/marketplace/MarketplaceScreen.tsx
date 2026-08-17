@@ -187,7 +187,12 @@ export function MarketplaceScreen(): React.JSX.Element {
                       {p.weeks} semaines · {p.sessionsPerWeek} séances/semaine
                     </Text>
                     <Text variant="body">{p.description}</Text>
-                    <View style={{ alignItems: 'flex-start', marginTop: spacing[1] }}>
+                    <View style={{ flexDirection: 'row', gap: spacing[2], marginTop: spacing[1] }}>
+                      <Button
+                        label="Voir les séances"
+                        variant="secondary"
+                        onPress={() => router.push({ pathname: '/profile/program-catalog/[id]', params: { id: p.id } })}
+                      />
                       <Button
                         label={enrolled ? 'Inscrit ✓' : enroll.isPending ? '…' : "S'inscrire"}
                         variant={enrolled ? 'secondary' : 'primary'}

@@ -1,11 +1,11 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { Pressable, View } from 'react-native';
-import { useRouter } from 'expo-router';
-import { Badge, Button, Card, Input, Screen, Text, useTheme } from '@supotsu/ui';
-import { radii, spacing } from '@supotsu/design-system';
-import { suggestProgression } from '@supotsu/engines';
+import { useLocalSearchParams, useRouter } from 'expo-router';
+import { Badge, Button, Card, EmptyState, Input, Screen, Text, useTheme } from '@supotsu/ui';
+import { spacing } from '@supotsu/design-system';
 import { EXERCISES, MUSCLE_LABEL, toCatalogExercise, type Exercise } from '@/features/exercises/catalog';
-import { useAddWorkout, useCustomExercises, useExerciseHistory } from '@/lib/data/queries';
+import { BackButton } from '@/features/navigation/BackButton';
+import { useCustomExercises, useEditWorkout, useWorkoutSets, useWorkouts } from '@/lib/data/queries';
 
 const LIMIT = 60;
 
@@ -15,23 +15,49 @@ interface SetDraft {
   rest: string;
 }
 
-/** Create a session plan: name, search + add exercises, set target reps/charge. It's saved "planned" — the muscle map, ACWR etc. only count it once the user actually marks it done from Planification. */
-export function NewWorkoutScreen(): React.JSX.Element {
+/** Edit an existing session's name and exercise list — same search-to-add UI as Nouvelle séance, pre-filled from the current sets. */
+export function EditWorkoutScreen(): React.JSX.Element {
   const router = useRouter();
   const { colors } = useTheme();
-  const addWorkout = useAddWorkout();
-  const { data: history = {} } = useExerciseHistory();
+  const { id } = useLocalSearchParams<{ id: string }>();
+  const { data: workouts = [], isLoading: loadingWorkout } = useWorkouts();
+  const { data: existingSets, isLoading: loadingSets } = useWorkoutSets(id);
   const { data: customExercises = [] } = useCustomExercises();
+  const editWorkout = useEditWorkout();
+
+  const workout = useMemo(() => workouts.find((w) => w.id === id), [workouts, id]);
 
   const [name, setName] = useState('');
   const [query, setQuery] = useState('');
   const [order, setOrder] = useState<string[]>([]);
   const [selected, setSelected] = useState<Record<string, SetDraft>>({});
   const [error, setError] = useState<string | null>(null);
+  const [prefilled, setPrefilled] = useState(false);
 
   const allExercises = useMemo(() => [...customExercises.map(toCatalogExercise), ...EXERCISES], [customExercises]);
   const byId = useMemo(() => new Map(allExercises.map((ex) => [ex.id, ex])), [allExercises]);
-  const isCustom = (id: string): boolean => id.startsWith('custom-');
+  const isCustom = (exId: string): boolean => exId.startsWith('custom-');
+
+  // Pre-fill once both the workout and its sets have loaded.
+  useEffect(() => {
+    if (prefilled || !workout || !existingSets) return;
+    setName(workout.name);
+    const nextOrder: string[] = [];
+    const nextSelected: Record<string, SetDraft> = {};
+    for (const s of existingSets) {
+      if (!nextSelected[s.exerciseId]) {
+        nextOrder.push(s.exerciseId);
+        nextSelected[s.exerciseId] = {
+          reps: s.reps != null ? String(s.reps) : '',
+          weight: s.weightKg != null ? String(s.weightKg) : '',
+          rest: s.restSec != null ? String(s.restSec) : '',
+        };
+      }
+    }
+    setOrder(nextOrder);
+    setSelected(nextSelected);
+    setPrefilled(true);
+  }, [prefilled, workout, existingSets]);
 
   const q = query.trim().toLowerCase();
   const searchResults = q
@@ -44,25 +70,26 @@ export function NewWorkoutScreen(): React.JSX.Element {
         .slice(0, LIMIT)
     : [];
 
-  const add = (id: string): void => {
-    setSelected((prev) => ({ ...prev, [id]: { reps: '', weight: '', rest: '' } }));
-    setOrder((prev) => [...prev, id]);
+  const add = (exId: string): void => {
+    setSelected((prev) => ({ ...prev, [exId]: { reps: '', weight: '', rest: '' } }));
+    setOrder((prev) => [...prev, exId]);
     setQuery('');
   };
-  const remove = (id: string): void => {
+  const remove = (exId: string): void => {
     setSelected((prev) => {
       const next = { ...prev };
-      delete next[id];
+      delete next[exId];
       return next;
     });
-    setOrder((prev) => prev.filter((x) => x !== id));
+    setOrder((prev) => prev.filter((x) => x !== exId));
   };
-  const update = (id: string, patch: Partial<SetDraft>): void => {
-    setSelected((prev) => ({ ...prev, [id]: { ...prev[id], ...patch } }));
+  const update = (exId: string, patch: Partial<SetDraft>): void => {
+    setSelected((prev) => ({ ...prev, [exId]: { ...prev[exId]!, ...patch } }));
   };
 
   const submit = async (): Promise<void> => {
     setError(null);
+    if (!workout) return;
     if (!name.trim() || order.length === 0) {
       setError('Donne un nom et ajoute au moins un exercice.');
       return;
@@ -75,7 +102,7 @@ export function NewWorkoutScreen(): React.JSX.Element {
       restSec: selected[exerciseId]!.rest ? Number(selected[exerciseId]!.rest) : undefined,
     }));
     try {
-      await addWorkout.mutateAsync({ name: name.trim(), sets });
+      await editWorkout.mutateAsync({ workoutId: workout.id, name: name.trim(), notes: workout.notes, sets });
       router.back();
     } catch {
       setError('Enregistrement impossible.');
@@ -85,12 +112,26 @@ export function NewWorkoutScreen(): React.JSX.Element {
   const exerciseSubtitle = (ex: Exercise): string =>
     `${isCustom(ex.id) ? '✨ Perso · ' : ''}${[ex.primary, ...ex.secondary].map((m) => MUSCLE_LABEL[m]).join(', ')} · ${ex.equipment}`;
 
+  if (loadingWorkout || loadingSets) {
+    return (
+      <Screen scroll>
+        <Text variant="body" color="textMuted">Chargement…</Text>
+      </Screen>
+    );
+  }
+
+  if (!workout) {
+    return (
+      <Screen scroll>
+        <EmptyState icon="🏋️" title="Séance introuvable" actionLabel="Retour" onAction={() => router.back()} />
+      </Screen>
+    );
+  }
+
   return (
     <Screen scroll>
-      <Text variant="title">Nouvelle séance</Text>
-      <Text variant="caption" color="textMuted">
-        Crée ta séance maintenant, tu la commenceras quand tu veux depuis Planification.
-      </Text>
+      <BackButton />
+      <Text variant="title">Modifier la séance</Text>
       <Input
         label="Nom de la séance"
         placeholder="Ex : Push A"
@@ -107,13 +148,7 @@ export function NewWorkoutScreen(): React.JSX.Element {
       />
       {q ? (
         searchResults.length === 0 ? (
-          <Text variant="caption" color="textSubtle">
-            Aucun exercice ne correspond à "{query}". Tu peux{' '}
-            <Text variant="caption" color="primary" onPress={() => router.push('/sport/exercise/new')}>
-              créer un exercice personnalisé
-            </Text>
-            .
-          </Text>
+          <Text variant="caption" color="textSubtle">Aucun exercice ne correspond à "{query}".</Text>
         ) : (
           <View style={{ gap: spacing[2] }}>
             {searchResults.map((ex) => (
@@ -140,67 +175,35 @@ export function NewWorkoutScreen(): React.JSX.Element {
         <Text variant="caption" color="textSubtle">Recherche un exercice ci-dessus pour l'ajouter à ta séance.</Text>
       ) : (
         <View style={{ gap: spacing[2] }}>
-          {order.map((id) => {
-            const ex = byId.get(id);
+          {order.map((exId) => {
+            const ex = byId.get(exId);
             if (!ex) return null;
             return (
-              <Card key={id} elevated>
+              <Card key={exId} elevated>
                 <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
                   <View style={{ flex: 1 }}>
                     <Text variant="subtitle">{ex.name}</Text>
                     <Text variant="caption" color="textMuted">{exerciseSubtitle(ex)}</Text>
                   </View>
-                  <Pressable onPress={() => remove(id)} hitSlop={8}>
+                  <Pressable onPress={() => remove(exId)} hitSlop={8}>
                     <Text variant="heading" style={{ color: colors.error }}>×</Text>
                   </Pressable>
                 </View>
-
-                {(() => {
-                  const suggestion = history[id] ? suggestProgression(history[id]) : undefined;
-                  if (!suggestion) return null;
-                  return (
-                    <View
-                      style={{
-                        marginTop: spacing[2],
-                        padding: spacing[2],
-                        borderRadius: radii.md,
-                        backgroundColor: colors.surfaceElevated,
-                        gap: spacing[1],
-                      }}
-                    >
-                      <Text variant="caption" color="textMuted">
-                        💡 Surcharge progressive : {suggestion.rationale}
-                      </Text>
-                      <View style={{ alignItems: 'flex-start' }}>
-                        <Button
-                          label="Utiliser la suggestion"
-                          variant="secondary"
-                          onPress={() =>
-                            update(id, {
-                              reps: suggestion.reps !== undefined ? String(suggestion.reps) : '',
-                              weight: suggestion.weightKg !== undefined ? String(suggestion.weightKg) : '',
-                            })
-                          }
-                        />
-                      </View>
-                    </View>
-                  );
-                })()}
                 <View style={{ flexDirection: 'row', gap: spacing[4], marginTop: spacing[2] }}>
                   <View style={{ flex: 1 }}>
                     <Input
                       label="Répétitions"
                       keyboardType="numeric"
-                      value={selected[id]!.reps}
-                      onChangeText={(v) => update(id, { reps: v })}
+                      value={selected[exId]!.reps}
+                      onChangeText={(v) => update(exId, { reps: v })}
                     />
                   </View>
                   <View style={{ flex: 1 }}>
                     <Input
                       label="Charge (kg)"
                       keyboardType="numeric"
-                      value={selected[id]!.weight}
-                      onChangeText={(v) => update(id, { weight: v })}
+                      value={selected[exId]!.weight}
+                      onChangeText={(v) => update(exId, { weight: v })}
                     />
                   </View>
                 </View>
@@ -209,8 +212,8 @@ export function NewWorkoutScreen(): React.JSX.Element {
                     label="Repos entre séries (sec)"
                     placeholder="Ex : 90"
                     keyboardType="numeric"
-                    value={selected[id]!.rest}
-                    onChangeText={(v) => update(id, { rest: v })}
+                    value={selected[exId]!.rest}
+                    onChangeText={(v) => update(exId, { rest: v })}
                   />
                 </View>
               </Card>
@@ -225,9 +228,9 @@ export function NewWorkoutScreen(): React.JSX.Element {
         <Button label="Annuler" variant="secondary" onPress={() => router.back()} />
         <View style={{ flex: 1 }} />
         <Button
-          label={addWorkout.isPending ? '…' : 'Créer la séance'}
+          label={editWorkout.isPending ? '…' : 'Enregistrer les modifications'}
           onPress={submit}
-          disabled={addWorkout.isPending}
+          disabled={editWorkout.isPending}
         />
       </View>
     </Screen>

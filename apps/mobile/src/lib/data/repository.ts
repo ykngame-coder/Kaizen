@@ -33,7 +33,7 @@ import type {
   UserSessionInput,
   WellnessCheckinInput,
 } from '@supotsu/shared';
-import { computeGoalProgress } from '@supotsu/engines';
+import { computeGoalProgress, generateProgramSchedule } from '@supotsu/engines';
 import { PROGRAM_CATALOG } from '@supotsu/shared';
 import type {
   ImportedActivity,
@@ -54,6 +54,9 @@ import {
   listPlannedWorkouts as listPlannedWorkoutsDb,
   updateWorkoutStatus as updateWorkoutStatusDb,
   deleteWorkout as deleteWorkoutDb,
+  listSetsForWorkout,
+  updateWorkout as updateWorkoutDb,
+  replaceWorkoutSets as replaceWorkoutSetsDb,
   listWorkouts as listWorkoutsDb,
   listWorkoutSetsForUser,
   listLoggedSets as listLoggedSetsDb,
@@ -174,6 +177,10 @@ export interface DataRepository {
   ): Promise<Workout>;
   /** Remove a planned session. */
   deletePlannedWorkout(userId: string, workoutId: string): Promise<void>;
+  /** The exercises/sets logged for one specific workout, in order. */
+  getWorkoutSets(userId: string, workoutId: string): Promise<SetEntry[]>;
+  /** Edit a session's name/notes and replace its exercise list wholesale. */
+  editWorkout(userId: string, workoutId: string, patch: { name: string; notes?: string; sets: Omit<SetEntry, 'id' | 'workoutId'>[] }): Promise<void>;
   listHealthMetrics(userId: string): Promise<HealthMetric[]>;
   listSleepSessions(userId: string): Promise<SleepSession[]>;
   listRecords(userId: string): Promise<PersonalRecord[]>;
@@ -384,6 +391,9 @@ function rowToChallenge(r: ChallengeRow): Challenge {
 }
 
 function rowToProgram(r: ProgramRow): Program {
+  // Session content isn't a DB column — it's static reference content
+  // (like the exercise library), bundled with the app and looked up by id.
+  const sessionTemplates = PROGRAM_CATALOG.find((p) => p.id === r.id)?.sessionTemplates ?? [];
   return {
     id: r.id,
     title: r.title,
@@ -394,6 +404,7 @@ function rowToProgram(r: ProgramRow): Program {
     sessionsPerWeek: r.sessions_per_week,
     description: r.description,
     priceCents: r.price_cents,
+    sessionTemplates,
   };
 }
 
@@ -576,6 +587,7 @@ interface LoggedSetRow {
   order: number;
   reps: number | null;
   weightKg: number | null;
+  restSec?: number | null;
 }
 
 /** For each exercise, the sets of the most recent workout that contains it. */
@@ -771,6 +783,7 @@ function createDemoRepository(): DataRepository {
           order: s.order,
           reps: s.reps ?? null,
           weightKg: s.weightKg ?? null,
+          restSec: s.restSec ?? null,
           date: now,
         }));
         await writeJson(setKey(userId), [...added, ...rows]);
@@ -823,6 +836,33 @@ function createDemoRepository(): DataRepository {
         wkKey(userId),
         items.filter((w) => w.id !== workoutId),
       );
+    },
+    async getWorkoutSets(userId, workoutId) {
+      const rows = await readJson<LoggedSetRow & { date: string }>(setKey(userId));
+      return rows
+        .filter((r) => r.workoutId === workoutId)
+        .sort((a, b) => a.order - b.order)
+        .map((r) => ({
+          id: `${r.workoutId}-${r.order}`,
+          workoutId: r.workoutId,
+          exerciseId: r.exerciseId,
+          order: r.order,
+          reps: r.reps ?? undefined,
+          weightKg: r.weightKg ?? undefined,
+          restSec: r.restSec ?? undefined,
+        }));
+    },
+    async editWorkout(userId, workoutId, patch) {
+      const now = new Date().toISOString();
+      const workouts = await readJson<Workout>(wkKey(userId));
+      const next = workouts.map((w) => (w.id === workoutId ? { ...w, name: patch.name, notes: patch.notes, updatedAt: now } : w));
+      if (!next.some((w) => w.id === workoutId)) throw new Error('Séance introuvable.');
+      await writeJson(wkKey(userId), next);
+
+      const rows = await readJson<LoggedSetRow & { date: string }>(setKey(userId));
+      const kept = rows.filter((r) => r.workoutId !== workoutId);
+      const added = patch.sets.map((s) => ({ workoutId, exerciseId: s.exerciseId, order: s.order, reps: s.reps ?? null, weightKg: s.weightKg ?? null, restSec: s.restSec ?? null, date: now }));
+      await writeJson(setKey(userId), [...added, ...kept]);
     },
     async listHealthMetrics(userId) {
       const items = await readJson<HealthMetric>(hmKey(userId));
@@ -1044,7 +1084,26 @@ function createDemoRepository(): DataRepository {
     },
     async enrollProgram(userId, programId) {
       const ids = await readJson<string>(enrollKey(userId));
-      if (!ids.includes(programId)) await writeJson(enrollKey(userId), [programId, ...ids]);
+      if (ids.includes(programId)) return; // already enrolled — don't regenerate the schedule
+      await writeJson(enrollKey(userId), [programId, ...ids]);
+
+      const program = PROGRAM_CATALOG.find((p) => p.id === programId);
+      if (!program) return;
+      const now = new Date().toISOString();
+      const schedule = generateProgramSchedule(program);
+      const workouts = await readJson<Workout>(wkKey(userId));
+      const setsStore = await readJson<LoggedSetRow & { date: string }>(setKey(userId));
+      const newWorkouts: Workout[] = [];
+      const newSets: (LoggedSetRow & { date: string })[] = [];
+      for (const s of schedule) {
+        const id = randomId();
+        newWorkouts.push({ id, userId, name: s.name, status: 'planned', plannedFor: s.plannedFor, notes: s.notes, createdAt: now, updatedAt: now });
+        for (const set of s.sets ?? []) {
+          newSets.push({ workoutId: id, exerciseId: set.exerciseId, order: set.order, reps: set.reps, weightKg: null, date: now });
+        }
+      }
+      await writeJson(wkKey(userId), [...newWorkouts, ...workouts]);
+      if (newSets.length > 0) await writeJson(setKey(userId), [...newSets, ...setsStore]);
     },
     async listUserSessions(userId) {
       const all = await readJson<UserSession>(usKey());
@@ -1537,7 +1596,21 @@ function createSupabaseRepository(
       return (await listEnrollmentsDb(client, userId)).map((e) => e.program_id);
     },
     async enrollProgram(userId, programId) {
+      const existing = await listEnrollmentsDb(client, userId);
+      const alreadyEnrolled = existing.some((e) => e.program_id === programId);
       await enrollInProgram(client, userId, programId);
+      if (alreadyEnrolled) return; // don't regenerate the schedule on a re-enroll
+
+      const program = PROGRAM_CATALOG.find((p) => p.id === programId);
+      if (!program) return;
+      const schedule = generateProgramSchedule(program);
+      for (const s of schedule) {
+        await insertWorkout(
+          client,
+          { user_id: userId, name: s.name, status: 'planned', planned_for: s.plannedFor, notes: s.notes ?? null },
+          (s.sets ?? []).map((set) => ({ exercise_id: set.exerciseId, order: set.order, reps: set.reps, weight_kg: null })),
+        );
+      }
     },
     async listUserSessions(userId) {
       return (await listUserSessionsDb(client, userId)).map(rowToUserSession);
@@ -1787,6 +1860,7 @@ function createSupabaseRepository(
           order: s.order,
           reps: s.reps ?? null,
           weight_kg: s.weightKg ?? null,
+          rest_sec: s.restSec ?? null,
           rpe: s.rpe ?? null,
         })),
       );
@@ -1810,6 +1884,28 @@ function createSupabaseRepository(
     },
     async deletePlannedWorkout(_userId, workoutId) {
       await deleteWorkoutDb(client, workoutId);
+    },
+    async getWorkoutSets(_userId, workoutId) {
+      const rows = await listSetsForWorkout(client, workoutId);
+      return rows.map((r) => ({
+        id: r.id,
+        workoutId: r.workout_id,
+        exerciseId: r.exercise_id,
+        order: r.order,
+        reps: r.reps ?? undefined,
+        weightKg: r.weight_kg ?? undefined,
+        durationSec: r.duration_sec ?? undefined,
+        restSec: r.rest_sec ?? undefined,
+        rpe: r.rpe ?? undefined,
+      }));
+    },
+    async editWorkout(_userId, workoutId, patch) {
+      await updateWorkoutDb(client, workoutId, { name: patch.name, notes: patch.notes ?? null });
+      await replaceWorkoutSetsDb(
+        client,
+        workoutId,
+        patch.sets.map((s) => ({ exercise_id: s.exerciseId, order: s.order, reps: s.reps ?? null, weight_kg: s.weightKg ?? null, rest_sec: s.restSec ?? null })),
+      );
     },
   };
 }

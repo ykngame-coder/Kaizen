@@ -149,3 +149,40 @@ export async function deleteWorkout(client: SupotsuClient, workoutId: string): P
   const { error } = await client.from('workouts').delete().eq('id', workoutId);
   if (error) throw error;
 }
+
+export type WorkoutSetRow = Database['public']['Tables']['workout_sets']['Row'];
+
+/** The sets belonging to one specific workout, in order — for a session's editable detail view (RLS scopes workout_sets to the caller's own workouts). */
+export async function listSetsForWorkout(client: SupotsuClient, workoutId: string): Promise<WorkoutSetRow[]> {
+  const { data, error } = await client
+    .from('workout_sets')
+    .select('*')
+    .eq('workout_id', workoutId)
+    .order('order', { ascending: true });
+  if (error) throw error;
+  return data ?? [];
+}
+
+/** Update a workout's editable fields (name/notes) — not status, use updateWorkoutStatus for that. */
+export async function updateWorkout(
+  client: SupotsuClient,
+  workoutId: string,
+  patch: { name?: string; notes?: string | null },
+): Promise<WorkoutRow> {
+  const { data, error } = await client.from('workouts').update(patch).eq('id', workoutId).select('*').single();
+  if (error) throw error;
+  return data;
+}
+
+/** Replace a workout's sets wholesale (delete then insert) — simplest correct way to persist an edited exercise/rep list without diffing. */
+export async function replaceWorkoutSets(
+  client: SupotsuClient,
+  workoutId: string,
+  sets: Omit<WorkoutSetInsertRow, 'workout_id'>[],
+): Promise<void> {
+  const { error: delError } = await client.from('workout_sets').delete().eq('workout_id', workoutId);
+  if (delError) throw delError;
+  if (sets.length === 0) return;
+  const { error: insError } = await client.from('workout_sets').insert(sets.map((s) => ({ ...s, workout_id: workoutId })));
+  if (insError) throw insError;
+}

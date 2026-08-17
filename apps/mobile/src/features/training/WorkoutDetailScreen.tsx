@@ -1,10 +1,13 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import { View } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Badge, Button, Card, EmptyState, Screen, Text, useTheme, type BadgeTone } from '@supotsu/ui';
 import { radii, spacing } from '@supotsu/design-system';
 import type { WorkoutStatus } from '@supotsu/core';
-import { useWorkouts } from '@/lib/data/queries';
+import { PICKABLE_EXERCISES } from '@supotsu/shared';
+import { EXERCISES } from '@/features/exercises/catalog';
+import { BackButton } from '@/features/navigation/BackButton';
+import { useCustomExercises, useDeletePlannedWorkout, useWorkoutSets, useWorkouts } from '@/lib/data/queries';
 import { formatDate } from '@/lib/format';
 
 const STATUS: Record<WorkoutStatus, { label: string; tone: BadgeTone }> = {
@@ -35,16 +38,35 @@ function Stat({ label, value }: { label: string; value: string }): React.JSX.Ele
   );
 }
 
-/**
- * Détail d'une séance (mockup #8). Shows the fields the model actually tracks —
- * name, status, date, duration, RPE, notes. Exercise-by-exercise logging is not
- * yet in the data model, so that section is an honest "coming soon".
- */
+/** Détail d'une séance : nom, statut, date, durée, RPE, notes, et le détail exercice par exercice (séries, répétitions, charges). */
 export function WorkoutDetailScreen(): React.JSX.Element {
   const router = useRouter();
+  const { colors } = useTheme();
   const { id } = useLocalSearchParams<{ id: string }>();
   const { data: workouts = [], isLoading } = useWorkouts();
+  const { data: sets = [] } = useWorkoutSets(id);
+  const { data: customExercises = [] } = useCustomExercises();
+  const deleteWorkout = useDeletePlannedWorkout();
+  const [confirmingDelete, setConfirmingDelete] = useState(false);
   const workout = useMemo(() => workouts.find((w) => w.id === id), [workouts, id]);
+
+  const exerciseName = useMemo(() => {
+    const map = new Map<string, string>();
+    for (const e of PICKABLE_EXERCISES) map.set(e.id, e.name);
+    for (const e of EXERCISES) map.set(e.id, e.name);
+    for (const e of customExercises) map.set(e.id, e.name);
+    return (exerciseId: string): string => map.get(exerciseId) ?? exerciseId;
+  }, [customExercises]);
+
+  const byExercise = useMemo(() => {
+    const groups: { exerciseId: string; sets: typeof sets }[] = [];
+    for (const s of [...sets].sort((a, b) => a.order - b.order)) {
+      const last = groups.at(-1);
+      if (last && last.exerciseId === s.exerciseId) last.sets.push(s);
+      else groups.push({ exerciseId: s.exerciseId, sets: [s] });
+    }
+    return groups;
+  }, [sets]);
 
   if (isLoading) {
     return (
@@ -66,8 +88,14 @@ export function WorkoutDetailScreen(): React.JSX.Element {
 
   const status = STATUS[workout.status];
 
+  const onDelete = async (): Promise<void> => {
+    await deleteWorkout.mutateAsync(workout.id);
+    router.back();
+  };
+
   return (
     <Screen scroll>
+      <BackButton />
       <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' }}>
         <View style={{ flex: 1 }}>
           <Text variant="title">{workout.name}</Text>
@@ -95,17 +123,60 @@ export function WorkoutDetailScreen(): React.JSX.Element {
         </Card>
       ) : null}
 
-      {/* Exercices — not yet modelled */}
+      {/* Exercices */}
       <Card>
         <Text variant="heading">Exercices</Text>
-        <Text variant="body" color="textMuted" style={{ marginTop: spacing[1], lineHeight: 21 }}>
-          Le détail par exercice (séries, répétitions, charges) arrive bientôt. Pour l'instant, Kaizen suit la séance au niveau global (durée, RPE, statut).
-        </Text>
+        {byExercise.length === 0 ? (
+          <Text variant="body" color="textMuted" style={{ marginTop: spacing[1], lineHeight: 21 }}>
+            Aucun exercice enregistré pour cette séance.
+          </Text>
+        ) : (
+          <View style={{ marginTop: spacing[2], gap: spacing[3] }}>
+            {byExercise.map((g) => (
+              <View key={g.exerciseId}>
+                <Text variant="body" style={{ fontWeight: '700' }}>{exerciseName(g.exerciseId)}</Text>
+                <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: spacing[2], marginTop: spacing[1] }}>
+                  {g.sets.map((s, i) => (
+                    <View
+                      key={s.id}
+                      style={{ paddingHorizontal: 10, paddingVertical: 6, borderRadius: radii.md, backgroundColor: colors.surfaceElevated }}
+                    >
+                      <Text variant="caption" color="textMuted">
+                        Série {i + 1} · {s.reps != null ? `${s.reps} reps` : '—'}{s.weightKg != null ? ` · ${s.weightKg} kg` : ''}
+                      </Text>
+                    </View>
+                  ))}
+                </View>
+              </View>
+            ))}
+          </View>
+        )}
       </Card>
 
-      <View style={{ flexDirection: 'row', gap: spacing[3] }}>
-        <Button label="Retour" variant="secondary" onPress={() => router.back()} />
-      </View>
+      {confirmingDelete ? (
+        <Card>
+          <Text variant="body">Supprimer définitivement cette séance ?</Text>
+          <View style={{ flexDirection: 'row', gap: spacing[2], marginTop: spacing[3] }}>
+            <Button label="Annuler" variant="secondary" onPress={() => setConfirmingDelete(false)} />
+            <Button
+              label={deleteWorkout.isPending ? '…' : 'Supprimer'}
+              variant="danger"
+              onPress={onDelete}
+              disabled={deleteWorkout.isPending}
+            />
+          </View>
+        </Card>
+      ) : (
+        <View style={{ flexDirection: 'row', gap: spacing[3] }}>
+          <Button label="Retour" variant="secondary" onPress={() => router.back()} />
+          <Button
+            label="Modifier"
+            variant="secondary"
+            onPress={() => router.push({ pathname: '/sport/workout/[id]/edit', params: { id: workout.id } })}
+          />
+          <Button label="Supprimer" variant="secondary" onPress={() => setConfirmingDelete(true)} />
+        </View>
+      )}
     </Screen>
   );
 }

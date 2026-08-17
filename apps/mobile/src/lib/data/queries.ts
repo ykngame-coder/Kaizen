@@ -14,7 +14,7 @@ import type {
   UserSessionInput,
   WellnessCheckinInput,
 } from '@supotsu/shared';
-import type { Challenge, Visibility, Workout } from '@supotsu/core';
+import type { Challenge, SetEntry, Visibility, Workout } from '@supotsu/core';
 import type {
   ImportedActivity,
   ImportedHealthMetric,
@@ -698,6 +698,36 @@ export function useDeletePlannedWorkout() {
     mutationFn: (workoutId: string) => repo.deletePlannedWorkout(user!.id, workoutId),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['plannedWorkouts', user?.id] });
+      qc.invalidateQueries({ queryKey: ['workouts', user?.id] });
+      qc.invalidateQueries({ queryKey: ['muscleSessions', user?.id] });
+      qc.invalidateQueries({ queryKey: ['exerciseHistory', user?.id] });
+    },
+  });
+}
+
+export function useWorkoutSets(workoutId: string | undefined) {
+  const { user } = useAuth();
+  const repo = useRepository();
+  return useQuery({
+    queryKey: ['workoutSets', workoutId],
+    enabled: !!user && !!workoutId,
+    queryFn: () => repo.getWorkoutSets(user!.id, workoutId!),
+  });
+}
+
+export function useEditWorkout() {
+  const { user } = useAuth();
+  const repo = useRepository();
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (input: { workoutId: string; name: string; notes?: string; sets: Omit<SetEntry, 'id' | 'workoutId'>[] }) =>
+      repo.editWorkout(user!.id, input.workoutId, input),
+    onSuccess: (_data, input) => {
+      qc.invalidateQueries({ queryKey: ['workouts', user?.id] });
+      qc.invalidateQueries({ queryKey: ['plannedWorkouts', user?.id] });
+      qc.invalidateQueries({ queryKey: ['workoutSets', input.workoutId] });
+      qc.invalidateQueries({ queryKey: ['muscleSessions', user?.id] });
+      qc.invalidateQueries({ queryKey: ['exerciseHistory', user?.id] });
     },
   });
 }

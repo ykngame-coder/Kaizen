@@ -1,4 +1,4 @@
-import type { ISODateString, Program, ProgramFocus, SportLevel } from '@supotsu/core';
+import type { ISODateString, Program, ProgramFocus, ProgramSessionExercise, SportLevel } from '@supotsu/core';
 import type { EngineResult } from './result';
 
 /**
@@ -73,4 +73,68 @@ export function recommendProgram(
     sourcesUsed: ['manual'],
     generatedAt: asOf,
   };
+}
+
+/** Weekday index sets (Mon=0 … Sun=6) used to spread a program's sessions across the week, keyed by sessionsPerWeek. */
+const WEEKDAY_PATTERNS: Record<number, number[]> = {
+  1: [0],
+  2: [0, 3],
+  3: [0, 2, 4],
+  4: [0, 1, 3, 4],
+  5: [0, 1, 2, 3, 4],
+  6: [0, 1, 2, 3, 4, 5],
+  7: [0, 1, 2, 3, 4, 5, 6],
+};
+
+function localDayKey(d: Date): string {
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+}
+
+/** One `sets`×`reps` exercise expanded into individual set rows (order 0, 1, 2… across the whole session, matching workout_sets' one-row-per-set shape). */
+function expandSets(exercises: ProgramSessionExercise[] | undefined): { exerciseId: string; order: number; reps: number }[] | undefined {
+  if (!exercises || exercises.length === 0) return undefined;
+  const out: { exerciseId: string; order: number; reps: number }[] = [];
+  let order = 0;
+  for (const ex of exercises) {
+    for (let i = 0; i < ex.sets; i += 1) {
+      out.push({ exerciseId: ex.exerciseId, order, reps: ex.reps });
+      order += 1;
+    }
+  }
+  return out;
+}
+
+export interface GeneratedProgramSession {
+  name: string;
+  /** Local calendar day, YYYY-MM-DD. */
+  plannedFor: string;
+  notes?: string;
+  sets?: { exerciseId: string; order: number; reps: number }[];
+}
+
+/**
+ * Turns a program's `sessionTemplates` into dated calendar entries, starting
+ * the day after `startFrom` (so enrolling doesn't cram a session into
+ * "today"), spread across the week per `sessionsPerWeek` (see
+ * WEEKDAY_PATTERNS). Pure — the caller persists the result as planned
+ * workouts.
+ */
+export function generateProgramSchedule(program: Program, startFrom: Date = new Date()): GeneratedProgramSession[] {
+  const pattern = WEEKDAY_PATTERNS[Math.min(7, Math.max(1, program.sessionsPerWeek))] ?? WEEKDAY_PATTERNS[3]!;
+  const sessions = program.sessionTemplates;
+  const out: GeneratedProgramSession[] = [];
+  const cursor = new Date(startFrom.getFullYear(), startFrom.getMonth(), startFrom.getDate() + 1);
+  let i = 0;
+  let safety = 0;
+  while (i < sessions.length && safety < 3650) {
+    safety += 1;
+    const dow = (cursor.getDay() + 6) % 7; // Mon=0 … Sun=6
+    if (pattern.includes(dow)) {
+      const t = sessions[i]!;
+      out.push({ name: t.title, plannedFor: localDayKey(cursor), notes: t.notes, sets: expandSets(t.exercises) });
+      i += 1;
+    }
+    cursor.setDate(cursor.getDate() + 1);
+  }
+  return out;
 }
