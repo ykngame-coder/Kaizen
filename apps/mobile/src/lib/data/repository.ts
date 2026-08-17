@@ -124,6 +124,12 @@ import { getSupabase } from '@/lib/supabase';
 import { secureStorage } from '@/lib/secure-storage';
 import { randomId } from '@/lib/id';
 
+/** Local (device-timezone) calendar-day key, matching the `planned_for` DATE column. */
+function todayKey(): string {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+}
+
 export interface NewWorkout {
   name: string;
   sets: Omit<SetEntry, 'id' | 'workoutId'>[];
@@ -749,8 +755,8 @@ function createDemoRepository(): DataRepository {
         id: randomId(),
         userId,
         name: workout.name,
-        status: 'completed',
-        completedAt: now,
+        status: 'planned',
+        plannedFor: todayKey(),
         createdAt: now,
         updatedAt: now,
       };
@@ -1773,8 +1779,8 @@ function createSupabaseRepository(
         {
           user_id: userId,
           name: workout.name,
-          status: 'completed',
-          completed_at: new Date().toISOString(),
+          status: 'planned',
+          planned_for: todayKey(),
         },
         workout.sets.map((s) => ({
           exercise_id: s.exerciseId,

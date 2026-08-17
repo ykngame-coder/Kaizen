@@ -1,5 +1,6 @@
 import React, { useMemo, useState } from 'react';
 import { Pressable, View } from 'react-native';
+import { Swipeable } from 'react-native-gesture-handler';
 import { Button, Card, Input, Screen, Text, useTheme } from '@supotsu/ui';
 import { radii, spacing } from '@supotsu/design-system';
 import type { MuscleGroup, Workout } from '@supotsu/core';
@@ -346,57 +347,77 @@ function SessionCard({
   const k = (workout.plannedFor ?? '').slice(0, 10);
   const notReady = focus ? notReadyOn(k, focus.muscles, sessions) : [];
   return (
-    <Card>
-      <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing[2] }}>
-        <Text style={{ fontSize: 20 }}>{focus?.icon ?? '🎽'}</Text>
-        <View style={{ flex: 1 }}>
-          <Text variant="body" style={{ fontWeight: '700' }}>{workout.name}</Text>
-          {workout.notes ? (
-            <Text variant="caption" color="textSubtle" style={{ marginTop: 1 }}>{workout.notes}</Text>
-          ) : null}
-        </View>
-      </View>
-
-      {focus && focus.muscles.length > 0 && (
-        <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: spacing[1], marginTop: spacing[2] }}>
-          {focus.muscles.map((m) => {
-            const cold = notReady.includes(m);
-            return (
-              <View
-                key={m}
-                style={{
-                  paddingHorizontal: 9, paddingVertical: 3, borderRadius: radii.full,
-                  backgroundColor: cold ? 'rgba(255,139,94,0.14)' : 'rgba(43,227,139,0.12)',
-                  borderWidth: 1, borderColor: cold ? 'rgba(255,139,94,0.3)' : 'rgba(43,227,139,0.28)',
-                }}
-              >
-                <Text variant="caption" style={{ color: cold ? colors.accentStrength : colors.accentData, fontWeight: '600' }}>
-                  {MUSCLE_LABEL[m] ?? m}
-                </Text>
-              </View>
-            );
-          })}
-        </View>
-      )}
-
-      <View style={{ flexDirection: 'row', gap: spacing[2], marginTop: spacing[3] }}>
-        <View style={{ flex: 1 }}>
-          <Button label="✓ Fait" variant="primary" onPress={onDone} fullWidth />
-        </View>
-        <View style={{ flex: 1 }}>
-          <Button label="Passer" variant="secondary" onPress={onSkip} fullWidth />
-        </View>
+    <Swipeable
+      renderRightActions={() => (
         <Pressable
           onPress={onDelete}
-          hitSlop={8}
-          style={({ pressed }) => ({
-            opacity: pressed ? 0.5 : 1, width: 44, alignItems: 'center', justifyContent: 'center',
-            borderRadius: radii.md, borderWidth: 1, borderColor: colors.border,
-          })}
+          style={{
+            justifyContent: 'center',
+            alignItems: 'center',
+            width: 84,
+            marginLeft: spacing[2],
+            borderRadius: radii.lg,
+            backgroundColor: colors.error,
+          }}
         >
-          <Text style={{ fontSize: 16 }}>🗑</Text>
+          <Text style={{ fontSize: 18 }}>🗑</Text>
+          <Text variant="caption" color="onPrimary" style={{ marginTop: 2, fontWeight: '600' }}>Supprimer</Text>
         </Pressable>
-      </View>
-    </Card>
+      )}
+      overshootRight={false}
+    >
+      <Card>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing[2] }}>
+          <Text style={{ fontSize: 20 }}>{focus?.icon ?? '🎽'}</Text>
+          <View style={{ flex: 1 }}>
+            <Text variant="body" style={{ fontWeight: '700' }}>{workout.name}</Text>
+            {workout.notes ? (
+              <Text variant="caption" color="textSubtle" style={{ marginTop: 1 }}>{workout.notes}</Text>
+            ) : null}
+          </View>
+        </View>
+
+        {focus && focus.muscles.length > 0 && (
+          <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: spacing[1], marginTop: spacing[2] }}>
+            {focus.muscles.map((m) => {
+              const cold = notReady.includes(m);
+              return (
+                <View
+                  key={m}
+                  style={{
+                    paddingHorizontal: 9, paddingVertical: 3, borderRadius: radii.full,
+                    backgroundColor: cold ? 'rgba(255,139,94,0.14)' : 'rgba(43,227,139,0.12)',
+                    borderWidth: 1, borderColor: cold ? 'rgba(255,139,94,0.3)' : 'rgba(43,227,139,0.28)',
+                  }}
+                >
+                  <Text variant="caption" style={{ color: cold ? colors.accentStrength : colors.accentData, fontWeight: '600' }}>
+                    {MUSCLE_LABEL[m] ?? m}
+                  </Text>
+                </View>
+              );
+            })}
+          </View>
+        )}
+
+        <View style={{ flexDirection: 'row', gap: spacing[2], marginTop: spacing[3] }}>
+          <View style={{ flex: 1 }}>
+            <Button label="✓ Fait" variant="primary" onPress={onDone} fullWidth />
+          </View>
+          <View style={{ flex: 1 }}>
+            <Button label="Passer" variant="secondary" onPress={onSkip} fullWidth />
+          </View>
+          <Pressable
+            onPress={onDelete}
+            hitSlop={8}
+            style={({ pressed }) => ({
+              opacity: pressed ? 0.5 : 1, width: 44, alignItems: 'center', justifyContent: 'center',
+              borderRadius: radii.md, borderWidth: 1, borderColor: colors.border,
+            })}
+          >
+            <Text style={{ fontSize: 16 }}>🗑</Text>
+          </Pressable>
+        </View>
+      </Card>
+    </Swipeable>
   );
 }
