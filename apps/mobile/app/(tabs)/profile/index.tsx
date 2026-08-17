@@ -22,7 +22,7 @@ function Group({ children }: { children: React.ReactNode }): React.JSX.Element {
 
 /** Profil (mockup #18): account header, quick stats, grouped navigation, sign-out. */
 export default function ProfileTab(): React.JSX.Element {
-  const { name, toggle, setPreference } = useTheme();
+  const { name } = useTheme();
   const { user, mode, signOut } = useAuth();
   const router = useRouter();
   const { data: workouts = [] } = useWorkouts();
@@ -159,8 +159,6 @@ export default function ProfileTab(): React.JSX.Element {
       </Text>
       <Group>
         <ListRow icon="⚙️" iconColor="rgba(116,128,146,0.22)" title="Réglages" subtitle="Unités, thème, confidentialité, sécurité" onPress={() => router.push('/profile/settings')} divider />
-        <ListRow icon="🌗" iconColor="rgba(116,128,146,0.22)" title="Thème" value={name === 'dark' ? 'Sombre' : 'Clair'} onPress={toggle} divider />
-        <ListRow icon="🖥" iconColor="rgba(116,128,146,0.22)" title="Suivre le système" onPress={() => setPreference('system')} divider />
         <ListRow icon="💬" iconColor="rgba(116,128,146,0.22)" title="Support" subtitle="Aide et contact" onPress={() => router.push('/profile/support')} />
       </Group>
 
