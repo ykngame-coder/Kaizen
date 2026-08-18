@@ -1,13 +1,16 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { Pressable, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Badge, Button, Card, Input, Screen, Text, useTheme } from '@supotsu/ui';
 import { radii, spacing } from '@supotsu/design-system';
 import { suggestProgression } from '@supotsu/engines';
 import { EXERCISES, MUSCLE_LABEL, toCatalogExercise, type Exercise } from '@/features/exercises/catalog';
-import { useAddWorkout, useCustomExercises, useExerciseHistory } from '@/lib/data/queries';
+import { useAddWorkout, useCustomExercises, useExerciseHistory, useWorkouts, useWorkoutSets } from '@/lib/data/queries';
+import { formatDate } from '@/lib/format';
 
 const LIMIT = 60;
+/** Name Garmin imports are stored under (repository.ts upsertImportedWorkout) — flags the badge below. */
+const GARMIN_IMPORT_NAME = 'Musculation (import Garmin)';
 
 interface SetDraft {
   reps: string;
@@ -22,16 +25,55 @@ export function NewWorkoutScreen(): React.JSX.Element {
   const addWorkout = useAddWorkout();
   const { data: history = {} } = useExerciseHistory();
   const { data: customExercises = [] } = useCustomExercises();
+  const { data: allWorkouts = [] } = useWorkouts();
 
   const [name, setName] = useState('');
   const [query, setQuery] = useState('');
   const [order, setOrder] = useState<string[]>([]);
   const [selected, setSelected] = useState<Record<string, SetDraft>>({});
   const [error, setError] = useState<string | null>(null);
+  const [pickerOpen, setPickerOpen] = useState(false);
+  const [importSourceId, setImportSourceId] = useState<string | undefined>();
 
   const allExercises = useMemo(() => [...customExercises.map(toCatalogExercise), ...EXERCISES], [customExercises]);
   const byId = useMemo(() => new Map(allExercises.map((ex) => [ex.id, ex])), [allExercises]);
   const isCustom = (id: string): boolean => id.startsWith('custom-');
+
+  // Séances déjà faites (incl. import Garmin) qu'on peut reprendre comme point de départ.
+  const pastWorkouts = useMemo(
+    () =>
+      [...allWorkouts]
+        .filter((w) => w.status === 'completed')
+        .sort((a, b) => (b.completedAt ?? '').localeCompare(a.completedAt ?? '')),
+    [allWorkouts],
+  );
+  const { data: importSets } = useWorkoutSets(importSourceId);
+
+  // Une fois les séries de la séance choisie chargées, préremplit le formulaire — même
+  // logique que le préremplissage d'EditWorkoutScreen, mais ça reste une nouvelle séance.
+  useEffect(() => {
+    if (!importSourceId || !importSets) return;
+    const source = allWorkouts.find((w) => w.id === importSourceId);
+    const nextOrder: string[] = [];
+    const nextSelected: Record<string, SetDraft> = {};
+    for (const s of [...importSets].sort((a, b) => a.order - b.order)) {
+      if (!nextSelected[s.exerciseId]) {
+        nextOrder.push(s.exerciseId);
+        nextSelected[s.exerciseId] = {
+          reps: s.reps != null ? String(s.reps) : '',
+          weight: s.weightKg != null ? String(s.weightKg) : '',
+          rest: s.restSec != null ? String(s.restSec) : '',
+        };
+      }
+    }
+    if (source && source.name !== GARMIN_IMPORT_NAME) {
+      setName((prev) => (prev.trim() ? prev : source.name));
+    }
+    setOrder(nextOrder);
+    setSelected(nextSelected);
+    setImportSourceId(undefined);
+    setPickerOpen(false);
+  }, [importSourceId, importSets, allWorkouts]);
 
   const q = query.trim().toLowerCase();
   const searchResults = q
@@ -91,6 +133,53 @@ export function NewWorkoutScreen(): React.JSX.Element {
       <Text variant="caption" color="textMuted">
         Crée ta séance maintenant, tu la commenceras quand tu veux depuis Planification.
       </Text>
+
+      {pastWorkouts.length > 0 && (
+        <View style={{ marginTop: spacing[2], alignItems: 'flex-start' }}>
+          <Button
+            label={pickerOpen ? 'Fermer' : 'Importer une séance déjà faite'}
+            variant="secondary"
+            onPress={() => setPickerOpen((v) => !v)}
+          />
+        </View>
+      )}
+      {pickerOpen && (
+        <Card style={{ marginTop: spacing[2] }}>
+          <Text variant="heading">Reprendre une séance déjà faite</Text>
+          <Text variant="caption" color="textMuted" style={{ marginBottom: spacing[2] }}>
+            Préremplit le nom et les exercices — tu peux tout modifier avant de créer.
+          </Text>
+          <View style={{ gap: spacing[2] }}>
+            {pastWorkouts.slice(0, 20).map((w) => (
+              <Pressable
+                key={w.id}
+                onPress={() => setImportSourceId(w.id)}
+                style={({ pressed }) => ({ opacity: pressed ? 0.7 : 1 })}
+              >
+                <Card elevated>
+                  <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <View style={{ flex: 1 }}>
+                      <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing[2] }}>
+                        <Text variant="subtitle">{w.name}</Text>
+                        {w.name === GARMIN_IMPORT_NAME && <Badge label="Garmin" tone="info" />}
+                      </View>
+                      {w.completedAt && (
+                        <Text variant="caption" color="textMuted">
+                          {formatDate(w.completedAt)}
+                        </Text>
+                      )}
+                    </View>
+                    <Text variant="heading" style={{ color: colors.primary }}>
+                      {importSourceId === w.id ? '…' : '↓'}
+                    </Text>
+                  </View>
+                </Card>
+              </Pressable>
+            ))}
+          </View>
+        </Card>
+      )}
+
       <Input
         label="Nom de la séance"
         placeholder="Ex : Push A"
