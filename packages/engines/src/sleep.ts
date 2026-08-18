@@ -50,6 +50,10 @@ export function sleepBand(score: number): SleepBand {
  * Sleep Score 0-100 from the most recent night. Duration is weighted most;
  * efficiency (time asleep vs in bed) refines it when available. Confidence
  * reflects how many components backed the score.
+ *
+ * @deprecated Superseded by {@link computeSleepScore2} (adds régularité,
+ * dette de sommeil and récupération) — kept only for its existing tests.
+ * New code should use computeSleepScore2 / {@link sleepCoaching}.
  */
 export function computeSleepScore(
   metrics: HealthMetric[],
@@ -105,7 +109,10 @@ export function averageSleepHours(
   return nights.reduce((s, m) => s + m.value, 0) / nights.length;
 }
 
-/** Explainable sleep briefing (Master Prompt P14.6), or undefined without data. */
+/**
+ * Explainable sleep briefing (Master Prompt P14.6), or undefined without data.
+ * @deprecated Built on the deprecated {@link computeSleepScore}. Use {@link sleepCoaching}, which is built on Score 2.0.
+ */
 export function sleepExplanation(
   metrics: HealthMetric[],
   asOf: ISODateString,

@@ -25,12 +25,25 @@ export interface ScoreFactor {
 }
 
 /**
- * Default weighting for the overall Supotsu Performance Score
- * (Master Prompt P34.4). Weights are adjustable per user profile.
+ * Default weighting for the overall Supotsu Score's four pillars (Master
+ * Prompt P34.4). Weights are adjustable per user profile. Renormalized over
+ * whichever pillars actually have data — see buildDailySnapshot.
  */
 export const OVERALL_SCORE_WEIGHTS = {
-  performance: 0.35,
+  sport: 0.3,
   recovery: 0.25,
-  consistency: 0.2,
-  progression: 0.2,
+  sleep: 0.25,
+  nutrition: 0.2,
+} as const;
+
+/**
+ * Default weighting for the Sport pillar's sub-scores. ACWR/training-load is
+ * deliberately excluded — it's shown as a standalone metric (Sport hub), not
+ * folded into the score, to avoid double-counting training volume alongside
+ * Performance and Progression.
+ */
+export const SPORT_SCORE_WEIGHTS = {
+  performance: 0.4,
+  regularity: 0.3,
+  progression: 0.3,
 } as const;

@@ -1,7 +1,7 @@
-import type { Activity, Confidence, HealthMetric, ISODateString, Pillar, WellnessCheckin } from '@supotsu/core';
+import type { Activity, Confidence, HealthMetric, ISODateString, Pillar, SleepSession, WellnessCheckin } from '@supotsu/core';
 import type { EngineResult, Recommendation } from './result';
 import { computeRecoveryScore } from './recovery';
-import { computeSleepScore } from './sleep';
+import { computeSleepScore2 } from './sleep';
 import { computeWellnessIndex } from './wellness';
 import { computeAcwr } from './load';
 
@@ -24,6 +24,8 @@ export interface RecommendationInput {
   healthMetrics: HealthMetric[];
   wellnessCheckins: WellnessCheckin[];
   asOf: ISODateString;
+  /** Optional — improves the sleep-quality component of Score 2.0 when available. */
+  sleepSessions?: SleepSession[];
 }
 
 /**
@@ -32,12 +34,12 @@ export interface RecommendationInput {
  * "keep going" always closes it out).
  */
 export function buildRecommendations(input: RecommendationInput): PrioritizedRecommendation[] {
-  const { activities, healthMetrics, wellnessCheckins, asOf } = input;
+  const { activities, healthMetrics, wellnessCheckins, asOf, sleepSessions } = input;
   const recs: PrioritizedRecommendation[] = [];
 
   const acwr = computeAcwr(activities, asOf);
   const recovery = computeRecoveryScore(healthMetrics, asOf);
-  const sleep = computeSleepScore(healthMetrics, asOf);
+  const sleep = computeSleepScore2(healthMetrics, asOf, 7, sleepSessions);
   const wellness = computeWellnessIndex(wellnessCheckins, asOf);
 
   // 1 — Injury risk from a training-load spike (safety first).

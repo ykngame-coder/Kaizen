@@ -17,6 +17,10 @@ const sleep = (h: number, ago: number): HealthMetric => ({
   id: `s${ago}`, userId: 'u', type: 'sleep_duration', value: h, unit: 'h', source: 'garmin',
   measuredAt: daysAgo(ago), createdAt: daysAgo(ago), updatedAt: daysAgo(ago),
 });
+const sleepEfficiency = (pct: number, ago: number): HealthMetric => ({
+  id: `se${ago}`, userId: 'u', type: 'sleep_efficiency', value: pct, unit: '%', source: 'garmin',
+  measuredAt: daysAgo(ago), createdAt: daysAgo(ago), updatedAt: daysAgo(ago),
+});
 
 describe('buildRecommendations', () => {
   it('puts an injury-risk load spike first', () => {
@@ -29,8 +33,13 @@ describe('buildRecommendations', () => {
   });
 
   it('recommends catching up on poor sleep', () => {
+    // Score 2.0 needs ≥2 components before it trusts a confidence — duration
+    // alone isn't enough, so pair it with a low efficiency reading too.
     const recs = buildRecommendations({
-      activities: [], healthMetrics: [sleep(4.5, 0)], wellnessCheckins: [], asOf: ASOF,
+      activities: [],
+      healthMetrics: [sleep(4.5, 0), sleepEfficiency(60, 0)],
+      wellnessCheckins: [],
+      asOf: ASOF,
     });
     expect(recs.some((r) => r.pillar === 'sleep' && r.articleId === 'sleep')).toBe(true);
   });

@@ -1,7 +1,19 @@
-import type { Activity, Confidence, Goal, HealthMetric, ISODateString } from '@supotsu/core';
-import { OVERALL_SCORE_WEIGHTS } from '@supotsu/core';
+import type {
+  Activity,
+  Confidence,
+  Goal,
+  HealthMetric,
+  ISODateString,
+  NutritionEntry,
+  NutritionTargets,
+  SleepSession,
+} from '@supotsu/core';
+import { OVERALL_SCORE_WEIGHTS, SPORT_SCORE_WEIGHTS } from '@supotsu/core';
 import type { EngineResult, Explanation, Recommendation } from './result';
 import { computeRecoveryScore, recoveryBand } from './recovery';
+import { computeSleepScore2 } from './sleep';
+import { computeNutritionScore, estimateTargets } from './nutrition';
+import { trendSlopePerDay, type TrendPoint } from './progression';
 
 /**
  * Pure scoring functions. They take domain data in and return provenance-aware
@@ -124,13 +136,204 @@ export function computePerformanceScore(
   };
 }
 
+const WEEK_MS = 7 * DAY_MS;
+const CONFIDENCE_RANK: Record<Confidence, number> = { to_confirm: 0, medium: 1, high: 2 };
+
+function minConfidence(confs: Confidence[]): Confidence {
+  if (confs.length === 0) return 'to_confirm';
+  return confs.reduce((min, c) => (CONFIDENCE_RANK[c] < CONFIDENCE_RANK[min] ? c : min));
+}
+
+/** A day's worth of strength-training volume (reps × load), e.g. one session. */
+export interface StrengthVolumePoint {
+  date: ISODateString;
+  volume: number;
+}
+
+/**
+ * Bucket dated values into `weeks` consecutive 7-day windows ending at `asOf`,
+ * oldest first, each spaced exactly 7 days apart (so trendSlopePerDay reads
+ * "per week" cleanly via `slope * 7`). Weeks with no data are kept as 0 —
+ * a real training gap is a real signal for the trend, not a missing point.
+ */
+function weeklySeries(
+  items: { date: ISODateString; value: number }[],
+  asOf: ISODateString,
+  weeks: number,
+): TrendPoint[] {
+  const asOfMs = new Date(asOf).getTime();
+  const buckets = new Array(weeks).fill(0) as number[];
+  for (const it of items) {
+    const age = asOfMs - new Date(it.date).getTime();
+    if (age < 0 || age >= weeks * WEEK_MS) continue;
+    const weeksAgo = Math.floor(age / WEEK_MS);
+    const idx = weeks - 1 - weeksAgo;
+    if (idx >= 0 && idx < weeks) buckets[idx] = buckets[idx]! + it.value;
+  }
+  return buckets.map((value, i) => ({
+    date: new Date(asOfMs - (weeks - 1 - i) * WEEK_MS).toISOString(),
+    value,
+  }));
+}
+
+/** Week-over-week change as a fraction of the series' mean level, or undefined without a usable trend. */
+function weeklyTrendPct(series: TrendPoint[]): number | undefined {
+  const slope = trendSlopePerDay(series);
+  if (slope === undefined) return undefined;
+  const mean = series.reduce((s, p) => s + p.value, 0) / series.length;
+  if (mean <= 0) return undefined;
+  return (slope * 7) / mean;
+}
+
+/**
+ * Progression score: is training load — and, when available, strength volume
+ * (reps × charge) — trending up, flat, or down over the last `weeks` weeks?
+ * 50 = flat; a rising trend pushes above 50, a falling one below.
+ */
+export function computeProgressionScore(
+  activities: Activity[],
+  asOf: ISODateString,
+  strengthVolume: StrengthVolumePoint[] = [],
+  weeks = 6,
+): EngineResult<number> {
+  const loadItems = activities
+    .filter((a) => within(a, asOf, weeks * 7))
+    .map((a) => ({ date: a.startedAt, value: activityLoad(a) }));
+  const loadSeries = weeklySeries(loadItems, asOf, weeks);
+  const loadWeeksWithData = loadSeries.filter((p) => p.value > 0).length;
+  const loadPct = weeklyTrendPct(loadSeries);
+
+  const volSeries =
+    strengthVolume.length > 0
+      ? weeklySeries(
+          strengthVolume.map((s) => ({ date: s.date, value: s.volume })),
+          asOf,
+          weeks,
+        )
+      : undefined;
+  const volWeeksWithData = volSeries ? volSeries.filter((p) => p.value > 0).length : 0;
+  const volPct = volSeries ? weeklyTrendPct(volSeries) : undefined;
+
+  const pcts = [loadPct, volPct].filter((p): p is number => p !== undefined);
+  const weeksWithData = Math.max(loadWeeksWithData, volWeeksWithData);
+
+  if (pcts.length === 0) {
+    return { value: 50, confidence: 'to_confirm', sourcesUsed: ['supotsu'], generatedAt: asOf };
+  }
+
+  const avgPct = pcts.reduce((s, p) => s + p, 0) / pcts.length;
+  const bounded = clamp(avgPct, -1, 1);
+  const value = clamp(Math.round(50 + bounded * 50));
+  const confidence: Confidence = weeksWithData >= 4 ? 'high' : weeksWithData >= 2 ? 'medium' : 'to_confirm';
+
+  const pctRounded = Math.round(avgPct * 100);
+  const explanation: Explanation = {
+    observation:
+      pctRounded >= 0
+        ? `Ta charge d'entraînement progresse de ${pctRounded} %/semaine en moyenne sur ${weeks} semaines.`
+        : `Ta charge d'entraînement baisse de ${Math.abs(pctRounded)} %/semaine en moyenne sur ${weeks} semaines.`,
+    analysis:
+      pctRounded > 5
+        ? 'La surcharge progressive est en place — de quoi soutenir des gains continus.'
+        : pctRounded < -5
+          ? 'Une charge en baisse freine la progression, sauf si c’est une semaine de décharge volontaire.'
+          : 'Ta charge est stable — ni progression nette, ni régression.',
+    action:
+      pctRounded > 5
+        ? 'Continue sur cette lancée, en surveillant la récupération.'
+        : pctRounded < -5
+          ? 'Si ce n’est pas une semaine de récupération planifiée, augmente légèrement le volume.'
+          : 'Ajoute un peu de volume ou de charge pour relancer la progression.',
+  };
+
+  return { value, confidence, explanation, sourcesUsed: ['supotsu'], generatedAt: asOf };
+}
+
+export interface SportScoreBreakdown {
+  performance: number;
+  regularity: number;
+  progression: number;
+}
+
+/**
+ * Sport score: weighted average of Performance, Regularity (consistency) and
+ * Progression, renormalized over whichever sub-scores actually have data.
+ * ACWR/training-load is deliberately NOT included — it's a standalone metric
+ * (Sport hub), not part of the score, to avoid double-counting training volume.
+ */
+export function computeSportScore(
+  activities: Activity[],
+  asOf: ISODateString,
+  strengthVolume: StrengthVolumePoint[] = [],
+): EngineResult<number> & { breakdown: SportScoreBreakdown } {
+  const performance = computePerformanceScore(activities, asOf);
+  const regularity = computeConsistencyScore(activities, asOf);
+  const progression = computeProgressionScore(activities, asOf, strengthVolume);
+
+  const breakdown: SportScoreBreakdown = {
+    performance: performance.value,
+    regularity: regularity.value,
+    progression: progression.value,
+  };
+
+  const parts = [
+    { result: performance, weight: SPORT_SCORE_WEIGHTS.performance, label: 'performance' as const },
+    { result: regularity, weight: SPORT_SCORE_WEIGHTS.regularity, label: 'régularité' as const },
+    { result: progression, weight: SPORT_SCORE_WEIGHTS.progression, label: 'progression' as const },
+  ];
+  const available = parts.filter((p) => p.result.confidence !== 'to_confirm');
+
+  if (available.length === 0) {
+    return {
+      value: 50,
+      confidence: 'to_confirm',
+      breakdown,
+      sourcesUsed: ['supotsu'],
+      generatedAt: asOf,
+    };
+  }
+
+  const totalWeight = available.reduce((s, p) => s + p.weight, 0);
+  const value = clamp(
+    Math.round(available.reduce((s, p) => s + p.result.value * p.weight, 0) / totalWeight),
+  );
+  const confidence = minConfidence(available.map((p) => p.result.confidence));
+
+  const weakest = [...available].sort((a, b) => a.result.value - b.result.value)[0]!;
+  const explanation: Explanation = {
+    observation: `Score Sport ${value}/100 — performance ${breakdown.performance}, régularité ${breakdown.regularity}, progression ${breakdown.progression}.`,
+    analysis:
+      weakest.result.value < 50
+        ? `Le point le plus faible est la ${weakest.label} (${weakest.result.value}/100).`
+        : 'Les trois composantes sont dans une plage correcte.',
+    action:
+      weakest.result.value < 50
+        ? weakest.label === 'progression'
+          ? 'Vise une petite hausse de charge ou de volume cette semaine.'
+          : weakest.label === 'régularité'
+            ? 'Ajoute une séance cette semaine pour retrouver un rythme régulier.'
+            : 'Reprends progressivement — une séance de plus cette semaine relancera la dynamique.'
+        : 'Continue sur ce rythme.',
+  };
+
+  return { value, confidence, breakdown, explanation, sourcesUsed: ['supotsu'], generatedAt: asOf };
+}
+
 export interface DailySnapshot {
   overall: number;
+  /** Sport pillar (performance + regularity + progression), null without enough activity data. */
+  sport: number | null;
+  sportBreakdown: SportScoreBreakdown | null;
+  /** 0-100, or null when no health data is available yet. */
+  recovery: number | null;
+  /** Sommeil (Score 2.0 — quantité/qualité/régularité/dette/récup), null without a logged night. */
+  sleep: number | null;
+  /** Null without any nutrition entry logged today. */
+  nutrition: number | null;
+  /** Legacy sub-scores, still used for the recommendation and displayed as standalone metrics. */
   performance: number;
   consistency: number;
   trainingLoad: number;
-  /** 0-100, or null when no health data is available yet. */
-  recovery: number | null;
   acwr: number;
   recommendation: Recommendation;
 }
@@ -188,16 +391,27 @@ function buildRecommendation(
   return { pillar: 'decision', title: explanation.action, explanation, confidence };
 }
 
+/** Optional inputs for the pillars beyond activities/health (all default to "no data"). */
+export interface DailySnapshotExtras {
+  nutritionEntries?: NutritionEntry[];
+  nutritionTargets?: NutritionTargets;
+  sleepSessions?: SleepSession[];
+  strengthVolume?: StrengthVolumePoint[];
+}
+
 /**
- * Aggregates sub-scores into the dashboard snapshot. Recovery is absent until
- * connectors land (Étape 5), so the overall score re-normalizes over the
- * components we actually have — and its confidence reflects that.
+ * Aggregates the four pillars (Sport, Récupération, Sommeil, Nutrition) into
+ * the dashboard snapshot. Each pillar is null when its own confidence is
+ * `to_confirm` (no usable data yet), and the overall score re-normalizes
+ * over whichever pillars actually have data — never inflating a score for a
+ * missing one (P1 "aucune boîte noire").
  */
 export function buildDailySnapshot(
   activities: Activity[],
   _goals: Goal[],
   asOf: ISODateString,
   healthMetrics: HealthMetric[] = [],
+  extras: DailySnapshotExtras = {},
 ): EngineResult<DailySnapshot> {
   const performance = computePerformanceScore(activities, asOf).value;
   const consistency = computeConsistencyScore(activities, asOf).value;
@@ -208,16 +422,31 @@ export function buildDailySnapshot(
   const hasRecovery = recoveryResult.confidence !== 'to_confirm';
   const recovery = hasRecovery ? recoveryResult.value : null;
 
-  // Weighted overall over the components actually available (renormalized).
-  const parts: { value: number; weight: number }[] = [
-    { value: performance, weight: OVERALL_SCORE_WEIGHTS.performance },
-    { value: consistency, weight: OVERALL_SCORE_WEIGHTS.consistency },
-  ];
-  if (recovery !== null) parts.push({ value: recovery, weight: OVERALL_SCORE_WEIGHTS.recovery });
-  const totalWeight = parts.reduce((s, p) => s + p.weight, 0);
-  const overall = clamp(
-    Math.round(parts.reduce((s, p) => s + p.value * p.weight, 0) / totalWeight),
-  );
+  const sportResult = computeSportScore(activities, asOf, extras.strengthVolume ?? []);
+  const hasSport = sportResult.confidence !== 'to_confirm';
+  const sport = hasSport ? sportResult.value : null;
+  const sportBreakdown = hasSport ? sportResult.breakdown : null;
+
+  const sleepResult = computeSleepScore2(healthMetrics, asOf, 7, extras.sleepSessions);
+  const hasSleep = sleepResult.confidence !== 'to_confirm';
+  const sleep = hasSleep ? sleepResult.value : null;
+
+  const nutritionTargets = extras.nutritionTargets ?? estimateTargets({}, asOf).value;
+  const nutritionResult = computeNutritionScore(extras.nutritionEntries ?? [], nutritionTargets, asOf);
+  const hasNutrition = nutritionResult.confidence !== 'to_confirm';
+  const nutrition = hasNutrition ? nutritionResult.value : null;
+
+  // Weighted overall over the pillars actually available (renormalized).
+  const pillars: { value: number; weight: number }[] = [];
+  if (sport !== null) pillars.push({ value: sport, weight: OVERALL_SCORE_WEIGHTS.sport });
+  if (recovery !== null) pillars.push({ value: recovery, weight: OVERALL_SCORE_WEIGHTS.recovery });
+  if (sleep !== null) pillars.push({ value: sleep, weight: OVERALL_SCORE_WEIGHTS.sleep });
+  if (nutrition !== null) pillars.push({ value: nutrition, weight: OVERALL_SCORE_WEIGHTS.nutrition });
+  const totalWeight = pillars.reduce((s, p) => s + p.weight, 0);
+  const overall =
+    totalWeight > 0
+      ? clamp(Math.round(pillars.reduce((s, p) => s + p.value * p.weight, 0) / totalWeight))
+      : 0;
 
   const recommendation = buildRecommendation(activities, asOf, workload, consistency, recovery);
   const sample = activities.filter((a) => within(a, asOf, 28)).length;
@@ -225,14 +454,18 @@ export function buildDailySnapshot(
   return {
     value: {
       overall,
+      sport,
+      sportBreakdown,
+      recovery,
+      sleep,
+      nutrition,
       performance,
       consistency,
       trainingLoad,
-      recovery,
       acwr: workload.acwr,
       recommendation,
     },
-    confidence: hasRecovery || sample >= 4 ? 'medium' : 'to_confirm',
+    confidence: pillars.length > 0 || sample >= 4 ? 'medium' : 'to_confirm',
     explanation: recommendation.explanation,
     sourcesUsed: ['supotsu'],
     generatedAt: asOf,
