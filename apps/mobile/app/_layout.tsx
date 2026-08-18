@@ -6,6 +6,11 @@ import { StatusBar } from 'expo-status-bar';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { QueryClientProvider } from '@tanstack/react-query';
+import { useFonts } from 'expo-font';
+import * as SplashScreen from 'expo-splash-screen';
+import { Oswald_600SemiBold, Oswald_700Bold } from '@expo-google-fonts/oswald';
+import { Barlow_400Regular, Barlow_500Medium, Barlow_600SemiBold } from '@expo-google-fonts/barlow';
+import { ArchivoBlack_400Regular } from '@expo-google-fonts/archivo-black';
 import { ThemeProvider, useTheme } from '@supotsu/ui';
 import { queryClient } from '@/lib/query';
 import { AuthProvider, useAuth } from '@/features/auth/AuthProvider';
@@ -14,6 +19,11 @@ import { PreferencesProvider } from '@/lib/preferences';
 import { AppTabBar } from '@/features/navigation/AppTabBar';
 import { BiometricGate } from '@/features/security/BiometricGate';
 import { useHealthKitAutoSync } from '@/features/connectors/useHealthKitAutoSync';
+
+// Keep the splash screen up until the app's custom fonts (design-system
+// typography.ts) are loaded — swapping fonts in after first paint would
+// flash the system font first.
+void SplashScreen.preventAutoHideAsync().catch(() => undefined);
 
 /**
  * Central route gate: sends users to auth, onboarding or the app depending on
@@ -68,7 +78,22 @@ function RouteGuard({ children }: { children: React.ReactNode }): React.JSX.Elem
 }
 
 /** App root: theming, data client, auth/onboarding state and route gating. */
-export default function RootLayout(): React.JSX.Element {
+export default function RootLayout(): React.JSX.Element | null {
+  const [fontsLoaded, fontError] = useFonts({
+    Oswald_600SemiBold,
+    Oswald_700Bold,
+    Barlow_400Regular,
+    Barlow_500Medium,
+    Barlow_600SemiBold,
+    ArchivoBlack_400Regular,
+  });
+
+  useEffect(() => {
+    if (fontsLoaded || fontError) void SplashScreen.hideAsync();
+  }, [fontsLoaded, fontError]);
+
+  if (!fontsLoaded && !fontError) return null;
+
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <SafeAreaProvider>

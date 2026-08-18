@@ -1,14 +1,19 @@
 /**
- * Typographic scale. A dedicated `data` family gives scores, records and
- * numeric stats a tabular, high-legibility treatment (Master Prompt P47.6:
- * "style spécifique pour performances, records, statistiques").
+ * Typographic scale. Three families give the app its own identity instead of
+ * the system default: Oswald (condensed, uppercase) for titles/headings,
+ * Barlow for everyday UI text, and Archivo Black for scores/records/stats —
+ * a dedicated `data` family gives them a bold, tabular, high-legibility
+ * treatment (Master Prompt P47.6: "style spécifique pour performances,
+ * records, statistiques"). Loaded via @expo-google-fonts in app/_layout.tsx.
  */
 
 export const fontFamily = {
-  /** UI text. Replaced by the app's loaded font at runtime. */
-  sans: 'System',
+  /** Titles and section headings. */
+  display: 'Oswald_700Bold',
+  /** UI text. */
+  sans: 'Barlow_400Regular',
   /** Numeric / data display — tabular figures. */
-  data: 'System',
+  data: 'ArchivoBlack_400Regular',
 } as const;
 
 export const fontSize = {
@@ -41,47 +46,60 @@ const lh = (size: number, ratio: number): number => Math.round(size * ratio);
 /**
  * Named text roles. `lineHeight` is an absolute pixel value because React
  * Native interprets it as px (not a multiplier) — using a ratio collapses lines.
+ *
+ * Each Google Fonts weight ships as its own named font file (e.g.
+ * 'Barlow_700Bold' is a distinct family from 'Barlow_400Regular', not a
+ * `fontWeight` variant of it) — so `fontFamily` alone carries the weight
+ * here and no `fontWeight` is set. A `style={{ fontWeight: '700' }}` override
+ * on a screen has no visual effect once a named family is set; that's a
+ * known trade-off of static Google Fonts, not a bug.
  */
 export const textVariants = {
   display: {
+    fontFamily: 'Oswald_700Bold',
     fontSize: fontSize['4xl'],
-    fontWeight: fontWeight.bold,
     lineHeight: lh(fontSize['4xl'], lineHeight.tight),
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
   },
   title: {
+    fontFamily: 'Oswald_700Bold',
     fontSize: fontSize['2xl'],
-    fontWeight: fontWeight.bold,
     lineHeight: lh(fontSize['2xl'], lineHeight.tight),
+    textTransform: 'uppercase',
+    letterSpacing: 0.4,
   },
   heading: {
+    fontFamily: 'Oswald_600SemiBold',
     fontSize: fontSize.xl,
-    fontWeight: fontWeight.semibold,
     lineHeight: lh(fontSize.xl, lineHeight.snug),
+    textTransform: 'uppercase',
+    letterSpacing: 0.3,
   },
   subtitle: {
+    fontFamily: 'Barlow_500Medium',
     fontSize: fontSize.lg,
-    fontWeight: fontWeight.medium,
     lineHeight: lh(fontSize.lg, lineHeight.snug),
   },
   body: {
+    fontFamily: 'Barlow_400Regular',
     fontSize: fontSize.base,
-    fontWeight: fontWeight.regular,
     lineHeight: lh(fontSize.base, lineHeight.normal),
   },
   caption: {
+    fontFamily: 'Barlow_400Regular',
     fontSize: fontSize.sm,
-    fontWeight: fontWeight.regular,
     lineHeight: lh(fontSize.sm, lineHeight.normal),
   },
   label: {
+    fontFamily: 'Barlow_600SemiBold',
     fontSize: fontSize.xs,
-    fontWeight: fontWeight.semibold,
     lineHeight: lh(fontSize.xs, lineHeight.snug),
   },
   /** Big score / record numerals. */
   data: {
+    fontFamily: 'ArchivoBlack_400Regular',
     fontSize: fontSize['3xl'],
-    fontWeight: fontWeight.bold,
     lineHeight: lh(fontSize['3xl'], lineHeight.tight),
   },
 } as const;
