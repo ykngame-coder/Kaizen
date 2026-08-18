@@ -5,6 +5,7 @@ import { Badge, Button, Input, Screen, SegmentedControl, Text } from '@supotsu/u
 import { spacing } from '@supotsu/design-system';
 import { activityInputSchema, type ActivityInput } from '@supotsu/shared';
 import { useAddActivity } from '@/lib/data/queries';
+import { BackButton } from '@/features/navigation/BackButton';
 
 const TYPES = [
   { value: 'running', label: 'Course' },
@@ -68,6 +69,7 @@ export function AddActivityScreen(): React.JSX.Element {
 
   return (
     <Screen scroll>
+      <BackButton />
       <Text variant="title">Nouvelle activité</Text>
 
       <View style={{ gap: spacing[2] }}>

@@ -22,6 +22,7 @@ import {
   useUserPrograms,
   useUserSessions,
 } from '@/lib/data/queries';
+import { BackButton } from '@/features/navigation/BackButton';
 
 const FOCUS_LABEL: Record<ProgramFocus, string> = {
   strength: 'Force',
@@ -133,6 +134,7 @@ export function MarketplaceScreen(): React.JSX.Element {
 
   return (
     <Screen scroll>
+      <BackButton />
       <Text variant="title">Programmes</Text>
       <Text variant="caption" style={{ color: colors.textMuted }}>
         Des programmes de coachs, de la communauté, ou les tiens.

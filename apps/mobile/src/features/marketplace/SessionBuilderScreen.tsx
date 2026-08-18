@@ -5,6 +5,7 @@ import { Badge, Button, Card, EmptyState, Icon, Input, Screen, SegmentedControl,
 import { radii, spacing } from '@supotsu/design-system';
 import { EXERCISES, MUSCLE_LABEL, toCatalogExercise } from '@/features/exercises/catalog';
 import { useAddUserSession, useCustomExercises, useUserSessions } from '@/lib/data/queries';
+import { BackButton } from '@/features/navigation/BackButton';
 
 const VISIBILITY_OPTIONS = [
   { value: 'private' as const, label: 'Privé' },
@@ -100,6 +101,7 @@ export function SessionBuilderScreen(): React.JSX.Element {
 
   return (
     <Screen scroll>
+      <BackButton />
       <Text variant="title">Nouvelle séance</Text>
       <Text variant="caption" color="textSubtle">
         {sessions.length}/{SESSIONS_QUOTA} séances dans ta bibliothèque
