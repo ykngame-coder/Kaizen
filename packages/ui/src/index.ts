@@ -34,5 +34,7 @@ export { Fab } from './Fab';
 export type { FabProps } from './Fab';
 export { ListRow } from './ListRow';
 export type { ListRowProps } from './ListRow';
+export { Icon } from './Icon';
+export type { IconProps, IconName } from './Icon';
 export { FilterChip } from './FilterChip';
 export type { FilterChipProps } from './FilterChip';

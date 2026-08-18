@@ -1,7 +1,7 @@
 import React, { useMemo } from 'react';
 import { Pressable, View } from 'react-native';
 import { useRouter, type Href } from 'expo-router';
-import { Badge, Button, Card, EmptyState, ProgressRing, Screen, Text, useTheme } from '@supotsu/ui';
+import { Badge, Button, Card, EmptyState, Icon, ProgressRing, Screen, Text, useTheme } from '@supotsu/ui';
 import { radii, spacing } from '@supotsu/design-system';
 import type { HealthMetric, SleepSession } from '@supotsu/core';
 import {
@@ -91,11 +91,11 @@ const fmtHM = (min: number): string => {
 };
 
 /** Compact quick-glance stat tile (Stress / Bien-être). */
-function QuickStat({ icon, value, label }: { icon: string; value: string; label: string }): React.JSX.Element {
+function QuickStat({ icon, value, label }: { icon: React.ReactNode; value: string; label: string }): React.JSX.Element {
   const { colors } = useTheme();
   return (
     <View style={{ flex: 1, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border, borderRadius: radii.lg, padding: spacing[3], alignItems: 'center' }}>
-      <Text style={{ fontSize: 15 }}>{icon}</Text>
+      {typeof icon === 'string' ? <Text style={{ fontSize: 15 }}>{icon}</Text> : icon}
       <Text variant="subtitle" style={{ marginTop: spacing[1] }}>{value}</Text>
       <Text variant="caption" color="textSubtle" style={{ marginTop: 2 }}>{label}</Text>
     </View>
@@ -103,7 +103,7 @@ function QuickStat({ icon, value, label }: { icon: string; value: string; label:
 }
 
 /** Recovery-tool link tile (grille outils). */
-function ToolTile({ icon, label, path }: { icon: string; label: string; path: Href }): React.JSX.Element {
+function ToolTile({ icon, label, path }: { icon: React.ReactNode; label: string; path: Href }): React.JSX.Element {
   const router = useRouter();
   const { colors } = useTheme();
   return (
@@ -111,7 +111,7 @@ function ToolTile({ icon, label, path }: { icon: string; label: string; path: Hr
       onPress={() => router.push(path)}
       style={({ pressed }) => ({ flex: 1, minWidth: '45%', opacity: pressed ? 0.6 : 1, backgroundColor: colors.surfaceElevated, borderRadius: radii.lg, padding: spacing[3] })}
     >
-      <Text style={{ fontSize: 16 }}>{icon}</Text>
+      {typeof icon === 'string' ? <Text style={{ fontSize: 16 }}>{icon}</Text> : icon}
       <Text variant="body" style={{ marginTop: spacing[1] }}>{label}</Text>
     </Pressable>
   );
@@ -256,7 +256,7 @@ export function SommeilScreen(): React.JSX.Element {
         </View>
         <Pressable onPress={() => router.push('/search')} style={({ pressed }) => ({ opacity: pressed ? 0.6 : 1, position: 'absolute', right: 0, top: 0 })}>
           <View style={{ width: 38, height: 38, borderRadius: 19, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border, alignItems: 'center', justifyContent: 'center' }}>
-            <Text style={{ fontSize: 16 }}>🔍</Text>
+            <Icon name="search" size={16} color={colors.text} />
           </View>
         </Pressable>
       </View>
@@ -268,7 +268,7 @@ export function SommeilScreen(): React.JSX.Element {
         </Text>
       ) : !hasData ? (
         <EmptyState
-          icon="😴"
+          icon={<Icon name="bedtime" size={44} color={colors.textSubtle} />}
           title="Pas encore de données de sommeil"
           message="Synchronise Apple Santé (Health Auto Export) ou importe un export pour suivre tes nuits — toute source est prise en compte."
           actionLabel="Importer / connecter"
@@ -318,9 +318,9 @@ export function SommeilScreen(): React.JSX.Element {
 
           {/* 2. Stress + Bien-être mental */}
           <View style={{ flexDirection: 'row', gap: spacing[3] }}>
-            <QuickStat icon="🌬" value={stress ? `${Math.round(stress.value)}/100` : '—'} label="Stress" />
+            <QuickStat icon={<Icon name="windy" size={15} color={colors.info} />} value={stress ? `${Math.round(stress.value)}/100` : '—'} label="Stress" />
             <QuickStat
-              icon="🙂"
+              icon={<Icon name="emoticonHappy" size={15} color={colors.accentData} />}
               value={wellness.confidence !== 'to_confirm' ? `${wellness.value}/100` : '—'}
               label={wellness.confidence !== 'to_confirm' ? `Bien-être · ${wellnessBand(wellness.value)}` : 'Bien-être'}
             />
@@ -484,10 +484,10 @@ export function SommeilScreen(): React.JSX.Element {
             Outils de récupération
           </Text>
           <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: spacing[3] }}>
-            <ToolTile icon="🌬" label="Respiration" path="/sommeil/breathing" />
-            <ToolTile icon="🫁" label="Stomach Vacuum" path="/sport/stomach-vacuum" />
-            <ToolTile icon="🧩" label="Neuro-récupération" path="/sommeil/neuro-recovery" />
-            <ToolTile icon="🎧" label="Sons" path="/sommeil/sound" />
+            <ToolTile icon={<Icon name="windy" size={16} color={colors.text} />} label="Respiration" path="/sommeil/breathing" />
+            <ToolTile icon={<Icon name="lungs" size={16} color={colors.text} />} label="Stomach Vacuum" path="/sport/stomach-vacuum" />
+            <ToolTile icon={<Icon name="puzzle" size={16} color={colors.text} />} label="Neuro-récupération" path="/sommeil/neuro-recovery" />
+            <ToolTile icon={<Icon name="headphones" size={16} color={colors.text} />} label="Sons" path="/sommeil/sound" />
           </View>
 
           {/* 10. Comprendre + Objectifs */}

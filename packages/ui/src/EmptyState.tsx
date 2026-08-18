@@ -5,8 +5,8 @@ import { Text } from './Text';
 import { Button } from './Button';
 
 export interface EmptyStateProps {
-  /** A single emoji or short glyph shown above the text. */
-  icon?: string;
+  /** A single emoji, short glyph, or an `<Icon />` element shown above the text. */
+  icon?: React.ReactNode;
   title: string;
   message?: string;
   actionLabel?: string;
@@ -23,7 +23,7 @@ export function EmptyState({
 }: EmptyStateProps): React.JSX.Element {
   return (
     <View style={{ alignItems: 'center', gap: spacing[2], paddingVertical: spacing[6] }}>
-      <Text variant="display">{icon}</Text>
+      {typeof icon === 'string' ? <Text variant="display">{icon}</Text> : icon}
       <Text variant="heading" style={{ textAlign: 'center' }}>
         {title}
       </Text>

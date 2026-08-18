@@ -6,7 +6,8 @@ import { spacing } from '@supotsu/design-system';
 export interface HubRowProps {
   title: string;
   subtitle?: string;
-  icon?: string;
+  /** Emoji glyph or an `<Icon />` element. */
+  icon?: React.ReactNode;
   onPress?: () => void;
   /** Not built yet — shows a "Bientôt" badge and is not tappable. */
   soon?: boolean;
@@ -18,7 +19,7 @@ export function HubRow({ title, subtitle, icon, onPress, soon }: HubRowProps): R
   const body = (
     <Card style={{ opacity: soon ? 0.55 : 1 }}>
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing[3] }}>
-        {icon ? <Text style={{ fontSize: 20 }}>{icon}</Text> : null}
+        {icon ? (typeof icon === 'string' ? <Text style={{ fontSize: 20 }}>{icon}</Text> : icon) : null}
         <View style={{ flex: 1 }}>
           <Text variant="heading">{title}</Text>
           {subtitle ? (

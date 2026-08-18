@@ -2,7 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { Image, Pressable, ScrollView, View } from 'react-native';
 import { useRouter, type Href } from 'expo-router';
 import { useQueryClient } from '@tanstack/react-query';
-import { Card, Gradient, ProgressRing, Screen, Sparkline, Text, useTheme } from '@supotsu/ui';
+import { Card, Gradient, Icon, ProgressRing, Screen, Sparkline, Text, useTheme, type IconName } from '@supotsu/ui';
 import { radii, spacing } from '@supotsu/design-system';
 import type { HealthMetricType } from '@supotsu/core';
 import {
@@ -79,12 +79,12 @@ function SectionTitle({ children, right }: { children: React.ReactNode; right?: 
   );
 }
 
-function KpiTile({ icon, value, delta, deltaTone, label }: { icon: string; value: string; delta?: string; deltaTone?: 'up' | 'down' | 'muted'; label: string }): React.JSX.Element {
+function KpiTile({ icon, value, delta, deltaTone, label }: { icon: React.ReactNode; value: string; delta?: string; deltaTone?: 'up' | 'down' | 'muted'; label: string }): React.JSX.Element {
   const { colors } = useTheme();
   const dColor = deltaTone === 'up' ? colors.accentData : deltaTone === 'down' ? colors.error : colors.textSubtle;
   return (
     <View style={{ flex: 1, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border, borderRadius: radii.lg, padding: spacing[3] }}>
-      <Text style={{ fontSize: 15 }}>{icon}</Text>
+      {typeof icon === 'string' ? <Text style={{ fontSize: 15 }}>{icon}</Text> : icon}
       <Text variant="subtitle" style={{ marginTop: spacing[1], letterSpacing: -0.4 }}>{value}</Text>
       {delta ? <Text variant="caption" style={{ color: dColor, marginTop: 2, fontWeight: '600' }}>{delta}</Text> : null}
       <Text variant="caption" color="textSubtle" style={{ marginTop: 2 }}>{label}</Text>
@@ -285,17 +285,17 @@ export function DashboardScreen(): React.JSX.Element {
     kpis: (
       <View style={{ gap: spacing[3] }}>
         <View style={{ flexDirection: 'row', gap: spacing[3] }}>
-          <KpiTile icon="💤" value={lastNight ? fmtSleep(lastNight.hours) : '—'} delta={sleepDelta != null ? `${sleepDelta >= 0 ? '▲ +' : '▼ '}${Math.abs(sleepDelta)} min` : undefined} deltaTone={sleepDelta != null && sleepDelta >= 0 ? 'up' : 'down'} label="Sommeil" />
-          <KpiTile icon="📈" value={hrv != null ? `${Math.round(hrv)} ms` : '—'} label="HRV" />
-          <KpiTile icon="❤️" value={rhr != null ? `${Math.round(rhr)}` : '—'} label="FC repos" />
+          <KpiTile icon={<Icon name="sleep" size={16} color={colors.info} />} value={lastNight ? fmtSleep(lastNight.hours) : '—'} delta={sleepDelta != null ? `${sleepDelta >= 0 ? '▲ +' : '▼ '}${Math.abs(sleepDelta)} min` : undefined} deltaTone={sleepDelta != null && sleepDelta >= 0 ? 'up' : 'down'} label="Sommeil" />
+          <KpiTile icon={<Icon name="trendingUp" size={16} color={colors.accentData} />} value={hrv != null ? `${Math.round(hrv)} ms` : '—'} label="HRV" />
+          <KpiTile icon={<Icon name="heartPulse" size={16} color={colors.error} />} value={rhr != null ? `${Math.round(rhr)}` : '—'} label="FC repos" />
         </View>
         <View style={{ flexDirection: 'row', gap: spacing[3] }}>
-          <KpiTile icon="⚖" value={weight != null ? weight.toFixed(1) : '—'} delta={weightDelta != null ? `${weightDelta <= 0 ? '▼ ' : '▲ +'}${Math.abs(weightDelta).toFixed(1)}` : undefined} deltaTone={weightDelta != null && weightDelta <= 0 ? 'up' : 'down'} label="Poids (kg)" />
-          <KpiTile icon="📉" value={nutrition.length > 0 ? `${deficit}` : '—'} label="Déficit kcal" />
-          <KpiTile icon="💧" value={`${(totals.hydrationMl / 1000).toFixed(1)}`} label={`/ ${(targets.hydrationMl / 1000).toFixed(1)} L`} />
+          <KpiTile icon={<Icon name="scale" size={16} color={colors.accentMobility} />} value={weight != null ? weight.toFixed(1) : '—'} delta={weightDelta != null ? `${weightDelta <= 0 ? '▼ ' : '▲ +'}${Math.abs(weightDelta).toFixed(1)}` : undefined} deltaTone={weightDelta != null && weightDelta <= 0 ? 'up' : 'down'} label="Poids (kg)" />
+          <KpiTile icon={<Icon name="trendingDown" size={16} color={colors.warning} />} value={nutrition.length > 0 ? `${deficit}` : '—'} label="Déficit kcal" />
+          <KpiTile icon={<Icon name="water" size={16} color={colors.info} />} value={`${(totals.hydrationMl / 1000).toFixed(1)}`} label={`/ ${(targets.hydrationMl / 1000).toFixed(1)} L`} />
         </View>
         <View style={{ flexDirection: 'row', gap: spacing[3] }}>
-          <KpiTile icon="👣" value={stepsToday > 0 ? stepsToday.toLocaleString('fr-FR') : '—'} label={`/ ${preferences.dailyStepsGoal.toLocaleString('fr-FR')} pas`} />
+          <KpiTile icon={<Icon name="footsteps" size={16} color={colors.accentData} />} value={stepsToday > 0 ? stepsToday.toLocaleString('fr-FR') : '—'} label={`/ ${preferences.dailyStepsGoal.toLocaleString('fr-FR')} pas`} />
         </View>
       </View>
     ),
@@ -310,7 +310,7 @@ export function DashboardScreen(): React.JSX.Element {
         <Card>
           <SectionTitle right={<Pressable onPress={() => router.push('/sport/planning')}><Text variant="caption" color="primary">Planning ›</Text></Pressable>}>Prochaine séance</SectionTitle>
           <View style={{ flexDirection: 'row', gap: spacing[4], alignItems: 'center' }}>
-            <View style={{ width: 64, height: 64, borderRadius: radii.lg, backgroundColor: colors.surfaceElevated, alignItems: 'center', justifyContent: 'center' }}><Text style={{ fontSize: 28 }}>🏋️</Text></View>
+            <View style={{ width: 64, height: 64, borderRadius: radii.lg, backgroundColor: colors.surfaceElevated, alignItems: 'center', justifyContent: 'center' }}><Icon name="dumbbell" size={28} color={colors.primary} /></View>
             <View style={{ flex: 1 }}>
               {nextPlanned ? (
                 <>
@@ -396,7 +396,7 @@ export function DashboardScreen(): React.JSX.Element {
     ),
     analyse: (
       <View style={{ borderRadius: radii.xl, borderWidth: 1, borderColor: 'rgba(45,127,249,0.25)', backgroundColor: 'rgba(45,127,249,0.08)', padding: spacing[5] }}>
-        <View style={{ flexDirection: 'row', gap: spacing[2], alignItems: 'center' }}><Text style={{ fontSize: 20 }}>🧠</Text><Text variant="heading">Analyse du jour</Text></View>
+        <View style={{ flexDirection: 'row', gap: spacing[2], alignItems: 'center' }}><Icon name="brain" size={20} color={colors.info} /><Text variant="heading">Analyse du jour</Text></View>
         <Text variant="body" color="textMuted" style={{ marginTop: spacing[2], lineHeight: 22 }}>
           {recovery ? `${BAND_INFO[recovery.band]?.advice} ${hrvSeries.length >= 2 && hrvSeries.at(-1)! >= hrvSeries[0]! ? 'Ta HRV progresse — bon signe de récupération.' : ''}` : 'Ajoute des données (sommeil, HRV, activités) pour une analyse personnalisée.'}
         </Text>
@@ -411,7 +411,7 @@ export function DashboardScreen(): React.JSX.Element {
               const def = badgeDefinition(b.id);
               return (
                 <View key={b.id} style={{ width: 92, alignItems: 'center' }}>
-                  <View style={{ width: 60, height: 60, borderRadius: 30, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.surfaceElevated, borderWidth: 1, borderColor: colors.border }}><Text style={{ fontSize: 24 }}>🏅</Text></View>
+                  <View style={{ width: 60, height: 60, borderRadius: 30, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.surfaceElevated, borderWidth: 1, borderColor: colors.border }}><Icon name="medal" size={24} color={colors.warning} /></View>
                   <Text variant="caption" color="textMuted" style={{ marginTop: 6, textAlign: 'center' }}>{def?.label ?? b.id}</Text>
                 </View>
               );
@@ -426,7 +426,7 @@ export function DashboardScreen(): React.JSX.Element {
         <View style={{ flexDirection: 'row', flexWrap: 'wrap' }}>
           {QUICK_LINKS.map((l) => (
             <Pressable key={l.label} onPress={() => router.push(l.path)} style={({ pressed }) => ({ width: '25%', alignItems: 'center', gap: 6, paddingVertical: spacing[2], opacity: pressed ? 0.6 : 1 })}>
-              <View style={{ width: 52, height: 52, borderRadius: radii.lg, backgroundColor: colors.surfaceElevated, borderWidth: 1, borderColor: colors.border, alignItems: 'center', justifyContent: 'center' }}><Text style={{ fontSize: 22 }}>{l.icon}</Text></View>
+              <View style={{ width: 52, height: 52, borderRadius: radii.lg, backgroundColor: colors.surfaceElevated, borderWidth: 1, borderColor: colors.border, alignItems: 'center', justifyContent: 'center' }}><Icon name={l.icon} size={22} color={colors.text} /></View>
               <Text variant="caption" color="textMuted" style={{ textAlign: 'center' }}>{l.label}</Text>
             </Pressable>
           ))}
@@ -441,9 +441,9 @@ export function DashboardScreen(): React.JSX.Element {
         {/* Header */}
         <View>
           <View style={{ flexDirection: 'row', justifyContent: 'flex-end', gap: spacing[2] }}>
-            <IconBtn icon="🔍" onPress={() => router.push('/search')} />
-            <IconBtn icon="🎛" onPress={() => router.push('/dashboard-customize')} />
-            <IconBtn icon="🔔" onPress={() => router.push('/profile/notifications')} />
+            <IconBtn icon={<Icon name="search" size={16} />} onPress={() => router.push('/search')} />
+            <IconBtn icon={<Icon name="tune" size={16} />} onPress={() => router.push('/dashboard-customize')} />
+            <IconBtn icon={<Icon name="notifications" size={16} />} onPress={() => router.push('/profile/notifications')} />
             <Pressable onPress={() => router.push('/profile')}>
               <View style={{ width: 38, height: 38, borderRadius: 19, overflow: 'hidden', alignItems: 'center', justifyContent: 'center' }}>
                 {avatarUri ? (
@@ -467,7 +467,7 @@ export function DashboardScreen(): React.JSX.Element {
         {/* Focus du jour */}
         <Gradient style={{ borderRadius: radii.xl, padding: 1.5 }}>
           <View style={{ backgroundColor: colors.surface, borderRadius: radii.xl - 1.5, padding: spacing[5], flexDirection: 'row', gap: spacing[4], alignItems: 'center' }}>
-            <Text style={{ fontSize: 34 }}>🏋️</Text>
+            <Icon name="dumbbell" size={34} color={colors.primary} />
             <View style={{ flex: 1 }}>
               <Text variant="caption" color="primary" style={{ letterSpacing: 1.4, fontWeight: '700', textTransform: 'uppercase' }}>Focus du jour</Text>
               <Text variant="body" style={{ fontWeight: '600', marginTop: 4, lineHeight: 21 }}>{focusMsg}</Text>
@@ -512,22 +512,22 @@ export function DashboardScreen(): React.JSX.Element {
   );
 }
 
-const QUICK_LINKS: { label: string; icon: string; path: Href }[] = [
-  { label: 'Repas', icon: '🍽', path: '/nutrition' },
-  { label: 'Séance', icon: '▶️', path: '/sport/workout/new' },
-  { label: 'Pesée', icon: '⚖', path: '/nutrition/weight' },
-  { label: 'Habitude', icon: '✓', path: '/profile/habits' },
-  { label: 'Objectif', icon: '🎯', path: '/profile/goals' },
-  { label: 'Sommeil', icon: '😴', path: '/sommeil' },
-  { label: 'Coach IA', icon: '✦', path: '/coach' },
-  { label: 'Stats', icon: '📊', path: '/profile/analytics' },
+const QUICK_LINKS: { label: string; icon: IconName; path: Href }[] = [
+  { label: 'Repas', icon: 'silverware', path: '/nutrition' },
+  { label: 'Séance', icon: 'play', path: '/sport/workout/new' },
+  { label: 'Pesée', icon: 'scale', path: '/nutrition/weight' },
+  { label: 'Habitude', icon: 'calendarCheck', path: '/profile/habits' },
+  { label: 'Objectif', icon: 'target', path: '/profile/goals' },
+  { label: 'Sommeil', icon: 'bedtime', path: '/sommeil' },
+  { label: 'Coach IA', icon: 'sparkle', path: '/coach' },
+  { label: 'Stats', icon: 'chartBar', path: '/profile/analytics' },
 ];
 
-function IconBtn({ icon, onPress }: { icon: string; onPress: () => void }): React.JSX.Element {
+function IconBtn({ icon, onPress }: { icon: React.ReactNode; onPress: () => void }): React.JSX.Element {
   const { colors } = useTheme();
   return (
     <Pressable onPress={onPress} style={({ pressed }) => ({ transform: [{ scale: pressed ? 0.94 : 1 }] })}>
-      <View style={{ width: 38, height: 38, borderRadius: 19, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border, alignItems: 'center', justifyContent: 'center' }}><Text style={{ fontSize: 16 }}>{icon}</Text></View>
+      <View style={{ width: 38, height: 38, borderRadius: 19, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border, alignItems: 'center', justifyContent: 'center' }}>{typeof icon === 'string' ? <Text style={{ fontSize: 16 }}>{icon}</Text> : icon}</View>
     </Pressable>
   );
 }

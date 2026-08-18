@@ -1,7 +1,7 @@
 import React, { useMemo } from 'react';
 import { Pressable, View } from 'react-native';
 import { useRouter, type Href } from 'expo-router';
-import { Card, Fab, ProgressRing, Screen, Text, useTheme } from '@supotsu/ui';
+import { Card, Fab, Icon, ProgressRing, Screen, Text, useTheme, type IconName } from '@supotsu/ui';
 import { radii, spacing } from '@supotsu/design-system';
 import type { MuscleGroup } from '@supotsu/core';
 import { computeAcwr, computeRecoveryScore, computeSportScore } from '@supotsu/engines';
@@ -27,17 +27,17 @@ const MUSCLE_INLINE: Partial<Record<MuscleGroup, string>> = {
   quads: 'Quadriceps', hamstrings: 'Ischios', glutes: 'Fessiers', calves: 'Mollets', core: 'Abdos',
 };
 
-const NAV: { title: string; subtitle: string; icon: string; path?: Href; soon?: boolean }[] = [
-  { title: 'Planification', subtitle: 'Programme tes séances + prévision récup', icon: '🗓', path: '/sport/planning' },
-  { title: 'Calendrier', subtitle: 'Tes séances et événements', icon: '📅', path: '/sport/calendar' },
-  { title: 'Programmes', subtitle: 'Programmes structurés et recommandés', icon: '📋', path: '/profile/marketplace' },
-  { title: 'Récupération musculaire', subtitle: 'Muscles fatigués vs prêts à travailler', icon: '💪', path: '/sport/muscles' },
-  { title: 'Stomach Vacuum', subtitle: 'Gainage du transverse, séance guidée', icon: '🫁', path: '/sport/stomach-vacuum' },
-  { title: 'Minuteurs', subtitle: 'Tabata, HIIT, EMOM ou perso', icon: '⏱', path: '/sport/timer' },
-  { title: 'Étirements', subtitle: 'Routine guidée, du jour ou par zone', icon: '🧘‍♂️', path: '/sport/stretching' },
-  { title: 'Records', subtitle: '1RM, meilleurs temps, distances', icon: '🏆', path: '/sport/records' },
-  { title: 'Exercices', subtitle: 'Bibliothèque, muscles, matériel', icon: '📚', path: '/sport/exercises' },
-  { title: 'Progression musculaire', subtitle: 'Évolution par groupe musculaire', icon: '📈', path: '/sport/muscle-progress' },
+const NAV: { title: string; subtitle: string; icon: IconName; path?: Href; soon?: boolean }[] = [
+  { title: 'Planification', subtitle: 'Programme tes séances + prévision récup', icon: 'calendarClock', path: '/sport/planning' },
+  { title: 'Calendrier', subtitle: 'Tes séances et événements', icon: 'calendar', path: '/sport/calendar' },
+  { title: 'Programmes', subtitle: 'Programmes structurés et recommandés', icon: 'clipboardText', path: '/profile/marketplace' },
+  { title: 'Récupération musculaire', subtitle: 'Muscles fatigués vs prêts à travailler', icon: 'armFlex', path: '/sport/muscles' },
+  { title: 'Stomach Vacuum', subtitle: 'Gainage du transverse, séance guidée', icon: 'lungs', path: '/sport/stomach-vacuum' },
+  { title: 'Minuteurs', subtitle: 'Tabata, HIIT, EMOM ou perso', icon: 'timer', path: '/sport/timer' },
+  { title: 'Étirements', subtitle: 'Routine guidée, du jour ou par zone', icon: 'yoga', path: '/sport/stretching' },
+  { title: 'Records', subtitle: '1RM, meilleurs temps, distances', icon: 'trophy', path: '/sport/records' },
+  { title: 'Exercices', subtitle: 'Bibliothèque, muscles, matériel', icon: 'bookOpen', path: '/sport/exercises' },
+  { title: 'Progression musculaire', subtitle: 'Évolution par groupe musculaire', icon: 'trendingUp', path: '/sport/muscle-progress' },
 ];
 
 /** hh h mm from seconds. */
@@ -56,11 +56,11 @@ function planLabel(plannedFor: string | undefined, todayKey: string): string {
 }
 
 /** 2×2 stat tile. */
-function StatTile({ icon, value, label }: { icon: string; value: string; label: string }): React.JSX.Element {
+function StatTile({ icon, value, label }: { icon: React.ReactNode; value: string; label: string }): React.JSX.Element {
   const { colors } = useTheme();
   return (
     <View style={{ flex: 1, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border, borderRadius: radii.lg, padding: spacing[4] }}>
-      <Text style={{ fontSize: 18 }}>{icon}</Text>
+      {typeof icon === 'string' ? <Text style={{ fontSize: 18 }}>{icon}</Text> : icon}
       <Text variant="subtitle" style={{ marginTop: spacing[2], letterSpacing: -0.4 }}>
         {value}
       </Text>
@@ -160,7 +160,7 @@ export function SportScreen(): React.JSX.Element {
           </View>
           <Pressable onPress={() => router.push('/search')} style={({ pressed }) => ({ opacity: pressed ? 0.6 : 1, position: 'absolute', right: 0, top: 0 })}>
             <View style={{ width: 38, height: 38, borderRadius: 19, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border, alignItems: 'center', justifyContent: 'center' }}>
-              <Text style={{ fontSize: 16 }}>🔍</Text>
+              <Icon name="search" size={16} color={colors.text} />
             </View>
           </Pressable>
         </View>
@@ -170,7 +170,7 @@ export function SportScreen(): React.JSX.Element {
         <Card style={{ marginTop: spacing[3] }}>
           <View style={{ flexDirection: 'row', gap: spacing[4], alignItems: 'center' }}>
             <View style={{ width: 64, height: 64, borderRadius: radii.lg, backgroundColor: colors.surfaceElevated, alignItems: 'center', justifyContent: 'center' }}>
-              <Text style={{ fontSize: 28 }}>🏋️</Text>
+              <Icon name="dumbbell" size={28} color={colors.primary} />
             </View>
             <View style={{ flex: 1 }}>
               {plannedToday ? (
@@ -284,7 +284,7 @@ export function SportScreen(): React.JSX.Element {
               const row = (
                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing[3], paddingVertical: spacing[3], borderBottomWidth: i < recent.length - 1 ? 1 : 0, borderBottomColor: colors.border }}>
                   <View style={{ width: 34, height: 34, borderRadius: radii.md, backgroundColor: colors.surfaceElevated, alignItems: 'center', justifyContent: 'center' }}>
-                    <Text style={{ fontSize: 16 }}>{r.kind === 'workout' ? '🎽' : '🏃'}</Text>
+                    <Icon name={r.kind === 'workout' ? 'tshirt' : 'run'} size={16} color={colors.text} />
                   </View>
                   <View style={{ flex: 1 }}>
                     <Text variant="body">{r.name}</Text>
@@ -321,19 +321,19 @@ export function SportScreen(): React.JSX.Element {
         </Text>
         <View style={{ gap: spacing[3] }}>
           <View style={{ flexDirection: 'row', gap: spacing[3] }}>
-            <StatTile icon="💪" value={`${week.sessions}`} label="Séances" />
-            <StatTile icon="⏱" value={week.totalSec > 0 ? fmtDur(week.totalSec) : '—'} label="Temps total" />
+            <StatTile icon={<Icon name="armFlex" size={18} color={colors.accentStrength} />} value={`${week.sessions}`} label="Séances" />
+            <StatTile icon={<Icon name="timer" size={18} color={colors.info} />} value={week.totalSec > 0 ? fmtDur(week.totalSec) : '—'} label="Temps total" />
           </View>
           <View style={{ flexDirection: 'row', gap: spacing[3] }}>
-            <StatTile icon="🔥" value={week.cals > 0 ? `${Math.round(week.cals)}` : '—'} label="Calories" />
-            <StatTile icon="🎯" value={week.rpe != null ? week.rpe.toFixed(1) : '—'} label="RPE moyen" />
+            <StatTile icon={<Icon name="fire" size={18} color={colors.warning} />} value={week.cals > 0 ? `${Math.round(week.cals)}` : '—'} label="Calories" />
+            <StatTile icon={<Icon name="target" size={18} color={colors.accentData} />} value={week.rpe != null ? week.rpe.toFixed(1) : '—'} label="RPE moyen" />
           </View>
         </View>
 
         {/* Sections */}
         <View style={{ gap: spacing[2], marginTop: spacing[2] }}>
           {NAV.map((n) => (
-            <HubRow key={n.title} title={n.title} subtitle={n.subtitle} icon={n.icon} soon={n.soon} onPress={n.path ? () => router.push(n.path!) : undefined} />
+            <HubRow key={n.title} title={n.title} subtitle={n.subtitle} icon={<Icon name={n.icon} size={20} color={colors.text} />} soon={n.soon} onPress={n.path ? () => router.push(n.path!) : undefined} />
           ))}
         </View>
 

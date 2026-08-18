@@ -1,7 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import { Pressable, ScrollView, TextInput, View } from 'react-native';
 import { useRouter } from 'expo-router';
-import { Button, Card, Fab, FilterChip, Input, ProgressRing, Screen, Sparkline, Text, useTheme } from '@supotsu/ui';
+import { Button, Card, Fab, FilterChip, Icon, Input, ProgressRing, Screen, Sparkline, Text, useTheme, type IconName } from '@supotsu/ui';
 import { radii, spacing } from '@supotsu/design-system';
 import {
   computeNutritionScore,
@@ -27,7 +27,7 @@ function latestMetric(m: { type: HealthMetricType; value: number; measuredAt: st
 const MEAL_ORDER = ['breakfast', 'lunch', 'dinner', 'snack'] as const;
 const WATER_PRESETS = [250, 500, 750];
 const MEAL_LABEL: Record<string, string> = { breakfast: 'Petit-déjeuner', lunch: 'Déjeuner', dinner: 'Dîner', snack: 'Collation' };
-const MEAL_ICON: Record<string, string> = { breakfast: '🥣', lunch: '🍗', dinner: '🍝', snack: '🍎' };
+const MEAL_ICON: Record<string, IconName> = { breakfast: 'bowl', lunch: 'drumstick', dinner: 'noodles', snack: 'apple' };
 
 function SectionTitle({ children, right }: { children: React.ReactNode; right?: React.ReactNode }): React.JSX.Element {
   return (
@@ -207,7 +207,7 @@ export function NutritionScreen(): React.JSX.Element {
             <Text variant="caption" color="textSubtle">Ton carburant du jour</Text>
           </View>
           <Pressable onPress={() => router.push('/search')} style={({ pressed }) => ({ opacity: pressed ? 0.6 : 1, position: 'absolute', right: 0, top: 0 })}>
-            <View style={{ width: 38, height: 38, borderRadius: 19, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border, alignItems: 'center', justifyContent: 'center' }}><Text style={{ fontSize: 16 }}>🔍</Text></View>
+            <View style={{ width: 38, height: 38, borderRadius: 19, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border, alignItems: 'center', justifyContent: 'center' }}><Icon name="search" size={16} color={colors.text} /></View>
           </Pressable>
         </View>
         <DayNav value={selectedDate} onChange={setSelectedDate} />
@@ -278,7 +278,7 @@ export function NutritionScreen(): React.JSX.Element {
           <SectionTitle>Repas</SectionTitle>
           {meals.map((m, i) => (
             <View key={m.type} style={{ flexDirection: 'row', alignItems: 'center', gap: spacing[3], paddingVertical: spacing[3], borderBottomWidth: i < meals.length - 1 ? 1 : 0, borderBottomColor: colors.border }}>
-              <View style={{ width: 40, height: 40, borderRadius: 12, backgroundColor: colors.surfaceElevated, alignItems: 'center', justifyContent: 'center' }}><Text style={{ fontSize: 19 }}>{MEAL_ICON[m.type]}</Text></View>
+              <View style={{ width: 40, height: 40, borderRadius: 12, backgroundColor: colors.surfaceElevated, alignItems: 'center', justifyContent: 'center' }}><Icon name={MEAL_ICON[m.type] ?? 'bowl'} size={19} color={colors.text} /></View>
               <View style={{ flex: 1 }}>
                 <Text variant="body" style={{ fontWeight: '600' }}>{MEAL_LABEL[m.type]}</Text>
                 <Text variant="caption" color="textSubtle" style={{ marginTop: 2 }}>{m.count > 0 ? `P ${Math.round(m.p)} · G ${Math.round(m.c)} · L ${Math.round(m.f)}` : 'à planifier'}</Text>

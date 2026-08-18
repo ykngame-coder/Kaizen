@@ -5,8 +5,8 @@ import { Text } from './Text';
 import { useTheme } from './theme';
 
 export interface ListRowProps {
-  /** Emoji/glyph inside the coloured icon square. Omit for no icon. */
-  icon?: string;
+  /** Emoji glyph or an `<Icon />` element inside the coloured icon square. Omit for no icon. */
+  icon?: React.ReactNode;
   /** Tint of the icon square background (defaults to elevated surface). */
   iconColor?: string;
   title: string;
@@ -66,7 +66,7 @@ export function ListRow({
             justifyContent: 'center',
           }}
         >
-          <Text style={{ fontSize: 17 }}>{icon}</Text>
+          {typeof icon === 'string' ? <Text style={{ fontSize: 17 }}>{icon}</Text> : icon}
         </View>
       ) : null}
 

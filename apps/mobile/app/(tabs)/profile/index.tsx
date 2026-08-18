@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Image, Platform, Pressable, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import * as ImagePicker from 'expo-image-picker';
-import { Badge, Button, Card, Gradient, ListRow, Screen, Text, useTheme } from '@supotsu/ui';
+import { Badge, Button, Card, Gradient, Icon, ListRow, Screen, Text, useTheme } from '@supotsu/ui';
 import { radii, spacing } from '@supotsu/design-system';
 import { useAuth } from '@/features/auth/AuthProvider';
 import { useWorkouts } from '@/lib/data/queries';
@@ -22,7 +22,7 @@ function Group({ children }: { children: React.ReactNode }): React.JSX.Element {
 
 /** Profil (mockup #18): account header, quick stats, grouped navigation, sign-out. */
 export default function ProfileTab(): React.JSX.Element {
-  const { name } = useTheme();
+  const { name, colors } = useTheme();
   const { user, mode, signOut } = useAuth();
   const router = useRouter();
   const { data: workouts = [] } = useWorkouts();
@@ -134,12 +134,12 @@ export default function ProfileTab(): React.JSX.Element {
         Compte & données
       </Text>
       <Group>
-        <ListRow icon="⚖" iconColor="rgba(45,127,249,0.18)" title="Appareils & synchronisation" subtitle="Garmin, Apple Santé, Renpho…" onPress={() => router.push('/profile/connectors')} divider />
-        <ListRow icon="🎯" iconColor="rgba(43,227,139,0.18)" title="Objectifs" subtitle="Cibles et progression" onPress={() => router.push('/profile/goals')} divider />
-        <ListRow icon="🔔" iconColor="rgba(245,183,66,0.18)" title="Notifications" subtitle="Rappels et alertes" onPress={() => router.push('/profile/notifications')} divider />
-        <ListRow icon="🔗" iconColor="rgba(139,92,246,0.18)" title="Données & intégrations" subtitle="Export, connexions tierces" onPress={() => router.push('/profile/integrations')} divider />
-        <ListRow icon="📋" iconColor="rgba(139,92,246,0.18)" title="Qualité des données" subtitle="Complétude et fiabilité de tes sources" onPress={() => router.push('/profile/data-quality')} divider />
-        <ListRow icon="📥" iconColor="rgba(139,92,246,0.18)" title="Importer un fichier" subtitle="Export Garmin / Apple Santé (JSON)" onPress={() => router.push('/profile/import')} />
+        <ListRow icon={<Icon name="devices" color={colors.info} />} iconColor="rgba(45,127,249,0.18)" title="Appareils & synchronisation" subtitle="Garmin, Apple Santé, Renpho…" onPress={() => router.push('/profile/connectors')} divider />
+        <ListRow icon={<Icon name="target" color={colors.accentData} />} iconColor="rgba(43,227,139,0.18)" title="Objectifs" subtitle="Cibles et progression" onPress={() => router.push('/profile/goals')} divider />
+        <ListRow icon={<Icon name="notifications" color={colors.warning} />} iconColor="rgba(245,183,66,0.18)" title="Notifications" subtitle="Rappels et alertes" onPress={() => router.push('/profile/notifications')} divider />
+        <ListRow icon={<Icon name="link" color={colors.accentMobility} />} iconColor="rgba(139,92,246,0.18)" title="Données & intégrations" subtitle="Export, connexions tierces" onPress={() => router.push('/profile/integrations')} divider />
+        <ListRow icon={<Icon name="clipboardCheck" color={colors.accentMobility} />} iconColor="rgba(139,92,246,0.18)" title="Qualité des données" subtitle="Complétude et fiabilité de tes sources" onPress={() => router.push('/profile/data-quality')} divider />
+        <ListRow icon={<Icon name="download" color={colors.accentMobility} />} iconColor="rgba(139,92,246,0.18)" title="Importer un fichier" subtitle="Export Garmin / Apple Santé (JSON)" onPress={() => router.push('/profile/import')} />
       </Group>
 
       {/* Bilan & communauté */}
@@ -147,10 +147,10 @@ export default function ProfileTab(): React.JSX.Element {
         Bilan & communauté
       </Text>
       <Group>
-        <ListRow icon="📊" iconColor="rgba(45,127,249,0.18)" title="Bilan & badges" subtitle="Tendances, statistiques, récompenses" onPress={() => router.push('/profile/progression')} divider />
-        <ListRow icon="✓" iconColor="rgba(43,227,139,0.18)" title="Habitudes & discipline" subtitle="Check-list, séries, régularité" onPress={() => router.push('/profile/habits')} divider />
-        <ListRow icon="👥" iconColor="rgba(245,183,66,0.18)" title="Communauté" subtitle="Défis, entraide" onPress={() => router.push('/profile/community')} divider />
-        <ListRow icon="🛒" iconColor="rgba(245,183,66,0.18)" title="Marketplace" subtitle="Programmes structurés" onPress={() => router.push('/profile/marketplace')} />
+        <ListRow icon={<Icon name="chartBar" color={colors.info} />} iconColor="rgba(45,127,249,0.18)" title="Bilan & badges" subtitle="Tendances, statistiques, récompenses" onPress={() => router.push('/profile/progression')} divider />
+        <ListRow icon={<Icon name="calendarCheck" color={colors.accentData} />} iconColor="rgba(43,227,139,0.18)" title="Habitudes & discipline" subtitle="Check-list, séries, régularité" onPress={() => router.push('/profile/habits')} divider />
+        <ListRow icon={<Icon name="peopleGroup" color={colors.warning} />} iconColor="rgba(245,183,66,0.18)" title="Communauté" subtitle="Défis, entraide" onPress={() => router.push('/profile/community')} divider />
+        <ListRow icon={<Icon name="cart" color={colors.warning} />} iconColor="rgba(245,183,66,0.18)" title="Marketplace" subtitle="Programmes structurés" onPress={() => router.push('/profile/marketplace')} />
       </Group>
 
       {/* Préférences */}
@@ -158,8 +158,8 @@ export default function ProfileTab(): React.JSX.Element {
         Préférences
       </Text>
       <Group>
-        <ListRow icon="⚙️" iconColor="rgba(116,128,146,0.22)" title="Réglages" subtitle="Unités, thème, confidentialité, sécurité" onPress={() => router.push('/profile/settings')} divider />
-        <ListRow icon="💬" iconColor="rgba(116,128,146,0.22)" title="Support" subtitle="Aide et contact" onPress={() => router.push('/profile/support')} />
+        <ListRow icon={<Icon name="settings" color={colors.textSubtle} />} iconColor="rgba(116,128,146,0.22)" title="Réglages" subtitle="Unités, thème, confidentialité, sécurité" onPress={() => router.push('/profile/settings')} divider />
+        <ListRow icon={<Icon name="chat" color={colors.textSubtle} />} iconColor="rgba(116,128,146,0.22)" title="Support" subtitle="Aide et contact" onPress={() => router.push('/profile/support')} />
       </Group>
 
       <View style={{ alignItems: 'flex-start', marginTop: spacing[2] }}>
