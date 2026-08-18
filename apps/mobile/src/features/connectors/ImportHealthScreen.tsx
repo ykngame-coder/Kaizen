@@ -9,6 +9,23 @@ import { parseGarminFitWorkout, parseImportFile, type ImportedWorkout } from '@s
 import { useImportHealth } from '@/lib/data/queries';
 import { readFileBytes } from '@/lib/fileBytes';
 
+/**
+ * Extract a human-readable message from anything a failed import can throw.
+ * `instanceof Error` alone isn't enough here: a network-level Supabase
+ * failure (e.g. a slow/dropped request) resolves to a plain
+ * `{message, details, hint, code}` object rather than an Error subclass, and
+ * a browser localStorage quota error is a DOMException, which doesn't extend
+ * Error either. Both still carry a string `.message`.
+ */
+function errorMessage(e: unknown): string {
+  if (e instanceof Error) return e.message;
+  if (typeof e === 'string') return e;
+  if (typeof e === 'object' && e !== null && 'message' in e && typeof e.message === 'string') {
+    return e.message;
+  }
+  return 'Import impossible.';
+}
+
 /** Read a picked file's text, cross-platform (web blob vs native file uri). */
 async function readFileText(uri: string): Promise<string> {
   if (Platform.OS === 'web') {
@@ -133,10 +150,7 @@ export function ImportHealthScreen(): React.JSX.Element {
           (failed > 0 ? ` (${failed} fichier(s) ignoré(s)).` : '.'),
       });
     } catch (e) {
-      setStatus({
-        tone: 'error',
-        text: e instanceof Error ? `Échec : ${e.message}` : 'Import impossible.',
-      });
+      setStatus({ tone: 'error', text: `Échec : ${errorMessage(e)}` });
     } finally {
       setBusy(false);
     }

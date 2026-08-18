@@ -9,7 +9,7 @@ import { useAddWorkout, useCustomExercises, useExerciseHistory, useWorkouts, use
 import { formatDate } from '@/lib/format';
 
 const LIMIT = 60;
-/** Name Garmin imports are stored under (repository.ts upsertImportedWorkout) — flags the badge below. */
+/** Name Garmin imports are stored under (repository.ts upsertImportedWorkouts) — flags the badge below. */
 const GARMIN_IMPORT_NAME = 'Musculation (import Garmin)';
 
 interface SetDraft {

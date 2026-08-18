@@ -50,7 +50,7 @@ import {
   upsertActivities,
   listActivities as listActivitiesDb,
   insertWorkout,
-  upsertImportedWorkout,
+  upsertImportedWorkouts,
   insertPlannedWorkout,
   listPlannedWorkouts as listPlannedWorkoutsDb,
   updateWorkoutStatus as updateWorkoutStatusDb,
@@ -1878,26 +1878,28 @@ function createSupabaseRepository(
           segments: (s.segments ?? null) as unknown as SleepSessionRow['segments'],
         })),
       );
-      let workoutsAdded = 0;
-      for (const w of payload.workouts) {
-        const created = await upsertImportedWorkout(
-          client,
-          {
-            user_id: userId,
-            external_id: w.externalId,
-            name: 'Musculation (import Garmin)',
-            status: 'completed',
-            completed_at: w.startedAt,
-          },
+      const setsByExternalId = new Map(
+        payload.workouts.map((w) => [
+          w.externalId,
           w.sets.map((s, i) => ({
             exercise_id: s.exerciseId,
             order: i,
             reps: s.reps ?? null,
             weight_kg: s.weightKg ?? null,
           })),
-        );
-        if (created) workoutsAdded += 1;
-      }
+        ]),
+      );
+      const workoutsAdded = await upsertImportedWorkouts(
+        client,
+        payload.workouts.map((w) => ({
+          user_id: userId,
+          external_id: w.externalId,
+          name: 'Musculation (import Garmin)',
+          status: 'completed' as const,
+          completed_at: w.startedAt,
+        })),
+        setsByExternalId,
+      );
       return {
         activities: payload.activities.length,
         health: payload.healthMetrics.length,

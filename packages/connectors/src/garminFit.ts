@@ -94,7 +94,7 @@ function firstValue(v: unknown): string | undefined {
  * usable strength sets (e.g. it's a run/ride, or only unmapped categories).
  * `externalId` should be stable across re-imports of the same export (the
  * caller derives it, e.g. from the file's path/name inside the archive) so
- * `upsertImportedWorkout` can dedupe it.
+ * `upsertImportedWorkouts` can dedupe it.
  */
 export async function parseGarminFitWorkout(
   bytes: Uint8Array,

@@ -5,10 +5,12 @@ export async function readFileBytes(uri: string): Promise<Uint8Array> {
   if (Platform.OS === 'web') {
     return new Uint8Array(await (await fetch(uri)).arrayBuffer());
   }
-  const { readAsStringAsync, EncodingType } = await import('expo-file-system/legacy');
-  const b64 = await readAsStringAsync(uri, { encoding: EncodingType.Base64 });
-  const bin = atob(b64);
-  const bytes = new Uint8Array(bin.length);
-  for (let i = 0; i < bin.length; i += 1) bytes[i] = bin.charCodeAt(i);
-  return bytes;
+  // The modern File API reads bytes natively. The legacy
+  // readAsStringAsync(base64) + atob() + manual per-byte loop this replaced
+  // froze the app on realistic Garmin-export-sized files (tens of MB): base64
+  // inflates the payload ~33%, atob() builds a full binary JS string, then a
+  // per-byte loop copies it into a Uint8Array — all synchronous on the JS
+  // thread, with no chunking.
+  const { File } = await import('expo-file-system');
+  return new Uint8Array(await new File(uri).arrayBuffer());
 }

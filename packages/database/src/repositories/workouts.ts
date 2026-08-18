@@ -23,30 +23,36 @@ export async function insertWorkout(
 }
 
 /**
- * Insert an imported workout (e.g. Garmin FIT strength sets) and its sets,
+ * Insert imported workouts (e.g. Garmin FIT strength sets) and their sets,
  * deduped on (user_id, external_id) — re-importing the same export is a
- * no-op instead of doubling every set's volume. Returns null when the
- * workout already exists (nothing inserted).
+ * no-op instead of doubling every set's volume. One upsert + one insert for
+ * the whole batch, not two sequential round-trips per workout: a real
+ * multi-year Garmin export can carry hundreds of past strength sessions, and
+ * awaiting each one in turn made that import slow and — worse — meant a
+ * single transient network error anywhere in the sequence aborted the entire
+ * import with no partial progress. Returns how many workouts were newly
+ * created (existing ones are skipped, not double-inserted).
  */
-export async function upsertImportedWorkout(
+export async function upsertImportedWorkouts(
   client: SupotsuClient,
-  input: WorkoutInsertRow & { external_id: string },
-  sets: Omit<WorkoutSetInsertRow, 'workout_id'>[],
-): Promise<WorkoutRow | null> {
+  workouts: (WorkoutInsertRow & { external_id: string })[],
+  setsByExternalId: Map<string, Omit<WorkoutSetInsertRow, 'workout_id'>[]>,
+): Promise<number> {
+  if (workouts.length === 0) return 0;
   const { data, error } = await client
     .from('workouts')
-    .upsert(input, { onConflict: 'user_id,external_id', ignoreDuplicates: true })
-    .select('*');
+    .upsert(workouts, { onConflict: 'user_id,external_id', ignoreDuplicates: true })
+    .select('id, external_id');
   if (error) throw error;
-  const row = data?.[0];
-  if (!row) return null;
-  if (sets.length > 0) {
-    const { error: setError } = await client
-      .from('workout_sets')
-      .insert(sets.map((s) => ({ ...s, workout_id: row.id })));
+  const created = data ?? [];
+  const allSets = created.flatMap((row) =>
+    (setsByExternalId.get(row.external_id ?? '') ?? []).map((s) => ({ ...s, workout_id: row.id })),
+  );
+  if (allSets.length > 0) {
+    const { error: setError } = await client.from('workout_sets').insert(allSets);
     if (setError) throw setError;
   }
-  return row;
+  return created.length;
 }
 
 /** The user's logged sets (exercise id + parent workout), for the muscle map. */
