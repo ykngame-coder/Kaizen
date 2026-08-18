@@ -11,8 +11,8 @@ describe('css-variables', () => {
 
   it('emits RGB triplets for every semantic color', () => {
     const vars = themeToCssVars(darkTheme);
-    // brand[500] = #7c5cff -> "124 92 255"
-    expect(vars['--color-primary']).toBe('124 92 255');
+    // brand[500] = #19d3a2 -> "25 211 162"
+    expect(vars['--color-primary']).toBe('25 211 162');
     for (const value of Object.values(vars)) {
       expect(value).toMatch(/^\d{1,3} \d{1,3} \d{1,3}$/);
     }

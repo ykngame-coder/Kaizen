@@ -132,7 +132,7 @@ export function IntegrationsScreen(): React.JSX.Element {
           </View>
           <Text style={{ color: colors.primary, fontSize: 18 }}>↓</Text>
           <Gradient style={{ borderRadius: radii.md, paddingHorizontal: spacing[5], paddingVertical: spacing[3] }}>
-            <Text style={{ color: '#fff', fontWeight: '800', letterSpacing: 0.5 }}>KAIZEN SUPOTSU</Text>
+            <Text style={{ color: colors.onGradient, fontWeight: '800', letterSpacing: 0.5 }}>KAIZEN SUPOTSU</Text>
           </Gradient>
           <Text style={{ color: colors.primary, fontSize: 18 }}>↓</Text>
           <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: spacing[2], justifyContent: 'center' }}>

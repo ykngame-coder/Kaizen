@@ -35,12 +35,12 @@ export function Button({
     danger: colors.error,
     gradient: 'transparent',
   };
-  const fg: Record<ButtonVariant, 'onPrimary' | 'text'> = {
-    primary: 'onPrimary',
+  const fg: Record<ButtonVariant, 'onPrimary' | 'onGradient' | 'text'> = {
+    primary: 'onGradient',
     secondary: 'text',
     quick: 'onPrimary',
     danger: 'onPrimary',
-    gradient: 'onPrimary',
+    gradient: 'onGradient',
   };
 
   // The visual (background/padding/radius) lives on an inner View with a plain

@@ -69,7 +69,7 @@ function ArchetypeTile({ item, active, onPress }: { item: (typeof ARCHETYPES)[nu
         {active ? (
           <View style={{ width: 20, height: 20, borderRadius: 10, overflow: 'hidden', alignItems: 'center', justifyContent: 'center' }}>
             <Gradient fill />
-            <Text style={{ color: '#fff', fontSize: 11 }}>✓</Text>
+            <Text style={{ color: colors.onGradient, fontSize: 11 }}>✓</Text>
           </View>
         ) : null}
       </View>
@@ -314,7 +314,7 @@ export function GoalsScreen(): React.JSX.Element {
               <View key={g.id} style={{ flexDirection: 'row', alignItems: 'center', gap: spacing[3], backgroundColor: colors.surfaceElevated, borderRadius: radii.md, padding: spacing[3] }}>
                 <View style={{ width: 24, height: 24, borderRadius: 12, overflow: 'hidden', alignItems: 'center', justifyContent: 'center' }}>
                   <Gradient fill />
-                  <Text style={{ color: '#fff', fontSize: 12, fontWeight: '800' }}>{i + 1}</Text>
+                  <Text style={{ color: colors.onGradient, fontSize: 12, fontWeight: '800' }}>{i + 1}</Text>
                 </View>
                 <Text variant="body" style={{ flex: 1 }}>
                   {g.title}

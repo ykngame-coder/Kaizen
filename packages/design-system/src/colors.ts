@@ -7,19 +7,20 @@
  */
 
 export const palette = {
-  // Signature brand color — the Kaizen Supotsu logo gradient collapses to a
-  // "blurple" primary; the full blue→purple→pink gradient lives in `gradients`.
+  // Signature brand color — an emerald "growth" primary (kaizen = continuous
+  // improvement), replacing the earlier generic blue-purple-pink AI-startup
+  // gradient. The full blue→emerald→lime gradient lives in `gradients`.
   brand: {
-    50: '#f0ecff',
-    100: '#dcd0ff',
-    200: '#c0aaff',
-    300: '#a17dff',
-    400: '#8a5cff',
-    500: '#7c5cff', // primary
-    600: '#6a3ff0',
-    700: '#5730c9',
-    800: '#3f2391',
-    900: '#281559',
+    50: '#e7fbf3',
+    100: '#c2f4e2',
+    200: '#8ee8c8',
+    300: '#54d8ab',
+    400: '#26c18e',
+    500: '#19d3a2', // primary
+    600: '#0ea37e',
+    700: '#0a7d61',
+    800: '#065943',
+    900: '#033729',
   },
   // Neutral ramp — premium dark identity (#071018 bg, #101923 / #172330 cards).
   neutral: {
@@ -60,8 +61,8 @@ export const palette = {
  * derivation stays string-only.
  */
 export const gradients = {
-  /** Brand: blue → purple → pink. Buttons, active states, hero rings. */
-  brand: ['#4c8dff', '#8b5cf6', '#ec4899'],
+  /** Brand: info blue → recovery emerald → lime. Buttons, active states, hero rings. */
+  brand: [palette.state.info, palette.accent.recovery, palette.accent.lime],
   /** Positive data: emerald → cyan. Scores, upward trends, recovery. */
   data: ['#00d99b', '#22d3ee'],
 } as const;

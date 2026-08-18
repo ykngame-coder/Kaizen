@@ -87,7 +87,7 @@ export function CoachScreen(): React.JSX.Element {
               }}
             >
               <Gradient fill start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} />
-              <Text variant="body" color="onPrimary">
+              <Text variant="body" color="onGradient">
                 {m.text}
               </Text>
             </View>

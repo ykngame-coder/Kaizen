@@ -95,9 +95,9 @@ function KpiTile({ icon, value, delta, deltaTone, label }: { icon: string; value
 /** One pillar of the Score Kaizen breakdown (Sport / Récup / Sommeil / Nutrition). */
 function PillarCell({ label, value }: { label: string; value: number | null }): React.JSX.Element {
   return (
-    <View style={{ flex: 1, alignItems: 'center', backgroundColor: 'rgba(255,255,255,0.14)', borderRadius: radii.md, paddingVertical: spacing[2] }}>
-      <Text variant="subtitle" color="onPrimary">{value ?? '—'}</Text>
-      <Text variant="caption" color="onPrimary" style={{ opacity: 0.85, marginTop: 1 }}>{label}</Text>
+    <View style={{ flex: 1, alignItems: 'center', backgroundColor: 'rgba(0,0,0,0.10)', borderRadius: radii.md, paddingVertical: spacing[2] }}>
+      <Text variant="subtitle" color="onGradient">{value ?? '—'}</Text>
+      <Text variant="caption" color="onGradient" style={{ opacity: 0.75, marginTop: 1 }}>{label}</Text>
     </View>
   );
 }
@@ -451,7 +451,7 @@ export function DashboardScreen(): React.JSX.Element {
                 ) : (
                   <>
                     <Gradient fill />
-                    <Text variant="body" color="onPrimary" style={{ fontWeight: '700' }}>{initial}</Text>
+                    <Text variant="body" color="onGradient" style={{ fontWeight: '700' }}>{initial}</Text>
                   </>
                 )}
               </View>
@@ -478,18 +478,18 @@ export function DashboardScreen(): React.JSX.Element {
         {/* Score Kaizen */}
         <View style={{ borderRadius: radii.lg, overflow: 'hidden' }}>
           <Gradient style={{ padding: spacing[5] }}>
-            <Text variant="caption" color="onPrimary" style={{ opacity: 0.85 }}>
+            <Text variant="caption" color="onGradient" style={{ opacity: 0.85 }}>
               SCORE KAIZEN
             </Text>
             <View style={{ flexDirection: 'row', alignItems: 'flex-end', gap: spacing[3], marginTop: spacing[1] }}>
-              <Text variant="display" color="onPrimary">
+              <Text variant="display" color="onGradient">
                 {hasScoreData ? snapshot.value.overall : '—'}
               </Text>
-              <Text variant="subtitle" color="onPrimary" style={{ opacity: 0.85, marginBottom: spacing[2] }}>
+              <Text variant="subtitle" color="onGradient" style={{ opacity: 0.85, marginBottom: spacing[2] }}>
                 / 100
               </Text>
             </View>
-            <Text variant="caption" color="onPrimary" style={{ opacity: 0.9, marginTop: spacing[1] }}>
+            <Text variant="caption" color="onGradient" style={{ opacity: 0.9, marginTop: spacing[1] }}>
               {hasScoreData
                 ? `${BAND_INFO[kaizenBand]?.label ?? ''} · Sport, récupération, sommeil et nutrition combinés.`
                 : 'Ajoute une activité ou une donnée santé pour calibrer ton score.'}

@@ -85,7 +85,7 @@ export default function ProfileTab(): React.JSX.Element {
               ) : (
                 <>
                   <Gradient fill />
-                  <Text variant="title" color="onPrimary">
+                  <Text variant="title" color="onGradient">
                     {initial}
                   </Text>
                 </>

@@ -22,6 +22,7 @@ module.exports = {
         'text-subtle': withVar('--color-text-subtle'),
         primary: withVar('--color-primary'),
         'on-primary': withVar('--color-on-primary'),
+        'on-gradient': withVar('--color-on-gradient'),
         'accent-strength': withVar('--color-accent-strength'),
         'accent-endurance': withVar('--color-accent-endurance'),
         'accent-mobility': withVar('--color-accent-mobility'),

@@ -9,6 +9,7 @@ type ColorRole =
   | 'textSubtle'
   | 'primary'
   | 'onPrimary'
+  | 'onGradient'
   | 'success'
   | 'warning'
   | 'error'

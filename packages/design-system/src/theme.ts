@@ -25,6 +25,14 @@ export interface SemanticColors {
   primary: string;
   /** Foreground placed on top of `primary`. */
   onPrimary: string;
+  /**
+   * Foreground placed on top of the brand gradient (score cards, gradient
+   * buttons, avatar fills). Separate from `onPrimary` because the gradient
+   * runs light (emerald→lime) — white text loses contrast on it, while
+   * `onPrimary` still needs to stay white for solid, darker fills (danger,
+   * quick-action buttons).
+   */
+  onGradient: string;
   /** Sport-category accents. */
   accentStrength: string;
   accentEndurance: string;
@@ -51,6 +59,7 @@ export const darkTheme: SemanticColors = {
   textSubtle: palette.neutral[500],
   primary: palette.brand[500],
   onPrimary: palette.neutral[0],
+  onGradient: palette.neutral[950],
   accentStrength: palette.accent.strength,
   accentEndurance: palette.accent.endurance,
   accentMobility: palette.accent.mobility,
@@ -73,6 +82,7 @@ export const lightTheme: SemanticColors = {
   textSubtle: palette.neutral[400],
   primary: palette.brand[600],
   onPrimary: palette.neutral[0],
+  onGradient: palette.neutral[950],
   accentStrength: palette.accent.strength,
   accentEndurance: palette.accent.endurance,
   accentMobility: palette.accent.mobility,
