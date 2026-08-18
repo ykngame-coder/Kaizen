@@ -188,6 +188,61 @@ export function mapHealthKitWorkoutType(activityType: number | undefined): Activ
   return WORKOUT_MAP[activityType] ?? 'other';
 }
 
+/**
+ * French name for HealthKit activity types that don't fit Supotsu's narrow
+ * ActivityType set (only ~10 buckets) — everything outside WORKOUT_MAP above
+ * collapses to the generic "Autre" label otherwise. Codes are
+ * HKWorkoutActivityType's stable raw values (unchanged since iOS 8).
+ */
+const WORKOUT_NAME: Record<number, string> = {
+  16: 'Elliptique',
+  24: 'Randonnée',
+  35: 'Aviron',
+  44: 'Montée d’escaliers',
+  68: 'Escaliers',
+  8: 'Boxe',
+  65: 'Kickboxing',
+  28: 'Arts martiaux',
+  66: 'Pilates',
+  58: 'Barre au sol',
+  59: 'Renforcement (core)',
+  64: 'Corde à sauter',
+  73: 'Cardio mixte',
+  9: 'Escalade',
+  6: 'Basketball',
+  41: 'Football',
+  48: 'Tennis',
+  21: 'Golf',
+  4: 'Badminton',
+  43: 'Squash',
+  23: 'Handball',
+  51: 'Volleyball',
+  36: 'Rugby',
+  5: 'Baseball',
+  53: 'Fitness aquatique',
+  54: 'Water-polo',
+  45: 'Surf',
+  31: 'Sports de pagaie',
+  40: 'Sports de neige',
+  60: 'Ski de fond',
+  61: 'Ski alpin',
+  67: 'Snowboard',
+  39: 'Patinage',
+  56: 'Lutte',
+  22: 'Gymnastique',
+  72: 'Tai-chi',
+  62: 'Étirements',
+  29: 'Corps et esprit',
+  74: 'Handbike',
+  80: 'Retour au calme',
+};
+
+/** HealthKit's own name for an activity type, when it doesn't map to a real ActivityType. */
+export function healthKitWorkoutName(activityType: number | undefined): string | undefined {
+  if (activityType === undefined) return undefined;
+  return WORKOUT_NAME[activityType];
+}
+
 /** A HealthKit workout, already read from the native module. */
 export interface HKWorkout {
   uuid?: string;
@@ -207,14 +262,18 @@ export function normalizeHealthKitWorkout(w: HKWorkout): ImportedActivity | null
   // reject it here instead so one bad workout doesn't fail the whole sync.
   const durationSec = Math.round(w.duration);
   if (durationSec <= 0) return null;
+  const type = mapHealthKitWorkoutType(w.workoutActivityType);
   return {
     externalId: w.uuid ? `applehealth-${w.uuid}` : undefined,
-    type: mapHealthKitWorkoutType(w.workoutActivityType),
+    type,
     source: 'apple_health',
     startedAt: new Date(w.startDate).toISOString(),
     durationSec,
     distanceM: w.totalDistance !== undefined ? Math.round(w.totalDistance) : undefined,
     calories: w.totalEnergyBurned !== undefined ? Math.round(w.totalEnergyBurned) : undefined,
+    // Only when we fell back to the generic bucket — a real type (running,
+    // yoga…) already has its own label, no need to repeat it.
+    notes: type === 'other' ? healthKitWorkoutName(w.workoutActivityType) : undefined,
   };
 }
 

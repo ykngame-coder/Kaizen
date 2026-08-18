@@ -1834,6 +1834,7 @@ function createSupabaseRepository(
           calories: a.calories ?? null,
           intensity: a.intensity ?? null,
           avg_heart_rate: a.avgHeartRate ?? null,
+          notes: a.notes ?? null,
         })),
       );
       await insertHealthMetrics(

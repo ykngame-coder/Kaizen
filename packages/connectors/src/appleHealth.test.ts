@@ -152,6 +152,24 @@ describe('normalizeHealthKitWorkout', () => {
     expect(normalizeHealthKitWorkout({ startDate: '2026-07-20T06:00:00Z', duration: 0.3 })).toBeNull();
     expect(normalizeHealthKitWorkout({ startDate: '2026-07-20T06:00:00Z', duration: -5 })).toBeNull();
   });
+
+  it('carries HealthKit\'s own activity name in notes when the type falls back to "other"', () => {
+    const a = normalizeHealthKitWorkout({
+      workoutActivityType: 24, // hiking — not in WORKOUT_MAP
+      startDate: '2026-07-20T06:00:00Z',
+      duration: 1800,
+    });
+    expect(a).toMatchObject({ type: 'other', notes: 'Randonnée' });
+  });
+
+  it('leaves notes unset for a type that already has a real label', () => {
+    const a = normalizeHealthKitWorkout({
+      workoutActivityType: 37, // running — already mapped
+      startDate: '2026-07-20T06:00:00Z',
+      duration: 1800,
+    });
+    expect(a?.notes).toBeUndefined();
+  });
 });
 
 describe('normalizeShortcutHealth', () => {

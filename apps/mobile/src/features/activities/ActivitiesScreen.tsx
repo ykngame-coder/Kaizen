@@ -25,7 +25,9 @@ export function ActivitiesScreen(): React.JSX.Element {
     <Screen scroll>
       <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
         <Text variant="title">Activités</Text>
-        <Button label="+ Ajouter" onPress={() => router.push('/sport/activity/new')} />
+        {(isLoading || activities.length > 0) && (
+          <Button label="+ Ajouter" onPress={() => router.push('/sport/activity/new')} />
+        )}
       </View>
 
       <View style={{ flexDirection: 'row', gap: spacing[4] }}>
@@ -62,7 +64,7 @@ export function ActivitiesScreen(): React.JSX.Element {
                     alignItems: 'center',
                   }}
                 >
-                  <Text variant="subtitle">{activityLabel(a.type)}</Text>
+                  <Text variant="subtitle">{a.type === 'other' && a.notes ? a.notes : activityLabel(a.type)}</Text>
                   <Text variant="caption" color="textMuted">
                     {formatDate(a.startedAt)}
                   </Text>
