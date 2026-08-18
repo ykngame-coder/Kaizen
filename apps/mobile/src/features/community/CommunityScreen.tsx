@@ -1,7 +1,7 @@
 import React, { useMemo } from 'react';
 import { View } from 'react-native';
 import { useRouter } from 'expo-router';
-import { Badge, Button, Card, EmptyState, Screen, Text, useTheme } from '@supotsu/ui';
+import { Badge, Button, Card, EmptyState, Icon, Screen, Text, useTheme } from '@supotsu/ui';
 import { spacing } from '@supotsu/design-system';
 import { challengeExplanation, computeChallengeProgress } from '@supotsu/engines';
 import type { Activity, Challenge } from '@supotsu/core';
@@ -111,7 +111,7 @@ export function CommunityScreen(): React.JSX.Element {
         </Text>
       ) : challenges.length === 0 ? (
         <EmptyState
-          icon="🔥"
+          icon={<Icon name="fire" size={44} color={colors.textSubtle} />}
           title="Aucun défi pour l'instant"
           message="Crée le premier défi et invite tes amis à te rejoindre."
           actionLabel="Créer un défi"

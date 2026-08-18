@@ -1,7 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import { Pressable, View } from 'react-native';
 import { useRouter, type Href } from 'expo-router';
-import { Button, Card, EmptyState, Gradient, ListRow, Screen, Text, Toggle, useTheme } from '@supotsu/ui';
+import { Button, Card, EmptyState, Gradient, Icon, ListRow, Screen, Text, Toggle, useTheme } from '@supotsu/ui';
 import { radii, spacing } from '@supotsu/design-system';
 import type { HealthMetricType } from '@supotsu/core';
 import { computeCircadianProfile, computeRecoveryScore, estimateTargets, recoveryBand, sumDay } from '@supotsu/engines';
@@ -199,7 +199,7 @@ export function NotificationsScreen(): React.JSX.Element {
       ) : null}
 
       {cleared || notifs.length === 0 ? (
-        <EmptyState icon="🔔" title={cleared ? 'Tout est à jour' : 'Rien de neuf'} message="Tes alertes sont générées à partir de tes données (récupération, nutrition, records, sommeil, habitudes, appareils)." />
+        <EmptyState icon={<Icon name="notifications" size={44} color={colors.textSubtle} />} title={cleared ? 'Tout est à jour' : 'Rien de neuf'} message="Tes alertes sont générées à partir de tes données (récupération, nutrition, records, sommeil, habitudes, appareils)." />
       ) : (
         <>
           {GROUPS.map((g) => {
@@ -257,9 +257,9 @@ export function NotificationsScreen(): React.JSX.Element {
 
       {/* Paramètres */}
       <Card style={{ paddingVertical: spacing[1] }}>
-        <ListRow icon="🌙" iconColor="rgba(45,127,249,0.18)" title="Heures de silence" value="22:30 – 07:00" onPress={() => router.push('/profile/settings')} divider />
-        <ListRow icon="📋" iconColor="rgba(43,227,139,0.18)" title="Résumé quotidien" value="08:00" onPress={() => router.push('/profile/settings')} divider />
-        <ListRow icon="📊" iconColor="rgba(139,92,246,0.18)" title="Résumé hebdomadaire" value="Dimanche" onPress={() => router.push('/profile/report')} />
+        <ListRow icon={<Icon name="moon" color={colors.info} />} iconColor="rgba(45,127,249,0.18)" title="Heures de silence" value="22:30 – 07:00" onPress={() => router.push('/profile/settings')} divider />
+        <ListRow icon={<Icon name="clipboardText" color={colors.accentData} />} iconColor="rgba(43,227,139,0.18)" title="Résumé quotidien" value="08:00" onPress={() => router.push('/profile/settings')} divider />
+        <ListRow icon={<Icon name="chartBar" color={colors.accentMobility} />} iconColor="rgba(139,92,246,0.18)" title="Résumé hebdomadaire" value="Dimanche" onPress={() => router.push('/profile/report')} />
       </Card>
 
       <View style={{ flexDirection: 'row', gap: spacing[2] }}>

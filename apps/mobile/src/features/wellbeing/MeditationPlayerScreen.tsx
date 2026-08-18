@@ -2,7 +2,7 @@ import React, { useEffect, useMemo, useRef } from 'react';
 import { View } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useAudioPlayer, useAudioPlayerStatus } from 'expo-audio';
-import { Button, EmptyState, Screen, Text, useTheme } from '@supotsu/ui';
+import { Button, EmptyState, Icon, Screen, Text, useTheme } from '@supotsu/ui';
 import { radii, spacing } from '@supotsu/design-system';
 import { meditationAudioUrl } from '@/lib/meditationAudio';
 import { MEDITATION_CATALOG } from './meditationCatalog';
@@ -55,7 +55,7 @@ export function MeditationPlayerScreen(): React.JSX.Element {
   if (!session) {
     return (
       <Screen>
-        <EmptyState icon="🧘" title="Séance introuvable" actionLabel="Retour" onAction={() => router.back()} />
+        <EmptyState icon={<Icon name="yoga" size={44} color={colors.textSubtle} />} title="Séance introuvable" actionLabel="Retour" onAction={() => router.back()} />
       </Screen>
     );
   }
@@ -63,7 +63,7 @@ export function MeditationPlayerScreen(): React.JSX.Element {
   if (!url) {
     return (
       <Screen>
-        <EmptyState icon="🧘" title="Indisponible hors connexion" message="La lecture nécessite une connexion au backend." actionLabel="Retour" onAction={() => router.back()} />
+        <EmptyState icon={<Icon name="yoga" size={44} color={colors.textSubtle} />} title="Indisponible hors connexion" message="La lecture nécessite une connexion au backend." actionLabel="Retour" onAction={() => router.back()} />
       </Screen>
     );
   }
@@ -87,7 +87,7 @@ export function MeditationPlayerScreen(): React.JSX.Element {
             justifyContent: 'center',
           }}
         >
-          <Text style={{ fontSize: 40 }}>🧘</Text>
+          <Icon name="yoga" size={40} color={colors.primary} />
           <Text variant="heading" style={{ marginTop: spacing[2] }}>
             {fmtClock(status.currentTime)} / {fmtClock(duration)}
           </Text>

@@ -1,7 +1,7 @@
 import React, { useMemo } from 'react';
 import { View } from 'react-native';
 import { useRouter } from 'expo-router';
-import { Badge, Button, Card, EmptyState, ProgressRing, Screen, Text, useTheme } from '@supotsu/ui';
+import { Badge, Button, Card, EmptyState, Icon, ProgressRing, Screen, Text, useTheme } from '@supotsu/ui';
 import { spacing } from '@supotsu/design-system';
 import type { DataSource, HealthMetricType, Reliability } from '@supotsu/core';
 import {
@@ -81,7 +81,7 @@ export function DataQualityScreen(): React.JSX.Element {
 
       {!hasData ? (
         <EmptyState
-          icon="🔎"
+          icon={<Icon name="search" size={44} color={colors.textSubtle} />}
           title="Aucune donnée à évaluer"
           message="Connecte un appareil ou importe un export pour voir la provenance et la fiabilité de tes données."
           actionLabel="Mes appareils"

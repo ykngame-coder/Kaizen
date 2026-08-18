@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { View } from 'react-native';
 import { useRouter } from 'expo-router';
-import { Badge, Button, EmptyState, Input, Screen, SegmentedControl, Text } from '@supotsu/ui';
+import { Badge, Button, EmptyState, Icon, Input, Screen, SegmentedControl, Text } from '@supotsu/ui';
 import { spacing } from '@supotsu/design-system';
 import type { ProgramFocus, SportLevel } from '@supotsu/core';
 import { useAddUserProgram, useUserPrograms } from '@/lib/data/queries';
@@ -68,7 +68,7 @@ export function ProgramBuilderScreen(): React.JSX.Element {
     return (
       <Screen>
         <EmptyState
-          icon="📦"
+          icon={<Icon name="packageBox" size={44} />}
           title="Limite de programmes atteinte"
           message={`Tu as déjà ${PROGRAMS_QUOTA} programmes. Supprime-en un pour en créer un nouveau.`}
           actionLabel="Retour"

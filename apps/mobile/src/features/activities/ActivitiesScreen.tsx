@@ -1,7 +1,7 @@
 import React, { useMemo } from 'react';
 import { View } from 'react-native';
 import { useRouter } from 'expo-router';
-import { Button, Card, EmptyState, KPICard, Screen, Text } from '@supotsu/ui';
+import { Button, Card, EmptyState, Icon, KPICard, Screen, Text } from '@supotsu/ui';
 import { spacing } from '@supotsu/design-system';
 import { useActivities } from '@/lib/data/queries';
 import { activityLabel, formatDate, formatDistance, formatDuration } from '@/lib/format';
@@ -43,7 +43,7 @@ export function ActivitiesScreen(): React.JSX.Element {
         </Text>
       ) : activities.length === 0 ? (
         <EmptyState
-          icon="≋"
+          icon={<Icon name="run" size={44} />}
           title="Aucune activité"
           message="Ajoute ta première activité pour suivre ta progression et calibrer ton score Kaizen."
           actionLabel="Ajouter une activité"

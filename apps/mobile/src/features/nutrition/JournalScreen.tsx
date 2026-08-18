@@ -1,7 +1,7 @@
 import React, { useMemo } from 'react';
 import { View } from 'react-native';
 import { useRouter } from 'expo-router';
-import { Badge, Button, Card, Fab, ProgressRing, Screen, Sparkline, Text, useTheme } from '@supotsu/ui';
+import { Badge, Button, Card, Fab, Icon, ProgressRing, Screen, Sparkline, Text, useTheme } from '@supotsu/ui';
 import { radii, spacing } from '@supotsu/design-system';
 import { dailySums, entriesForDay, estimateTargets, sumDay, type TrendPoint } from '@supotsu/engines';
 import { useAddNutritionEntry, useHealthMetrics, useNutritionEntries } from '@/lib/data/queries';
@@ -19,11 +19,11 @@ function SectionTitle({ children, right }: { children: React.ReactNode; right?: 
     </View>
   );
 }
-function Kpi({ icon, value, unit, label, color }: { icon: string; value: string; unit?: string; label: string; color?: string }): React.JSX.Element {
+function Kpi({ icon, value, unit, label, color }: { icon: React.ReactNode; value: string; unit?: string; label: string; color?: string }): React.JSX.Element {
   const { colors } = useTheme();
   return (
     <View style={{ flexGrow: 1, flexBasis: '45%', backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border, borderRadius: radii.lg, padding: spacing[4] }}>
-      <Text style={{ fontSize: 17 }}>{icon}</Text>
+      {typeof icon === 'string' ? <Text style={{ fontSize: 17 }}>{icon}</Text> : icon}
       <Text variant="subtitle" style={{ marginTop: spacing[2], color: color ?? colors.text }}>{value}{unit ? <Text variant="caption" color="textSubtle"> {unit}</Text> : null}</Text>
       <Text variant="caption" color="textSubtle" style={{ marginTop: 2 }}>{label}</Text>
     </View>
@@ -101,10 +101,10 @@ export function JournalScreen(): React.JSX.Element {
 
         {/* KPI */}
         <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: spacing[3] }}>
-          <Kpi icon="🍽" value={`${Math.round(totals.kcal)}`} unit="kcal" label="Consommées" />
-          <Kpi icon="🎯" value={`${Math.round(kcalTarget)}`} unit="kcal" label="Objectif" />
-          <Kpi icon="📉" value={hasData ? `${deficit}` : '—'} unit="kcal" label="Déficit" color={colors.accentData} />
-          <Kpi icon="🥩" value={`${Math.round(totals.proteinG)}`} unit="g" label="Protéines" />
+          <Kpi icon={<Icon name="silverware" size={17} color={colors.text} />} value={`${Math.round(totals.kcal)}`} unit="kcal" label="Consommées" />
+          <Kpi icon={<Icon name="target" size={17} color={colors.accentData} />} value={`${Math.round(kcalTarget)}`} unit="kcal" label="Objectif" />
+          <Kpi icon={<Icon name="trendingDown" size={17} color={colors.warning} />} value={hasData ? `${deficit}` : '—'} unit="kcal" label="Déficit" color={colors.accentData} />
+          <Kpi icon={<Icon name="steak" size={17} color={colors.error} />} value={`${Math.round(totals.proteinG)}`} unit="g" label="Protéines" />
         </View>
 
         {/* Ring + macros */}
@@ -189,7 +189,7 @@ export function JournalScreen(): React.JSX.Element {
         {/* Analyse */}
         {hasData ? (
           <View style={{ borderRadius: radii.xl, borderWidth: 1, borderColor: 'rgba(43,227,139,0.25)', backgroundColor: 'rgba(43,227,139,0.08)', padding: spacing[5] }}>
-            <View style={{ flexDirection: 'row', gap: spacing[2], alignItems: 'center' }}><Text style={{ fontSize: 20 }}>💡</Text><Text variant="heading">Analyse & conseils</Text></View>
+            <View style={{ flexDirection: 'row', gap: spacing[2], alignItems: 'center' }}><Icon name="lightbulb" size={20} color={colors.warning} /><Text variant="heading">Analyse & conseils</Text></View>
             <Text variant="body" color="textMuted" style={{ marginTop: spacing[2], lineHeight: 22 }}>
               {deficit > 200 ? `Déficit de ${deficit} kcal — cohérent avec un objectif de perte de graisse. ` : deficit >= 0 ? 'Léger déficit — proche de l’équilibre. ' : `Surplus de ${Math.abs(deficit)} kcal aujourd’hui. `}
               {totals.proteinG >= targets.proteinG * 0.9 ? 'Tes protéines sont au bon niveau.' : `Il te manque ${Math.round(targets.proteinG - totals.proteinG)} g de protéines.`}

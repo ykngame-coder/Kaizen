@@ -1,7 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import { Pressable, ScrollView, View } from 'react-native';
 import { useRouter } from 'expo-router';
-import { Card, Screen, Text, useTheme } from '@supotsu/ui';
+import { Card, Icon, Screen, Text, useTheme } from '@supotsu/ui';
 import { radii, spacing } from '@supotsu/design-system';
 import type { ActivityType } from '@supotsu/core';
 import { computeAcwr, computeRecoveryScore, sleepTrend, sumDay } from '@supotsu/engines';
@@ -226,7 +226,7 @@ export function CalendarScreen(): React.JSX.Element {
 
       {/* Analyse */}
       <View style={{ borderRadius: radii.xl, borderWidth: 1, borderColor: 'rgba(139,92,246,0.28)', backgroundColor: 'rgba(139,92,246,0.10)', padding: spacing[5] }}>
-        <View style={{ flexDirection: 'row', gap: spacing[2], alignItems: 'center' }}><Text style={{ fontSize: 20 }}>🧠</Text><Text variant="heading">Analyse Kaizen</Text></View>
+        <View style={{ flexDirection: 'row', gap: spacing[2], alignItems: 'center' }}><Icon name="brain" size={20} color={colors.info} /><Text variant="heading">Analyse Kaizen</Text></View>
         <Text variant="body" color="textMuted" style={{ marginTop: spacing[2], lineHeight: 22 }}>
           {acwr.zone === 'risque' || acwr.zone === 'élevé' ? 'Ta charge récente est élevée — pense à insérer une journée de récupération. ' : 'Ta charge est bien répartie. '}
           {deadlines.length > 0 ? `Prochaine échéance : ${deadlines[0]!.label} (${formatDate(deadlines[0]!.date)}).` : 'Ajoute un objectif avec une échéance pour un suivi calendaire.'}

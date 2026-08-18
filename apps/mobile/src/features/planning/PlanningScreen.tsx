@@ -1,7 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import { Alert, Pressable, View } from 'react-native';
 import { Swipeable } from 'react-native-gesture-handler';
-import { Button, Card, Input, Screen, Text, useTheme } from '@supotsu/ui';
+import { Button, Card, Icon, Input, Screen, Text, useTheme } from '@supotsu/ui';
 import { radii, spacing } from '@supotsu/design-system';
 import type { MuscleGroup, Workout } from '@supotsu/core';
 import { computeMuscleStates } from '@supotsu/engines';
@@ -420,7 +420,7 @@ function SessionCard({
             backgroundColor: colors.error,
           }}
         >
-          <Text style={{ fontSize: 18 }}>🗑</Text>
+          <Icon name="trash" size={18} color={colors.onPrimary} />
           <Text variant="caption" color="onPrimary" style={{ marginTop: 2, fontWeight: '600' }}>Supprimer</Text>
         </Pressable>
       )}
@@ -488,7 +488,7 @@ function SessionCard({
               borderRadius: radii.md, borderWidth: 1, borderColor: colors.border,
             })}
           >
-            <Text style={{ fontSize: 16 }}>🗑</Text>
+            <Icon name="trash" size={16} color={colors.text} />
           </Pressable>
         </View>
       </Card>

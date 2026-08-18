@@ -7,6 +7,7 @@ import {
   Card,
   EmptyState,
   Gradient,
+  Icon,
   Input,
   Screen,
   SegmentedControl,
@@ -280,7 +281,7 @@ export function GoalsScreen(): React.JSX.Element {
         </Text>
       ) : active.length === 0 ? (
         <EmptyState
-          icon="🎯"
+          icon={<Icon name="target" size={44} color={colors.textSubtle} />}
           title="Aucun objectif"
           message="Fixe un premier objectif — poids, performance ou habitude — et suis ta progression."
           actionLabel="Créer un objectif"

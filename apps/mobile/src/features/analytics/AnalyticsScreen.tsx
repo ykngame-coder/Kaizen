@@ -1,7 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import { Share, View } from 'react-native';
 import { useRouter } from 'expo-router';
-import { Badge, Button, Card, EmptyState, Screen, SegmentedControl, Sparkline, Text, useTheme } from '@supotsu/ui';
+import { Badge, Button, Card, EmptyState, Icon, Screen, SegmentedControl, Sparkline, Text, useTheme } from '@supotsu/ui';
 import { radii, spacing } from '@supotsu/design-system';
 import type { ActivityType } from '@supotsu/core';
 import {
@@ -198,7 +198,7 @@ export function AnalyticsScreen(): React.JSX.Element {
       <SegmentedControl options={ANALYTICS_PERIODS.map((p) => ({ value: p.key, label: p.label }))} value={period} onChange={setPeriod} />
 
       {!hasAny ? (
-        <EmptyState icon="📊" title="Pas encore assez de données" message="Enregistre des activités, des nuits, des repas et des check-in pour débloquer tes statistiques." />
+        <EmptyState icon={<Icon name="chartBar" size={44} color={colors.textSubtle} />} title="Pas encore assez de données" message="Enregistre des activités, des nuits, des repas et des check-in pour débloquer tes statistiques." />
       ) : (
         <>
           {/* KPI */}
@@ -316,7 +316,7 @@ export function AnalyticsScreen(): React.JSX.Element {
 
           {/* Rapport IA */}
           <View style={{ borderRadius: radii.xl, borderWidth: 1, borderColor: 'rgba(45,127,249,0.25)', backgroundColor: 'rgba(45,127,249,0.08)', padding: spacing[5] }}>
-            <View style={{ flexDirection: 'row', gap: spacing[2], alignItems: 'center' }}><Text style={{ fontSize: 20 }}>🧠</Text><Text variant="heading">Rapport Kaizen</Text></View>
+            <View style={{ flexDirection: 'row', gap: spacing[2], alignItems: 'center' }}><Icon name="brain" size={20} color={colors.info} /><Text variant="heading">Rapport Kaizen</Text></View>
             <Text variant="body" color="textMuted" style={{ marginTop: spacing[2], lineHeight: 22 }}>
               {recovery.confidence !== 'to_confirm' ? `Ta récupération est ${recoveryBand(recovery.value)}. ` : ''}
               {sessions > 0 ? `Tu as réalisé ${sessions} séance${sessions > 1 ? 's' : ''} sur la période. ` : ''}

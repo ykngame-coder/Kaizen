@@ -1,7 +1,7 @@
 import React, { useMemo } from 'react';
 import { View } from 'react-native';
 import { useRouter } from 'expo-router';
-import { Badge, Button, Card, EmptyState, ProgressRing, Screen, Sparkline, Text, useTheme } from '@supotsu/ui';
+import { Badge, Button, Card, EmptyState, Icon, ProgressRing, Screen, Sparkline, Text, useTheme } from '@supotsu/ui';
 import { spacing } from '@supotsu/design-system';
 import { computeAcwr, dailyLoadSeries, loadExplanation, type LoadZone } from '@supotsu/engines';
 import { useActivities } from '@/lib/data/queries';
@@ -55,7 +55,7 @@ export function LoadScreen(): React.JSX.Element {
         </Text>
       ) : !hasData ? (
         <EmptyState
-          icon="📈"
+          icon={<Icon name="trendingUp" size={44} color={colors.textSubtle} />}
           title="Pas encore assez d'activités"
           message="Enregistre tes séances sur quelques semaines pour calculer ta charge et ton risque."
           actionLabel="Ajouter une activité"

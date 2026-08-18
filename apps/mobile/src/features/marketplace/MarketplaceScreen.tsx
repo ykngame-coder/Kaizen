@@ -1,7 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import { View } from 'react-native';
 import { useRouter } from 'expo-router';
-import { Badge, Button, Card, EmptyState, Screen, SegmentedControl, Text, useTheme, type BadgeTone } from '@supotsu/ui';
+import { Badge, Button, Card, EmptyState, Icon, Screen, SegmentedControl, Text, useTheme, type BadgeTone } from '@supotsu/ui';
 import { spacing } from '@supotsu/design-system';
 import { recommendProgram } from '@supotsu/engines';
 import type { Activity, ProgramFocus } from '@supotsu/core';
@@ -269,7 +269,7 @@ export function MarketplaceScreen(): React.JSX.Element {
             <Text variant="caption" color="textSubtle">{mySessions.length}/{SESSIONS_QUOTA}</Text>
           </View>
           {mySessions.length === 0 ? (
-            <EmptyState icon="🏋️" title="Aucune séance créée" message="Construis ta bibliothèque de séances réutilisables." actionLabel="Créer une séance" onAction={() => router.push('/profile/session-builder')} />
+            <EmptyState icon={<Icon name="dumbbell" size={44} color={colors.textSubtle} />} title="Aucune séance créée" message="Construis ta bibliothèque de séances réutilisables." actionLabel="Créer une séance" onAction={() => router.push('/profile/session-builder')} />
           ) : (
             <View style={{ gap: spacing[2] }}>
               {mySessions.map((s) => (
@@ -302,7 +302,7 @@ export function MarketplaceScreen(): React.JSX.Element {
             <Text variant="caption" color="textSubtle">{myPrograms.length}/{PROGRAMS_QUOTA}</Text>
           </View>
           {myPrograms.length === 0 ? (
-            <EmptyState icon="🗓" title="Aucun programme créé" message="Construis ton propre programme à partir de tes séances." actionLabel="Créer un programme" onAction={() => router.push('/profile/program-builder')} />
+            <EmptyState icon={<Icon name="calendarClock" size={44} color={colors.textSubtle} />} title="Aucun programme créé" message="Construis ton propre programme à partir de tes séances." actionLabel="Créer un programme" onAction={() => router.push('/profile/program-builder')} />
           ) : (
             <View style={{ gap: spacing[2] }}>
               {myPrograms.map((p) => (

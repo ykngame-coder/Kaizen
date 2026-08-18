@@ -1,7 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import { Pressable, View } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { Badge, Button, Card, EmptyState, Screen, Text, useTheme } from '@supotsu/ui';
+import { Badge, Button, Card, EmptyState, Icon, Screen, Text, useTheme } from '@supotsu/ui';
 import { radii, spacing } from '@supotsu/design-system';
 import {
   useAssignProgramSession,
@@ -39,7 +39,7 @@ export function ProgramScheduleScreen(): React.JSX.Element {
   if (!program) {
     return (
       <Screen>
-        <EmptyState icon="🗓" title="Programme introuvable" message="Ce programme n'existe plus." actionLabel="Retour" onAction={() => router.back()} />
+        <EmptyState icon={<Icon name="calendarClock" size={44} color={colors.textSubtle} />} title="Programme introuvable" message="Ce programme n'existe plus." actionLabel="Retour" onAction={() => router.back()} />
       </Screen>
     );
   }

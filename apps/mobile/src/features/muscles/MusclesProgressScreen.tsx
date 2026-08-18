@@ -2,7 +2,7 @@ import React, { useMemo, useState } from 'react';
 import { ScrollView, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import Svg, { Circle, Line, Polygon } from 'react-native-svg';
-import { Badge, Button, Card, ProgressRing, Screen, SegmentedControl, Sparkline, Text, useTheme } from '@supotsu/ui';
+import { Badge, Button, Card, Icon, ProgressRing, Screen, SegmentedControl, Sparkline, Text, useTheme } from '@supotsu/ui';
 import { radii, spacing } from '@supotsu/design-system';
 import type { ActivityType, MuscleGroup } from '@supotsu/core';
 import { computeMuscleStates } from '@supotsu/engines';
@@ -286,7 +286,7 @@ export function MusclesProgressScreen(): React.JSX.Element {
           <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: spacing[3] }}>
             {weekRecords.map((r) => (
               <View key={r.id} style={{ width: 150, backgroundColor: colors.surfaceElevated, borderWidth: 1, borderColor: colors.border, borderRadius: radii.lg, padding: spacing[3] }}>
-                <Text style={{ fontSize: 20 }}>🏆</Text>
+                <Icon name="trophy" size={20} color={colors.warning} />
                 <Text variant="subtitle" style={{ marginTop: spacing[2] }}>{r.value} {r.unit}</Text>
                 <Text variant="caption" color="textMuted">{r.label}</Text>
                 <Text variant="caption" color="textSubtle" style={{ marginTop: 2 }}>{formatDate(r.achievedAt)}</Text>
@@ -299,7 +299,7 @@ export function MusclesProgressScreen(): React.JSX.Element {
       {/* Smart tips */}
       {tips.length > 0 ? (
         <View style={{ borderRadius: radii.xl, borderWidth: 1, borderColor: 'rgba(43,227,139,0.25)', backgroundColor: 'rgba(43,227,139,0.08)', padding: spacing[5] }}>
-          <View style={{ flexDirection: 'row', gap: spacing[2], alignItems: 'center' }}><Text style={{ fontSize: 20 }}>💡</Text><Text variant="heading">Conseils</Text></View>
+          <View style={{ flexDirection: 'row', gap: spacing[2], alignItems: 'center' }}><Icon name="lightbulb" size={20} color={colors.warning} /><Text variant="heading">Conseils</Text></View>
           <View style={{ marginTop: spacing[2], gap: spacing[1] }}>
             {tips.map((t, i) => (<Text key={i} variant="body" color="textMuted" style={{ lineHeight: 20 }}>• {t}</Text>))}
           </View>

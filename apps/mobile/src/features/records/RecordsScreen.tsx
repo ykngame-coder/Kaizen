@@ -1,7 +1,7 @@
 import React, { useMemo } from 'react';
 import { View } from 'react-native';
 import { useRouter } from 'expo-router';
-import { Badge, Button, Card, EmptyState, Screen, Text } from '@supotsu/ui';
+import { Badge, Button, Card, EmptyState, Icon, Screen, Text } from '@supotsu/ui';
 import { spacing } from '@supotsu/design-system';
 import type { PersonalRecord, RecordCategory } from '@supotsu/core';
 import { useRecords } from '@/lib/data/queries';
@@ -64,7 +64,7 @@ export function RecordsScreen(): React.JSX.Element {
         </Text>
       ) : records.length === 0 ? (
         <EmptyState
-          icon="🏆"
+          icon={<Icon name="trophy" size={44} />}
           title="Pas encore de record"
           message="Importe ton export Garmin pour voir tes 1RM et tes meilleurs temps."
           actionLabel="Importer un fichier"

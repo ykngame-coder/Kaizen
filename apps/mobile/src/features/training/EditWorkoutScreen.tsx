@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Pressable, View } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { Badge, Button, Card, EmptyState, Input, Screen, Text, useTheme } from '@supotsu/ui';
+import { Badge, Button, Card, EmptyState, Icon, Input, Screen, Text, useTheme } from '@supotsu/ui';
 import { spacing } from '@supotsu/design-system';
 import { EXERCISES, MUSCLE_LABEL, toCatalogExercise, type Exercise } from '@/features/exercises/catalog';
 import { BackButton } from '@/features/navigation/BackButton';
@@ -123,7 +123,7 @@ export function EditWorkoutScreen(): React.JSX.Element {
   if (!workout) {
     return (
       <Screen scroll>
-        <EmptyState icon="🏋️" title="Séance introuvable" actionLabel="Retour" onAction={() => router.back()} />
+        <EmptyState icon={<Icon name="dumbbell" size={44} color={colors.textSubtle} />} title="Séance introuvable" actionLabel="Retour" onAction={() => router.back()} />
       </Screen>
     );
   }

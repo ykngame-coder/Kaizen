@@ -75,6 +75,27 @@ const REGISTRY = {
   noodles: community('noodles'),
   drumstick: community('food-drumstick-outline'),
   apple: community('food-apple-outline'),
+  steak: community('food-steak'),
+
+  // Phase 2 — settings, detail, onboarding screens
+  checkCircle: community('check-circle-outline'),
+  bolt: community('lightning-bolt'),
+  fileDocument: community('file-document-outline'),
+  warning: material('warning'),
+  lock: material('lock-outline'),
+  packageBox: community('package-variant-closed'),
+  moon: community('weather-night'),
+  camera: material('photo-camera'),
+  person: material('person-outline'),
+  star: material('star-outline'),
+  language: material('language'),
+  vibrate: community('vibrate'),
+  logout: community('logout'),
+  infoOutline: material('info-outline'),
+  lifebuoy: community('lifebuoy'),
+  shieldLock: community('shield-lock-outline'),
+  lightbulb: community('lightbulb-on-outline'),
+  trash: community('trash-can-outline'),
 } as const;
 
 export type IconName = keyof typeof REGISTRY;

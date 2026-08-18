@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { View } from 'react-native';
 import { useRouter } from 'expo-router';
-import { Button, Card, Input, Screen, SegmentedControl, Text, triggerHaptic, useTheme } from '@supotsu/ui';
+import { Button, Card, Icon, Input, Screen, SegmentedControl, Text, triggerHaptic, useTheme } from '@supotsu/ui';
 import { radii, spacing } from '@supotsu/design-system';
 
 /**
@@ -183,7 +183,7 @@ export function IntervalTimerScreen(): React.JSX.Element {
 
       {screen === 'done' ? (
         <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', gap: spacing[4] }}>
-          <Text style={{ fontSize: 40 }}>🔥</Text>
+          <Icon name="fire" size={40} color={colors.warning} />
           <Text variant="heading">Séance terminée</Text>
           <Text variant="caption" color="textMuted" style={{ textAlign: 'center' }}>
             {rounds} rounds · {work}s / {rest}s

@@ -1,7 +1,7 @@
 import React from 'react';
 import { View } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { Badge, Button, EmptyState, Screen, Text } from '@supotsu/ui';
+import { Badge, Button, EmptyState, Icon, Screen, Text } from '@supotsu/ui';
 import { spacing } from '@supotsu/design-system';
 import type { Pillar } from '@supotsu/core';
 import { getArticle } from '@supotsu/engines';
@@ -25,7 +25,7 @@ export function ArticleScreen(): React.JSX.Element {
   if (!article) {
     return (
       <Screen scroll>
-        <EmptyState icon="📄" title="Article introuvable" message="Ce contenu n’existe pas ou plus." />
+        <EmptyState icon={<Icon name="fileDocument" size={44} />} title="Article introuvable" message="Ce contenu n’existe pas ou plus." />
         <View style={{ alignItems: 'flex-start' }}>
           <Button label="Retour" variant="secondary" onPress={() => router.back()} />
         </View>

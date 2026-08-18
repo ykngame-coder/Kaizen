@@ -1,7 +1,7 @@
 import React, { useMemo } from 'react';
 import { View } from 'react-native';
 import { useRouter, type Href } from 'expo-router';
-import { Card, Screen, Text, useTheme } from '@supotsu/ui';
+import { Card, Icon, Screen, Text, useTheme } from '@supotsu/ui';
 import { radii, spacing } from '@supotsu/design-system';
 import { averageSleepHours, computeRecoveryScore } from '@supotsu/engines';
 import { BackButton } from '@/features/navigation/BackButton';
@@ -19,11 +19,11 @@ interface Section {
 }
 
 /** Weekly snapshot stat. */
-function Snap({ icon, value, label }: { icon: string; value: string; label: string }): React.JSX.Element {
+function Snap({ icon, value, label }: { icon: React.ReactNode; value: string; label: string }): React.JSX.Element {
   const { colors } = useTheme();
   return (
     <View style={{ flex: 1, backgroundColor: colors.surfaceElevated, borderRadius: radii.lg, padding: spacing[3], alignItems: 'center' }}>
-      <Text style={{ fontSize: 16 }}>{icon}</Text>
+      {typeof icon === 'string' ? <Text style={{ fontSize: 16 }}>{icon}</Text> : icon}
       <Text variant="subtitle" style={{ marginTop: spacing[1] }}>
         {value}
       </Text>
@@ -80,10 +80,10 @@ export function ProgressionScreen(): React.JSX.Element {
       <Card style={{ marginTop: spacing[3] }}>
         <Text variant="heading">7 derniers jours</Text>
         <View style={{ flexDirection: 'row', gap: spacing[2], marginTop: spacing[3] }}>
-          <Snap icon="💪" value={`${snap.sessions}`} label="Séances" />
-          <Snap icon="😴" value={snap.sleep} label="Sommeil moy." />
-          <Snap icon="✅" value={snap.recovery} label="Récup moy." />
-          <Snap icon="⚖" value={snap.weight} label="Poids" />
+          <Snap icon={<Icon name="armFlex" size={16} />} value={`${snap.sessions}`} label="Séances" />
+          <Snap icon={<Icon name="bedtime" size={16} />} value={snap.sleep} label="Sommeil moy." />
+          <Snap icon={<Icon name="checkCircle" size={16} />} value={snap.recovery} label="Récup moy." />
+          <Snap icon={<Icon name="scale" size={16} />} value={snap.weight} label="Poids" />
         </View>
       </Card>
 

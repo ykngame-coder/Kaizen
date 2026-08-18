@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Animated, View } from 'react-native';
 import { useRouter } from 'expo-router';
-import { Button, Card, Input, Screen, SegmentedControl, Text, triggerHaptic, useTheme } from '@supotsu/ui';
+import { Button, Card, Icon, Input, Screen, SegmentedControl, Text, triggerHaptic, useTheme } from '@supotsu/ui';
 import { spacing } from '@supotsu/design-system';
 import { useActivities, useAddActivity } from '@/lib/data/queries';
 
@@ -259,7 +259,7 @@ export function StomachVacuumScreen(): React.JSX.Element {
 
       {screen === 'done' ? (
         <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', gap: spacing[4] }}>
-          <Text style={{ fontSize: 40 }}>💪</Text>
+          <Icon name="armFlex" size={40} color={colors.accentStrength} />
           <Text variant="heading">Séance enregistrée</Text>
           <Text variant="caption" color="textMuted" style={{ textAlign: 'center' }}>
             {totalSets} séries · tenue {holdSec}s — ajoutée à ton historique d'activités.

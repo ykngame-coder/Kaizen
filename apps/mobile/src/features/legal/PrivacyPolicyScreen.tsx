@@ -1,7 +1,7 @@
 import React from 'react';
 import { View } from 'react-native';
 import { useRouter } from 'expo-router';
-import { Badge, Button, Screen, Text } from '@supotsu/ui';
+import { Badge, Button, Icon, Screen, Text, useTheme } from '@supotsu/ui';
 import { radii, spacing } from '@supotsu/design-system';
 
 const SUPPORT_EMAIL = 'support@kaizensupotsu.uk';
@@ -25,7 +25,7 @@ function P({ children }: { children: React.ReactNode }): React.JSX.Element {
 }
 
 /** Highlighted callout for the medical-disclaimer and health-data-consent sections. */
-function Callout({ icon, title, children }: { icon: string; title: string; children: React.ReactNode }): React.JSX.Element {
+function Callout({ icon, title, children }: { icon: React.ReactNode; title: string; children: React.ReactNode }): React.JSX.Element {
   return (
     <View
       style={{
@@ -38,9 +38,12 @@ function Callout({ icon, title, children }: { icon: string; title: string; child
         gap: spacing[2],
       }}
     >
-      <Text variant="body" style={{ fontWeight: '700' }}>
-        {icon} {title}
-      </Text>
+      <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing[2] }}>
+        {icon}
+        <Text variant="body" style={{ fontWeight: '700', flex: 1 }}>
+          {title}
+        </Text>
+      </View>
       {children}
     </View>
   );
@@ -49,6 +52,7 @@ function Callout({ icon, title, children }: { icon: string; title: string; child
 /** Politique de confidentialité — reachable while signed out (App Store Connect "Privacy Policy URL"). */
 export function PrivacyPolicyScreen(): React.JSX.Element {
   const router = useRouter();
+  const { colors } = useTheme();
 
   return (
     <Screen scroll>
@@ -58,7 +62,7 @@ export function PrivacyPolicyScreen(): React.JSX.Element {
         <Badge label="Version Bêta · Développeur indépendant" tone="warning" />
       </View>
 
-      <Callout icon="⚠️" title="Avertissement important — absence de conseil médical">
+      <Callout icon={<Icon name="warning" size={18} color={colors.warning} />} title="Avertissement important — absence de conseil médical">
         <P>
           Kaizen Supotsu n'est pas un dispositif médical et ne fournit aucun conseil, diagnostic ou
           traitement médical.
@@ -82,7 +86,7 @@ export function PrivacyPolicyScreen(): React.JSX.Element {
         </P>
       </Callout>
 
-      <Callout icon="🔒" title="Consentement explicite et traitement des données de santé (RGPD)">
+      <Callout icon={<Icon name="lock" size={18} color={colors.warning} />} title="Consentement explicite et traitement des données de santé (RGPD)">
         <P>
           Conformément à l'article 9 du Règlement Général sur la Protection des Données (RGPD), les
           données relatives à l'activité physique, au sommeil et à la physiologie (fréquence

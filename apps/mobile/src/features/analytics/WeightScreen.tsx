@@ -1,7 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import { View } from 'react-native';
 import { useRouter } from 'expo-router';
-import { Badge, Button, Card, EmptyState, Input, Screen, SegmentedControl, Sparkline, Text, useTheme } from '@supotsu/ui';
+import { Badge, Button, Card, EmptyState, Icon, Input, Screen, SegmentedControl, Sparkline, Text, useTheme } from '@supotsu/ui';
 import { radii, spacing } from '@supotsu/design-system';
 import type { HealthMetricType } from '@supotsu/core';
 import { summarizeTrend, weightTrend } from '@supotsu/engines';
@@ -109,7 +109,7 @@ export function WeightScreen(): React.JSX.Element {
       ) : null}
 
       {currentWeight == null ? (
-        <EmptyState icon="⚖" title="Aucune pesée" message="Connecte une balance (Renpho via Apple Santé), importe tes données, ou ajoute une pesée manuellement ci-dessus." />
+        <EmptyState icon={<Icon name="scale" size={44} color={colors.textSubtle} />} title="Aucune pesée" message="Connecte une balance (Renpho via Apple Santé), importe tes données, ou ajoute une pesée manuellement ci-dessus." />
       ) : (
         <>
           {/* Poids courant + tendance */}

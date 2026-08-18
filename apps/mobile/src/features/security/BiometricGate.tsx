@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { ActivityIndicator, AppState, Platform, View } from 'react-native';
 import * as LocalAuthentication from 'expo-local-authentication';
-import { Button, Text, useTheme } from '@supotsu/ui';
+import { Button, Icon, Text, useTheme } from '@supotsu/ui';
 import { spacing } from '@supotsu/design-system';
 import { usePreferences } from '@/lib/preferences';
 
@@ -53,7 +53,7 @@ export function BiometricGate({ children }: { children: React.ReactNode }): Reac
 
   return (
     <View style={{ flex: 1, backgroundColor: colors.background, alignItems: 'center', justifyContent: 'center', gap: spacing[4], padding: spacing[6] }}>
-      <Text variant="display">🔐</Text>
+      <Icon name="shieldLock" size={44} color={colors.primary} />
       <Text variant="body" color="textMuted" style={{ textAlign: 'center' }}>
         Kaizen Supotsu est verrouillé. Déverrouille avec Face ID / Touch ID pour continuer.
       </Text>

@@ -2,7 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { Image, Platform, Pressable, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import * as ImagePicker from 'expo-image-picker';
-import { Button, Card, EmptyState, Screen, Text, useTheme } from '@supotsu/ui';
+import { Button, Card, EmptyState, Icon, Screen, Text, useTheme } from '@supotsu/ui';
 import { radii, spacing } from '@supotsu/design-system';
 import { addPhoto, loadPhotos, removePhoto, type ProgressPhoto } from '@/lib/progressPhotos';
 import { formatDate } from '@/lib/format';
@@ -91,7 +91,7 @@ export function ProgressPhotosScreen(): React.JSX.Element {
 
       {/* Grid */}
       {photos.length === 0 ? (
-        <EmptyState icon="📸" title="Aucune photo" message="Ajoute une première photo pour démarrer ton suivi visuel — de face, même lumière, même pose pour de meilleures comparaisons." />
+        <EmptyState icon={<Icon name="camera" size={44} color={colors.textSubtle} />} title="Aucune photo" message="Ajoute une première photo pour démarrer ton suivi visuel — de face, même lumière, même pose pour de meilleures comparaisons." />
       ) : (
         <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: spacing[3] }}>
           {photos.map((p) => {

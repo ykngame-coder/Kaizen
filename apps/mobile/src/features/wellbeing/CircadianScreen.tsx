@@ -1,7 +1,7 @@
 import React, { useMemo } from 'react';
 import { View } from 'react-native';
 import { useRouter } from 'expo-router';
-import { Badge, Button, Card, EmptyState, Screen, Text, useTheme } from '@supotsu/ui';
+import { Badge, Button, Card, EmptyState, Icon, Screen, Text, useTheme } from '@supotsu/ui';
 import { spacing } from '@supotsu/design-system';
 import { computeCircadianProfile, type Chronotype } from '@supotsu/engines';
 import { useHealthMetrics } from '@/lib/data/queries';
@@ -53,7 +53,7 @@ export function CircadianScreen(): React.JSX.Element {
         </Text>
       ) : !profile ? (
         <EmptyState
-          icon="🌙"
+          icon={<Icon name="moon" size={44} color={colors.textSubtle} />}
           title="Encore un peu de patience"
           message="Il faut au moins 4 nuits enregistrées pour établir ton rythme. Continue à synchroniser tes données."
           actionLabel="Importer / connecter"

@@ -1,7 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import { View } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { Badge, Button, Card, EmptyState, Screen, Text, useTheme, type BadgeTone } from '@supotsu/ui';
+import { Badge, Button, Card, EmptyState, Icon, Screen, Text, useTheme, type BadgeTone } from '@supotsu/ui';
 import { radii, spacing } from '@supotsu/design-system';
 import type { WorkoutStatus } from '@supotsu/core';
 import { PICKABLE_EXERCISES } from '@supotsu/shared';
@@ -81,7 +81,7 @@ export function WorkoutDetailScreen(): React.JSX.Element {
   if (!workout) {
     return (
       <Screen scroll>
-        <EmptyState icon="🏋️" title="Séance introuvable" message="Cette séance n'existe plus ou n'a pas encore été synchronisée." actionLabel="Retour" onAction={() => router.back()} />
+        <EmptyState icon={<Icon name="dumbbell" size={44} color={colors.textSubtle} />} title="Séance introuvable" message="Cette séance n'existe plus ou n'a pas encore été synchronisée." actionLabel="Retour" onAction={() => router.back()} />
       </Screen>
     );
   }

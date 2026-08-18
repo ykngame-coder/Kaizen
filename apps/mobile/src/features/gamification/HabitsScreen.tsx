@@ -1,7 +1,7 @@
 import React, { useMemo } from 'react';
 import { Pressable, View } from 'react-native';
 import { useRouter } from 'expo-router';
-import { Card, Screen, Text, useTheme } from '@supotsu/ui';
+import { Card, Icon, Screen, Text, useTheme } from '@supotsu/ui';
 import { radii, spacing } from '@supotsu/design-system';
 import { BackButton } from '@/features/navigation/BackButton';
 import { useHabitLogs, useHabits, useLogHabit } from '@/lib/data/queries';
@@ -35,11 +35,11 @@ function streakOf(days: Set<string>, now: Date): number {
   return streak;
 }
 
-function Kpi({ icon, value, sub, label, color }: { icon: string; value: string; sub?: string; label: string; color?: string }): React.JSX.Element {
+function Kpi({ icon, value, sub, label, color }: { icon: React.ReactNode; value: string; sub?: string; label: string; color?: string }): React.JSX.Element {
   const { colors } = useTheme();
   return (
     <View style={{ flexGrow: 1, flexBasis: '45%', backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border, borderRadius: radii.lg, padding: spacing[4] }}>
-      <Text style={{ fontSize: 18 }}>{icon}</Text>
+      {typeof icon === 'string' ? <Text style={{ fontSize: 18 }}>{icon}</Text> : icon}
       <Text variant="data" style={{ marginTop: spacing[2], color: color ?? colors.text }}>{value}{sub ? <Text variant="caption" color="textSubtle">{sub}</Text> : null}</Text>
       <Text variant="caption" color="textSubtle" style={{ marginTop: 2 }}>{label}</Text>
     </View>
@@ -134,10 +134,10 @@ export function HabitsScreen(): React.JSX.Element {
 
         {/* KPI */}
         <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: spacing[3] }}>
-          <Kpi icon="✅" value={`${doneToday.size}`} sub={`/${active.length}`} label="Validées aujourd'hui" color={colors.accentData} />
-          <Kpi icon="⚡" value={`${bestStreak} j`} label="Meilleure série" />
-          <Kpi icon="🎯" value={`${success} %`} label="Réussite · 30 j" />
-          <Kpi icon="🏅" value={`${active.length}`} label="Habitudes actives" />
+          <Kpi icon={<Icon name="checkCircle" size={18} color={colors.accentData} />} value={`${doneToday.size}`} sub={`/${active.length}`} label="Validées aujourd'hui" color={colors.accentData} />
+          <Kpi icon={<Icon name="bolt" size={18} color={colors.warning} />} value={`${bestStreak} j`} label="Meilleure série" />
+          <Kpi icon={<Icon name="target" size={18} color={colors.accentData} />} value={`${success} %`} label="Réussite · 30 j" />
+          <Kpi icon={<Icon name="medal" size={18} color={colors.warning} />} value={`${active.length}`} label="Habitudes actives" />
         </View>
 
         {/* 30-day calendar */}

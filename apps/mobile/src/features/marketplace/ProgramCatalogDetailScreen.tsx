@@ -1,7 +1,7 @@
 import React, { useMemo } from 'react';
 import { View } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { Badge, Button, Card, EmptyState, Screen, Text } from '@supotsu/ui';
+import { Badge, Button, Card, EmptyState, Icon, Screen, Text } from '@supotsu/ui';
 import { spacing } from '@supotsu/design-system';
 import type { ProgramFocus } from '@supotsu/core';
 import { PICKABLE_EXERCISES } from '@supotsu/shared';
@@ -50,7 +50,7 @@ export function ProgramCatalogDetailScreen(): React.JSX.Element {
   if (!program) {
     return (
       <Screen scroll>
-        <EmptyState icon="🗓" title="Programme introuvable" actionLabel="Retour" onAction={() => router.back()} />
+        <EmptyState icon={<Icon name="calendarClock" size={44} />} title="Programme introuvable" actionLabel="Retour" onAction={() => router.back()} />
       </Screen>
     );
   }

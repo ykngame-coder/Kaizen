@@ -1,7 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import { Share, View } from 'react-native';
 import { useRouter } from 'expo-router';
-import { Button, Card, ProgressRing, Screen, Sparkline, Text, useTheme } from '@supotsu/ui';
+import { Button, Card, Icon, ProgressRing, Screen, Sparkline, Text, useTheme } from '@supotsu/ui';
 import { radii, spacing } from '@supotsu/design-system';
 import { averageSleepHours, computeRecoveryScore, recoveryBand, sleepTrend, sumDay } from '@supotsu/engines';
 import { useActivities, useHabitLogs, useHabits, useHealthMetrics, useNutritionEntries, useRecords } from '@/lib/data/queries';
@@ -259,7 +259,7 @@ export function WeeklyReportScreen(): React.JSX.Element {
 
       {/* Analyse */}
       <View style={{ borderRadius: radii.xl, borderWidth: 1, borderColor: 'rgba(45,127,249,0.25)', backgroundColor: 'rgba(45,127,249,0.08)', padding: spacing[5] }}>
-        <View style={{ flexDirection: 'row', gap: spacing[2], alignItems: 'center' }}><Text style={{ fontSize: 20 }}>🧠</Text><Text variant="heading">Analyse Kaizen</Text></View>
+        <View style={{ flexDirection: 'row', gap: spacing[2], alignItems: 'center' }}><Icon name="brain" size={20} color={colors.info} /><Text variant="heading">Analyse Kaizen</Text></View>
         <Text variant="body" color="textMuted" style={{ marginTop: spacing[2], lineHeight: 22 }}>
           {r.avgRec != null && r.avgRecPrev != null && r.avgRec >= r.avgRecPrev ? 'Ta récupération s’est améliorée cette semaine. ' : ''}
           {r.avgSleep && r.avgSleep < 7.5 ? 'Le sommeil reste ton principal axe d’amélioration. ' : r.avgSleep ? 'Ton sommeil est solide. ' : ''}

@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { View } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { Button, EmptyState, Screen, Text, triggerHaptic, useTheme } from '@supotsu/ui';
+import { Button, EmptyState, Icon, Screen, Text, triggerHaptic, useTheme } from '@supotsu/ui';
 import { radii, spacing } from '@supotsu/design-system';
 import type { MuscleGroup } from '@supotsu/core';
 import { stretchesForZone, type Stretch } from './stretchCatalog';
@@ -77,7 +77,7 @@ export function StretchingSessionScreen(): React.JSX.Element {
   if (holds.length === 0) {
     return (
       <Screen>
-        <EmptyState icon="🧘‍♂️" title="Aucun étirement" message="Cette routine est vide." actionLabel="Retour" onAction={() => router.back()} />
+        <EmptyState icon={<Icon name="yoga" size={44} color={colors.textSubtle} />} title="Aucun étirement" message="Cette routine est vide." actionLabel="Retour" onAction={() => router.back()} />
       </Screen>
     );
   }
@@ -86,7 +86,7 @@ export function StretchingSessionScreen(): React.JSX.Element {
     return (
       <Screen>
         <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', gap: spacing[4] }}>
-          <Text style={{ fontSize: 40 }}>🧘‍♂️</Text>
+          <Icon name="yoga" size={40} color={colors.primary} />
           <Text variant="heading">Routine terminée</Text>
           <Text variant="caption" color="textMuted">{holds.length} tenues réalisées</Text>
           <Button label="Retour" onPress={() => router.back()} />

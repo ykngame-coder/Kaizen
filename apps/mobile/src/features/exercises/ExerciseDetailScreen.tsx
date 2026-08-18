@@ -1,7 +1,7 @@
 import React, { useMemo } from 'react';
 import { Image, View } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { Badge, Button, Card, EmptyState, Screen, Text, useTheme } from '@supotsu/ui';
+import { Badge, Button, Card, EmptyState, Icon, Screen, Text, useTheme } from '@supotsu/ui';
 import { radii, spacing } from '@supotsu/design-system';
 import { EXERCISES, MUSCLE_LABEL, exerciseImageUrl } from './catalog';
 
@@ -15,7 +15,7 @@ export function ExerciseDetailScreen(): React.JSX.Element {
   if (!exercise) {
     return (
       <Screen scroll>
-        <EmptyState icon="🏋️" title="Exercice introuvable" message="Cet exercice n'existe pas dans le catalogue." actionLabel="Retour" onAction={() => router.back()} />
+        <EmptyState icon={<Icon name="dumbbell" size={44} color={colors.textSubtle} />} title="Exercice introuvable" message="Cet exercice n'existe pas dans le catalogue." actionLabel="Retour" onAction={() => router.back()} />
       </Screen>
     );
   }

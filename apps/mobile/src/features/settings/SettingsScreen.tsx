@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Alert, Platform, Share, View } from 'react-native';
 import { useRouter } from 'expo-router';
-import { Badge, Button, Card, Input, ListRow, Screen, SegmentedControl, Text, Toggle, useTheme } from '@supotsu/ui';
+import { Badge, Button, Card, Icon, Input, ListRow, Screen, SegmentedControl, Text, Toggle, useTheme } from '@supotsu/ui';
 import { spacing } from '@supotsu/design-system';
 import { useAuth } from '@/features/auth/AuthProvider';
 import { usePreferences, type TimeFormat, type UnitSystem } from '@/lib/preferences';
@@ -30,14 +30,14 @@ function GroupTitle({ children }: { children: React.ReactNode }): React.JSX.Elem
 function Group({ children }: { children: React.ReactNode }): React.JSX.Element {
   return <Card style={{ paddingVertical: spacing[1] }}>{children}</Card>;
 }
-function ToggleRow({ icon, tint, label, subtitle, value, onValueChange, divider, disabled }: { icon: string; tint: string; label: string; subtitle?: string; value: boolean; onValueChange: (v: boolean) => void; divider?: boolean; disabled?: boolean }): React.JSX.Element {
+function ToggleRow({ icon, tint, label, subtitle, value, onValueChange, divider, disabled }: { icon: React.ReactNode; tint: string; label: string; subtitle?: string; value: boolean; onValueChange: (v: boolean) => void; divider?: boolean; disabled?: boolean }): React.JSX.Element {
   return <ListRow icon={icon} iconColor={tint} title={label} subtitle={subtitle} accessory={<Toggle value={value} onValueChange={onValueChange} disabled={disabled} />} divider={divider} />;
 }
 
 /** Réglages (mockup #16) — grouped preferences, notifications, privacy, security, about. */
 export function SettingsScreen(): React.JSX.Element {
   const router = useRouter();
-  const { name, preference, setPreference: setThemePref } = useTheme();
+  const { name, preference, setPreference: setThemePref, colors } = useTheme();
   const { preferences, setPreference } = usePreferences();
   const { user, mode, signOut } = useAuth();
   const [exportState, setExportState] = useState<'idle' | 'working' | 'done' | 'error'>('idle');
@@ -132,8 +132,8 @@ export function SettingsScreen(): React.JSX.Element {
       {/* Compte */}
       <GroupTitle>COMPTE</GroupTitle>
       <Group>
-        <ListRow icon="👤" iconColor="rgba(45,127,249,0.18)" title="Profil sportif" subtitle="Poids, taille, niveau, disponibilités" onPress={() => router.push('/profile/edit')} divider />
-        <ListRow icon="⭐" iconColor="rgba(245,183,66,0.18)" title="Abonnement" accessory={<Badge label="Gratuit" tone="neutral" />} />
+        <ListRow icon={<Icon name="person" color={colors.info} />} iconColor="rgba(45,127,249,0.18)" title="Profil sportif" subtitle="Poids, taille, niveau, disponibilités" onPress={() => router.push('/profile/edit')} divider />
+        <ListRow icon={<Icon name="star" color={colors.warning} />} iconColor="rgba(245,183,66,0.18)" title="Abonnement" accessory={<Badge label="Gratuit" tone="neutral" />} />
       </Group>
 
       {/* Préférences */}
@@ -158,25 +158,25 @@ export function SettingsScreen(): React.JSX.Element {
         />
       </Card>
       <Group>
-        <ListRow icon="🌐" iconColor="rgba(116,128,146,0.22)" title="Langue" value="Français" divider />
-        <ToggleRow icon="📳" tint="rgba(59,203,255,0.18)" label="Retour haptique" value={preferences.haptics} onValueChange={(v) => setPreference('haptics', v)} />
+        <ListRow icon={<Icon name="language" color={colors.textSubtle} />} iconColor="rgba(116,128,146,0.22)" title="Langue" value="Français" divider />
+        <ToggleRow icon={<Icon name="vibrate" color={colors.info} />} tint="rgba(59,203,255,0.18)" label="Retour haptique" value={preferences.haptics} onValueChange={(v) => setPreference('haptics', v)} />
       </Group>
 
       {/* Notifications */}
       <GroupTitle>NOTIFICATIONS</GroupTitle>
       <Group>
-        <ToggleRow icon="📋" tint="rgba(43,227,139,0.18)" label="Bilan du jour" value={preferences.dailyBriefing} onValueChange={(v) => setPreference('dailyBriefing', v)} divider />
-        <ToggleRow icon="🔔" tint="rgba(245,183,66,0.18)" label="Rappels (habitudes, check-in)" value={preferences.reminders} onValueChange={(v) => setPreference('reminders', v)} divider />
-        <ListRow icon="⚙️" iconColor="rgba(116,128,146,0.22)" title="Configurer par catégorie" onPress={() => router.push('/profile/notifications')} />
+        <ToggleRow icon={<Icon name="clipboardText" color={colors.accentData} />} tint="rgba(43,227,139,0.18)" label="Bilan du jour" value={preferences.dailyBriefing} onValueChange={(v) => setPreference('dailyBriefing', v)} divider />
+        <ToggleRow icon={<Icon name="notifications" color={colors.warning} />} tint="rgba(245,183,66,0.18)" label="Rappels (habitudes, check-in)" value={preferences.reminders} onValueChange={(v) => setPreference('reminders', v)} divider />
+        <ListRow icon={<Icon name="settings" color={colors.textSubtle} />} iconColor="rgba(116,128,146,0.22)" title="Configurer par catégorie" onPress={() => router.push('/profile/notifications')} />
       </Group>
 
       {/* Confidentialité */}
       <GroupTitle>CONFIDENTIALITÉ & DONNÉES</GroupTitle>
       <Group>
-        <ListRow icon="⬇️" iconColor="rgba(45,127,249,0.18)" title={exportState === 'working' ? 'Export en cours…' : 'Exporter mes données (JSON)'} subtitle="Toutes tes données, format RGPD" onPress={onExport} divider />
-        <ListRow icon="🔎" iconColor="rgba(59,203,255,0.18)" title="Qualité & provenance" onPress={() => router.push('/profile/data-quality')} divider />
-        <ToggleRow icon="🧠" tint="rgba(139,92,246,0.18)" label="Consentement analyses IA" value={aiConsent} onValueChange={setAiConsent} divider />
-        <ToggleRow icon="🏆" tint="rgba(245,183,66,0.18)" label="Apparaître dans les classements" value={preferences.shareInLeaderboards} onValueChange={(v) => setPreference('shareInLeaderboards', v)} />
+        <ListRow icon={<Icon name="download" color={colors.info} />} iconColor="rgba(45,127,249,0.18)" title={exportState === 'working' ? 'Export en cours…' : 'Exporter mes données (JSON)'} subtitle="Toutes tes données, format RGPD" onPress={onExport} divider />
+        <ListRow icon={<Icon name="search" color={colors.info} />} iconColor="rgba(59,203,255,0.18)" title="Qualité & provenance" onPress={() => router.push('/profile/data-quality')} divider />
+        <ToggleRow icon={<Icon name="brain" color={colors.accentMobility} />} tint="rgba(139,92,246,0.18)" label="Consentement analyses IA" value={aiConsent} onValueChange={setAiConsent} divider />
+        <ToggleRow icon={<Icon name="trophy" color={colors.warning} />} tint="rgba(245,183,66,0.18)" label="Apparaître dans les classements" value={preferences.shareInLeaderboards} onValueChange={(v) => setPreference('shareInLeaderboards', v)} />
       </Group>
       {exportState === 'done' ? <Text variant="caption" color="textSubtle">Export prêt {Platform.OS === 'web' ? '(téléchargé)' : '(partagé)'}.</Text> : null}
       {exportState === 'error' ? <Text variant="caption" color="error">L'export a échoué. Réessaie.</Text> : null}
@@ -186,7 +186,7 @@ export function SettingsScreen(): React.JSX.Element {
       <Group>
         {Platform.OS !== 'web' ? (
           <ToggleRow
-            icon="🔐"
+            icon={<Icon name="shieldLock" color={colors.accentData} />}
             tint="rgba(43,227,139,0.18)"
             label="Verrouillage biométrique"
             subtitle={biometricSupported ? undefined : 'Aucun Face ID / Touch ID configuré sur cet appareil'}
@@ -196,7 +196,7 @@ export function SettingsScreen(): React.JSX.Element {
             divider
           />
         ) : null}
-        <ListRow icon="🚪" iconColor="rgba(116,128,146,0.22)" title="Se déconnecter" onPress={signOut} />
+        <ListRow icon={<Icon name="logout" color={colors.textSubtle} />} iconColor="rgba(116,128,146,0.22)" title="Se déconnecter" onPress={signOut} />
       </Group>
 
       {/* Zone de danger — deliberately separated from "Se déconnecter" above:
@@ -205,21 +205,21 @@ export function SettingsScreen(): React.JSX.Element {
           scenario that caused a tester to lose their data. */}
       <GroupTitle>ZONE DE DANGER</GroupTitle>
       <Group>
-        <ListRow icon="🗑" iconColor="rgba(255,77,103,0.18)" title={deleteBusy ? 'Suppression…' : 'Supprimer mon compte'} subtitle="Irréversible — toutes tes données sont effacées immédiatement." destructive onPress={confirmDeleteAccount} />
+        <ListRow icon={<Icon name="trash" color={colors.error} />} iconColor="rgba(255,77,103,0.18)" title={deleteBusy ? 'Suppression…' : 'Supprimer mon compte'} subtitle="Irréversible — toutes tes données sont effacées immédiatement." destructive onPress={confirmDeleteAccount} />
       </Group>
       {deleteError ? <Text variant="caption" color="error">{deleteError}</Text> : null}
 
       {/* À propos */}
       <GroupTitle>AIDE</GroupTitle>
       <Group>
-        <ListRow icon="🛟" iconColor="rgba(45,127,249,0.18)" title="Aide & Support" subtitle="FAQ, guides, diagnostic, contact" onPress={() => router.push('/profile/support')} />
+        <ListRow icon={<Icon name="lifebuoy" color={colors.info} />} iconColor="rgba(45,127,249,0.18)" title="Aide & Support" subtitle="FAQ, guides, diagnostic, contact" onPress={() => router.push('/profile/support')} />
       </Group>
 
       <GroupTitle>À PROPOS</GroupTitle>
       <Group>
-        <ListRow icon="ℹ️" iconColor="rgba(116,128,146,0.22)" title="Version" value="1.0.0" divider />
-        <ListRow icon="📄" iconColor="rgba(116,128,146,0.22)" title="Conditions d'utilisation" chevron onPress={() => router.push('/terms')} divider />
-        <ListRow icon="🔒" iconColor="rgba(116,128,146,0.22)" title="Politique de confidentialité" chevron onPress={() => router.push('/privacy')} />
+        <ListRow icon={<Icon name="infoOutline" color={colors.textSubtle} />} iconColor="rgba(116,128,146,0.22)" title="Version" value="1.0.0" divider />
+        <ListRow icon={<Icon name="fileDocument" color={colors.textSubtle} />} iconColor="rgba(116,128,146,0.22)" title="Conditions d'utilisation" chevron onPress={() => router.push('/terms')} divider />
+        <ListRow icon={<Icon name="lock" color={colors.textSubtle} />} iconColor="rgba(116,128,146,0.22)" title="Politique de confidentialité" chevron onPress={() => router.push('/privacy')} />
       </Group>
 
       {mode === 'demo' ? <Text variant="caption" color="textSubtle" style={{ marginTop: spacing[3] }}>Mode démo : tes données restent sur cet appareil.</Text> : null}

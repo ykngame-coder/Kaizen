@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Pressable, View } from 'react-native';
 import { useRouter } from 'expo-router';
-import { Badge, Button, Card, EmptyState, Input, Screen, SegmentedControl, Text, useTheme } from '@supotsu/ui';
+import { Badge, Button, Card, EmptyState, Icon, Input, Screen, SegmentedControl, Text, useTheme } from '@supotsu/ui';
 import { radii, spacing } from '@supotsu/design-system';
 import { EXERCISES, MUSCLE_LABEL, toCatalogExercise } from '@/features/exercises/catalog';
 import { useAddUserSession, useCustomExercises, useUserSessions } from '@/lib/data/queries';
@@ -88,7 +88,7 @@ export function SessionBuilderScreen(): React.JSX.Element {
     return (
       <Screen>
         <EmptyState
-          icon="📦"
+          icon={<Icon name="packageBox" size={44} color={colors.textSubtle} />}
           title="Limite de séances atteinte"
           message={`Tu as déjà ${SESSIONS_QUOTA} séances dans ta bibliothèque. Supprime-en une pour en créer une nouvelle.`}
           actionLabel="Retour"
