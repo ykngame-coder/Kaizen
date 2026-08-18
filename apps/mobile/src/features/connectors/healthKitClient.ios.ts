@@ -32,8 +32,16 @@ const QUANTITY_TYPES: { id: QuantityTypeIdentifier; unit: string }[] = [
   { id: 'HKQuantityTypeIdentifierBodyMass', unit: 'kg' },
   { id: 'HKQuantityTypeIdentifierBodyFatPercentage', unit: '%' },
   { id: 'HKQuantityTypeIdentifierLeanBodyMass', unit: 'kg' },
-  { id: 'HKQuantityTypeIdentifierStepCount', unit: 'count' },
 ];
+// Steps get their own query (see below): a raw per-sample query over
+// LOOKBACK_DAYS pulls the pedometer's underlying samples (iPhone + Watch both
+// log every few minutes — easily hundreds/day), which for a 3-year window is
+// large enough to silently fail (swallowed by the per-type try/catch below,
+// so it looked like sync just did nothing for steps specifically while other
+// metrics succeeded). A statistics-collection query with a daily cumulative
+// sum is the same data Apple's own Health app shows and stays small
+// regardless of window length.
+const STEP_COUNT_TYPE = 'HKQuantityTypeIdentifierStepCount' as const;
 const SLEEP_TYPE = 'HKCategoryTypeIdentifierSleepAnalysis' as const;
 const WORKOUT_TYPE = 'HKWorkoutTypeIdentifier' as const;
 
@@ -57,6 +65,7 @@ export function healthKitAvailable(): boolean {
 
 const BACKGROUND_TYPES: (QuantityTypeIdentifier | typeof SLEEP_TYPE | typeof WORKOUT_TYPE)[] = [
   ...QUANTITY_TYPES.map((q) => q.id),
+  STEP_COUNT_TYPE,
   SLEEP_TYPE,
   WORKOUT_TYPE,
 ];
@@ -111,7 +120,7 @@ export async function syncHealthKit(): Promise<{
   // below, so activities/meals/water logged in-app can be mirrored back to
   // Apple Health without a second, separate prompt later.
   await HealthKit.requestAuthorization({
-    toRead: [...QUANTITY_TYPES.map((q) => q.id), SLEEP_TYPE, WORKOUT_TYPE],
+    toRead: [...QUANTITY_TYPES.map((q) => q.id), STEP_COUNT_TYPE, SLEEP_TYPE, WORKOUT_TYPE],
     toShare: WRITE_TYPES,
   });
 
@@ -138,6 +147,31 @@ export async function syncHealthKit(): Promise<{
     } catch {
       /* metric unavailable / not authorised */
     }
+  }
+
+  const stepMetrics: ImportedHealthMetric[] = [];
+  try {
+    const daily = await HealthKit.queryStatisticsCollectionForQuantity(
+      STEP_COUNT_TYPE,
+      ['cumulativeSum'],
+      since,
+      { day: 1 },
+      { filter: dateFilter, unit: 'count' },
+    );
+    for (const d of daily) {
+      const total = d.sumQuantity?.quantity;
+      if (typeof total !== 'number' || !Number.isFinite(total) || total <= 0 || !d.startDate) continue;
+      stepMetrics.push({
+        type: 'steps',
+        value: Math.round(total),
+        unit: 'count',
+        source: 'apple_health',
+        reliability: 'high',
+        measuredAt: d.startDate.toISOString(),
+      });
+    }
+  } catch {
+    /* steps unavailable */
   }
 
   const sleepSamples: HKSleepSample[] = [];
@@ -182,6 +216,7 @@ export async function syncHealthKit(): Promise<{
   const healthMetrics = [
     ...normalizeHealthKitSamples(quantitySamples),
     ...aggregateHealthKitSleep(sleepSamples),
+    ...stepMetrics,
   ];
   const sleepSessions = aggregateHealthKitSleepSessions(sleepSamples);
   const activities: ImportedActivity[] = [];
