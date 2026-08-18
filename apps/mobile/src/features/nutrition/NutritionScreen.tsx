@@ -201,12 +201,12 @@ export function NutritionScreen(): React.JSX.Element {
   return (
     <View style={{ flex: 1 }}>
       <Screen scroll>
-        <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-          <View>
+        <View style={{ position: 'relative' }}>
+          <View style={{ alignItems: 'center' }}>
             <Text variant="title">Nutrition</Text>
             <Text variant="caption" color="textSubtle">Ton carburant du jour</Text>
           </View>
-          <Pressable onPress={() => router.push('/search')} style={({ pressed }) => ({ opacity: pressed ? 0.6 : 1 })}>
+          <Pressable onPress={() => router.push('/search')} style={({ pressed }) => ({ opacity: pressed ? 0.6 : 1, position: 'absolute', right: 0, top: 0 })}>
             <View style={{ width: 38, height: 38, borderRadius: 19, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border, alignItems: 'center', justifyContent: 'center' }}><Text style={{ fontSize: 16 }}>🔍</Text></View>
           </Pressable>
         </View>

@@ -420,13 +420,13 @@ export function DashboardScreen(): React.JSX.Element {
     <View style={{ flex: 1 }}>
       <Screen scroll onRefresh={onRefresh} refreshing={refreshing}>
         {/* Header */}
-        <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-          <View style={{ flex: 1 }}>
+        <View style={{ position: 'relative' }}>
+          <View style={{ alignItems: 'center' }}>
             <Text variant="title">Bonjour{firstName ? ` ${firstName}` : ''}</Text>
             <Text variant="caption" color="textMuted" style={{ marginTop: 2 }}>L&apos;excellence se construit aujourd&apos;hui.</Text>
             <Text variant="caption" color="textSubtle" style={{ marginTop: 8 }}>{longDate(now)}</Text>
           </View>
-          <View style={{ flexDirection: 'row', gap: spacing[2] }}>
+          <View style={{ flexDirection: 'row', gap: spacing[2], position: 'absolute', right: 0, top: 0 }}>
             <IconBtn icon="🔍" onPress={() => router.push('/search')} />
             <IconBtn icon="🎛" onPress={() => router.push('/dashboard-customize')} />
             <IconBtn icon="🔔" onPress={() => router.push('/profile/notifications')} />

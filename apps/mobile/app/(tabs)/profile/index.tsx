@@ -73,7 +73,7 @@ export default function ProfileTab(): React.JSX.Element {
 
   return (
     <Screen scroll>
-      <Text variant="title">Profil</Text>
+      <Text variant="title" style={{ textAlign: 'center' }}>Profil</Text>
 
       {/* Account header */}
       <Card>
