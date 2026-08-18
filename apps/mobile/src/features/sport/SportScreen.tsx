@@ -4,7 +4,7 @@ import { useRouter, type Href } from 'expo-router';
 import { Card, Fab, ProgressRing, Screen, Text, useTheme } from '@supotsu/ui';
 import { radii, spacing } from '@supotsu/design-system';
 import type { MuscleGroup } from '@supotsu/core';
-import { computeAcwr, computeRecoveryScore } from '@supotsu/engines';
+import { computeAcwr, computeRecoveryScore, computeSportScore } from '@supotsu/engines';
 import {
   useActivities,
   useHealthMetrics,
@@ -110,6 +110,11 @@ export function SportScreen(): React.JSX.Element {
     return r.confidence === 'to_confirm' ? null : r.value;
   }, [health, asOf]);
 
+  const sport = useMemo(() => {
+    const r = computeSportScore(activities, asOf);
+    return r.confidence === 'to_confirm' ? null : r;
+  }, [activities, asOf]);
+
   const muscleStates = useMemo(() => muscleStatesFor(muscleSessions, asOf), [muscleSessions, asOf]);
   const colorFor = useMemo(() => muscleColorFor(muscleStates, colors), [muscleStates, colors]);
   const tired = useMemo(
@@ -194,6 +199,19 @@ export function SportScreen(): React.JSX.Element {
           >
             <Text variant="body" style={{ fontWeight: '600' }}>{plannedToday ? 'Voir le planning ›' : 'Créer une séance ›'}</Text>
           </Pressable>
+        </Card>
+
+        {/* Score Sport */}
+        <Card style={{ marginTop: spacing[3] }}>
+          <Text variant="heading">Score Sport</Text>
+          <View style={{ flexDirection: 'row', gap: spacing[4], alignItems: 'center', marginTop: spacing[3] }}>
+            <ProgressRing value={sport?.value ?? 0} size={72} thickness={8} gradient centerLabel={sport ? `${sport.value}` : '—'} />
+            <View style={{ flex: 1, flexDirection: 'row', justifyContent: 'space-around' }}>
+              <MiniStat label="Performance" value={sport ? `${sport.breakdown.performance}` : '—'} />
+              <MiniStat label="Régularité" value={sport ? `${sport.breakdown.regularity}` : '—'} />
+              <MiniStat label="Progression" value={sport ? `${sport.breakdown.progression}` : '—'} />
+            </View>
+          </View>
         </Card>
 
         {/* État du corps */}

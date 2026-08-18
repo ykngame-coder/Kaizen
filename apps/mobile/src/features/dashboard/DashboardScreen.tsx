@@ -18,7 +18,7 @@ import {
   sumDay,
   weightTrend,
 } from '@supotsu/engines';
-import { useActivities, useHabitLogs, useHabits, useHealthMetrics, useNutritionEntries, usePlannedWorkouts } from '@/lib/data/queries';
+import { useActivities, useHabitLogs, useHabits, useHealthMetrics, useNutritionEntries, usePlannedWorkouts, useSleepSessions } from '@/lib/data/queries';
 import { useAuth } from '@/features/auth/AuthProvider';
 import { MuscleBody } from '@/features/muscles/MuscleBody';
 import { getCloudAvatarUrl, loadAvatarUri } from '@/lib/profileAvatar';
@@ -92,6 +92,16 @@ function KpiTile({ icon, value, delta, deltaTone, label }: { icon: string; value
   );
 }
 
+/** One pillar of the Score Kaizen breakdown (Sport / Récup / Sommeil / Nutrition). */
+function PillarCell({ label, value }: { label: string; value: number | null }): React.JSX.Element {
+  return (
+    <View style={{ flex: 1, alignItems: 'center', backgroundColor: 'rgba(255,255,255,0.14)', borderRadius: radii.md, paddingVertical: spacing[2] }}>
+      <Text variant="subtitle" color="onPrimary">{value ?? '—'}</Text>
+      <Text variant="caption" color="onPrimary" style={{ opacity: 0.85, marginTop: 1 }}>{label}</Text>
+    </View>
+  );
+}
+
 function CheckRow({ done, label, last }: { done: boolean; label: string; last?: boolean }): React.JSX.Element {
   const { colors } = useTheme();
   return (
@@ -154,10 +164,6 @@ export function DashboardScreen(): React.JSX.Element {
     return { value: today.value, band: recoveryBand(today.value) };
   }, [health, asOf]);
 
-  const snapshot = useMemo(() => buildDailySnapshot(activities, [], asOf, health), [activities, health, asOf]);
-  const hasScoreData = activities.length > 0;
-  const kaizenBand = recoveryBand(snapshot.value.overall);
-
   const nights = useMemo(() => [...sleepTrend(health, asOf, 7)].sort((a, b) => a.date.localeCompare(b.date)), [health, asOf]);
   const lastNight = nights.at(-1);
   const prevNight = nights.at(-2);
@@ -181,6 +187,19 @@ export function DashboardScreen(): React.JSX.Element {
   const deficit = Math.round(targets.kcal - totals.kcal);
   const proteinLeft = Math.max(0, Math.round(targets.proteinG - totals.proteinG));
   const waterLeftMl = Math.max(0, Math.round(targets.hydrationMl - totals.hydrationMl));
+
+  const { data: sleepSessions = [] } = useSleepSessions();
+  const snapshot = useMemo(
+    () =>
+      buildDailySnapshot(activities, [], asOf, health, {
+        nutritionEntries: nutrition,
+        nutritionTargets: targets,
+        sleepSessions,
+      }),
+    [activities, health, asOf, nutrition, targets, sleepSessions],
+  );
+  const hasScoreData = snapshot.confidence !== 'to_confirm';
+  const kaizenBand = recoveryBand(snapshot.value.overall);
 
   // Day-state
   const energie = recovery ? (recovery.value >= 70 ? { t: 'Élevée', c: colors.accentData } : recovery.value >= 50 ? { t: 'Moyenne', c: colors.warning } : { t: 'Basse', c: colors.error }) : null;
@@ -472,9 +491,15 @@ export function DashboardScreen(): React.JSX.Element {
             </View>
             <Text variant="caption" color="onPrimary" style={{ opacity: 0.9, marginTop: spacing[1] }}>
               {hasScoreData
-                ? `${BAND_INFO[kaizenBand]?.label ?? ''} · performance et régularité combinées.`
-                : 'Ajoute une activité pour calibrer ton score.'}
+                ? `${BAND_INFO[kaizenBand]?.label ?? ''} · Sport, récupération, sommeil et nutrition combinés.`
+                : 'Ajoute une activité ou une donnée santé pour calibrer ton score.'}
             </Text>
+            <View style={{ flexDirection: 'row', gap: spacing[2], marginTop: spacing[4] }}>
+              <PillarCell label="Sport" value={snapshot.value.sport} />
+              <PillarCell label="Récup" value={snapshot.value.recovery} />
+              <PillarCell label="Sommeil" value={snapshot.value.sleep} />
+              <PillarCell label="Nutrition" value={snapshot.value.nutrition} />
+            </View>
           </Gradient>
         </View>
 
