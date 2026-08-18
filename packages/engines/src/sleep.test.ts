@@ -214,6 +214,29 @@ describe('computeSleepScore2', () => {
     expect(s.value).toBeGreaterThan(0);
     expect(s.value).toBeLessThanOrEqual(100);
   });
+
+  it('looks back 3 months for sleep debt — nights outside the 7-day regularity window still count', () => {
+    // Regularity uses windowDays (default 7); debt has its own fixed
+    // 90-day window and should still pick these up.
+    const metrics: HealthMetric[] = [sleep(6, 40), sleep(6, 55), sleep(6, 70)];
+    const s = computeSleepScore2(metrics, ASOF);
+    const debtComponent = s.components.find((c) => c.key === 'debt');
+    expect(debtComponent?.value).not.toBeNull();
+    expect(debtComponent?.detail).toContain('3 derniers mois');
+    expect(debtComponent?.detail).toContain('3 nuits');
+  });
+
+  it('needs a sustained ~1 missed night/week over 3 months to zero the debt score (same severity bar as the old 7-day cap, extended proportionally)', () => {
+    const metrics: HealthMetric[] = Array.from({ length: 13 }, (_, i) => sleep(0, i * 7));
+    const s = computeSleepScore2(metrics, ASOF);
+    expect(s.components.find((c) => c.key === 'debt')?.value).toBe(0);
+  });
+
+  it('does not over-penalize a couple of short nights within the 3-month window', () => {
+    const metrics: HealthMetric[] = [sleep(8, 5), sleep(6, 10), sleep(6, 45)];
+    const s = computeSleepScore2(metrics, ASOF);
+    expect(s.components.find((c) => c.key === 'debt')?.value).toBeGreaterThan(90);
+  });
 });
 
 describe('sleepCoaching', () => {

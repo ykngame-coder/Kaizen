@@ -146,8 +146,15 @@ export function sleepExplanation(
 
 /** Beyond this spread in bedtimes, regularity is treated as fully irregular. */
 const REGULARITY_TOLERANCE_MIN = 90;
-/** A full night's deficit (in hours) maps sleep debt to a score of 0. */
-const DEBT_CAP_HOURS = SLEEP_TARGET_HOURS;
+/**
+ * Sleep debt looks back 3 months rather than the 7-day window used for
+ * regularity: a single "bad week" is noise, but a sustained shortfall over a
+ * season is the kind of chronic debt that actually matters and is worth
+ * surfacing on its own timeline, independent of `windowDays`.
+ */
+const DEBT_WINDOW_DAYS = 90;
+/** A full night's deficit *per week*, sustained across the debt window, maps sleep debt to a score of 0 — same severity bar as before, just extended to the longer window. */
+const DEBT_CAP_HOURS = SLEEP_TARGET_HOURS * (DEBT_WINDOW_DAYS / 7);
 /** Minimum nights required before regularity / debt are meaningful. */
 const MIN_NIGHTS_FOR_TREND = 3;
 
@@ -358,8 +365,9 @@ export function computeSleepScore2(
         : `Nécessite au moins ${MIN_NIGHTS_FOR_TREND} nuits enregistrées.`,
   });
 
-  // 4) Dette — cumulative shortfall over the logged nights.
-  const { debt, nights } = sleepDebtHours(metrics, asOf, windowDays);
+  // 4) Dette — cumulative shortfall over the last 3 months (its own window,
+  //    independent of windowDays — see DEBT_WINDOW_DAYS above).
+  const { debt, nights } = sleepDebtHours(metrics, asOf, DEBT_WINDOW_DAYS);
   components.push({
     key: 'debt',
     label: COMPONENT_LABEL.debt,
@@ -368,8 +376,8 @@ export function computeSleepScore2(
     detail:
       nights >= MIN_NIGHTS_FOR_TREND
         ? debt > 0
-          ? `−${debt.toFixed(1)} h cumulées sur ${nights} nuits.`
-          : `Aucune dette sur ${nights} nuits.`
+          ? `−${debt.toFixed(1)} h cumulées sur ${nights} nuits (3 derniers mois).`
+          : `Aucune dette sur ${nights} nuits (3 derniers mois).`
         : `Nécessite au moins ${MIN_NIGHTS_FOR_TREND} nuits enregistrées.`,
   });
 
@@ -437,7 +445,7 @@ const COACHING_ACTION: Record<SleepComponentKey, string> = {
   quantity: 'Vise 30 à 60 min de sommeil en plus : couche-toi un peu plus tôt ce soir.',
   quality: 'Pour la qualité : limite écrans et alcool en soirée, et garde la chambre fraîche et sombre.',
   regularity: 'Vise un créneau de coucher stable (±30 min), y compris le week-end.',
-  debt: 'Rattrape ta dette avec 1 à 2 nuits plus longues, sans tout récupérer d’un coup.',
+  debt: 'Dette accumulée sur plusieurs mois : rattrape-la progressivement (30-60 min de sommeil en plus par nuit, sur plusieurs semaines), pas en une seule fois.',
   recovery: 'Récupération basse : allège l’intensité aujourd’hui et privilégie le repos actif.',
 };
 
