@@ -40,11 +40,11 @@ export async function updateGoalCurrent(
   return data;
 }
 
-/** Edit a goal's definition (title/type/target) — RLS scopes it to the owner. */
+/** Edit a goal's definition (title/type/target/deadline) — RLS scopes it to the owner. */
 export async function updateGoal(
   client: SupotsuClient,
   goalId: string,
-  patch: Pick<GoalInsert, 'title' | 'type' | 'target_value' | 'target_unit'>,
+  patch: Pick<GoalInsert, 'title' | 'type' | 'target_value' | 'target_unit' | 'deadline'>,
 ): Promise<GoalRow> {
   const { data, error } = await client.from('goals').update(patch).eq('id', goalId).select('*').single();
   if (error) throw error;

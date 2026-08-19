@@ -618,13 +618,15 @@ export function useUpdateGoal() {
       type,
       targetValue,
       targetUnit,
+      deadline,
     }: {
       goalId: string;
       title: string;
       type: GoalType;
       targetValue?: number;
       targetUnit?: string;
-    }) => repo.updateGoal(user!.id, goalId, { title, type, targetValue, targetUnit }),
+      deadline?: string;
+    }) => repo.updateGoal(user!.id, goalId, { title, type, targetValue, targetUnit, deadline }),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['goals', user?.id] });
     },

@@ -27,6 +27,7 @@ import {
 import { useAddGoal, useDeleteGoal, useGoals, useHealthMetrics, useUpdateGoal, useUpdateGoalCurrent } from '@/lib/data/queries';
 import { formatDate } from '@/lib/format';
 import { formatWeight, usePreferences } from '@/lib/preferences';
+import { DatePickerModal } from '@/features/navigation/DatePickerModal';
 
 const TYPE_OPTIONS: { value: GoalType; label: string }[] = [
   { value: 'body_composition', label: 'Poids / compo' },
@@ -234,6 +235,7 @@ export function GoalsScreen(): React.JSX.Element {
   const { data: metrics = [] } = useHealthMetrics();
   const { preferences, setPreference } = usePreferences();
   const addGoal = useAddGoal();
+  const updateGoal = useUpdateGoal();
   const asOf = new Date().toISOString();
 
   const [showForm, setShowForm] = useState(false);
@@ -243,11 +245,36 @@ export function GoalsScreen(): React.JSX.Element {
   const [unit, setUnit] = useState('kg');
   const [current, setCurrent] = useState('');
 
+  const [editingBody, setEditingBody] = useState(false);
+  const [bodyTarget, setBodyTarget] = useState('');
+  const [bodyDeadline, setBodyDeadline] = useState<string | undefined>(undefined);
+  const [bodyDatePickerOpen, setBodyDatePickerOpen] = useState(false);
+
   const weight = useMemo(() => weightTrend(metrics, asOf, 120), [metrics, asOf]);
   const weightSummary = useMemo(() => summarizeTrend(weight), [weight]);
   const currentWeight = latestMetric(metrics, 'weight');
   const bodyFat = latestMetric(metrics, 'body_fat');
   const bodyGoal = goals.find((g) => g.type === 'body_composition' && g.status !== 'abandoned');
+
+  const openEditBody = (): void => {
+    setBodyTarget(bodyGoal?.targetValue !== undefined ? String(bodyGoal.targetValue) : '');
+    setBodyDeadline(bodyGoal?.deadline);
+    setEditingBody(true);
+  };
+  const saveBodyGoal = (): void => {
+    const targetValue = bodyTarget ? Number(bodyTarget.replace(',', '.')) : undefined;
+    if (bodyGoal) {
+      updateGoal.mutate(
+        { goalId: bodyGoal.id, title: bodyGoal.title, type: 'body_composition', targetValue, targetUnit: 'kg', deadline: bodyDeadline },
+        { onSuccess: () => setEditingBody(false) },
+      );
+    } else {
+      addGoal.mutate(
+        { type: 'body_composition', title: 'Poids cible', priority: 'primary', targetValue, targetUnit: 'kg', currentValue: currentWeight, deadline: bodyDeadline },
+        { onSuccess: () => setEditingBody(false) },
+      );
+    }
+  };
 
   const canSave = title.trim().length > 0;
   const save = (): void => {
@@ -301,11 +328,47 @@ export function GoalsScreen(): React.JSX.Element {
 
       {/* Objectifs corporels */}
       <Card>
-        <Text variant="heading">Objectifs corporels</Text>
+        <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+          <Text variant="heading">Objectifs corporels</Text>
+          {!editingBody && (
+            <Pressable onPress={openEditBody} hitSlop={8} accessibilityLabel="Gérer l’objectif de poids">
+              <Icon name="pencil" size={18} color={colors.textMuted} />
+            </Pressable>
+          )}
+        </View>
         <Field label="Poids actuel" value={currentWeight != null ? formatWeight(currentWeight, preferences.units) : '—'} />
-        <Field label="Poids cible" value={bodyGoal?.targetValue != null ? formatWeight(bodyGoal.targetValue, preferences.units) : 'À définir'} />
-        <Field label="Masse grasse actuelle" value={bodyFat != null ? `${bodyFat.toFixed(1)} %` : '—'} />
-        <Field label="Date cible" value={bodyGoal?.deadline ? formatDate(bodyGoal.deadline) : '—'} last />
+        {editingBody ? (
+          <>
+            <View style={{ paddingVertical: spacing[2] }}>
+              <Input label="Poids cible (kg)" value={bodyTarget} onChangeText={setBodyTarget} keyboardType="numeric" placeholder="96" />
+            </View>
+            <Field label="Masse grasse actuelle" value={bodyFat != null ? `${bodyFat.toFixed(1)} %` : '—'} />
+            <Pressable onPress={() => setBodyDatePickerOpen(true)}>
+              <Field label="Date cible" value={bodyDeadline ? formatDate(bodyDeadline) : 'Choisir une date'} last />
+            </Pressable>
+            <View style={{ flexDirection: 'row', gap: spacing[2], marginTop: spacing[3] }}>
+              <Button label="Annuler" variant="secondary" onPress={() => setEditingBody(false)} />
+              <Button
+                label={updateGoal.isPending || addGoal.isPending ? '…' : 'Enregistrer'}
+                onPress={saveBodyGoal}
+                disabled={updateGoal.isPending || addGoal.isPending}
+              />
+            </View>
+            <DatePickerModal
+              visible={bodyDatePickerOpen}
+              value={bodyDeadline ?? new Date().toISOString()}
+              onSelect={setBodyDeadline}
+              onClose={() => setBodyDatePickerOpen(false)}
+              maxDaysFuture={365 * 3}
+            />
+          </>
+        ) : (
+          <>
+            <Field label="Poids cible" value={bodyGoal?.targetValue != null ? formatWeight(bodyGoal.targetValue, preferences.units) : 'À définir'} />
+            <Field label="Masse grasse actuelle" value={bodyFat != null ? `${bodyFat.toFixed(1)} %` : '—'} />
+            <Field label="Date cible" value={bodyGoal?.deadline ? formatDate(bodyGoal.deadline) : '—'} last />
+          </>
+        )}
       </Card>
 
       {weightSummary && weight.length >= 2 && (

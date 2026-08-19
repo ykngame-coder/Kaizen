@@ -214,7 +214,7 @@ export interface DataRepository {
   updateGoal(
     userId: string,
     goalId: string,
-    patch: { title: string; type: GoalType; targetValue?: number; targetUnit?: string },
+    patch: { title: string; type: GoalType; targetValue?: number; targetUnit?: string; deadline?: string },
   ): Promise<Goal>;
   deleteGoal(userId: string, goalId: string): Promise<void>;
   getAthleteProfile(userId: string): Promise<AthleteProfileInput | null>;
@@ -1572,6 +1572,7 @@ function createSupabaseRepository(
           type: patch.type,
           target_value: patch.targetValue ?? null,
           target_unit: patch.targetUnit ?? null,
+          deadline: patch.deadline ?? null,
         }),
       );
     },
