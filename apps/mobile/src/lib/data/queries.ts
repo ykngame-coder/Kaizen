@@ -14,7 +14,7 @@ import type {
   UserSessionInput,
   WellnessCheckinInput,
 } from '@supotsu/shared';
-import type { Challenge, SetEntry, Visibility, Workout } from '@supotsu/core';
+import type { Challenge, GoalType, SetEntry, Visibility, Workout } from '@supotsu/core';
 import type {
   ImportedActivity,
   ImportedHealthMetric,
@@ -601,6 +601,42 @@ export function useUpdateGoalCurrent() {
   return useMutation({
     mutationFn: ({ goalId, currentValue }: { goalId: string; currentValue: number }) =>
       repo.updateGoalCurrent(user!.id, goalId, currentValue),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['goals', user?.id] });
+    },
+  });
+}
+
+export function useUpdateGoal() {
+  const { user } = useAuth();
+  const repo = useRepository();
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({
+      goalId,
+      title,
+      type,
+      targetValue,
+      targetUnit,
+    }: {
+      goalId: string;
+      title: string;
+      type: GoalType;
+      targetValue?: number;
+      targetUnit?: string;
+    }) => repo.updateGoal(user!.id, goalId, { title, type, targetValue, targetUnit }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['goals', user?.id] });
+    },
+  });
+}
+
+export function useDeleteGoal() {
+  const { user } = useAuth();
+  const repo = useRepository();
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (goalId: string) => repo.deleteGoal(user!.id, goalId),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['goals', user?.id] });
     },

@@ -3,6 +3,7 @@ import type {
   Challenge,
   Exercise,
   Goal,
+  GoalType,
   HealthMetric,
   HealthMetricType,
   Habit,
@@ -104,6 +105,8 @@ import {
   insertGoal,
   listGoals as listGoalsDb,
   updateGoalCurrent,
+  updateGoal as updateGoalDb,
+  deleteGoal as deleteGoalDb,
   getAthleteProfile as getAthleteProfileDb,
   upsertAthleteProfile,
   type ActivityRow,
@@ -208,6 +211,12 @@ export interface DataRepository {
   listGoals(userId: string): Promise<Goal[]>;
   addGoal(userId: string, input: GoalInput): Promise<Goal>;
   updateGoalCurrent(userId: string, goalId: string, currentValue: number): Promise<Goal>;
+  updateGoal(
+    userId: string,
+    goalId: string,
+    patch: { title: string; type: GoalType; targetValue?: number; targetUnit?: string },
+  ): Promise<Goal>;
+  deleteGoal(userId: string, goalId: string): Promise<void>;
   getAthleteProfile(userId: string): Promise<AthleteProfileInput | null>;
   saveAthleteProfile(userId: string, input: AthleteProfileInput): Promise<void>;
   listNutritionEntries(userId: string): Promise<NutritionEntry[]>;
@@ -996,6 +1005,22 @@ function createDemoRepository(): DataRepository {
       await writeJson(goalKey(userId), next);
       return updated;
     },
+    async updateGoal(userId, goalId, patch) {
+      const items = await readJson<Goal>(goalKey(userId));
+      let updated: Goal | undefined;
+      const next = items.map((g) => {
+        if (g.id !== goalId) return g;
+        updated = { ...g, ...patch, updatedAt: new Date().toISOString() };
+        return updated;
+      });
+      if (!updated) throw new Error('Objectif introuvable.');
+      await writeJson(goalKey(userId), next);
+      return updated;
+    },
+    async deleteGoal(userId, goalId) {
+      const items = await readJson<Goal>(goalKey(userId));
+      await writeJson(goalKey(userId), items.filter((g) => g.id !== goalId));
+    },
     async getAthleteProfile(userId) {
       const raw = await secureStorage.getItem(profKey(userId));
       return raw ? (JSON.parse(raw) as AthleteProfileInput) : null;
@@ -1539,6 +1564,19 @@ function createSupabaseRepository(
       if (!current) throw new Error('Objectif introuvable.');
       const { progress, status } = progressedGoal(current, currentValue);
       return rowToGoal(await updateGoalCurrent(client, goalId, currentValue, progress, status));
+    },
+    async updateGoal(_userId, goalId, patch) {
+      return rowToGoal(
+        await updateGoalDb(client, goalId, {
+          title: patch.title,
+          type: patch.type,
+          target_value: patch.targetValue ?? null,
+          target_unit: patch.targetUnit ?? null,
+        }),
+      );
+    },
+    async deleteGoal(_userId, goalId) {
+      await deleteGoalDb(client, goalId);
     },
     async getAthleteProfile(userId) {
       const row = await getAthleteProfileDb(client, userId);

@@ -39,3 +39,20 @@ export async function updateGoalCurrent(
   if (error) throw error;
   return data;
 }
+
+/** Edit a goal's definition (title/type/target) — RLS scopes it to the owner. */
+export async function updateGoal(
+  client: SupotsuClient,
+  goalId: string,
+  patch: Pick<GoalInsert, 'title' | 'type' | 'target_value' | 'target_unit'>,
+): Promise<GoalRow> {
+  const { data, error } = await client.from('goals').update(patch).eq('id', goalId).select('*').single();
+  if (error) throw error;
+  return data;
+}
+
+/** Delete a goal (RLS scopes it to the owner). */
+export async function deleteGoal(client: SupotsuClient, goalId: string): Promise<void> {
+  const { error } = await client.from('goals').delete().eq('id', goalId);
+  if (error) throw error;
+}

@@ -96,6 +96,7 @@ const REGISTRY = {
   shieldLock: community('shield-lock-outline'),
   lightbulb: community('lightbulb-on-outline'),
   trash: community('trash-can-outline'),
+  pencil: community('pencil-outline'),
 } as const;
 
 export type IconName = keyof typeof REGISTRY;

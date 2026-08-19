@@ -24,7 +24,7 @@ import {
   summarizeTrend,
   weightTrend,
 } from '@supotsu/engines';
-import { useAddGoal, useGoals, useHealthMetrics, useUpdateGoalCurrent } from '@/lib/data/queries';
+import { useAddGoal, useDeleteGoal, useGoals, useHealthMetrics, useUpdateGoal, useUpdateGoalCurrent } from '@/lib/data/queries';
 import { formatDate } from '@/lib/format';
 import { formatWeight, usePreferences } from '@/lib/preferences';
 
@@ -96,7 +96,15 @@ function ArchetypeTile({ item, active, onPress }: { item: (typeof ARCHETYPES)[nu
 function GoalCard({ goal }: { goal: Goal }): React.JSX.Element {
   const { colors } = useTheme();
   const update = useUpdateGoalCurrent();
+  const editGoal = useUpdateGoal();
+  const removeGoal = useDeleteGoal();
   const [value, setValue] = useState('');
+  const [editing, setEditing] = useState(false);
+  const [confirmingDelete, setConfirmingDelete] = useState(false);
+  const [editType, setEditType] = useState<GoalType>(goal.type);
+  const [editTitle, setEditTitle] = useState(goal.title);
+  const [editTarget, setEditTarget] = useState(goal.targetValue !== undefined ? String(goal.targetValue) : '');
+  const [editUnit, setEditUnit] = useState(goal.targetUnit ?? '');
   const progress = computeGoalProgress(goal, goal.startValue);
   const pct = Math.round(progress * 100);
   const done = goal.status === 'achieved';
@@ -107,11 +115,69 @@ function GoalCard({ goal }: { goal: Goal }): React.JSX.Element {
     update.mutate({ goalId: goal.id, currentValue: n }, { onSuccess: () => setValue('') });
   };
 
+  const openEdit = (): void => {
+    setEditType(goal.type);
+    setEditTitle(goal.title);
+    setEditTarget(goal.targetValue !== undefined ? String(goal.targetValue) : '');
+    setEditUnit(goal.targetUnit ?? '');
+    setEditing(true);
+  };
+
+  const saveEdit = (): void => {
+    if (!editTitle.trim()) return;
+    editGoal.mutate(
+      {
+        goalId: goal.id,
+        title: editTitle.trim(),
+        type: editType,
+        targetValue: editTarget ? Number(editTarget.replace(',', '.')) : undefined,
+        targetUnit: editUnit.trim() || undefined,
+      },
+      { onSuccess: () => setEditing(false) },
+    );
+  };
+
+  if (editing) {
+    return (
+      <Card>
+        <Text variant="heading">Modifier l’objectif</Text>
+        <View style={{ gap: spacing[3], marginTop: spacing[2] }}>
+          <SegmentedControl options={TYPE_OPTIONS} value={editType} onChange={setEditType} />
+          <Input label="Titre" value={editTitle} onChangeText={setEditTitle} />
+          <View style={{ flexDirection: 'row', gap: spacing[2] }}>
+            <View style={{ flex: 1 }}>
+              <Input label="Cible" value={editTarget} onChangeText={setEditTarget} keyboardType="numeric" />
+            </View>
+            <View style={{ width: 72 }}>
+              <Input label="Unité" value={editUnit} onChangeText={setEditUnit} />
+            </View>
+          </View>
+          <View style={{ flexDirection: 'row', gap: spacing[2] }}>
+            <Button label="Annuler" variant="secondary" onPress={() => setEditing(false)} />
+            <Button
+              label={editGoal.isPending ? '…' : 'Enregistrer'}
+              onPress={saveEdit}
+              disabled={!editTitle.trim() || editGoal.isPending}
+            />
+          </View>
+        </View>
+      </Card>
+    );
+  }
+
   return (
     <Card>
       <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-        <Text variant="subtitle">{goal.title}</Text>
-        {done ? <Badge label="Atteint 🎉" tone="success" /> : <Badge label={`${pct}%`} tone="info" />}
+        <Text variant="subtitle" style={{ flex: 1 }}>{goal.title}</Text>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing[2] }}>
+          {done ? <Badge label="Atteint 🎉" tone="success" /> : <Badge label={`${pct}%`} tone="info" />}
+          <Pressable onPress={openEdit} hitSlop={8} accessibilityLabel="Modifier l’objectif">
+            <Icon name="pencil" size={18} color={colors.textMuted} />
+          </Pressable>
+          <Pressable onPress={() => setConfirmingDelete(true)} hitSlop={8} accessibilityLabel="Supprimer l’objectif">
+            <Icon name="trash" size={18} color={colors.textMuted} />
+          </Pressable>
+        </View>
       </View>
       {goal.targetValue !== undefined && (
         <Text variant="caption" color="textMuted">
@@ -126,19 +192,35 @@ function GoalCard({ goal }: { goal: Goal }): React.JSX.Element {
           Échéance : {formatDate(goal.deadline)}
         </Text>
       )}
-      {!done && goal.targetValue !== undefined && (
-        <View style={{ flexDirection: 'row', gap: spacing[2], alignItems: 'flex-end', marginTop: spacing[2] }}>
-          <View style={{ flex: 1 }}>
-            <Input
-              label="Valeur actuelle"
-              placeholder={String(goal.currentValue ?? '')}
-              value={value}
-              onChangeText={setValue}
-              keyboardType="numeric"
+      {confirmingDelete ? (
+        <View style={{ marginTop: spacing[3], gap: spacing[2] }}>
+          <Text variant="body">Supprimer définitivement cet objectif ?</Text>
+          <View style={{ flexDirection: 'row', gap: spacing[2] }}>
+            <Button label="Annuler" variant="secondary" onPress={() => setConfirmingDelete(false)} />
+            <Button
+              label={removeGoal.isPending ? '…' : 'Supprimer'}
+              variant="danger"
+              onPress={() => removeGoal.mutate(goal.id)}
+              disabled={removeGoal.isPending}
             />
           </View>
-          <Button label={update.isPending ? '…' : 'Mettre à jour'} onPress={submit} />
         </View>
+      ) : (
+        !done &&
+        goal.targetValue !== undefined && (
+          <View style={{ flexDirection: 'row', gap: spacing[2], alignItems: 'flex-end', marginTop: spacing[2] }}>
+            <View style={{ flex: 1 }}>
+              <Input
+                label="Valeur actuelle"
+                placeholder={String(goal.currentValue ?? '')}
+                value={value}
+                onChangeText={setValue}
+                keyboardType="numeric"
+              />
+            </View>
+            <Button label={update.isPending ? '…' : 'Mettre à jour'} onPress={submit} />
+          </View>
+        )
       )}
     </Card>
   );
