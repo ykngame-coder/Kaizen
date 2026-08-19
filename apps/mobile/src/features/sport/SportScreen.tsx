@@ -1,4 +1,5 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import { Pressable, View } from 'react-native';
 import { useRouter, type Href } from 'expo-router';
 import { Card, Fab, Icon, ProgressRing, Screen, Text, useTheme, type IconName } from '@supotsu/ui';
@@ -96,6 +97,10 @@ export function SportScreen(): React.JSX.Element {
   const [selectedDate, setSelectedDate] = useSelectedDay();
   const asOf = selectedDate;
 
+  const qc = useQueryClient();
+  const [refreshing, setRefreshing] = useState(false);
+  const onRefresh = async (): Promise<void> => { setRefreshing(true); await qc.invalidateQueries(); setRefreshing(false); };
+
   const todayKey = new Date().toISOString().slice(0, 10);
   const selectedDayKey = selectedDate.slice(0, 10);
 
@@ -151,7 +156,7 @@ export function SportScreen(): React.JSX.Element {
 
   return (
     <View style={{ flex: 1 }}>
-      <Screen scroll>
+      <Screen scroll onRefresh={onRefresh} refreshing={refreshing}>
         <View style={{ position: 'relative' }}>
           <View style={{ alignItems: 'center' }}>
             <Text variant="title">Sport</Text>

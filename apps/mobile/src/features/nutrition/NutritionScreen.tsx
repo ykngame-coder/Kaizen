@@ -1,4 +1,5 @@
 import React, { useMemo, useState } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import { Pressable, ScrollView, TextInput, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Button, Card, Fab, FilterChip, Icon, Input, ProgressRing, Screen, Sparkline, Text, useTheme, type IconName } from '@supotsu/ui';
@@ -132,6 +133,10 @@ export function NutritionScreen(): React.JSX.Element {
   const [selectedDate, setSelectedDate] = useSelectedDay();
   const asOf = selectedDate;
 
+  const qc = useQueryClient();
+  const [refreshing, setRefreshing] = useState(false);
+  const onRefresh = async (): Promise<void> => { setRefreshing(true); await qc.invalidateQueries(); setRefreshing(false); };
+
   const addWater = (ml: number): void => {
     addEntry.mutate({ mealType: 'snack', description: 'Eau', kcal: 0, hydrationMl: ml, source: 'manual', loggedAt: new Date().toISOString() });
   };
@@ -200,7 +205,7 @@ export function NutritionScreen(): React.JSX.Element {
 
   return (
     <View style={{ flex: 1 }}>
-      <Screen scroll>
+      <Screen scroll onRefresh={onRefresh} refreshing={refreshing}>
         <View style={{ position: 'relative' }}>
           <View style={{ alignItems: 'center' }}>
             <Text variant="title">Nutrition</Text>

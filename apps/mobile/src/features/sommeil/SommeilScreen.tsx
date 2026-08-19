@@ -1,4 +1,5 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import { Pressable, View } from 'react-native';
 import { useRouter, type Href } from 'expo-router';
 import { Badge, Button, Card, EmptyState, Icon, ProgressRing, Screen, Text, useTheme } from '@supotsu/ui';
@@ -202,6 +203,10 @@ export function SommeilScreen(): React.JSX.Element {
   const [selectedDate, setSelectedDate] = useSelectedDay();
   const asOf = selectedDate;
 
+  const qc = useQueryClient();
+  const [refreshing, setRefreshing] = useState(false);
+  const onRefresh = async (): Promise<void> => { setRefreshing(true); await qc.invalidateQueries(); setRefreshing(false); };
+
   const lastSession = sessions[0];
   const score = useMemo(
     () => computeSleepScore2(metrics, asOf, 7, sessions),
@@ -246,7 +251,7 @@ export function SommeilScreen(): React.JSX.Element {
   ].filter(Boolean) as { label: string; value: string }[];
 
   return (
-    <Screen scroll>
+    <Screen scroll onRefresh={onRefresh} refreshing={refreshing}>
       <View style={{ position: 'relative' }}>
         <View style={{ alignItems: 'center' }}>
           <Text variant="title">Sommeil</Text>

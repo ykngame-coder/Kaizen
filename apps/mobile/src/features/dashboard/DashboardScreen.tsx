@@ -79,16 +79,22 @@ function SectionTitle({ children, right }: { children: React.ReactNode; right?: 
   );
 }
 
-function KpiTile({ icon, value, delta, deltaTone, label }: { icon: React.ReactNode; value: string; delta?: string; deltaTone?: 'up' | 'down' | 'muted'; label: string }): React.JSX.Element {
+function KpiTile({ icon, value, delta, deltaTone, label, onPress }: { icon: React.ReactNode; value: string; delta?: string; deltaTone?: 'up' | 'down' | 'muted'; label: string; onPress?: () => void }): React.JSX.Element {
   const { colors } = useTheme();
   const dColor = deltaTone === 'up' ? colors.accentData : deltaTone === 'down' ? colors.error : colors.textSubtle;
-  return (
+  const content = (
     <View style={{ flex: 1, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border, borderRadius: radii.lg, padding: spacing[3] }}>
       {typeof icon === 'string' ? <Text style={{ fontSize: 15 }}>{icon}</Text> : icon}
       <Text variant="subtitle" style={{ marginTop: spacing[1], letterSpacing: -0.4 }}>{value}</Text>
       {delta ? <Text variant="caption" style={{ color: dColor, marginTop: 2, fontWeight: '600' }}>{delta}</Text> : null}
       <Text variant="caption" color="textSubtle" style={{ marginTop: 2 }}>{label}</Text>
     </View>
+  );
+  if (!onPress) return content;
+  return (
+    <Pressable onPress={onPress} style={({ pressed }) => ({ flex: 1, opacity: pressed ? 0.7 : 1 })}>
+      {content}
+    </Pressable>
   );
 }
 
@@ -267,32 +273,34 @@ export function DashboardScreen(): React.JSX.Element {
   // applied where they're rendered, below.
   const cardNodes: Record<string, React.ReactNode> = {
     'etat-du-jour': (
-      <Card>
-        <Text variant="heading">État du jour</Text>
-        <View style={{ flexDirection: 'row', gap: spacing[5], alignItems: 'center', marginTop: spacing[3] }}>
-          <ProgressRing value={recovery?.value ?? 0} size={104} thickness={10} gradient centerLabel={recovery ? `${recovery.value}` : '—'} caption="Recovery" />
-          <View style={{ flex: 1, gap: spacing[3] }}>
-            <StateRow label="Énergie" value={energie?.t ?? '—'} color={energie?.c} />
-            <StateRow label="Charge" value={chargeState?.t ?? 'À calibrer'} color={chargeState?.c} />
-            <StateRow label="Fatigue" value={fatigue?.t ?? '—'} color={fatigue?.c} />
+      <TapCard onPress={() => router.push('/sport/load')}>
+        <Card>
+          <Text variant="heading">État du jour</Text>
+          <View style={{ flexDirection: 'row', gap: spacing[5], alignItems: 'center', marginTop: spacing[3] }}>
+            <ProgressRing value={recovery?.value ?? 0} size={104} thickness={10} gradient centerLabel={recovery ? `${recovery.value}` : '—'} caption="Recovery" />
+            <View style={{ flex: 1, gap: spacing[3] }}>
+              <StateRow label="Énergie" value={energie?.t ?? '—'} color={energie?.c} />
+              <StateRow label="Charge" value={chargeState?.t ?? 'À calibrer'} color={chargeState?.c} />
+              <StateRow label="Fatigue" value={fatigue?.t ?? '—'} color={fatigue?.c} />
+            </View>
           </View>
-        </View>
-        <View style={{ marginTop: spacing[4], paddingTop: spacing[3], borderTopWidth: 1, borderTopColor: colors.border }}>
-          <Text variant="caption" color="textMuted" style={{ lineHeight: 20 }}>{recovery ? BAND_INFO[recovery.band]?.advice : 'Aucune donnée de récupération pour aujourd’hui.'}</Text>
-        </View>
-      </Card>
+          <View style={{ marginTop: spacing[4], paddingTop: spacing[3], borderTopWidth: 1, borderTopColor: colors.border }}>
+            <Text variant="caption" color="textMuted" style={{ lineHeight: 20 }}>{recovery ? BAND_INFO[recovery.band]?.advice : 'Aucune donnée de récupération pour aujourd’hui.'}</Text>
+          </View>
+        </Card>
+      </TapCard>
     ),
     kpis: (
       <View style={{ gap: spacing[3] }}>
         <View style={{ flexDirection: 'row', gap: spacing[3] }}>
-          <KpiTile icon={<Icon name="sleep" size={16} color={colors.info} />} value={lastNight ? fmtSleep(lastNight.hours) : '—'} delta={sleepDelta != null ? `${sleepDelta >= 0 ? '▲ +' : '▼ '}${Math.abs(sleepDelta)} min` : undefined} deltaTone={sleepDelta != null && sleepDelta >= 0 ? 'up' : 'down'} label="Sommeil" />
-          <KpiTile icon={<Icon name="trendingUp" size={16} color={colors.accentData} />} value={hrv != null ? `${Math.round(hrv)} ms` : '—'} label="HRV" />
-          <KpiTile icon={<Icon name="heartPulse" size={16} color={colors.error} />} value={rhr != null ? `${Math.round(rhr)}` : '—'} label="FC repos" />
+          <KpiTile icon={<Icon name="sleep" size={16} color={colors.info} />} value={lastNight ? fmtSleep(lastNight.hours) : '—'} delta={sleepDelta != null ? `${sleepDelta >= 0 ? '▲ +' : '▼ '}${Math.abs(sleepDelta)} min` : undefined} deltaTone={sleepDelta != null && sleepDelta >= 0 ? 'up' : 'down'} label="Sommeil" onPress={() => router.push('/sommeil')} />
+          <KpiTile icon={<Icon name="trendingUp" size={16} color={colors.accentData} />} value={hrv != null ? `${Math.round(hrv)} ms` : '—'} label="HRV" onPress={() => router.push('/sommeil')} />
+          <KpiTile icon={<Icon name="heartPulse" size={16} color={colors.error} />} value={rhr != null ? `${Math.round(rhr)}` : '—'} label="FC repos" onPress={() => router.push('/sommeil')} />
         </View>
         <View style={{ flexDirection: 'row', gap: spacing[3] }}>
-          <KpiTile icon={<Icon name="scale" size={16} color={colors.accentMobility} />} value={weight != null ? weight.toFixed(1) : '—'} delta={weightDelta != null ? `${weightDelta <= 0 ? '▼ ' : '▲ +'}${Math.abs(weightDelta).toFixed(1)}` : undefined} deltaTone={weightDelta != null && weightDelta <= 0 ? 'up' : 'down'} label="Poids (kg)" />
-          <KpiTile icon={<Icon name="trendingDown" size={16} color={colors.warning} />} value={nutrition.length > 0 ? `${deficit}` : '—'} label="Déficit kcal" />
-          <KpiTile icon={<Icon name="water" size={16} color={colors.info} />} value={`${(totals.hydrationMl / 1000).toFixed(1)}`} label={`/ ${(targets.hydrationMl / 1000).toFixed(1)} L`} />
+          <KpiTile icon={<Icon name="scale" size={16} color={colors.accentMobility} />} value={weight != null ? weight.toFixed(1) : '—'} delta={weightDelta != null ? `${weightDelta <= 0 ? '▼ ' : '▲ +'}${Math.abs(weightDelta).toFixed(1)}` : undefined} deltaTone={weightDelta != null && weightDelta <= 0 ? 'up' : 'down'} label="Poids (kg)" onPress={() => router.push('/nutrition/weight')} />
+          <KpiTile icon={<Icon name="trendingDown" size={16} color={colors.warning} />} value={nutrition.length > 0 ? `${deficit}` : '—'} label="Déficit kcal" onPress={() => router.push('/nutrition')} />
+          <KpiTile icon={<Icon name="water" size={16} color={colors.info} />} value={`${(totals.hydrationMl / 1000).toFixed(1)}`} label={`/ ${(targets.hydrationMl / 1000).toFixed(1)} L`} onPress={() => router.push('/nutrition')} />
         </View>
         <View style={{ flexDirection: 'row', gap: spacing[3] }}>
           <KpiTile icon={<Icon name="footsteps" size={16} color={colors.accentData} />} value={stepsToday > 0 ? stepsToday.toLocaleString('fr-FR') : '—'} label={`/ ${preferences.dailyStepsGoal.toLocaleString('fr-FR')} pas`} />
