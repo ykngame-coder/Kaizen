@@ -85,6 +85,16 @@ function MiniStat({ label, value }: { label: string; value: string }): React.JSX
   );
 }
 
+/** One Score Sport pillar (Performance / Régularité / Progression) — same filling-ring pattern as Nutrition's macro rings. */
+function PillarRing({ label, value, color }: { label: string; value: number | undefined; color: string }): React.JSX.Element {
+  return (
+    <View style={{ alignItems: 'center' }}>
+      <ProgressRing value={value ?? 0} size={64} thickness={7} color={color} centerLabel={value != null ? `${value}` : '—'} />
+      <Text variant="caption" style={{ color, fontWeight: '700', marginTop: spacing[1] }}>{label}</Text>
+    </View>
+  );
+}
+
 /** Sport hub (was Entraînements): body state, weekly stats, sections, history. */
 export function SportScreen(): React.JSX.Element {
   const router = useRouter();
@@ -212,11 +222,14 @@ export function SportScreen(): React.JSX.Element {
           <Text variant="heading">Score Sport</Text>
           <View style={{ flexDirection: 'row', gap: spacing[4], alignItems: 'center', marginTop: spacing[3] }}>
             <ProgressRing value={sport?.value ?? 0} size={72} thickness={8} gradient centerLabel={sport ? `${sport.value}` : '—'} />
-            <View style={{ flex: 1, flexDirection: 'row', justifyContent: 'space-around' }}>
-              <MiniStat label="Performance" value={sport ? `${sport.breakdown.performance}` : '—'} />
-              <MiniStat label="Régularité" value={sport ? `${sport.breakdown.regularity}` : '—'} />
-              <MiniStat label="Progression" value={sport ? `${sport.breakdown.progression}` : '—'} />
-            </View>
+            <Text variant="caption" color="textMuted" style={{ flex: 1 }}>
+              Performance, régularité et progression combinées.
+            </Text>
+          </View>
+          <View style={{ flexDirection: 'row', justifyContent: 'space-around', marginTop: spacing[4] }}>
+            <PillarRing label="Performance" value={sport?.breakdown.performance} color={colors.accentData} />
+            <PillarRing label="Régularité" value={sport?.breakdown.regularity} color={colors.warning} />
+            <PillarRing label="Progression" value={sport?.breakdown.progression} color={colors.accentMobility} />
           </View>
         </Card>
 
