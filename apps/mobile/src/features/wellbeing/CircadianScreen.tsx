@@ -5,6 +5,7 @@ import { Badge, Button, Card, EmptyState, Icon, Screen, Text, useTheme } from '@
 import { spacing } from '@supotsu/design-system';
 import { computeCircadianProfile, type Chronotype } from '@supotsu/engines';
 import { useHealthMetrics } from '@/lib/data/queries';
+import { EnergyWave } from './EnergyWave';
 
 const CHRONOTYPE_TONE: Record<Chronotype, 'info' | 'success' | 'warning'> = {
   précoce: 'info',
@@ -101,6 +102,16 @@ export function CircadianScreen(): React.JSX.Element {
                   : ' — bien maîtrisé.'}
               </Text>
             )}
+          </Card>
+
+          <Card>
+            <Text variant="heading">Ton énergie dans la journée</Text>
+            <Text variant="caption" color="textSubtle" style={{ marginTop: 2, marginBottom: spacing[2] }}>
+              Estimée à partir de ton chronotype — un repère, pas une mesure.
+            </Text>
+            <View style={{ alignItems: 'center' }}>
+              <EnergyWave points={profile.energyCurve} />
+            </View>
           </Card>
 
           <Card>

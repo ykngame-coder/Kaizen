@@ -34,6 +34,15 @@ export interface CircadianRecommendation {
   detail: string;
 }
 
+export interface EnergyPoint {
+  /** Local time "HH:MM". */
+  time: string;
+  /** 0-1 relative alertness level — not an absolute unit, just shape. */
+  energy: number;
+  kind?: 'peak' | 'dip';
+  label?: string;
+}
+
 export interface CircadianProfile {
   chronotype: Chronotype;
   /** Habitual local times, averaged over the window. */
@@ -46,6 +55,8 @@ export interface CircadianProfile {
   socialJetlagMin: number | null;
   nights: number;
   recommendations: CircadianRecommendation[];
+  /** Alertness across the waking day (wake → ideal bedtime), for the wavy timeline. */
+  energyCurve: EnergyPoint[];
 }
 
 export type CircadianResult = EngineResult<CircadianProfile | null>;
@@ -161,6 +172,39 @@ function buildRecommendations(idealBedMin: number, wakeMin: number): CircadianRe
 }
 
 /**
+ * Shape of a typical biphasic alertness curve, as hours-since-wake control
+ * points (chronobiology's well-known "two peaks, one afternoon dip" pattern
+ * — morning peak a few hours after waking, a post-lunch dip, a smaller
+ * evening peak, then a decline toward bedtime). Energy is 0-1 (shape only,
+ * not an absolute unit). Interpolated with a cosine ease between points so
+ * the rendered line is an actual wave, not a jagged connect-the-dots.
+ */
+const ENERGY_CURVE_SHAPE: { hoursSinceWake: number; energy: number; kind?: 'peak' | 'dip'; label?: string }[] = [
+  { hoursSinceWake: 0, energy: 0.35 },
+  { hoursSinceWake: 1.5, energy: 0.62 },
+  { hoursSinceWake: 3.5, energy: 0.95, kind: 'peak', label: 'Pic du matin' },
+  { hoursSinceWake: 5.5, energy: 0.72 },
+  { hoursSinceWake: 8, energy: 0.42, kind: 'dip', label: 'Creux de l’après-midi' },
+  { hoursSinceWake: 10, energy: 0.68 },
+  { hoursSinceWake: 11.5, energy: 0.85, kind: 'peak', label: 'Second pic (soirée)' },
+  { hoursSinceWake: 14, energy: 0.5 },
+];
+
+/** Control points scaled to the user's actual wake time and waking-day length. */
+function buildEnergyCurve(wakeMin: number, bedMin: number): EnergyPoint[] {
+  const awakeHours = clampMin(bedMin - wakeMin) / 60 || 16;
+  const points = ENERGY_CURVE_SHAPE.filter((p) => p.hoursSinceWake < awakeHours).map((p) => ({
+    time: hhmm(wakeMin + p.hoursSinceWake * 60),
+    energy: p.energy,
+    kind: p.kind,
+    label: p.label,
+  }));
+  // Anchor the last point at bedtime itself — low energy, no marker.
+  points.push({ time: hhmm(bedMin), energy: 0.22, kind: undefined, label: undefined });
+  return points;
+}
+
+/**
  * Compute the user's circadian profile. Returns a null value with `to_confirm`
  * confidence when there aren't enough nights to establish a habit.
  */
@@ -203,6 +247,7 @@ export function computeCircadianProfile(
     socialJetlagMin,
     nights: nights.length,
     recommendations: buildRecommendations(idealBedMin, habitualWakeMin),
+    energyCurve: buildEnergyCurve(habitualWakeMin, idealBedMin),
   };
 
   const confidence: Confidence = nights.length >= 7 ? 'high' : 'medium';

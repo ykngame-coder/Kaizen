@@ -75,4 +75,18 @@ describe('computeCircadianProfile', () => {
     expect(r.value?.socialJetlagMin).toBeGreaterThanOrEqual(85);
     expect(r.value?.socialJetlagMin).toBeLessThanOrEqual(95);
   });
+
+  it('builds an energy curve with a morning peak, an afternoon dip, and a low point at bedtime', () => {
+    const metrics = Array.from({ length: 7 }, (_, i) => night(8, `2026-07-${20 + i}T22:00:00.000Z`));
+    const r = computeCircadianProfile(metrics, ASOF);
+    const curve = r.value!.energyCurve;
+    const peak = curve.find((p) => p.kind === 'peak' && p.label === 'Pic du matin');
+    const dip = curve.find((p) => p.kind === 'dip');
+    expect(peak?.time).toBe('09:30'); // wake 06:00 + 3.5 h
+    expect(dip?.time).toBe('14:00'); // wake 06:00 + 8 h
+    expect(curve.at(-1)?.time).toBe(r.value!.idealBedtime);
+    expect(curve.at(-1)?.energy).toBeLessThan(0.3);
+    // Strictly ordered by time across the waking day, no duplicates/backtracking.
+    for (let i = 1; i < curve.length; i += 1) expect(curve[i]!.time > curve[i - 1]!.time).toBe(true);
+  });
 });
