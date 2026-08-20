@@ -9,6 +9,7 @@ import { BackButton } from '@/features/navigation/BackButton';
 import { DayNav, useSelectedDay } from '@/features/navigation/DayNav';
 import { useHabitLogs, useHabits, useHealthMetrics, useLogHabit, useNutritionEntries } from '@/lib/data/queries';
 import { usePreferences } from '@/lib/preferences';
+import { linkedKindFor, type LinkedKind } from './linkedHabits';
 
 const DAY_MS = 86_400_000;
 const dayKey = (d: Date): string => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
@@ -26,15 +27,6 @@ const iconFor = (pillar: string, name: string): string => {
   if (n.includes('muscu') || n.includes('entra') || n.includes('sport')) return '🏋️';
   return PILLAR_ICON[pillar] ?? '✅';
 };
-
-type LinkedKind = 'hydration' | 'steps';
-/** Habits whose real progress is already tracked elsewhere in the app — no manual tap needed. */
-function linkedKindFor(name: string): LinkedKind | null {
-  const n = name.toLowerCase();
-  if (n.includes('eau') || n.includes('hydrat')) return 'hydration';
-  if (n.includes('marche') || n.includes('pas')) return 'steps';
-  return null;
-}
 
 function latestMetric(m: { type: HealthMetricType; value: number; measuredAt: string }[], type: HealthMetricType): number | undefined {
   return m.filter((x) => x.type === type).sort((a, b) => a.measuredAt.localeCompare(b.measuredAt)).at(-1)?.value;
