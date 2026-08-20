@@ -6,9 +6,8 @@ import { radii, spacing } from '@supotsu/design-system';
 import type { ActivityType } from '@supotsu/core';
 import { useActivities, useGoals, useNutritionEntries, useRecords, useWorkouts } from '@/lib/data/queries';
 import { formatDate } from '@/lib/format';
-import { EXERCISES, MUSCLE_LABEL } from '@/features/exercises/catalog';
 
-type Category = 'Pages' | 'Exercices' | 'Séances' | 'Activités' | 'Nutrition' | 'Objectifs' | 'Records';
+type Category = 'Pages' | 'Séances' | 'Activités' | 'Nutrition' | 'Objectifs' | 'Records';
 
 interface Item {
   category: Category;
@@ -72,8 +71,8 @@ const ACTIVITY_LABEL: Record<ActivityType, string> = {
   cross_training: 'Cross-training', hyrox: 'Hyrox', mobility: 'Mobilité', yoga: 'Yoga', other: 'Autre',
 };
 
-const FILTERS: ('Tous' | Category)[] = ['Tous', 'Pages', 'Exercices', 'Séances', 'Activités', 'Nutrition', 'Objectifs', 'Records'];
-const CAT_ICON: Record<Category, string> = { Pages: '🧭', Exercices: '🏋️', Séances: '🎽', Activités: '🏃', Nutrition: '🍽', Objectifs: '🎯', Records: '🏆' };
+const FILTERS: ('Tous' | Category)[] = ['Tous', 'Pages', 'Séances', 'Activités', 'Nutrition', 'Objectifs', 'Records'];
+const CAT_ICON: Record<Category, string> = { Pages: '🧭', Séances: '🎽', Activités: '🏃', Nutrition: '🍽', Objectifs: '🎯', Records: '🏆' };
 const PAGE_ITEMS: Item[] = PAGES.map((p) => ({ ...p, category: 'Pages', icon: CAT_ICON.Pages }));
 
 /** Recherche universelle (mockup #21) — searches the user's real local data. */
@@ -91,7 +90,6 @@ export function SearchScreen(): React.JSX.Element {
 
   const index = useMemo<Item[]>(() => {
     const items: Item[] = [...PAGE_ITEMS];
-    for (const e of EXERCISES) items.push({ category: 'Exercices', icon: CAT_ICON.Exercices, title: e.name, subtitle: `${MUSCLE_LABEL[e.primary]} · ${e.equipment}`, path: { pathname: '/sport/exercise/[id]', params: { id: e.id } } });
     for (const w of workouts) items.push({ category: 'Séances', icon: CAT_ICON.Séances, title: w.name, subtitle: formatDate(w.completedAt ?? w.createdAt), path: { pathname: '/sport/workout/[id]', params: { id: w.id } } });
     for (const a of activities) items.push({ category: 'Activités', icon: CAT_ICON.Activités, title: ACTIVITY_LABEL[a.type], subtitle: `${formatDate(a.startedAt)} · ${Math.round(a.durationSec / 60)} min`, path: '/profile/analytics' });
     for (const n of nutrition) items.push({ category: 'Nutrition', icon: CAT_ICON.Nutrition, title: n.description, subtitle: `${Math.round(n.kcal)} kcal · ${formatDate(n.loggedAt)}`, path: '/nutrition' });

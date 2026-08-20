@@ -174,7 +174,11 @@ export function SportScreen(): React.JSX.Element {
               Prêt pour votre séance ?
             </Text>
           </View>
-          <Pressable onPress={() => router.push('/search')} style={({ pressed }) => ({ opacity: pressed ? 0.6 : 1, position: 'absolute', right: 0, top: 0 })}>
+          <Pressable
+            onPress={() => router.push('/sport/exercises')}
+            accessibilityLabel="Rechercher un exercice"
+            style={({ pressed }) => ({ opacity: pressed ? 0.6 : 1, position: 'absolute', right: 0, top: 0 })}
+          >
             <View style={{ width: 38, height: 38, borderRadius: 19, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border, alignItems: 'center', justifyContent: 'center' }}>
               <Icon name="search" size={16} color={colors.text} />
             </View>
