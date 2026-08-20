@@ -144,6 +144,21 @@ export function MarketplaceScreen(): React.JSX.Element {
 
       {tab === 'catalogue' ? (
         <>
+          <Card>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing[3] }}>
+              <View style={{ width: 44, height: 44, borderRadius: 22, backgroundColor: colors.surfaceElevated, alignItems: 'center', justifyContent: 'center' }}>
+                <Icon name="yoga" size={20} color={colors.primary} />
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text variant="subtitle">Étirements guidés</Text>
+                <Text variant="caption" color="textMuted">Routine du jour ou par zone, tenue chronométrée.</Text>
+              </View>
+            </View>
+            <View style={{ alignItems: 'flex-start', marginTop: spacing[2] }}>
+              <Button label="Ouvrir" variant="secondary" onPress={() => router.push('/sport/stretching')} />
+            </View>
+          </Card>
+
           {reco.value ? (
             <Card>
               <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>

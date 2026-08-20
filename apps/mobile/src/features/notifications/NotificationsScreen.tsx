@@ -139,7 +139,7 @@ export function NotificationsScreen(): React.JSX.Element {
 
     // Succès — last record + habits all done
     const lastRecord = [...records].sort((a, b) => b.achievedAt.localeCompare(a.achievedAt))[0];
-    if (lastRecord) out.push({ id: 'record', category: 'succes', icon: '🏆', title: `Record : ${lastRecord.label} — ${lastRecord.value} ${lastRecord.unit}.`, when: relative(lastRecord.achievedAt), path: '/sport/records' });
+    if (lastRecord) out.push({ id: 'record', category: 'succes', icon: '🏆', title: `Record : ${lastRecord.label} — ${lastRecord.value} ${lastRecord.unit}.`, when: relative(lastRecord.achievedAt), path: '/sport/muscle-progress' });
     if (habits.length > 0 && pending.length === 0) out.push({ id: 'habits-done', category: 'succes', icon: '🔥', title: 'Toutes tes habitudes du jour sont validées !', when: "Aujourd'hui", path: '/profile/habits' });
 
     // Appareils — Renpho pesée, latest sync

@@ -1,10 +1,10 @@
 import React, { useMemo, useState } from 'react';
-import { ScrollView, View } from 'react-native';
+import { View } from 'react-native';
 import { useRouter } from 'expo-router';
 import Svg, { Circle, Line, Polygon } from 'react-native-svg';
 import { Badge, Button, Card, Icon, ProgressRing, Screen, SegmentedControl, Sparkline, Text, useTheme } from '@supotsu/ui';
 import { radii, spacing } from '@supotsu/design-system';
-import type { ActivityType, MuscleGroup } from '@supotsu/core';
+import type { ActivityType, MuscleGroup, PersonalRecord, RecordCategory } from '@supotsu/core';
 import { computeMuscleStates } from '@supotsu/engines';
 import { useActivities, useMuscleSessions, useMuscleWork, useRecords } from '@/lib/data/queries';
 import { formatDate } from '@/lib/format';
@@ -38,6 +38,31 @@ function progLabel(idx: number): string {
   if (idx >= 55) return 'Stable';
   if (idx >= 40) return 'Faible';
   return 'En retard';
+}
+
+const RECORD_CATEGORY_LABEL: Record<RecordCategory, string> = {
+  run: 'Course',
+  strength: 'Force',
+  cycling: 'Vélo',
+  steps: 'Pas',
+  other: 'Autre',
+};
+
+/** Human value: run times as mm:ss, distances as km, weights as kg, steps grouped. */
+function formatRecordValue(r: PersonalRecord): string {
+  if (r.unit === 's') {
+    const total = Math.round(r.value);
+    const h = Math.floor(total / 3600);
+    const m = Math.floor((total % 3600) / 60);
+    const s = total % 60;
+    const mm = String(m).padStart(2, '0');
+    const ss = String(s).padStart(2, '0');
+    return h > 0 ? `${h}:${mm}:${ss}` : `${m}:${ss}`;
+  }
+  if (r.unit === 'm') return r.value >= 1000 ? `${(r.value / 1000).toFixed(2)} km` : `${Math.round(r.value)} m`;
+  if (r.unit === 'kg') return `${r.value} kg`;
+  if (r.unit === 'steps') return `${Math.round(r.value).toLocaleString('fr-FR')} pas`;
+  return `${r.value} ${r.unit}`;
 }
 
 const CARDIO: ActivityType[] = ['running', 'cycling', 'swimming', 'hyrox', 'cross_training', 'walking'];
@@ -166,7 +191,20 @@ export function MusclesProgressScreen(): React.JSX.Element {
 
   // Priority muscles (lowest index).
   const priority = [...MUSCLES].sort((a, b) => (index.get(a) ?? 0) - (index.get(b) ?? 0)).slice(0, 3);
-  const weekRecords = [...records].sort((a, b) => b.achievedAt.localeCompare(a.achievedAt)).slice(0, 5);
+
+  // Records grouped by category, best-first (mirrors the old standalone Records screen — merged here since they're both "how am I progressing").
+  const recordGroups = useMemo(() => {
+    const map = new Map<RecordCategory, PersonalRecord[]>();
+    for (const r of records) {
+      const list = map.get(r.category) ?? [];
+      list.push(r);
+      map.set(r.category, list);
+    }
+    for (const [cat, list] of map) {
+      list.sort((a, b) => (cat === 'run' && a.unit === 's' ? a.value - b.value : b.value - a.value));
+    }
+    return [...map.entries()];
+  }, [records]);
 
   // Smart tips.
   const tips: string[] = [];
@@ -189,7 +227,7 @@ export function MusclesProgressScreen(): React.JSX.Element {
     <Screen scroll>
       <BackButton />
       <Text variant="title">Progression musculaire</Text>
-      <Text variant="caption" color="textSubtle">Où tu progresses, stagnes, et quoi travailler.</Text>
+      <Text variant="caption" color="textSubtle">Où tu progresses, stagnes, et quoi travailler — avec tes records.</Text>
 
       <SegmentedControl options={PERIODS.map((p) => ({ value: p.key, label: p.label }))} value={period} onChange={setPeriod} />
 
@@ -279,21 +317,27 @@ export function MusclesProgressScreen(): React.JSX.Element {
         </View>
       </Card>
 
-      {/* Records */}
-      {weekRecords.length > 0 ? (
-        <View>
-          <SectionTitle>Nouveaux records</SectionTitle>
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: spacing[3] }}>
-            {weekRecords.map((r) => (
-              <View key={r.id} style={{ width: 150, backgroundColor: colors.surfaceElevated, borderWidth: 1, borderColor: colors.border, borderRadius: radii.lg, padding: spacing[3] }}>
-                <Icon name="trophy" size={20} color={colors.warning} />
-                <Text variant="subtitle" style={{ marginTop: spacing[2] }}>{r.value} {r.unit}</Text>
-                <Text variant="caption" color="textMuted">{r.label}</Text>
-                <Text variant="caption" color="textSubtle" style={{ marginTop: 2 }}>{formatDate(r.achievedAt)}</Text>
+      {/* Records — merged from the old standalone Records screen: 1RM, meilleurs temps, distances, tout ce qui mesure "où j'en suis" par rapport à moi-même, comme la progression musculaire au-dessus. */}
+      {recordGroups.length > 0 ? (
+        <>
+          <SectionTitle>Mes records</SectionTitle>
+          {recordGroups.map(([category, list]) => (
+            <Card key={category}>
+              <Text variant="heading">{RECORD_CATEGORY_LABEL[category]}</Text>
+              <View style={{ gap: spacing[2], marginTop: spacing[1] }}>
+                {list.map((r) => (
+                  <View key={r.id} style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <View style={{ flex: 1, paddingRight: spacing[2] }}>
+                      <Text variant="body">{r.label}</Text>
+                      <Text variant="caption" color="textMuted">{formatDate(r.achievedAt)}</Text>
+                    </View>
+                    <Badge label={formatRecordValue(r)} tone="info" />
+                  </View>
+                ))}
               </View>
-            ))}
-          </ScrollView>
-        </View>
+            </Card>
+          ))}
+        </>
       ) : null}
 
       {/* Smart tips */}

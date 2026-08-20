@@ -28,12 +28,11 @@ const PAGES: Omit<Item, 'category' | 'icon'>[] = [
   { title: 'Planification', subtitle: 'Sport', path: '/sport/planning', keywords: ['planning', 'programmer'] },
   { title: 'Calendrier', subtitle: 'Sport', path: '/sport/calendar' },
   { title: 'Récupération musculaire', subtitle: 'Sport', path: '/sport/muscles', keywords: ['silhouette', 'fatigue', 'fraîcheur'] },
-  { title: 'Progression musculaire', subtitle: 'Sport', path: '/sport/muscle-progress', keywords: ['progression', 'évolution'] },
+  { title: 'Progression musculaire', subtitle: 'Sport', path: '/sport/muscle-progress', keywords: ['progression', 'évolution', 'records', '1rm', 'performance'] },
   { title: "Charge d'entraînement", subtitle: 'Sport', path: '/sport/load', keywords: ['acwr', 'charge'] },
   { title: 'Stomach Vacuum', subtitle: 'Sport', path: '/sport/stomach-vacuum', keywords: ['gainage', 'transverse'] },
   { title: 'Minuteurs', subtitle: 'Sport', path: '/sport/timer', keywords: ['tabata', 'hiit', 'emom', 'chrono'] },
-  { title: 'Étirements', subtitle: 'Sport', path: '/sport/stretching', keywords: ['mobilité', 'stretching'] },
-  { title: 'Records', subtitle: 'Sport', path: '/sport/records', keywords: ['1rm', 'performance', 'record'] },
+  { title: 'Étirements', subtitle: 'Programmes', path: '/sport/stretching', keywords: ['mobilité', 'stretching'] },
   { title: 'Bibliothèque d’exercices', subtitle: 'Sport', path: '/sport/exercises', keywords: ['exercices', 'catalogue'] },
   { title: 'Activités', subtitle: 'Sport', path: '/sport/activities', keywords: ['course', 'marche', 'vélo', 'cardio'] },
   { title: 'Rythme circadien', subtitle: 'Sommeil', path: '/sommeil/circadian', keywords: ['chronotype', 'énergie', 'circadien'] },
@@ -94,7 +93,7 @@ export function SearchScreen(): React.JSX.Element {
     for (const a of activities) items.push({ category: 'Activités', icon: CAT_ICON.Activités, title: ACTIVITY_LABEL[a.type], subtitle: `${formatDate(a.startedAt)} · ${Math.round(a.durationSec / 60)} min`, path: '/profile/analytics' });
     for (const n of nutrition) items.push({ category: 'Nutrition', icon: CAT_ICON.Nutrition, title: n.description, subtitle: `${Math.round(n.kcal)} kcal · ${formatDate(n.loggedAt)}`, path: '/nutrition' });
     for (const g of goals) items.push({ category: 'Objectifs', icon: CAT_ICON.Objectifs, title: g.title, subtitle: g.description ?? 'Objectif', path: '/profile/goals' });
-    for (const r of records) items.push({ category: 'Records', icon: CAT_ICON.Records, title: r.label, subtitle: `${r.value} ${r.unit} · ${formatDate(r.achievedAt)}`, path: '/sport/records' });
+    for (const r of records) items.push({ category: 'Records', icon: CAT_ICON.Records, title: r.label, subtitle: `${r.value} ${r.unit} · ${formatDate(r.achievedAt)}`, path: '/sport/muscle-progress' });
     return items;
   }, [workouts, activities, nutrition, goals, records]);
 
