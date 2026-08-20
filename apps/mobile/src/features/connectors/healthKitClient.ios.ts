@@ -33,7 +33,7 @@ const QUANTITY_TYPES: { id: QuantityTypeIdentifier; unit: string }[] = [
   { id: 'HKQuantityTypeIdentifierBodyFatPercentage', unit: '%' },
   { id: 'HKQuantityTypeIdentifierLeanBodyMass', unit: 'kg' },
 ];
-// Steps get their own (short) window — see STEPS_LOOKBACK_DAYS below.
+// Steps get their own query — see syncHealthKit below.
 const STEP_COUNT_TYPE = 'HKQuantityTypeIdentifierStepCount' as const;
 const SLEEP_TYPE = 'HKCategoryTypeIdentifierSleepAnalysis' as const;
 const WORKOUT_TYPE = 'HKWorkoutTypeIdentifier' as const;
@@ -47,20 +47,6 @@ const WORKOUT_TYPE = 'HKWorkoutTypeIdentifier' as const;
  * `persistImport` dedupes, so nothing new is added twice.
  */
 const LOOKBACK_DAYS = 365 * 3;
-
-/**
- * Steps use a much shorter window than everything else. The pedometer's raw
- * samples (iPhone + Watch both log every few minutes — easily hundreds/day)
- * over a 3-year window is orders of magnitude more data than HRV/weight/
- * resting-HR ever produce; a first attempt at a 3-year statistics-collection
- * query for steps still left the Dashboard tile empty (TestFlight: "la
- * synchro Apple est bonne mais pas les pas"), and without a device to attach
- * a debugger to, that failure mode can't be root-caused blind. 30 days keeps
- * the query on the exact same code path as every other metric (already
- * proven to work) instead of a different, harder-to-verify API, and is all
- * the Dashboard's "today" tile and recent trend actually need.
- */
-const STEPS_LOOKBACK_DAYS = 30;
 
 export function healthKitAvailable(): boolean {
   try {
@@ -134,19 +120,14 @@ export async function syncHealthKit(): Promise<{
   const since = new Date(Date.now() - LOOKBACK_DAYS * 24 * 60 * 60 * 1000);
   const dateFilter = { date: { startDate: since } };
 
-  const stepsSince = new Date(Date.now() - STEPS_LOOKBACK_DAYS * 24 * 60 * 60 * 1000);
-  const allQuantityTypes = [
-    ...QUANTITY_TYPES,
-    { id: STEP_COUNT_TYPE, unit: 'count', filter: { date: { startDate: stepsSince } } },
-  ];
   const quantitySamples: HKQuantitySample[] = [];
-  for (const q of allQuantityTypes) {
+  for (const q of QUANTITY_TYPES) {
     try {
       const samples = await HealthKit.queryQuantitySamples(q.id, {
         unit: q.unit,
         limit: 0,
         ascending: false,
-        filter: 'filter' in q ? q.filter : dateFilter,
+        filter: dateFilter,
       });
       for (const s of samples) {
         quantitySamples.push({
@@ -159,6 +140,40 @@ export async function syncHealthKit(): Promise<{
     } catch {
       /* metric unavailable / not authorised */
     }
+  }
+
+  // Steps get a dedicated cumulative-sum query instead of summing raw
+  // samples: the pedometer logs overlapping-window entries from more than
+  // one HealthKit source even on an iPhone with no paired Watch, and naively
+  // adding every returned sample's value double-counts the overlap (a real
+  // TestFlight report: Apple Santé showed 13 700 steps, Kaizen showed
+  // 24 632 — almost 2x). cumulativeSum is HealthKit's own merge-aware
+  // aggregate — the same one the Health app itself uses — so it reports the
+  // correct total. Scoped to just today since that's the only thing the
+  // Dashboard tile shows; measuredAt is "now", not midnight, so a second
+  // sync later today lands as its own row rather than being silently
+  // dropped by the dedupe-on-(user,type,measured_at,source) upsert.
+  const stepMetrics: ImportedHealthMetric[] = [];
+  try {
+    const startOfToday = new Date();
+    startOfToday.setHours(0, 0, 0, 0);
+    const stats = await HealthKit.queryStatisticsForQuantity(STEP_COUNT_TYPE, ['cumulativeSum'], {
+      filter: { date: { startDate: startOfToday } },
+      unit: 'count',
+    });
+    const total = stats.sumQuantity?.quantity;
+    if (typeof total === 'number' && Number.isFinite(total) && total > 0) {
+      stepMetrics.push({
+        type: 'steps',
+        value: Math.round(total),
+        unit: 'count',
+        source: 'apple_health',
+        reliability: 'high',
+        measuredAt: new Date().toISOString(),
+      });
+    }
+  } catch {
+    /* steps unavailable */
   }
 
   const sleepSamples: HKSleepSample[] = [];
@@ -203,6 +218,7 @@ export async function syncHealthKit(): Promise<{
   const healthMetrics = [
     ...normalizeHealthKitSamples(quantitySamples),
     ...aggregateHealthKitSleep(sleepSamples),
+    ...stepMetrics,
   ];
   const sleepSessions = aggregateHealthKitSleepSessions(sleepSamples);
   const activities: ImportedActivity[] = [];

@@ -217,10 +217,14 @@ export function DashboardScreen(): React.JSX.Element {
 
   // Habits (today + streak + week)
   const todayK = dayKey(now);
-  const stepsToday = useMemo(
-    () => health.filter((m) => m.type === 'steps' && dayKey(new Date(m.measuredAt)) === todayK).reduce((s, m) => s + m.value, 0),
-    [health, todayK],
-  );
+  // Each sync stores today's steps as its own already-cumulative reading
+  // (HealthKit's own dedup-aware total, not a raw sample to add up) — take
+  // the most recent one, not a sum, or a later sync in the same day would
+  // double-count on top of an earlier one.
+  const stepsToday = useMemo(() => {
+    const todays = health.filter((m) => m.type === 'steps' && dayKey(new Date(m.measuredAt)) === todayK);
+    return [...todays].sort((a, b) => a.measuredAt.localeCompare(b.measuredAt)).at(-1)?.value ?? 0;
+  }, [health, todayK]);
   const doneToday = useMemo(() => new Set(habitLogs.filter((l) => dayKey(new Date(l.completedAt)) === todayK).map((l) => l.habitId)), [habitLogs, todayK]);
   const activeHabits = habits.filter((h) => !h.archivedAt);
   const pendingHabits = activeHabits.filter((h) => !doneToday.has(h.id));
