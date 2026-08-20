@@ -31,6 +31,13 @@ export interface MuscleSession {
   trainedAt: ISODateString;
   primaryMuscles: MuscleGroup[];
   secondaryMuscles: MuscleGroup[];
+  /**
+   * Mobility/stretching work (exercise category 'mobility') — eases fatigue
+   * instead of adding it. Doesn't update lastTrainedDaysAgo: that's reserved
+   * for real training load, so "last trained" and suggestNextMuscles still
+   * reflect what actually needs work, not the last time you stretched it.
+   */
+  recovery?: boolean;
 }
 
 function stateFor(freshness: number): MuscleState {
@@ -50,20 +57,26 @@ export function computeMuscleStates(sessions: MuscleSession[], asOf: ISODateStri
   const fatigue = new Map<MuscleGroup, number>();
   const lastAgo = new Map<MuscleGroup, number>();
 
-  const hit = (muscle: MuscleGroup, weight: number, daysAgo: number): void => {
+  const hit = (muscle: MuscleGroup, weight: number, daysAgo: number, isLoad: boolean): void => {
     const decay = Math.max(0, 1 - daysAgo / 3);
     if (decay > 0) fatigue.set(muscle, (fatigue.get(muscle) ?? 0) + weight * decay);
-    const prev = lastAgo.get(muscle);
-    if (prev === undefined || daysAgo < prev) lastAgo.set(muscle, daysAgo);
+    if (isLoad) {
+      const prev = lastAgo.get(muscle);
+      if (prev === undefined || daysAgo < prev) lastAgo.set(muscle, daysAgo);
+    }
   };
 
   for (const s of sessions) {
     const daysAgo = (now - new Date(s.trainedAt).getTime()) / DAY_MS;
     if (daysAgo < 0 || daysAgo > 4) continue;
+    // Recovery (mobility/stretching) sessions ease fatigue at half the rate a
+    // real session would add it — a gentle nudge toward freshness, not a
+    // substitute for rest.
+    const sign = s.recovery ? -0.5 : 1;
     const apply = (muscles: MuscleGroup[], weight: number): void => {
       for (const m of muscles) {
-        if (m === 'full_body') for (const bm of BODY_MUSCLES) hit(bm, weight * 0.5, daysAgo);
-        else hit(m, weight, daysAgo);
+        if (m === 'full_body') for (const bm of BODY_MUSCLES) hit(bm, weight * 0.5 * sign, daysAgo, !s.recovery);
+        else hit(m, weight * sign, daysAgo, !s.recovery);
       }
     };
     apply(s.primaryMuscles, 1.0);
@@ -71,7 +84,12 @@ export function computeMuscleStates(sessions: MuscleSession[], asOf: ISODateStri
   }
 
   return BODY_MUSCLES.map((muscle) => {
-    const freshness = clamp(Math.round(100 - (fatigue.get(muscle) ?? 0) * 50));
+    // Clamped only here (not per-hit) so accumulation stays order-independent
+    // — a recovery session can't "bank" fatigue relief past what real load
+    // already added this window, but it also can't be shadowed just because
+    // it happened to be processed before a real session in the input array.
+    const netFatigue = Math.max(0, fatigue.get(muscle) ?? 0);
+    const freshness = clamp(Math.round(100 - netFatigue * 50));
     const ago = lastAgo.get(muscle);
     return {
       muscle,

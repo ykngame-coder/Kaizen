@@ -37,6 +37,36 @@ describe('computeMuscleStates', () => {
     const out = computeMuscleStates([{ trainedAt: daysAgo(0), primaryMuscles: ['full_body'], secondaryMuscles: [] }], ASOF);
     expect(out.every((m) => m.lastTrainedDaysAgo === 0)).toBe(true);
   });
+
+  it('eases a fatigued muscle toward fresh with a recovery (mobility/stretching) session', () => {
+    const trained = computeMuscleStates([{ trainedAt: daysAgo(1), primaryMuscles: ['hamstrings'], secondaryMuscles: [] }], ASOF);
+    const withStretch = computeMuscleStates(
+      [
+        { trainedAt: daysAgo(1), primaryMuscles: ['hamstrings'], secondaryMuscles: [] },
+        { trainedAt: daysAgo(0), primaryMuscles: ['hamstrings'], secondaryMuscles: [], recovery: true },
+      ],
+      ASOF,
+    );
+    const before = trained.find((m) => m.muscle === 'hamstrings')!.freshness;
+    const after = withStretch.find((m) => m.muscle === 'hamstrings')!.freshness;
+    expect(after).toBeGreaterThan(before);
+  });
+
+  it('never pushes a muscle past fully fresh, however much recovery work is logged', () => {
+    const out = computeMuscleStates(
+      [{ trainedAt: daysAgo(0), primaryMuscles: ['calves'], secondaryMuscles: [], recovery: true }],
+      ASOF,
+    );
+    expect(out.find((m) => m.muscle === 'calves')!.freshness).toBe(100);
+  });
+
+  it('does not count a recovery session as "last trained" — only real load does', () => {
+    const out = computeMuscleStates(
+      [{ trainedAt: daysAgo(0), primaryMuscles: ['glutes'], secondaryMuscles: [], recovery: true }],
+      ASOF,
+    );
+    expect(out.find((m) => m.muscle === 'glutes')!.lastTrainedDaysAgo).toBeNull();
+  });
 });
 
 describe('overallReadiness', () => {

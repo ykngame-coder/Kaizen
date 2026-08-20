@@ -46,6 +46,7 @@ import type {
 } from '@supotsu/connectors';
 import type { MuscleSession } from '@supotsu/engines';
 import { EXERCISE_LIBRARY } from '@supotsu/shared';
+import { EXERCISES as FULL_EXERCISE_CATALOG } from '@/features/exercises/catalog';
 import {
   insertActivity,
   upsertActivities,
@@ -555,7 +556,31 @@ function importedToRecord(userId: string, r: ImportedRecord): PersonalRecord {
   };
 }
 
-const EXERCISE_BY_ID = new Map(EXERCISE_LIBRARY.map((e) => [e.id, e]));
+/** Minimal shape buildMuscleSessions/buildMuscleWork need, normalized from either catalogue. */
+interface MuscleLookupExercise {
+  primaryMuscles: MuscleGroup[];
+  secondaryMuscles: MuscleGroup[];
+  isMobility: boolean;
+}
+
+/**
+ * Union of both exercise catalogues an exercise_id can come from: the small
+ * hand-curated EXERCISE_LIBRARY (Garmin-import mappings, 0016/0017 seeds) and
+ * the 873-exercise free-exercise-db catalogue NewWorkoutScreen/
+ * SessionBuilderScreen actually pick from (wired into logging by migration
+ * 0018). Muscle-session building only ever looked at the former, so most
+ * real logged sets silently vanished from the muscle-recovery map.
+ */
+const EXERCISE_BY_ID = new Map<string, MuscleLookupExercise>([
+  ...EXERCISE_LIBRARY.map((e): [string, MuscleLookupExercise] => [
+    e.id,
+    { primaryMuscles: e.primaryMuscles, secondaryMuscles: e.secondaryMuscles, isMobility: e.category === 'mobility' },
+  ]),
+  ...FULL_EXERCISE_CATALOG.map((e): [string, MuscleLookupExercise] => [
+    e.id,
+    { primaryMuscles: [e.primary], secondaryMuscles: e.secondary, isMobility: e.category === 'mobilité' },
+  ]),
+]);
 
 /** Build muscle sessions from logged sets: one per (workout, exercise) with muscles. */
 function buildMuscleSessions(
@@ -575,6 +600,7 @@ function buildMuscleSessions(
       trainedAt,
       primaryMuscles: exercise.primaryMuscles,
       secondaryMuscles: exercise.secondaryMuscles,
+      recovery: exercise.isMobility,
     });
   }
   return out;
