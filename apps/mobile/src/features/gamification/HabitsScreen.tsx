@@ -1,10 +1,14 @@
-import React, { useMemo } from 'react';
+import React, { useEffect, useMemo } from 'react';
 import { Pressable, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Card, Icon, Screen, Text, useTheme } from '@supotsu/ui';
 import { radii, spacing } from '@supotsu/design-system';
+import type { Habit, HealthMetricType } from '@supotsu/core';
+import { estimateTargets, sumDay } from '@supotsu/engines';
 import { BackButton } from '@/features/navigation/BackButton';
-import { useHabitLogs, useHabits, useLogHabit } from '@/lib/data/queries';
+import { DayNav, useSelectedDay } from '@/features/navigation/DayNav';
+import { useHabitLogs, useHabits, useHealthMetrics, useLogHabit, useNutritionEntries } from '@/lib/data/queries';
+import { usePreferences } from '@/lib/preferences';
 
 const DAY_MS = 86_400_000;
 const dayKey = (d: Date): string => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
@@ -22,6 +26,19 @@ const iconFor = (pillar: string, name: string): string => {
   if (n.includes('muscu') || n.includes('entra') || n.includes('sport')) return '🏋️';
   return PILLAR_ICON[pillar] ?? '✅';
 };
+
+type LinkedKind = 'hydration' | 'steps';
+/** Habits whose real progress is already tracked elsewhere in the app — no manual tap needed. */
+function linkedKindFor(name: string): LinkedKind | null {
+  const n = name.toLowerCase();
+  if (n.includes('eau') || n.includes('hydrat')) return 'hydration';
+  if (n.includes('marche') || n.includes('pas')) return 'steps';
+  return null;
+}
+
+function latestMetric(m: { type: HealthMetricType; value: number; measuredAt: string }[], type: HealthMetricType): number | undefined {
+  return m.filter((x) => x.type === type).sort((a, b) => a.measuredAt.localeCompare(b.measuredAt)).at(-1)?.value;
+}
 
 /** Consecutive days ending today (or yesterday) present in the set. */
 function streakOf(days: Set<string>, now: Date): number {
@@ -46,37 +63,97 @@ function Kpi({ icon, value, sub, label, color }: { icon: React.ReactNode; value:
   );
 }
 
+function MiniBar({ pct, color }: { pct: number; color: string }): React.JSX.Element {
+  const { colors } = useTheme();
+  return (
+    <View style={{ height: 6, borderRadius: 3, backgroundColor: colors.surfaceElevated, overflow: 'hidden', marginTop: 4 }}>
+      <View style={{ width: `${Math.min(100, Math.max(0, pct))}%`, height: 6, borderRadius: 3, backgroundColor: color }} />
+    </View>
+  );
+}
+
 /** Habitudes & Discipline (mockup #9) — daily checklist, streaks, 30-day calendar. */
 export function HabitsScreen(): React.JSX.Element {
   const router = useRouter();
   const { colors } = useTheme();
-  const { data: habits = [] } = useHabits();
-  const { data: logs = [] } = useHabitLogs();
+  const { preferences } = usePreferences();
+  const { data: habits = [], isLoading: habitsLoading } = useHabits();
+  const { data: logs = [], isLoading: logsLoading } = useHabitLogs();
+  const { data: health = [] } = useHealthMetrics();
+  const { data: nutrition = [] } = useNutritionEntries();
   const logHabit = useLogHabit();
+  const [selectedDate, setSelectedDate] = useSelectedDay();
   const now = new Date();
   const todayK = dayKey(now);
+  const viewedK = dayKey(new Date(selectedDate));
+  const isToday = viewedK === todayK;
 
   const active = habits.filter((h) => !h.archivedAt);
 
-  // Logs indexed by day, and per-habit day-sets.
-  const { doneToday, byDay, perHabitDays } = useMemo(() => {
-    const doneT = new Set<string>();
-    const day = new Map<string, Set<string>>(); // dayKey -> set of habitIds done
-    const perHabit = new Map<string, Set<string>>(); // habitId -> set of dayKeys
+  // Logs indexed by day, per-habit day-sets (for streaks), and per-habit
+  // completion counts on the viewed day (for multi-per-day targets).
+  const { byDay, perHabitDays, countsOnViewedDay } = useMemo(() => {
+    const day = new Map<string, Set<string>>();
+    const perHabit = new Map<string, Set<string>>();
+    const counts = new Map<string, number>();
     for (const l of logs) {
       const k = dayKey(new Date(l.completedAt));
-      if (k === todayK) doneT.add(l.habitId);
       if (!day.has(k)) day.set(k, new Set());
       day.get(k)!.add(l.habitId);
       if (!perHabit.has(l.habitId)) perHabit.set(l.habitId, new Set());
       perHabit.get(l.habitId)!.add(k);
+      if (k === viewedK) counts.set(l.habitId, (counts.get(l.habitId) ?? 0) + 1);
     }
-    return { doneToday: doneT, byDay: day, perHabitDays: perHabit };
-  }, [logs, todayK]);
+    return { byDay: day, perHabitDays: perHabit, countsOnViewedDay: counts };
+  }, [logs, viewedK]);
+
+  // Real progress for linked habits — today only, no history backfill for past days.
+  const weight = latestMetric(health, 'weight');
+  const hydrationTarget = useMemo(() => estimateTargets({ weightKg: weight }, now.toISOString()).value.hydrationMl, [weight]);
+  const hydrationToday = useMemo(() => sumDay(nutrition, now.toISOString()).hydrationMl, [nutrition]);
+  const stepsToday = useMemo(() => {
+    const todays = health.filter((m) => m.type === 'steps' && dayKey(new Date(m.measuredAt)) === todayK);
+    return [...todays].sort((a, b) => a.measuredAt.localeCompare(b.measuredAt)).at(-1)?.value ?? 0;
+  }, [health, todayK]);
+
+  const liveProgress = (kind: LinkedKind): { value: number; target: number } =>
+    kind === 'hydration' ? { value: hydrationToday, target: hydrationTarget } : { value: stepsToday, target: preferences.dailyStepsGoal };
+
+  /** count/target/done for a habit on the viewed day — live data for linked habits, else manual log count. */
+  const progressFor = (h: Habit): { count: number; target: number; done: boolean; live?: { value: number; target: number } } => {
+    const kind = linkedKindFor(h.name);
+    if (kind && isToday) {
+      const live = liveProgress(kind);
+      return { count: live.value >= live.target ? 1 : 0, target: 1, done: live.target > 0 && live.value >= live.target, live };
+    }
+    const target = h.cadence === 'daily' ? Math.max(1, h.targetPerPeriod) : 1;
+    const count = countsOnViewedDay.get(h.id) ?? 0;
+    return { count, target, done: count >= target };
+  };
+
+  // Linked habits auto-log once their real-data target is hit — guarded by
+  // perHabitDays so it only fires once (the query invalidation that follows
+  // a successful log flips `alreadyLogged`, which then skips it on rerender).
+  // Also waits for both queries to actually resolve first: while `logs` is
+  // still loading (e.g. right after app launch) it reads as [], which would
+  // otherwise look like "never logged today" and fire a duplicate log for a
+  // day that was already auto-logged in an earlier session.
+  useEffect(() => {
+    if (!isToday || habitsLoading || logsLoading) return;
+    for (const h of active) {
+      const kind = linkedKindFor(h.name);
+      if (!kind) continue;
+      const live = liveProgress(kind);
+      if (live.target <= 0 || live.value < live.target) continue;
+      if ((perHabitDays.get(h.id) ?? new Set()).has(todayK)) continue;
+      logHabit.mutate(h.id);
+    }
+  }, [isToday, habitsLoading, logsLoading, active, hydrationToday, hydrationTarget, stepsToday, preferences.dailyStepsGoal, perHabitDays, todayK]);
 
   const denom = Math.max(1, active.length);
 
-  // 30-day completion calendar (oldest → today).
+  // 30-day completion calendar (oldest → today) — always anchored to real
+  // "today", independent of the day being browsed in the checklist above.
   const cal = useMemo(() => {
     return Array.from({ length: 30 }, (_, i) => {
       const d = new Date(now.getTime() - (29 - i) * DAY_MS);
@@ -95,6 +172,7 @@ export function HabitsScreen(): React.JSX.Element {
   // Streaks per habit + best.
   const streaks = useMemo(() => active.map((h) => ({ habit: h, streak: streakOf(perHabitDays.get(h.id) ?? new Set(), now) })).sort((a, b) => b.streak - a.streak), [active, perHabitDays, now]);
   const bestStreak = streaks[0]?.streak ?? 0;
+  const doneToday = useMemo(() => new Set(active.filter((h) => (perHabitDays.get(h.id) ?? new Set()).has(todayK)).map((h) => h.id)), [active, perHabitDays, todayK]);
   const disciplineScore = Math.round((doneToday.size / denom) * 40 + success * 0.6);
 
   const cellColor = (frac: number, future = false): string => {
@@ -157,23 +235,49 @@ export function HabitsScreen(): React.JSX.Element {
 
         {/* Daily checklist */}
         <Card>
-          <Text variant="heading">Check-list du jour</Text>
+          <Text variant="heading">Check-list</Text>
+          <DayNav value={selectedDate} onChange={setSelectedDate} maxDaysFuture={0} />
           {active.length === 0 ? (
             <Text variant="body" color="textMuted" style={{ marginTop: spacing[2] }}>Crée une habitude simple (eau, mobilité, lecture, sommeil…) pour construire ta régularité.</Text>
           ) : (
-            <View style={{ marginTop: spacing[1] }}>
+            <View style={{ marginTop: spacing[3] }}>
               {active.map((h, i) => {
-                const done = doneToday.has(h.id);
+                const p = progressFor(h);
+                const kind = linkedKindFor(h.name);
+                const isLast = i === active.length - 1;
                 return (
-                  <View key={h.id} style={{ flexDirection: 'row', alignItems: 'center', gap: spacing[3], paddingVertical: spacing[3], borderBottomWidth: i < active.length - 1 ? 1 : 0, borderBottomColor: colors.border }}>
+                  <View key={h.id} style={{ flexDirection: 'row', alignItems: 'center', gap: spacing[3], paddingVertical: spacing[3], borderBottomWidth: isLast ? 0 : 1, borderBottomColor: colors.border }}>
                     <View style={{ width: 36, height: 36, borderRadius: 11, backgroundColor: colors.surfaceElevated, alignItems: 'center', justifyContent: 'center' }}><Text style={{ fontSize: 17 }}>{iconFor(h.pillar, h.name)}</Text></View>
-                    <Text variant="body" style={{ flex: 1, color: done ? colors.textMuted : colors.text }}>{h.name}</Text>
-                    <Text variant="caption" style={{ color: done ? colors.accentData : colors.textSubtle, fontWeight: '600' }}>{done ? 'Fait' : 'À faire'}</Text>
-                    <Pressable onPress={() => { if (!done) logHabit.mutate(h.id); }} disabled={done || logHabit.isPending} hitSlop={8}>
-                      <View style={{ width: 28, height: 28, borderRadius: 14, alignItems: 'center', justifyContent: 'center', backgroundColor: done ? colors.accentData : 'transparent', borderWidth: done ? 0 : 2, borderColor: colors.textSubtle }}>
-                        {done ? <Text style={{ color: '#04140b', fontSize: 14, fontWeight: '800' }}>✓</Text> : null}
-                      </View>
-                    </Pressable>
+                    <View style={{ flex: 1 }}>
+                      <Text variant="body" style={{ color: p.done ? colors.textMuted : colors.text }}>{h.name}</Text>
+                      {p.live ? (
+                        <>
+                          <Text variant="caption" color="textSubtle">
+                            {kind === 'hydration' ? `${(p.live.value / 1000).toFixed(1)} / ${(p.live.target / 1000).toFixed(1)} L` : `${p.live.value.toLocaleString('fr-FR')} / ${p.live.target.toLocaleString('fr-FR')} pas`}
+                            {' · suivi auto'}
+                          </Text>
+                          <MiniBar pct={(p.live.value / Math.max(1, p.live.target)) * 100} color={p.done ? colors.accentData : colors.warning} />
+                        </>
+                      ) : p.target > 1 ? (
+                        <>
+                          <Text variant="caption" color={p.done ? 'accentData' : 'textSubtle'} style={{ fontWeight: '600' }}>{p.count}/{p.target}</Text>
+                          <MiniBar pct={(p.count / p.target) * 100} color={p.done ? colors.accentData : colors.warning} />
+                        </>
+                      ) : (
+                        <Text variant="caption" style={{ color: p.done ? colors.accentData : colors.textSubtle, fontWeight: '600' }}>{p.done ? 'Fait' : 'À faire'}</Text>
+                      )}
+                    </View>
+                    {p.live ? null : (
+                      <Pressable
+                        onPress={() => { if (!p.done && isToday) logHabit.mutate(h.id); }}
+                        disabled={p.done || !isToday || logHabit.isPending}
+                        hitSlop={8}
+                      >
+                        <View style={{ width: 28, height: 28, borderRadius: 14, alignItems: 'center', justifyContent: 'center', backgroundColor: p.done ? colors.accentData : 'transparent', borderWidth: p.done ? 0 : 2, borderColor: colors.textSubtle, opacity: isToday ? 1 : 0.4 }}>
+                          {p.done ? <Text style={{ color: '#04140b', fontSize: 14, fontWeight: '800' }}>✓</Text> : null}
+                        </View>
+                      </Pressable>
+                    )}
                   </View>
                 );
               })}
