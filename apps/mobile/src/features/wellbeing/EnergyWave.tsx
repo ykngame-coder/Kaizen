@@ -47,12 +47,24 @@ export function EnergyWave({ points, width = 320, height = 160 }: EnergyWaveProp
   const w = width - padX * 2;
   const h = height - padTop - padBottom;
 
-  const t0 = parseHHMM(points[0]!.time);
-  const t1 = parseHHMM(points[points.length - 1]!.time);
+  // Points span wake -> bedtime, which usually crosses midnight (e.g. 08:20 ->
+  // 00:20 the next day). Raw HH:MM minutes wrap back to a small number past
+  // midnight, so unwrap chronologically instead of parsing each time in
+  // isolation — otherwise the span collapses to ~0 and every point after the
+  // wrap plots far outside the canvas.
+  const rawMinutes = points.map((p) => parseHHMM(p.time));
+  const unwrapped: number[] = [];
+  let offset = 0;
+  for (let i = 0; i < rawMinutes.length; i += 1) {
+    if (i > 0 && rawMinutes[i]! < rawMinutes[i - 1]!) offset += 1440;
+    unwrapped.push(rawMinutes[i]! + offset);
+  }
+  const t0 = unwrapped[0]!;
+  const t1 = unwrapped[unwrapped.length - 1]!;
   const span = Math.max(1, t1 - t0);
 
-  const coords = points.map((p) => ({
-    x: padX + ((parseHHMM(p.time) - t0) / span) * w,
+  const coords = points.map((p, i) => ({
+    x: padX + ((unwrapped[i]! - t0) / span) * w,
     y: padTop + h - p.energy * h,
   }));
 
