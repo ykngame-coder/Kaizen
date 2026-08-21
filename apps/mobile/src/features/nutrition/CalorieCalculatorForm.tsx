@@ -1,7 +1,6 @@
 import React, { useMemo, useState } from 'react';
-import { View } from 'react-native';
-import { useRouter } from 'expo-router';
-import { Button, Card, Input, Screen, SegmentedControl, Text, useTheme } from '@supotsu/ui';
+import { Pressable, View } from 'react-native';
+import { Button, Input, SegmentedControl, Text, useTheme } from '@supotsu/ui';
 import { spacing } from '@supotsu/design-system';
 import { estimateDeficitTarget, estimateTargets, type ActivityLevel } from '@supotsu/engines';
 import { useHealthMetrics } from '@/lib/data/queries';
@@ -21,16 +20,17 @@ const ACTIVITY_OPTIONS: { value: ActivityLevel; label: string }[] = [
 ];
 
 /**
- * Small standalone deficit calculator (age/sexe/taille/poids/objectif/durée/
- * activité → BMR, TDEE, cible calorique) — complements Kaizen's own
- * bodyweight-only auto-estimate for anyone who wants to work from a classic
- * calculator form. Result can be applied straight to the Nutrition goals.
+ * Deficit calculator (age/sexe/taille/poids/objectif/durée/activité → BMR,
+ * TDEE, cible calorique) — complements Kaizen's own bodyweight-only
+ * auto-estimate. Lives collapsed inside the Nutrition "Objectifs" card;
+ * result can be applied straight to the Nutrition goals.
  */
-export function CalorieCalculatorScreen(): React.JSX.Element {
-  const router = useRouter();
+export function CalorieCalculatorForm(): React.JSX.Element {
   const { colors } = useTheme();
   const { data: health = [] } = useHealthMetrics();
   const { preferences, setPreference } = usePreferences();
+
+  const [open, setOpen] = useState(false);
 
   const latestWeight = useMemo(() => {
     const weights = health.filter((m) => m.type === 'weight').sort((a, b) => a.measuredAt.localeCompare(b.measuredAt));
@@ -71,14 +71,17 @@ export function CalorieCalculatorScreen(): React.JSX.Element {
   };
 
   return (
-    <Screen scroll>
-      <Text variant="title">Calculateur de calories</Text>
-      <Text variant="caption" color="textSubtle">
-        Une estimation plus détaillée que le calcul automatique de Kaizen, à partir de ton âge, ta taille et ton niveau d’activité.
-      </Text>
+    <View style={{ marginTop: spacing[3], paddingTop: spacing[3], borderTopWidth: 1, borderTopColor: colors.border }}>
+      <Pressable onPress={() => setOpen((v) => !v)} style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+        <View>
+          <Text variant="body" style={{ fontWeight: '600' }}>Calculateur de calories détaillé</Text>
+          <Text variant="caption" color="textSubtle">Âge, taille, activité… une estimation plus poussée que le calcul auto</Text>
+        </View>
+        <Text variant="subtitle" color="textSubtle">{open ? '−' : '+'}</Text>
+      </Pressable>
 
-      <Card>
-        <View style={{ gap: spacing[3] }}>
+      {open ? (
+        <View style={{ marginTop: spacing[4], gap: spacing[3] }}>
           <Input label="Âge" placeholder="Ex : 35" keyboardType="numeric" value={age} onChangeText={setAge} />
 
           <View style={{ gap: spacing[1] }}>
@@ -95,42 +98,37 @@ export function CalorieCalculatorScreen(): React.JSX.Element {
             <Text variant="label" color="textMuted">NIVEAU D'ACTIVITÉ PHYSIQUE</Text>
             <SegmentedControl options={ACTIVITY_OPTIONS} value={activity} onChange={setActivity} vertical />
           </View>
+
+          {result ? (
+            <View style={{ marginTop: spacing[2], paddingTop: spacing[3], borderTopWidth: 1, borderTopColor: colors.border }}>
+              <View style={{ flexDirection: 'row', justifyContent: 'space-around' }}>
+                <View style={{ alignItems: 'center' }}>
+                  <Text variant="subtitle">{result.bmr}</Text>
+                  <Text variant="caption" color="textSubtle">BMR (kcal)</Text>
+                </View>
+                <View style={{ alignItems: 'center' }}>
+                  <Text variant="subtitle">{result.tdee}</Text>
+                  <Text variant="caption" color="textSubtle">Dépense totale</Text>
+                </View>
+                <View style={{ alignItems: 'center' }}>
+                  <Text variant="subtitle" style={{ color: colors.accentData }}>{result.targetKcal}</Text>
+                  <Text variant="caption" color="textSubtle">Cible / jour</Text>
+                </View>
+              </View>
+              <Text variant="caption" color="textMuted" style={{ marginTop: spacing[3], lineHeight: 18 }}>
+                {result.dailyDeficit > 0
+                  ? `Déficit d'environ ${result.dailyDeficit} kcal/jour pour atteindre ${inputs.goalWeightKg} kg en ${inputs.durationMonths} mois.`
+                  : result.dailyDeficit < 0
+                    ? `Surplus d'environ ${Math.abs(result.dailyDeficit)} kcal/jour pour atteindre ${inputs.goalWeightKg} kg en ${inputs.durationMonths} mois.`
+                    : 'Ton poids actuel correspond déjà à ton objectif.'}
+              </Text>
+              <View style={{ marginTop: spacing[4] }}>
+                <Button label={applied ? 'Appliqué à mes objectifs ✓' : 'Appliquer à mes objectifs Nutrition'} onPress={applyResult} disabled={applied} fullWidth />
+              </View>
+            </View>
+          ) : null}
         </View>
-      </Card>
-
-      {result ? (
-        <Card>
-          <Text variant="heading">Résultat</Text>
-          <View style={{ flexDirection: 'row', justifyContent: 'space-around', marginTop: spacing[3] }}>
-            <View style={{ alignItems: 'center' }}>
-              <Text variant="subtitle">{result.bmr}</Text>
-              <Text variant="caption" color="textSubtle">BMR (kcal)</Text>
-            </View>
-            <View style={{ alignItems: 'center' }}>
-              <Text variant="subtitle">{result.tdee}</Text>
-              <Text variant="caption" color="textSubtle">Dépense totale</Text>
-            </View>
-            <View style={{ alignItems: 'center' }}>
-              <Text variant="subtitle" style={{ color: colors.accentData }}>{result.targetKcal}</Text>
-              <Text variant="caption" color="textSubtle">Cible / jour</Text>
-            </View>
-          </View>
-          <Text variant="caption" color="textMuted" style={{ marginTop: spacing[3], lineHeight: 18 }}>
-            {result.dailyDeficit > 0
-              ? `Déficit d'environ ${result.dailyDeficit} kcal/jour pour atteindre ${inputs.goalWeightKg} kg en ${inputs.durationMonths} mois.`
-              : result.dailyDeficit < 0
-                ? `Surplus d'environ ${Math.abs(result.dailyDeficit)} kcal/jour pour atteindre ${inputs.goalWeightKg} kg en ${inputs.durationMonths} mois.`
-                : 'Ton poids actuel correspond déjà à ton objectif.'}
-          </Text>
-          <View style={{ marginTop: spacing[4] }}>
-            <Button label={applied ? 'Appliqué à mes objectifs ✓' : 'Appliquer à mes objectifs Nutrition'} onPress={applyResult} disabled={applied} fullWidth />
-          </View>
-        </Card>
       ) : null}
-
-      <View style={{ alignItems: 'flex-start' }}>
-        <Button label="Retour" variant="secondary" onPress={() => router.back()} />
-      </View>
-    </Screen>
+    </View>
   );
 }

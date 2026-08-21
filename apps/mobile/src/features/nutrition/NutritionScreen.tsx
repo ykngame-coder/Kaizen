@@ -16,6 +16,7 @@ import type { TrendPoint } from '@supotsu/engines';
 import type { HealthMetricType } from '@supotsu/core';
 import { useAddNutritionEntry, useHealthMetrics, useNutritionEntries } from '@/lib/data/queries';
 import { useManualHealthKitSync } from '@/features/connectors/useHealthKitAutoSync';
+import { CalorieCalculatorForm } from './CalorieCalculatorForm';
 import { usePreferences } from '@/lib/preferences';
 import { DayNav, useSelectedDay } from '@/features/navigation/DayNav';
 import { ComprendreCard } from '@/features/knowledge/ComprendreCard';
@@ -355,9 +356,6 @@ export function NutritionScreen(): React.JSX.Element {
               <Text variant="caption" color={customized ? 'primary' : 'textSubtle'}>{customized ? 'Repasser en auto' : 'Auto'}</Text>
             </Pressable>
           }>Objectifs</SectionTitle>
-          <Pressable onPress={() => router.push('/nutrition/calculator')}>
-            <Text variant="caption" color="primary" style={{ marginBottom: spacing[2] }}>Calculateur de calories détaillé ›</Text>
-          </Pressable>
           <GoalBar label="Calories" current={totals.kcal} target={kcalTarget} unit="kcal" color={colors.info} />
           <GoalBar label="Protéines" current={totals.proteinG} target={goals.proteinG} unit="g" color={colors.accentData} />
           <GoalBar label="Hydratation" current={totals.hydrationMl / 1000} target={goals.hydrationMl / 1000} unit="L" color={colors.accentEndurance} />
@@ -387,6 +385,8 @@ export function NutritionScreen(): React.JSX.Element {
             onPlus={() => adjust({ hydrationMl: 250 })}
             onSet={(v) => setExact({ hydrationMl: v * 1000 })}
           />
+
+          <CalorieCalculatorForm />
         </Card>
 
         {/* Micronutriments — honest */}
