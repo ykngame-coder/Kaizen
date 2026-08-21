@@ -20,6 +20,7 @@ import {
   type SleepBand,
 } from '@supotsu/engines';
 import { useActivities, useHealthMetrics, useSleepSessions, useWellnessCheckins } from '@/lib/data/queries';
+import { useManualHealthKitSync } from '@/features/connectors/useHealthKitAutoSync';
 import { formatClock, formatClockFromIso, usePreferences, type TimeFormat } from '@/lib/preferences';
 import { DayNav, useSelectedDay } from '@/features/navigation/DayNav';
 import { ComprendreCard } from '@/features/knowledge/ComprendreCard';
@@ -204,8 +205,9 @@ export function SommeilScreen(): React.JSX.Element {
   const asOf = selectedDate;
 
   const qc = useQueryClient();
+  const syncHealth = useManualHealthKitSync();
   const [refreshing, setRefreshing] = useState(false);
-  const onRefresh = async (): Promise<void> => { setRefreshing(true); await qc.invalidateQueries(); setRefreshing(false); };
+  const onRefresh = async (): Promise<void> => { setRefreshing(true); await syncHealth(); await qc.invalidateQueries(); setRefreshing(false); };
 
   const lastSession = sessions[0];
   const score = useMemo(

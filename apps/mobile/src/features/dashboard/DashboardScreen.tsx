@@ -24,6 +24,7 @@ import { MuscleBody } from '@/features/muscles/MuscleBody';
 import { getCloudAvatarUrl, loadAvatarUri } from '@/lib/profileAvatar';
 import { usePreferences } from '@/lib/preferences';
 import { secureStorage } from '@/lib/secure-storage';
+import { useManualHealthKitSync } from '@/features/connectors/useHealthKitAutoSync';
 import { resolveDashboardCardOrder } from './dashboardCards';
 
 const DAY_MS = 86_400_000;
@@ -259,8 +260,9 @@ export function DashboardScreen(): React.JSX.Element {
   const badges = useMemo(() => evaluateBadges({ activities, nutritionEntries: nutrition, targets, asOf }).slice(-6).reverse(), [activities, nutrition, targets, asOf]);
 
   const qc = useQueryClient();
+  const syncHealth = useManualHealthKitSync();
   const [refreshing, setRefreshing] = useState(false);
-  const onRefresh = async (): Promise<void> => { setRefreshing(true); await qc.invalidateQueries(); setRefreshing(false); };
+  const onRefresh = async (): Promise<void> => { setRefreshing(true); await syncHealth(); await qc.invalidateQueries(); setRefreshing(false); };
 
   const [avatarUri, setAvatarUri] = useState<string | null>(null);
   useEffect(() => {

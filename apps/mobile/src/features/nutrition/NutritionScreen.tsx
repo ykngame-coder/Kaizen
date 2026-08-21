@@ -15,6 +15,7 @@ import {
 import type { TrendPoint } from '@supotsu/engines';
 import type { HealthMetricType } from '@supotsu/core';
 import { useAddNutritionEntry, useHealthMetrics, useNutritionEntries } from '@/lib/data/queries';
+import { useManualHealthKitSync } from '@/features/connectors/useHealthKitAutoSync';
 import { usePreferences } from '@/lib/preferences';
 import { DayNav, useSelectedDay } from '@/features/navigation/DayNav';
 import { ComprendreCard } from '@/features/knowledge/ComprendreCard';
@@ -134,8 +135,9 @@ export function NutritionScreen(): React.JSX.Element {
   const asOf = selectedDate;
 
   const qc = useQueryClient();
+  const syncHealth = useManualHealthKitSync();
   const [refreshing, setRefreshing] = useState(false);
-  const onRefresh = async (): Promise<void> => { setRefreshing(true); await qc.invalidateQueries(); setRefreshing(false); };
+  const onRefresh = async (): Promise<void> => { setRefreshing(true); await syncHealth(); await qc.invalidateQueries(); setRefreshing(false); };
 
   const addWater = (ml: number): void => {
     addEntry.mutate({ mealType: 'snack', description: 'Eau', kcal: 0, hydrationMl: ml, source: 'manual', loggedAt: new Date().toISOString() });

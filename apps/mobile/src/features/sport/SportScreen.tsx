@@ -14,6 +14,7 @@ import {
   useWorkouts,
 } from '@/lib/data/queries';
 import { formatDate } from '@/lib/format';
+import { useManualHealthKitSync } from '@/features/connectors/useHealthKitAutoSync';
 import { HubRow } from '@/features/navigation/HubRow';
 import { DayNav, useSelectedDay } from '@/features/navigation/DayNav';
 import { MuscleBody } from '@/features/muscles/MuscleBody';
@@ -106,8 +107,9 @@ export function SportScreen(): React.JSX.Element {
   const asOf = selectedDate;
 
   const qc = useQueryClient();
+  const syncHealth = useManualHealthKitSync();
   const [refreshing, setRefreshing] = useState(false);
-  const onRefresh = async (): Promise<void> => { setRefreshing(true); await qc.invalidateQueries(); setRefreshing(false); };
+  const onRefresh = async (): Promise<void> => { setRefreshing(true); await syncHealth(); await qc.invalidateQueries(); setRefreshing(false); };
 
   const todayKey = new Date().toISOString().slice(0, 10);
   const selectedDayKey = selectedDate.slice(0, 10);

@@ -65,3 +65,25 @@ export function useHealthKitAutoSync(): void {
     };
   }, [authStatus, user]);
 }
+
+/**
+ * Pull-to-refresh handlers call this before invalidating queries — otherwise
+ * "swipe down to refresh" only re-reads whatever's already in Supabase and
+ * looks like it did nothing when Apple Health has newer data that hasn't
+ * synced yet (auto-sync only runs on app open + background delivery, not on
+ * every pull-to-refresh).
+ */
+export function useManualHealthKitSync(): () => Promise<void> {
+  const importHealth = useImportHealth();
+  return async () => {
+    if (Platform.OS !== 'ios' || !healthKitAvailable() || !(await isHealthKitConnected())) return;
+    try {
+      const { activities, healthMetrics, sleepSessions } = await syncHealthKit();
+      if (activities.length + healthMetrics.length + sleepSessions.length > 0) {
+        await importHealth.mutateAsync({ activities, healthMetrics, records: [], sleepSessions, workouts: [] });
+      }
+    } catch {
+      // Best-effort — the caller still invalidates queries and re-reads whatever's stored.
+    }
+  };
+}
