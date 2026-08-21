@@ -94,6 +94,19 @@ export function useAddHealthMetric() {
   });
 }
 
+/** Remove a single health metric entry — e.g. to resolve a duplicate reading. */
+export function useDeleteHealthMetric() {
+  const { user } = useAuth();
+  const repo = useRepository();
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (metricId: string) => repo.deleteHealthMetric(user!.id, metricId),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['health', user?.id] });
+    },
+  });
+}
+
 export function useSleepSessions() {
   const { user } = useAuth();
   const repo = useRepository();

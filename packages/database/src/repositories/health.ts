@@ -33,3 +33,9 @@ export async function listHealthMetrics(
       .range(from, to),
   );
 }
+
+/** Delete a single health metric entry (e.g. to resolve a duplicate). */
+export async function deleteHealthMetric(client: SupotsuClient, metricId: string): Promise<void> {
+  const { error } = await client.from('health_metrics').delete().eq('id', metricId);
+  if (error) throw error;
+}

@@ -1,10 +1,10 @@
 import React, { useMemo, useState } from 'react';
-import { Share, View } from 'react-native';
+import { Pressable, Share, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Badge, Button, Card, Gradient, Screen, Text, useTheme } from '@supotsu/ui';
 import { radii, spacing } from '@supotsu/design-system';
-import type { DataSource, HealthMetricType } from '@supotsu/core';
-import { useHealthMetrics } from '@/lib/data/queries';
+import type { DataSource, HealthMetric, HealthMetricType } from '@supotsu/core';
+import { useDeleteHealthMetric, useHealthMetrics } from '@/lib/data/queries';
 import { useAuth } from '@/features/auth/AuthProvider';
 import { createDataRepository, exportUserData } from '@/lib/data/repository';
 
@@ -37,10 +37,10 @@ function fmtAgo(iso: string): string {
   return `il y a ${Math.round(h / 24)} j`;
 }
 
-/** Quality diagnostic row. */
-function QRow({ ok, label, value }: { ok: 'good' | 'warn'; label: string; value: string }): React.JSX.Element {
+/** Quality diagnostic row — tappable when `onPress` is given (e.g. duplicates, to expand detail). */
+function QRow({ ok, label, value, onPress }: { ok: 'good' | 'warn'; label: string; value: string; onPress?: () => void }): React.JSX.Element {
   const { colors } = useTheme();
-  return (
+  const row = (
     <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing[3], paddingVertical: spacing[2], borderBottomWidth: 1, borderBottomColor: colors.border }}>
       <View style={{ width: 10, height: 10, borderRadius: 5, backgroundColor: ok === 'good' ? colors.accentData : colors.warning }} />
       <Text variant="body" style={{ flex: 1 }}>
@@ -49,6 +49,27 @@ function QRow({ ok, label, value }: { ok: 'good' | 'warn'; label: string; value:
       <Text variant="caption" color="textSubtle">
         {value}
       </Text>
+      {onPress ? <Text variant="caption" color="textSubtle">{'›'}</Text> : null}
+    </View>
+  );
+  if (!onPress) return row;
+  return <Pressable onPress={onPress}>{row}</Pressable>;
+}
+
+/** One entry within a duplicate group, with a delete action. */
+function DuplicateEntryRow({ metric, onDelete, deleting }: { metric: HealthMetric; onDelete: () => void; deleting: boolean }): React.JSX.Element {
+  const label = SOURCE_LABEL[metric.source]?.name ?? metric.source;
+  return (
+    <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing[3], paddingVertical: spacing[2] }}>
+      <View style={{ flex: 1 }}>
+        <Text variant="body">
+          {metric.value} {metric.unit}
+        </Text>
+        <Text variant="caption" color="textSubtle">
+          {TYPE_LABEL[metric.type] ?? metric.type} · {label} · {fmtAgo(metric.measuredAt)}
+        </Text>
+      </View>
+      <Button label={deleting ? 'Suppression…' : 'Supprimer'} variant="secondary" onPress={onDelete} disabled={deleting} />
     </View>
   );
 }
@@ -72,22 +93,27 @@ export function IntegrationsScreen(): React.JSX.Element {
 
   const lastSync = sources[0]?.[1] ?? null;
 
+  const [showDuplicates, setShowDuplicates] = useState(false);
+  const deleteMetric = useDeleteHealthMetric();
+
   const quality = useMemo(() => {
     const present = new Set(health.map((m) => m.type));
     const completeness = Math.round((CORE_TYPES.filter((t) => present.has(t)).length / CORE_TYPES.length) * 100);
-    // Duplicate = same type+source+measuredAt seen twice.
-    const seen = new Set<string>();
-    let duplicates = 0;
+    // Duplicate = same type+source+measuredAt seen twice — group entries so the user can see and delete one.
+    const groups = new Map<string, HealthMetric[]>();
     for (const m of health) {
       const k = `${m.type}|${m.source}|${m.measuredAt}`;
-      if (seen.has(k)) duplicates += 1;
-      else seen.add(k);
+      const arr = groups.get(k);
+      if (arr) arr.push(m);
+      else groups.set(k, [m]);
     }
+    const duplicateGroups = [...groups.values()].filter((g) => g.length > 1);
+    const duplicates = duplicateGroups.reduce((sum, g) => sum + g.length - 1, 0);
     const missing = CORE_TYPES.filter((t) => !present.has(t)).map((t) => TYPE_LABEL[t] ?? t);
     const weights = health.filter((m) => m.type === 'weight').sort((a, b) => a.measuredAt.localeCompare(b.measuredAt));
     const lastWeight = weights.at(-1)?.measuredAt;
     const weightAgeDays = lastWeight ? Math.floor((Date.now() - new Date(lastWeight).getTime()) / DAY_MS) : null;
-    return { completeness, duplicates, missing, weightAgeDays };
+    return { completeness, duplicates, duplicateGroups, missing, weightAgeDays };
   }, [health]);
 
   const onExport = async (): Promise<void> => {
@@ -178,10 +204,29 @@ export function IntegrationsScreen(): React.JSX.Element {
         <Text variant="heading">Qualité des données</Text>
         <View style={{ marginTop: spacing[2] }}>
           <QRow ok={quality.completeness >= 80 ? 'good' : 'warn'} label="Complétude" value={`${quality.completeness} %`} />
-          <QRow ok={quality.duplicates === 0 ? 'good' : 'warn'} label="Doublons" value={quality.duplicates === 0 ? '0 détecté' : `${quality.duplicates} détecté(s)`} />
+          <QRow
+            ok={quality.duplicates === 0 ? 'good' : 'warn'}
+            label="Doublons"
+            value={quality.duplicates === 0 ? '0 détecté' : `${quality.duplicates} détecté(s)`}
+            onPress={quality.duplicateGroups.length > 0 ? () => setShowDuplicates((v) => !v) : undefined}
+          />
           <QRow ok={quality.missing.length === 0 ? 'good' : 'warn'} label="Données manquantes" value={quality.missing.length === 0 ? 'Aucune' : quality.missing.join(' · ')} />
           <QRow ok={quality.weightAgeDays == null || quality.weightAgeDays <= 7 ? 'good' : 'warn'} label="Dernière pesée" value={quality.weightAgeDays == null ? '—' : `il y a ${quality.weightAgeDays} j`} />
         </View>
+        {showDuplicates && quality.duplicateGroups.length > 0 ? (
+          <View style={{ marginTop: spacing[3], paddingTop: spacing[3], borderTopWidth: 1, borderTopColor: colors.border, gap: spacing[3] }}>
+            <Text variant="caption" color="textSubtle">
+              Garde une entrée par doublon et supprime les autres.
+            </Text>
+            {quality.duplicateGroups.map((group, gi) => (
+              <View key={gi} style={{ backgroundColor: colors.surfaceElevated, borderRadius: radii.md, paddingHorizontal: spacing[3] }}>
+                {group.map((m) => (
+                  <DuplicateEntryRow key={m.id} metric={m} onDelete={() => deleteMetric.mutate(m.id)} deleting={deleteMetric.isPending && deleteMetric.variables === m.id} />
+                ))}
+              </View>
+            ))}
+          </View>
+        ) : null}
       </Card>
 
       {/* Import / Export */}

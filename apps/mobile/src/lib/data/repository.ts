@@ -65,6 +65,7 @@ import {
   listLoggedSets as listLoggedSetsDb,
   insertHealthMetrics,
   listHealthMetrics as listHealthMetricsDb,
+  deleteHealthMetric as deleteHealthMetricDb,
   insertSleepSessions,
   listSleepSessions as listSleepSessionsDb,
   insertNutritionEntry,
@@ -200,6 +201,8 @@ export interface DataRepository {
   listHealthMetrics(userId: string): Promise<HealthMetric[]>;
   /** Log a single metric by hand (e.g. weight typed in without a connected scale). Always recorded with source "manual". */
   addHealthMetric(userId: string, input: HealthMetricInput): Promise<HealthMetric>;
+  /** Remove a single health metric entry (e.g. to resolve a duplicate reading). */
+  deleteHealthMetric(userId: string, metricId: string): Promise<void>;
   listSleepSessions(userId: string): Promise<SleepSession[]>;
   listRecords(userId: string): Promise<PersonalRecord[]>;
   listMuscleSessions(userId: string): Promise<MuscleSession[]>;
@@ -947,6 +950,10 @@ function createDemoRepository(): DataRepository {
       await writeJson(hmKey(userId), [created, ...items]);
       return created;
     },
+    async deleteHealthMetric(userId, metricId) {
+      const items = await readJson<HealthMetric>(hmKey(userId));
+      await writeJson(hmKey(userId), items.filter((m) => m.id !== metricId));
+    },
     async listSleepSessions(userId) {
       const items = await readJson<SleepSession>(sleepKey(userId));
       return items.sort((a, b) => b.startedAt.localeCompare(a.startedAt));
@@ -1530,6 +1537,9 @@ function createSupabaseRepository(
       ]);
       const now = new Date().toISOString();
       return { id: randomId(), userId, type: input.type, value: input.value, unit: input.unit, source: 'manual', measuredAt, createdAt: now, updatedAt: now };
+    },
+    async deleteHealthMetric(_userId, metricId) {
+      await deleteHealthMetricDb(client, metricId);
     },
     async listSleepSessions(userId) {
       return (await listSleepSessionsDb(client, userId)).map(rowToSleepSession);
