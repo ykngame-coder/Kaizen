@@ -9,7 +9,9 @@ import { secureStorage } from '@/lib/secure-storage';
 import { addTicket, loadTickets, reopenTicket, type SupportTicket } from './tickets';
 
 const SUPPORT_EMAIL = 'support@kaizensupotsu.uk';
-const REPO_URL = 'https://github.com/ykngame-coder/Kaizen';
+const MARKETING_URL = 'https://kaizensupotsu.uk';
+const APP_STORE_ID = '6801142789';
+const RATE_URL = `https://apps.apple.com/app/id${APP_STORE_ID}?action=write-review`;
 const APP_VERSION = (Constants.expoConfig?.version as string | undefined) ?? '1.0.0';
 
 const QUICK: { icon: string; label: string; path: Href }[] = [
@@ -47,10 +49,12 @@ const CHANGELOG: { v: string; items: string[] }[] = [
   { v: '2.1', items: ['Reconstruction premium de tous les écrans.', 'Bibliothèque de 873 exercices.', 'Import Apple Santé via Health Auto Export.'] },
 ];
 
-const RESOURCES: { label: string; url: string }[] = [
-  { label: 'Documentation', url: REPO_URL },
-  { label: 'Feuille de route', url: REPO_URL },
-  { label: 'Communauté', url: REPO_URL },
+/** Only real destinations — Documentation/Feuille de route had no actual
+ *  page to send anyone to (they silently pointed at the private dev repo on
+ *  GitHub), so they're gone rather than faked; the Guides section above
+ *  already covers documentation in-app. */
+const RESOURCES: { label: string; path: Href }[] = [
+  { label: 'Communauté', path: '/profile/community' },
 ];
 
 function Section({ title, right, children }: { title: string; right?: React.ReactNode; children: React.ReactNode }): React.JSX.Element {
@@ -292,7 +296,7 @@ export function SupportScreen(): React.JSX.Element {
             <Button label="🐞 Signaler un bug" onPress={() => send('bug')} />
             <Button label="💡 Proposer une idée" variant="secondary" onPress={() => send('idea')} />
             <Button label="📧 E-mail" variant="secondary" onPress={() => mail('Demande de support Kaizen')} />
-            <Button label="🌐 Centre d’aide" variant="secondary" onPress={() => openUrl(REPO_URL)} />
+            <Button label="🌐 Centre d’aide" variant="secondary" onPress={() => openUrl(MARKETING_URL)} />
           </View>
         </Card>
       </Section>
@@ -331,7 +335,7 @@ export function SupportScreen(): React.JSX.Element {
       <Section title="Ressources">
         <Card>
           {RESOURCES.map((r, i) => (
-            <Pressable key={r.label} onPress={() => openUrl(r.url)}>
+            <Pressable key={r.label} onPress={() => router.push(r.path)}>
               <View style={{ flexDirection: 'row', justifyContent: 'space-between', paddingVertical: spacing[3], borderBottomWidth: i < RESOURCES.length - 1 ? 1 : 0, borderBottomColor: colors.border }}>
                 <Text variant="body">{r.label}</Text>
                 <Text variant="body" color="textSubtle">›</Text>
@@ -357,7 +361,7 @@ export function SupportScreen(): React.JSX.Element {
       <Section title="Actions">
         <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: spacing[2] }}>
           <Button label="📩 Support" onPress={() => mail('Demande de support Kaizen')} />
-          <Button label="⭐ Évaluer l’app" variant="secondary" onPress={() => openUrl(REPO_URL)} />
+          <Button label="⭐ Évaluer l’app" variant="secondary" onPress={() => openUrl(RATE_URL)} />
           <Button label="📄 Confidentialité" variant="secondary" onPress={() => router.push('/privacy')} />
           <Button label="⚖ Conditions" variant="secondary" onPress={() => router.push('/terms')} />
         </View>
