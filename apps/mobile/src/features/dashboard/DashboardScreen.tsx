@@ -61,6 +61,14 @@ function fmtSleep(hours: number): string {
   const m = Math.round((hours - h) * 60);
   return `${h} h ${String(m).padStart(2, '0')}`;
 }
+/** A raw minute count ("+353 min") reads as noise past an hour — switch to "h" once it crosses 60. */
+function fmtSleepDelta(deltaMin: number): string {
+  const abs = Math.abs(deltaMin);
+  if (abs < 60) return `${abs} min`;
+  const h = Math.floor(abs / 60);
+  const m = abs % 60;
+  return `${h} h ${String(m).padStart(2, '0')}`;
+}
 function greetingName(email: string | undefined): string {
   const handle = (email ?? '').split('@')[0] ?? '';
   const cleaned = handle.replace(/[._-]+/g, ' ').trim().split(' ')[0] ?? '';
@@ -334,7 +342,7 @@ export function DashboardScreen(): React.JSX.Element {
     kpis: (
       <View style={{ gap: spacing[3] }}>
         <View style={{ flexDirection: 'row', gap: spacing[3] }}>
-          <KpiTile icon={<Icon name="sleep" size={16} color={colors.info} />} value={lastNight ? fmtSleep(lastNight.hours) : '—'} delta={sleepDelta != null ? `${sleepDelta >= 0 ? '▲ +' : '▼ '}${Math.abs(sleepDelta)} min` : undefined} deltaTone={sleepDelta != null && sleepDelta >= 0 ? 'up' : 'down'} label="Sommeil" onPress={() => router.push('/sommeil')} />
+          <KpiTile icon={<Icon name="sleep" size={16} color={colors.info} />} value={lastNight ? fmtSleep(lastNight.hours) : '—'} delta={sleepDelta != null ? `${sleepDelta >= 0 ? '▲ +' : '▼ '}${fmtSleepDelta(sleepDelta)}` : undefined} deltaTone={sleepDelta != null && sleepDelta >= 0 ? 'up' : 'down'} label="Sommeil" onPress={() => router.push('/sommeil')} />
           <KpiTile icon={<Icon name="trendingUp" size={16} color={colors.accentData} />} value={hrv != null ? `${Math.round(hrv)} ms` : '—'} label="HRV" onPress={() => router.push('/sommeil')} />
           <KpiTile icon={<Icon name="heartPulse" size={16} color={colors.error} />} value={rhr != null ? `${Math.round(rhr)}` : '—'} label="FC repos" onPress={() => router.push('/sommeil')} />
         </View>
