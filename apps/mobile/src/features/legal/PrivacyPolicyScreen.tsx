@@ -3,6 +3,7 @@ import { View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Badge, Button, Icon, Screen, Text, useTheme } from '@supotsu/ui';
 import { radii, spacing } from '@supotsu/design-system';
+import { BackButton } from '@/features/navigation/BackButton';
 
 const SUPPORT_EMAIL = 'support@kaizensupotsu.uk';
 const LAST_UPDATED = '14 août 2026';
@@ -56,6 +57,7 @@ export function PrivacyPolicyScreen(): React.JSX.Element {
 
   return (
     <Screen scroll>
+      <BackButton />
       <Text variant="title">Politique de confidentialité</Text>
       <Text variant="caption" color="textSubtle">Kaizen Supotsu · Dernière mise à jour : {LAST_UPDATED}</Text>
       <View style={{ alignItems: 'flex-start', marginTop: spacing[2] }}>

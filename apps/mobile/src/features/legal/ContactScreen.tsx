@@ -3,6 +3,7 @@ import { Linking, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Button, Screen, Text } from '@supotsu/ui';
 import { spacing } from '@supotsu/design-system';
+import { BackButton } from '@/features/navigation/BackButton';
 
 const SUPPORT_EMAIL = 'support@kaizensupotsu.uk';
 
@@ -12,6 +13,7 @@ export function ContactScreen(): React.JSX.Element {
 
   return (
     <Screen scroll>
+      <BackButton />
       <Text variant="title">Contact & support</Text>
       <Text variant="caption" color="textSubtle">Kaizen Supotsu</Text>
 

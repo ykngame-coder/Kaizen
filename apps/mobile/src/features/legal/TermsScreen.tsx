@@ -3,6 +3,7 @@ import { View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Button, Screen, Text } from '@supotsu/ui';
 import { spacing } from '@supotsu/design-system';
+import { BackButton } from '@/features/navigation/BackButton';
 
 const SUPPORT_EMAIL = 'support@kaizensupotsu.uk';
 const LAST_UPDATED = '14 août 2026';
@@ -30,6 +31,7 @@ export function TermsScreen(): React.JSX.Element {
 
   return (
     <Screen scroll>
+      <BackButton />
       <Text variant="title">Conditions d'utilisation</Text>
       <Text variant="caption" color="textSubtle">Dernière mise à jour : {LAST_UPDATED}</Text>
 
