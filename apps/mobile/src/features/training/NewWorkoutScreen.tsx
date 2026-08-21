@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Pressable, View } from 'react-native';
-import { useRouter } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Badge, Button, Card, Input, Screen, Text, useTheme } from '@supotsu/ui';
 import { radii, spacing } from '@supotsu/design-system';
 import { suggestProgression } from '@supotsu/engines';
@@ -22,6 +22,7 @@ interface SetDraft {
 export function NewWorkoutScreen(): React.JSX.Element {
   const router = useRouter();
   const { colors } = useTheme();
+  const params = useLocalSearchParams<{ openPicker?: string }>();
   const addWorkout = useAddWorkout();
   const { data: history = {} } = useExerciseHistory();
   const { data: customExercises = [] } = useCustomExercises();
@@ -32,7 +33,7 @@ export function NewWorkoutScreen(): React.JSX.Element {
   const [order, setOrder] = useState<string[]>([]);
   const [selected, setSelected] = useState<Record<string, SetDraft>>({});
   const [error, setError] = useState<string | null>(null);
-  const [pickerOpen, setPickerOpen] = useState(false);
+  const [pickerOpen, setPickerOpen] = useState(params.openPicker === '1');
   const [importSourceId, setImportSourceId] = useState<string | undefined>();
 
   const allExercises = useMemo(() => [...customExercises.map(toCatalogExercise), ...EXERCISES], [customExercises]);
@@ -134,21 +135,25 @@ export function NewWorkoutScreen(): React.JSX.Element {
         Crée ta séance maintenant, tu la commenceras quand tu veux depuis Planification.
       </Text>
 
-      {pastWorkouts.length > 0 && (
-        <View style={{ marginTop: spacing[2], alignItems: 'flex-start' }}>
-          <Button
-            label={pickerOpen ? 'Fermer' : 'Importer une séance déjà faite'}
-            variant="secondary"
-            onPress={() => setPickerOpen((v) => !v)}
-          />
-        </View>
-      )}
+      <View style={{ marginTop: spacing[2], alignItems: 'flex-start' }}>
+        <Button
+          label={pickerOpen ? 'Fermer' : 'Importer une séance déjà faite (ex : Garmin)'}
+          variant="secondary"
+          onPress={() => setPickerOpen((v) => !v)}
+        />
+      </View>
       {pickerOpen && (
         <Card style={{ marginTop: spacing[2] }}>
           <Text variant="heading">Reprendre une séance déjà faite</Text>
           <Text variant="caption" color="textMuted" style={{ marginBottom: spacing[2] }}>
             Préremplit le nom et les exercices — tu peux tout modifier avant de créer.
           </Text>
+          {pastWorkouts.length === 0 ? (
+            <Text variant="body" color="textMuted">
+              Aucune séance à reprendre pour l'instant. Importe ton historique Garmin depuis
+              Profil › Données & intégrations › Importer un fichier, puis reviens ici.
+            </Text>
+          ) : (
           <View style={{ gap: spacing[2] }}>
             {pastWorkouts.slice(0, 20).map((w) => (
               <Pressable
@@ -177,6 +182,7 @@ export function NewWorkoutScreen(): React.JSX.Element {
               </Pressable>
             ))}
           </View>
+          )}
         </Card>
       )}
 

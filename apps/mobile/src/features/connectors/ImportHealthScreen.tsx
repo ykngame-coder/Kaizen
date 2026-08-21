@@ -48,6 +48,7 @@ export function ImportHealthScreen(): React.JSX.Element {
   const [status, setStatus] = useState<{ tone: 'info' | 'success' | 'error'; text: string } | null>(
     null,
   );
+  const [importedWorkouts, setImportedWorkouts] = useState(0);
   const [busy, setBusy] = useState(false);
 
   const pickAndImport = async (): Promise<void> => {
@@ -142,6 +143,7 @@ export function ImportHealthScreen(): React.JSX.Element {
       }
       await importHealth.mutateAsync({ activities, healthMetrics, records, sleepSessions, workouts });
       const workoutsNote = workouts.length > 0 ? `, ${workouts.length} séance(s) musculation` : '';
+      setImportedWorkouts(workouts.length);
       setStatus({
         tone: 'success',
         text:
@@ -180,6 +182,19 @@ export function ImportHealthScreen(): React.JSX.Element {
       </Card>
 
       {status ? <Badge label={status.text} tone={status.tone} /> : null}
+
+      {importedWorkouts > 0 ? (
+        <Card>
+          <Text variant="heading">Créer une séance à partir de tes imports</Text>
+          <Text variant="body" color="textMuted">
+            Tes séances de musculation importées peuvent servir de point de départ pour une
+            nouvelle séance — exercices et séries préremplis, à modifier avant de créer.
+          </Text>
+          <View style={{ alignItems: 'flex-start', marginTop: spacing[2] }}>
+            <Button label="Reprendre une séance importée" onPress={() => router.push('/sport/workout/new?openPicker=1')} />
+          </View>
+        </Card>
+      ) : null}
 
       <View style={{ alignItems: 'flex-start' }}>
         <Button label="Retour" variant="secondary" onPress={() => router.back()} />
