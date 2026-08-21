@@ -18,8 +18,6 @@ export interface Preferences {
   dailyBriefing: boolean;
   /** Habit / check-in reminders. */
   reminders: boolean;
-  /** Appear in community leaderboards. */
-  shareInLeaderboards: boolean;
   /** Primary goal archetype — personalises the whole app (mockup #17). */
   primaryGoal?: string;
   /** Manual nutrition targets — override the auto-estimated ones when set. */
@@ -44,7 +42,6 @@ const DEFAULTS: Preferences = {
   units: 'metric',
   dailyBriefing: true,
   reminders: true,
-  shareInLeaderboards: true,
   primaryGoal: 'fat_loss',
   timeFormat: '24h',
   haptics: true,

@@ -175,8 +175,7 @@ export function SettingsScreen(): React.JSX.Element {
       <Group>
         <ListRow icon={<Icon name="download" color={colors.info} />} iconColor="rgba(45,127,249,0.18)" title={exportState === 'working' ? 'Export en cours…' : 'Exporter mes données (JSON)'} subtitle="Toutes tes données, format RGPD" onPress={onExport} divider />
         <ListRow icon={<Icon name="search" color={colors.info} />} iconColor="rgba(59,203,255,0.18)" title="Qualité & provenance" onPress={() => router.push('/profile/data-quality')} divider />
-        <ToggleRow icon={<Icon name="brain" color={colors.accentMobility} />} tint="rgba(139,92,246,0.18)" label="Consentement analyses IA" value={aiConsent} onValueChange={setAiConsent} divider />
-        <ToggleRow icon={<Icon name="trophy" color={colors.warning} />} tint="rgba(245,183,66,0.18)" label="Apparaître dans les classements" value={preferences.shareInLeaderboards} onValueChange={(v) => setPreference('shareInLeaderboards', v)} />
+        <ToggleRow icon={<Icon name="brain" color={colors.accentMobility} />} tint="rgba(139,92,246,0.18)" label="Consentement analyses IA" value={aiConsent} onValueChange={setAiConsent} />
       </Group>
       {exportState === 'done' ? <Text variant="caption" color="textSubtle">Export prêt {Platform.OS === 'web' ? '(téléchargé)' : '(partagé)'}.</Text> : null}
       {exportState === 'error' ? <Text variant="caption" color="error">L'export a échoué. Réessaie.</Text> : null}
