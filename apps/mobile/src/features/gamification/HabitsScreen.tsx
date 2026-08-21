@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo } from 'react';
 import { Pressable, View } from 'react-native';
 import { useRouter } from 'expo-router';
-import { Card, Icon, Screen, Text, useTheme } from '@supotsu/ui';
+import { Button, Card, Icon, Screen, Text, useTheme } from '@supotsu/ui';
 import { radii, spacing } from '@supotsu/design-system';
 import type { Habit, HealthMetricType } from '@supotsu/core';
 import { estimateTargets, sumDay } from '@supotsu/engines';
@@ -179,25 +179,7 @@ export function HabitsScreen(): React.JSX.Element {
       <Screen scroll>
         <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
           <BackButton />
-          <Pressable
-            onPress={() => router.push('/profile/habit/new')}
-            accessibilityLabel="Nouvelle habitude"
-            style={({ pressed }) => ({
-              flexDirection: 'row',
-              alignItems: 'center',
-              gap: 6,
-              height: 38,
-              paddingHorizontal: spacing[3],
-              borderRadius: 19,
-              backgroundColor: colors.surface,
-              borderWidth: 1,
-              borderColor: colors.border,
-              opacity: pressed ? 0.7 : 1,
-            })}
-          >
-            <Text variant="body" style={{ fontWeight: '700' }}>+</Text>
-            <Text variant="caption">Habitude</Text>
-          </Pressable>
+          <Button label="+ Habitude" onPress={() => router.push('/profile/habit/new')} accessibilityLabel="Nouvelle habitude" />
         </View>
         <Text variant="title">Habitudes & discipline</Text>
         <Text variant="caption" color="textSubtle">Discipline • Séries • Progression</Text>
