@@ -23,6 +23,7 @@ import { useAuth } from '@/features/auth/AuthProvider';
 import { MuscleBody } from '@/features/muscles/MuscleBody';
 import { getCloudAvatarUrl, loadAvatarUri } from '@/lib/profileAvatar';
 import { usePreferences } from '@/lib/preferences';
+import { secureStorage } from '@/lib/secure-storage';
 import { resolveDashboardCardOrder } from './dashboardCards';
 
 const DAY_MS = 86_400_000;
@@ -108,14 +109,19 @@ function PillarCell({ label, value }: { label: string; value: number | null }): 
   );
 }
 
-function CheckRow({ done, label, last }: { done: boolean; label: string; last?: boolean }): React.JSX.Element {
+/** Checkbox is its own tap target (manual override); the rest of the row navigates to the relevant screen. */
+function CheckRow({ done, label, last, onToggle, onPress }: { done: boolean; label: string; last?: boolean; onToggle: () => void; onPress: () => void }): React.JSX.Element {
   const { colors } = useTheme();
   return (
-    <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing[3], paddingVertical: spacing[3], borderBottomWidth: last ? 0 : 1, borderBottomColor: colors.border }}>
-      <View style={{ width: 22, height: 22, borderRadius: 7, alignItems: 'center', justifyContent: 'center', backgroundColor: done ? colors.accentData : 'transparent', borderWidth: done ? 0 : 2, borderColor: colors.textSubtle }}>
-        {done ? <Text style={{ color: '#04140b', fontSize: 12, fontWeight: '800' }}>✓</Text> : null}
-      </View>
-      <Text variant="body" style={{ flex: 1, color: done ? colors.textSubtle : colors.text }}>{label}</Text>
+    <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing[3], paddingVertical: spacing[1], borderBottomWidth: last ? 0 : 1, borderBottomColor: colors.border }}>
+      <Pressable onPress={onToggle} hitSlop={10} style={{ paddingVertical: spacing[2] }}>
+        <View style={{ width: 22, height: 22, borderRadius: 7, alignItems: 'center', justifyContent: 'center', backgroundColor: done ? colors.accentData : 'transparent', borderWidth: done ? 0 : 2, borderColor: colors.textSubtle }}>
+          {done ? <Text style={{ color: '#04140b', fontSize: 12, fontWeight: '800' }}>✓</Text> : null}
+        </View>
+      </Pressable>
+      <Pressable onPress={onPress} style={({ pressed }) => ({ flex: 1, paddingVertical: spacing[2], opacity: pressed ? 0.6 : 1 })}>
+        <Text variant="body" style={{ color: done ? colors.textSubtle : colors.text }}>{label}</Text>
+      </Pressable>
     </View>
   );
 }
@@ -266,12 +272,41 @@ export function DashboardScreen(): React.JSX.Element {
   const initial = (firstName || user?.email || 'K').charAt(0).toUpperCase();
   const focusMsg = recovery ? BAND_INFO[recovery.band]?.advice ?? '' : 'Importe tes données de santé pour débloquer ton focus du jour.';
 
-  const priorities = [
-    { done: waterLeftMl <= 0, label: waterLeftMl > 0 ? `Boire encore ${(waterLeftMl / 1000).toFixed(1)} L d'eau` : 'Hydratation atteinte' },
-    { done: proteinLeft <= 0, label: proteinLeft > 0 ? `Atteindre ${Math.round(targets.proteinG)} g de protéines (${proteinLeft} g restants)` : 'Protéines atteintes' },
-    { done: pendingHabits.length === 0 && activeHabits.length > 0, label: activeHabits.length === 0 ? 'Ajouter une habitude à suivre' : pendingHabits.length === 0 ? 'Toutes les habitudes validées' : `Valider ${pendingHabits.length} habitude${pendingHabits.length > 1 ? 's' : ''}` },
-    { done: !!lastNight && lastNight.hours >= 7.75, label: lastNight ? `Sommeil ${fmtSleep(lastNight.hours)} (cible 7 h 45)` : 'Enregistrer ta nuit' },
+  // Manual override on top of the auto-computed `done` above — lets the user
+  // tick a priority by hand even before the underlying data catches up.
+  // Scoped to today's date key so it naturally resets tomorrow.
+  const [manualDone, setManualDone] = useState<Set<number>>(new Set());
+  useEffect(() => {
+    let active = true;
+    void secureStorage.getItem(`supotsu.dashboard.priorities.${todayK}`).then((raw) => {
+      if (!active || !raw) return;
+      try {
+        setManualDone(new Set(JSON.parse(raw) as number[]));
+      } catch {
+        // ignore corrupt state
+      }
+    });
+    return () => {
+      active = false;
+    };
+  }, [todayK]);
+  const togglePriority = (i: number): void => {
+    setManualDone((prev) => {
+      const next = new Set(prev);
+      if (next.has(i)) next.delete(i);
+      else next.add(i);
+      void secureStorage.setItem(`supotsu.dashboard.priorities.${todayK}`, JSON.stringify([...next]));
+      return next;
+    });
+  };
+
+  const priorityBase: { done: boolean; label: string; path: Href }[] = [
+    { done: waterLeftMl <= 0, label: waterLeftMl > 0 ? `Boire encore ${(waterLeftMl / 1000).toFixed(1)} L d'eau` : 'Hydratation atteinte', path: '/nutrition' },
+    { done: proteinLeft <= 0, label: proteinLeft > 0 ? `Atteindre ${Math.round(targets.proteinG)} g de protéines (${proteinLeft} g restants)` : 'Protéines atteintes', path: '/nutrition' },
+    { done: pendingHabits.length === 0 && activeHabits.length > 0, label: activeHabits.length === 0 ? 'Ajouter une habitude à suivre' : pendingHabits.length === 0 ? 'Toutes les habitudes validées' : `Valider ${pendingHabits.length} habitude${pendingHabits.length > 1 ? 's' : ''}`, path: '/profile/habits' },
+    { done: !!lastNight && lastNight.hours >= 7.75, label: lastNight ? `Sommeil ${fmtSleep(lastNight.hours)} (cible 7 h 45)` : 'Enregistrer ta nuit', path: '/sommeil' },
   ];
+  const priorities = priorityBase.map((p, i) => ({ ...p, done: p.done || manualDone.has(i) }));
 
   // One node per customizable card (see dashboardCards.ts) — order/visibility
   // applied where they're rendered, below.
@@ -314,7 +349,16 @@ export function DashboardScreen(): React.JSX.Element {
     priorites: (
       <Card>
         <SectionTitle>Priorités du jour</SectionTitle>
-        {priorities.map((p, i) => (<CheckRow key={i} done={p.done} label={p.label} last={i === priorities.length - 1} />))}
+        {priorities.map((p, i) => (
+          <CheckRow
+            key={i}
+            done={p.done}
+            label={p.label}
+            last={i === priorities.length - 1}
+            onToggle={() => togglePriority(i)}
+            onPress={() => router.push(p.path)}
+          />
+        ))}
       </Card>
     ),
     'prochaine-seance': (
