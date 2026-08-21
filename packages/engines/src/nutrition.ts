@@ -102,6 +102,59 @@ export function estimateTargets(inputs: TargetInputs, asOf: ISODateString): Engi
   };
 }
 
+export type ActivityLevel = 'sedentary' | 'light' | 'moderate' | 'active' | 'very_active';
+
+const ACTIVITY_FACTOR: Record<ActivityLevel, number> = {
+  sedentary: 1.2,
+  light: 1.375,
+  moderate: 1.55,
+  active: 1.725,
+  very_active: 1.9,
+};
+
+export interface DeficitCalcInputs {
+  age: number;
+  sex: 'male' | 'female';
+  heightCm: number;
+  weightKg: number;
+  goalWeightKg: number;
+  /** How long to reach the goal weight, in months. */
+  durationMonths: number;
+  activity: ActivityLevel;
+}
+
+export interface DeficitCalcResult {
+  bmr: number;
+  tdee: number;
+  /** Positive = calorie deficit (losing weight), negative = surplus (gaining). */
+  dailyDeficit: number;
+  targetKcal: number;
+}
+
+/** ~7700 kcal stored per kg of body fat — the standard estimate behind every deficit calculator. */
+const KCAL_PER_KG = 7700;
+
+/**
+ * A standalone "how many calories should I eat" calculator (Mifflin-St Jeor
+ * BMR × activity factor, then a deficit/surplus spread over the chosen
+ * duration) — distinct from `estimateTargets`, which only uses bodyweight.
+ * This is for the user who wants to work from age/height/activity/a target
+ * date the way a classic online calculator does, then apply the result.
+ */
+export function estimateDeficitTarget(inputs: DeficitCalcInputs): DeficitCalcResult {
+  const bmr =
+    inputs.sex === 'male'
+      ? 10 * inputs.weightKg + 6.25 * inputs.heightCm - 5 * inputs.age + 5
+      : 10 * inputs.weightKg + 6.25 * inputs.heightCm - 5 * inputs.age - 161;
+  const tdee = bmr * ACTIVITY_FACTOR[inputs.activity];
+  const days = Math.max(1, inputs.durationMonths * 30);
+  const dailyDeficit = ((inputs.weightKg - inputs.goalWeightKg) * KCAL_PER_KG) / days;
+  // Safety bounds: never below 1200 kcal / 75% of TDEE, never more than a 500 kcal surplus.
+  const floor = Math.max(1200, tdee * 0.75);
+  const targetKcal = Math.round(Math.min(tdee + 500, Math.max(floor, tdee - dailyDeficit)));
+  return { bmr: Math.round(bmr), tdee: Math.round(tdee), dailyDeficit: Math.round(dailyDeficit), targetKcal };
+}
+
 /**
  * Nutrition score 0-100 for the day: how well intake meets targets. Protein
  * adequacy and hydration each weigh as much as calorie balance, because under-
