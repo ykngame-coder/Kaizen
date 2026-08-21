@@ -1,5 +1,5 @@
 import React, { useMemo } from 'react';
-import { View } from 'react-native';
+import { Pressable, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Button, Card, EmptyState, Icon, KPICard, Screen, Text } from '@supotsu/ui';
 import { spacing } from '@supotsu/design-system';
@@ -56,25 +56,27 @@ export function ActivitiesScreen(): React.JSX.Element {
           {activities.map((a) => {
             const distance = formatDistance(a.distanceM);
             return (
-              <Card key={a.id}>
-                <View
-                  style={{
-                    flexDirection: 'row',
-                    justifyContent: 'space-between',
-                    alignItems: 'center',
-                  }}
-                >
-                  <Text variant="subtitle">{a.type === 'other' && a.notes ? a.notes : activityLabel(a.type)}</Text>
-                  <Text variant="caption" color="textMuted">
-                    {formatDate(a.startedAt)}
+              <Pressable key={a.id} onPress={() => router.push({ pathname: '/sport/activity/[id]', params: { id: a.id } })} style={({ pressed }) => ({ opacity: pressed ? 0.7 : 1 })}>
+                <Card>
+                  <View
+                    style={{
+                      flexDirection: 'row',
+                      justifyContent: 'space-between',
+                      alignItems: 'center',
+                    }}
+                  >
+                    <Text variant="subtitle">{a.type === 'other' && a.notes ? a.notes : activityLabel(a.type)}</Text>
+                    <Text variant="caption" color="textMuted">
+                      {formatDate(a.startedAt)}
+                    </Text>
+                  </View>
+                  <Text variant="body" color="textMuted">
+                    {formatDuration(a.durationSec)}
+                    {distance ? ` · ${distance}` : ''}
+                    {a.intensity ? ` · ${a.intensity}` : ''}
                   </Text>
-                </View>
-                <Text variant="body" color="textMuted">
-                  {formatDuration(a.durationSec)}
-                  {distance ? ` · ${distance}` : ''}
-                  {a.intensity ? ` · ${a.intensity}` : ''}
-                </Text>
-              </Card>
+                </Card>
+              </Pressable>
             );
           })}
         </View>
