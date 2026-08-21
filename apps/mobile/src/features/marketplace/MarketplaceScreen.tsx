@@ -208,7 +208,7 @@ export function MarketplaceScreen(): React.JSX.Element {
                       <Button
                         label="Voir les séances"
                         variant="secondary"
-                        onPress={() => router.push({ pathname: '/profile/program-catalog/[id]', params: { id: p.id } })}
+                        onPress={() => router.push({ pathname: '/marketplace/program-catalog/[id]', params: { id: p.id } })}
                       />
                       <Button
                         label={enrolled ? 'Inscrit ✓' : enroll.isPending ? '…' : "S'inscrire"}
@@ -286,7 +286,7 @@ export function MarketplaceScreen(): React.JSX.Element {
             <Text variant="caption" color="textSubtle">{mySessions.length}/{SESSIONS_QUOTA}</Text>
           </View>
           {mySessions.length === 0 ? (
-            <EmptyState icon={<Icon name="dumbbell" size={44} color={colors.textSubtle} />} title="Aucune séance créée" message="Construis ta bibliothèque de séances réutilisables." actionLabel="Créer une séance" onAction={() => router.push('/profile/session-builder')} />
+            <EmptyState icon={<Icon name="dumbbell" size={44} color={colors.textSubtle} />} title="Aucune séance créée" message="Construis ta bibliothèque de séances réutilisables." actionLabel="Créer une séance" onAction={() => router.push('/marketplace/session-builder')} />
           ) : (
             <View style={{ gap: spacing[2] }}>
               {mySessions.map((s) => (
@@ -310,7 +310,7 @@ export function MarketplaceScreen(): React.JSX.Element {
           )}
           {mySessions.length > 0 ? (
             <View style={{ marginTop: spacing[2] }}>
-              <Button label="+ Nouvelle séance" variant="secondary" onPress={() => router.push('/profile/session-builder')} />
+              <Button label="+ Nouvelle séance" variant="secondary" onPress={() => router.push('/marketplace/session-builder')} />
             </View>
           ) : null}
 
@@ -319,7 +319,7 @@ export function MarketplaceScreen(): React.JSX.Element {
             <Text variant="caption" color="textSubtle">{myPrograms.length}/{PROGRAMS_QUOTA}</Text>
           </View>
           {myPrograms.length === 0 ? (
-            <EmptyState icon={<Icon name="calendarClock" size={44} color={colors.textSubtle} />} title="Aucun programme créé" message="Construis ton propre programme à partir de tes séances." actionLabel="Créer un programme" onAction={() => router.push('/profile/program-builder')} />
+            <EmptyState icon={<Icon name="calendarClock" size={44} color={colors.textSubtle} />} title="Aucun programme créé" message="Construis ton propre programme à partir de tes séances." actionLabel="Créer un programme" onAction={() => router.push('/marketplace/program-builder')} />
           ) : (
             <View style={{ gap: spacing[2] }}>
               {myPrograms.map((p) => (
@@ -334,7 +334,7 @@ export function MarketplaceScreen(): React.JSX.Element {
                   <View style={{ flexDirection: 'row', gap: spacing[2], marginTop: spacing[2] }}>
                     <Button
                       label="Planning"
-                      onPress={() => router.push({ pathname: '/profile/program/[id]', params: { id: p.id } })}
+                      onPress={() => router.push({ pathname: '/marketplace/program/[id]', params: { id: p.id } })}
                     />
                     <Button
                       label={p.visibility === 'public' ? 'Rendre privé' : 'Partager'}
@@ -349,7 +349,7 @@ export function MarketplaceScreen(): React.JSX.Element {
           )}
           {myPrograms.length > 0 ? (
             <View style={{ marginTop: spacing[2] }}>
-              <Button label="+ Nouveau programme" variant="secondary" onPress={() => router.push('/profile/program-builder')} />
+              <Button label="+ Nouveau programme" variant="secondary" onPress={() => router.push('/marketplace/program-builder')} />
             </View>
           ) : null}
         </>

@@ -48,7 +48,7 @@ const PAGES: Omit<Item, 'category' | 'icon'>[] = [
   { title: 'Scanner un code-barres', subtitle: 'Nutrition', path: '/nutrition/food/scan', keywords: ['scan', 'code-barres'] },
   { title: 'Objectifs', subtitle: 'Profil', path: '/profile/goals', keywords: ['objectif', 'but', 'cible'] },
   { title: 'Habitudes & discipline', subtitle: 'Profil', path: '/profile/habits', keywords: ['habitude', 'discipline', 'série', 'streak'] },
-  { title: 'Programmes', subtitle: 'Profil', path: '/profile/marketplace', keywords: ['catalogue', 'communauté', 'créations'] },
+  { title: 'Programmes', subtitle: 'Programmes', path: '/marketplace', keywords: ['catalogue', 'communauté', 'créations', 'marketplace'] },
   { title: 'Réglages', subtitle: 'Profil', path: '/profile/settings', keywords: ['paramètres', 'préférences'] },
   { title: 'Importer / connecter', subtitle: 'Profil', path: '/profile/import', keywords: ['import', 'export', 'fichier'] },
   { title: 'Appareils & capteurs', subtitle: 'Profil', path: '/profile/connectors', keywords: ['healthkit', 'garmin', 'apple santé', 'synchro'] },

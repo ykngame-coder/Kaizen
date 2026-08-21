@@ -58,7 +58,7 @@ export function ProgramBuilderScreen(): React.JSX.Element {
         description: description.trim() || undefined,
         visibility,
       });
-      router.replace({ pathname: '/profile/program/[id]', params: { id: program.id } });
+      router.replace({ pathname: '/marketplace/program/[id]', params: { id: program.id } });
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Enregistrement impossible.');
     }

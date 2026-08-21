@@ -150,7 +150,7 @@ export default function ProfileTab(): React.JSX.Element {
         <ListRow icon={<Icon name="chartBar" color={colors.info} />} iconColor="rgba(45,127,249,0.18)" title="Bilan & badges" subtitle="Tendances, statistiques, récompenses" onPress={() => router.push('/profile/progression')} divider />
         <ListRow icon={<Icon name="calendarCheck" color={colors.accentData} />} iconColor="rgba(43,227,139,0.18)" title="Habitudes & discipline" subtitle="Check-list, séries, régularité" onPress={() => router.push('/profile/habits')} divider />
         <ListRow icon={<Icon name="peopleGroup" color={colors.warning} />} iconColor="rgba(245,183,66,0.18)" title="Communauté" subtitle="Défis, entraide" onPress={() => router.push('/profile/community')} divider />
-        <ListRow icon={<Icon name="cart" color={colors.warning} />} iconColor="rgba(245,183,66,0.18)" title="Marketplace" subtitle="Programmes structurés" onPress={() => router.push('/profile/marketplace')} />
+        <ListRow icon={<Icon name="cart" color={colors.warning} />} iconColor="rgba(245,183,66,0.18)" title="Marketplace" subtitle="Programmes structurés" onPress={() => router.push('/marketplace')} />
       </Group>
 
       {/* Préférences */}

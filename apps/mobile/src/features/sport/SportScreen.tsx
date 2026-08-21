@@ -32,7 +32,7 @@ const NAV: { title: string; subtitle: string; icon: IconName; path?: Href; soon?
   { title: 'Activités', subtitle: 'Course, marche, vélo… historique et ajout', icon: 'run', path: '/sport/activities' },
   { title: 'Planification', subtitle: 'Programme tes séances + prévision récup', icon: 'calendarClock', path: '/sport/planning' },
   { title: 'Calendrier', subtitle: 'Tes séances et événements', icon: 'calendar', path: '/sport/calendar' },
-  { title: 'Programmes', subtitle: 'Programmes structurés et recommandés', icon: 'clipboardText', path: '/profile/marketplace' },
+  { title: 'Programmes', subtitle: 'Programmes structurés et recommandés', icon: 'clipboardText', path: '/marketplace' },
   { title: 'Récupération musculaire', subtitle: 'Muscles fatigués vs prêts à travailler', icon: 'armFlex', path: '/sport/muscles' },
   { title: 'Stomach Vacuum', subtitle: 'Gainage du transverse, séance guidée', icon: 'lungs', path: '/sport/stomach-vacuum' },
   { title: 'Minuteurs', subtitle: 'Tabata, HIIT, EMOM ou perso', icon: 'timer', path: '/sport/timer' },
