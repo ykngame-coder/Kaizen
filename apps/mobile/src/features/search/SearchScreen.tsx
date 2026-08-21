@@ -6,6 +6,7 @@ import { radii, spacing } from '@supotsu/design-system';
 import type { ActivityType } from '@supotsu/core';
 import { useActivities, useGoals, useNutritionEntries, useRecords, useWorkouts } from '@/lib/data/queries';
 import { formatDate } from '@/lib/format';
+import { BackButton } from '@/features/navigation/BackButton';
 
 type Category = 'Pages' | 'Séances' | 'Activités' | 'Nutrition' | 'Objectifs' | 'Records';
 
@@ -113,6 +114,7 @@ export function SearchScreen(): React.JSX.Element {
 
   return (
     <Screen scroll>
+      <BackButton />
       <Text variant="title">Recherche</Text>
       <Input placeholder="Rechercher un écran, une séance, un aliment, un objectif…" value={query} onChangeText={setQuery} autoFocus />
 
