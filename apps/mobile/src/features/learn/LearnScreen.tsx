@@ -1,7 +1,7 @@
 import React, { useMemo } from 'react';
-import { View } from 'react-native';
+import { Pressable, View } from 'react-native';
 import { useRouter } from 'expo-router';
-import { Badge, Button, Card, Screen, Text } from '@supotsu/ui';
+import { Badge, Button, Card, Carousel, Screen, Text } from '@supotsu/ui';
 import { spacing } from '@supotsu/design-system';
 import type { Confidence, Pillar } from '@supotsu/core';
 import {
@@ -102,14 +102,15 @@ export function LearnScreen(): React.JSX.Element {
       )}
 
       {forYou.length > 0 && (
-        <Card>
-          <Text variant="heading">À lire pour toi</Text>
-          <View style={{ gap: spacing[2], marginTop: spacing[1] }}>
-            {forYou.map((a) => (
-              <ArticleRow key={a.id} article={a} onPress={() => openArticle(a)} />
-            ))}
-          </View>
-        </Card>
+        <View>
+          <Text variant="heading" style={{ marginBottom: spacing[3] }}>À lire pour toi</Text>
+          <Carousel
+            data={forYou}
+            keyExtractor={(a) => a.id}
+            peek={28}
+            renderItem={(a) => <ArticleCard article={a} onPress={() => openArticle(a)} />}
+          />
+        </View>
       )}
 
       <Text variant="heading" style={{ marginTop: spacing[2] }}>
@@ -140,6 +141,29 @@ export function LearnScreen(): React.JSX.Element {
         />
       </View>
     </Screen>
+  );
+}
+
+/** Visual card for the curated "À lire pour toi" carousel — the dense ArticleRow fits a list but reads as noise at carousel-page size. */
+function ArticleCard({
+  article,
+  onPress,
+}: {
+  article: KnowledgeArticle;
+  onPress: () => void;
+}): React.JSX.Element {
+  return (
+    <Pressable onPress={onPress} style={({ pressed }) => ({ opacity: pressed ? 0.7 : 1 })}>
+      <Card>
+        <Text variant="heading">{article.title}</Text>
+        <Text variant="body" color="textMuted" style={{ marginTop: spacing[1] }}>
+          {article.summary}
+        </Text>
+        <View style={{ alignItems: 'flex-start', marginTop: spacing[2] }}>
+          <Badge label={`${article.readMinutes} min`} tone="info" />
+        </View>
+      </Card>
+    </Pressable>
   );
 }
 

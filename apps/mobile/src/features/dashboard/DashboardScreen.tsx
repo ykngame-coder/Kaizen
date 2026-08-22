@@ -2,7 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { Image, Pressable, ScrollView, View } from 'react-native';
 import { useRouter, type Href } from 'expo-router';
 import { useQueryClient } from '@tanstack/react-query';
-import { Card, Gradient, Icon, ProgressRing, Screen, Sparkline, Text, useTheme, type IconName } from '@supotsu/ui';
+import { Card, Carousel, Gradient, Icon, ProgressRing, Screen, Sparkline, Text, useTheme, type IconName } from '@supotsu/ui';
 import { radii, spacing } from '@supotsu/design-system';
 import type { HealthMetricType } from '@supotsu/core';
 import {
@@ -144,13 +144,18 @@ function TapCard({ onPress, children }: { onPress: () => void; children: React.R
   );
 }
 
+/** Fills whatever width its container gives it (Carousel page or a fixed chip) — measures itself so the sparkline scales to fit instead of guessing a width. */
 function TrendCard({ label, value, up, series, color }: { label: string; value: string; up: boolean; series: number[]; color: string }): React.JSX.Element {
   const { colors } = useTheme();
+  const [width, setWidth] = useState(0);
   return (
-    <View style={{ width: 118, backgroundColor: colors.surfaceElevated, borderWidth: 1, borderColor: colors.border, borderRadius: radii.lg, padding: spacing[3] }}>
+    <View
+      onLayout={(e) => setWidth(e.nativeEvent.layout.width)}
+      style={{ backgroundColor: colors.surfaceElevated, borderWidth: 1, borderColor: colors.border, borderRadius: radii.lg, padding: spacing[3] }}
+    >
       <Text variant="caption" color="textSubtle">{label}</Text>
       <Text variant="subtitle" style={{ color: up ? colors.accentData : colors.error, marginTop: 2 }}>{value}</Text>
-      {series.length >= 2 ? <View style={{ marginTop: spacing[2] }}><Sparkline values={series} width={92} height={30} color={color} /></View> : null}
+      {series.length >= 2 && width > 0 ? <View style={{ marginTop: spacing[2] }}><Sparkline values={series} width={width - spacing[3] * 2} height={56} color={color} /></View> : null}
     </View>
   );
 }
@@ -340,21 +345,25 @@ export function DashboardScreen(): React.JSX.Element {
       </TapCard>
     ),
     kpis: (
-      <View style={{ gap: spacing[3] }}>
-        <View style={{ flexDirection: 'row', gap: spacing[3] }}>
-          <KpiTile icon={<Icon name="sleep" size={16} color={colors.info} />} value={lastNight ? fmtSleep(lastNight.hours) : '—'} delta={sleepDelta != null ? `${sleepDelta >= 0 ? '▲ +' : '▼ '}${fmtSleepDelta(sleepDelta)}` : undefined} deltaTone={sleepDelta != null && sleepDelta >= 0 ? 'up' : 'down'} label="Sommeil" onPress={() => router.push('/sommeil')} />
-          <KpiTile icon={<Icon name="trendingUp" size={16} color={colors.accentData} />} value={hrv != null ? `${Math.round(hrv)} ms` : '—'} label="HRV" onPress={() => router.push('/sommeil')} />
-          <KpiTile icon={<Icon name="heartPulse" size={16} color={colors.error} />} value={rhr != null ? `${Math.round(rhr)}` : '—'} label="FC repos" onPress={() => router.push('/sommeil')} />
-        </View>
-        <View style={{ flexDirection: 'row', gap: spacing[3] }}>
-          <KpiTile icon={<Icon name="scale" size={16} color={colors.accentMobility} />} value={weight != null ? weight.toFixed(1) : '—'} delta={weightDelta != null ? `${weightDelta <= 0 ? '▼ ' : '▲ +'}${Math.abs(weightDelta).toFixed(1)}` : undefined} deltaTone={weightDelta != null && weightDelta <= 0 ? 'up' : 'down'} label="Poids (kg)" onPress={() => router.push('/nutrition/weight')} />
-          <KpiTile icon={<Icon name="trendingDown" size={16} color={colors.warning} />} value={nutrition.length > 0 ? `${deficit}` : '—'} label="Déficit kcal" onPress={() => router.push('/nutrition')} />
-          <KpiTile icon={<Icon name="water" size={16} color={colors.info} />} value={`${(totals.hydrationMl / 1000).toFixed(1)}`} label={`/ ${(targets.hydrationMl / 1000).toFixed(1)} L`} onPress={() => router.push('/nutrition')} />
-        </View>
-        <View style={{ flexDirection: 'row', gap: spacing[3] }}>
-          <KpiTile icon={<Icon name="footsteps" size={16} color={colors.accentData} />} value={stepsToday > 0 ? stepsToday.toLocaleString('fr-FR') : '—'} label={`/ ${preferences.dailyStepsGoal.toLocaleString('fr-FR')} pas`} />
-        </View>
-      </View>
+      <Carousel
+        data={[
+          <View style={{ flexDirection: 'row', gap: spacing[3] }}>
+            <KpiTile icon={<Icon name="sleep" size={16} color={colors.info} />} value={lastNight ? fmtSleep(lastNight.hours) : '—'} delta={sleepDelta != null ? `${sleepDelta >= 0 ? '▲ +' : '▼ '}${fmtSleepDelta(sleepDelta)}` : undefined} deltaTone={sleepDelta != null && sleepDelta >= 0 ? 'up' : 'down'} label="Sommeil" onPress={() => router.push('/sommeil')} />
+            <KpiTile icon={<Icon name="trendingUp" size={16} color={colors.accentData} />} value={hrv != null ? `${Math.round(hrv)} ms` : '—'} label="HRV" onPress={() => router.push('/sommeil')} />
+            <KpiTile icon={<Icon name="heartPulse" size={16} color={colors.error} />} value={rhr != null ? `${Math.round(rhr)}` : '—'} label="FC repos" onPress={() => router.push('/sommeil')} />
+          </View>,
+          <View style={{ flexDirection: 'row', gap: spacing[3] }}>
+            <KpiTile icon={<Icon name="scale" size={16} color={colors.accentMobility} />} value={weight != null ? weight.toFixed(1) : '—'} delta={weightDelta != null ? `${weightDelta <= 0 ? '▼ ' : '▲ +'}${Math.abs(weightDelta).toFixed(1)}` : undefined} deltaTone={weightDelta != null && weightDelta <= 0 ? 'up' : 'down'} label="Poids (kg)" onPress={() => router.push('/nutrition/weight')} />
+            <KpiTile icon={<Icon name="trendingDown" size={16} color={colors.warning} />} value={nutrition.length > 0 ? `${deficit}` : '—'} label="Déficit kcal" onPress={() => router.push('/nutrition')} />
+            <KpiTile icon={<Icon name="water" size={16} color={colors.info} />} value={`${(totals.hydrationMl / 1000).toFixed(1)}`} label={`/ ${(targets.hydrationMl / 1000).toFixed(1)} L`} onPress={() => router.push('/nutrition')} />
+          </View>,
+          <View style={{ flexDirection: 'row', gap: spacing[3] }}>
+            <KpiTile icon={<Icon name="footsteps" size={16} color={colors.accentData} />} value={stepsToday > 0 ? stepsToday.toLocaleString('fr-FR') : '—'} label={`/ ${preferences.dailyStepsGoal.toLocaleString('fr-FR')} pas`} />
+          </View>,
+        ]}
+        keyExtractor={(_, i) => `kpi-page-${i}`}
+        renderItem={(page) => page}
+      />
     ),
     priorites: (
       <Card>
@@ -453,11 +462,16 @@ export function DashboardScreen(): React.JSX.Element {
     tendances: (
       <View>
         <SectionTitle right={<Text variant="caption" color="textSubtle">30 jours</Text>}>Tendances</SectionTitle>
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: spacing[3] }}>
-          <TrendCard label="Poids" value={weightSeries.length >= 2 ? `${(weightSeries.at(-1)! - weightSeries[0]!).toFixed(1)}` : '—'} up={weightSeries.length >= 2 ? weightSeries.at(-1)! <= weightSeries[0]! : true} series={weightSeries} color="#ff7a8a" />
-          <TrendCard label="Recovery" value={recoverySeries.length >= 2 ? `${recoverySeries.at(-1)! - recoverySeries[0]! >= 0 ? '+' : ''}${recoverySeries.at(-1)! - recoverySeries[0]!}` : '—'} up={recoverySeries.length >= 2 ? recoverySeries.at(-1)! >= recoverySeries[0]! : true} series={recoverySeries} color={colors.accentData} />
-          <TrendCard label="HRV" value={hrvSeries.length >= 2 ? `${Math.round(hrvSeries.at(-1)! - hrvSeries[0]!)}` : '—'} up={hrvSeries.length >= 2 ? hrvSeries.at(-1)! >= hrvSeries[0]! : true} series={hrvSeries} color={colors.accentEndurance} />
-        </ScrollView>
+        <Carousel
+          data={[
+            { key: 'poids', label: 'Poids', value: weightSeries.length >= 2 ? `${(weightSeries.at(-1)! - weightSeries[0]!).toFixed(1)}` : '—', up: weightSeries.length >= 2 ? weightSeries.at(-1)! <= weightSeries[0]! : true, series: weightSeries, color: '#ff7a8a' },
+            { key: 'recovery', label: 'Recovery', value: recoverySeries.length >= 2 ? `${recoverySeries.at(-1)! - recoverySeries[0]! >= 0 ? '+' : ''}${recoverySeries.at(-1)! - recoverySeries[0]!}` : '—', up: recoverySeries.length >= 2 ? recoverySeries.at(-1)! >= recoverySeries[0]! : true, series: recoverySeries, color: colors.accentData },
+            { key: 'hrv', label: 'HRV', value: hrvSeries.length >= 2 ? `${Math.round(hrvSeries.at(-1)! - hrvSeries[0]!)}` : '—', up: hrvSeries.length >= 2 ? hrvSeries.at(-1)! >= hrvSeries[0]! : true, series: hrvSeries, color: colors.accentEndurance },
+          ]}
+          keyExtractor={(t) => t.key}
+          peek={36}
+          renderItem={(t) => <TrendCard label={t.label} value={t.value} up={t.up} series={t.series} color={t.color} />}
+        />
       </View>
     ),
     analyse: (

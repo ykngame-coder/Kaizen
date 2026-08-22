@@ -2,7 +2,7 @@ import React, { useMemo, useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { Pressable, View } from 'react-native';
 import { useRouter, type Href } from 'expo-router';
-import { Card, Fab, Icon, ProgressRing, Screen, Text, useTheme, type IconName } from '@supotsu/ui';
+import { Card, Carousel, Fab, Icon, ProgressRing, Screen, Text, useTheme, type IconName } from '@supotsu/ui';
 import { radii, spacing } from '@supotsu/design-system';
 import type { MuscleGroup } from '@supotsu/core';
 import { computeAcwr, computeRecoveryScore, computeSportScore } from '@supotsu/engines';
@@ -186,106 +186,126 @@ export function SportScreen(): React.JSX.Element {
         </View>
         <DayNav value={selectedDate} onChange={setSelectedDate} />
 
-        {/* Séance du jour sélectionné */}
-        <Card style={{ marginTop: spacing[3] }}>
-          <View style={{ flexDirection: 'row', gap: spacing[4], alignItems: 'center' }}>
-            <View style={{ width: 64, height: 64, borderRadius: radii.lg, backgroundColor: colors.surfaceElevated, alignItems: 'center', justifyContent: 'center' }}>
-              <Icon name="dumbbell" size={28} color={colors.primary} />
-            </View>
-            <View style={{ flex: 1 }}>
-              {plannedToday ? (
-                <>
-                  <Text variant="body" style={{ fontWeight: '700' }}>{plannedToday.name}</Text>
-                  <Text variant="caption" color="textSubtle" style={{ marginTop: 2 }}>
-                    {planLabel(plannedToday.plannedFor, todayKey)}
-                    {plannedToday.notes ? ` · ${plannedToday.notes}` : ''}
-                  </Text>
-                </>
-              ) : (
-                <>
-                  <Text variant="body" style={{ fontWeight: '700' }}>
-                    {selectedDayKey === todayKey ? 'Aucune séance prévue aujourd’hui' : 'Aucune séance prévue ce jour-là'}
-                  </Text>
-                  <Text variant="caption" color="textSubtle" style={{ marginTop: 2 }}>
-                    Choisis un focus selon ta récupération
-                  </Text>
-                </>
-              )}
-            </View>
-          </View>
-          <Pressable
-            onPress={() => router.push(plannedToday ? '/sport/planning' : '/sport/workout/new')}
-            style={({ pressed }) => ({ marginTop: spacing[3], height: 46, borderRadius: radii.xl, backgroundColor: colors.surfaceElevated, borderWidth: 1, borderColor: colors.border, alignItems: 'center', justifyContent: 'center', transform: [{ scale: pressed ? 0.98 : 1 }] })}
-          >
-            <Text variant="body" style={{ fontWeight: '600' }}>{plannedToday ? 'Voir le planning ›' : 'Créer une séance ›'}</Text>
-          </Pressable>
-        </Card>
-
-        {/* Score Sport */}
-        <Card style={{ marginTop: spacing[3] }}>
-          <Text variant="heading">Score Sport</Text>
-          <View style={{ flexDirection: 'row', gap: spacing[4], alignItems: 'center', marginTop: spacing[3] }}>
-            <ProgressRing value={sport?.value ?? 0} size={72} thickness={8} gradient centerLabel={sport ? `${sport.value}` : '—'} />
-            <Text variant="caption" color="textMuted" style={{ flex: 1 }}>
-              Performance, régularité et progression combinées.
-            </Text>
-          </View>
-          <View style={{ flexDirection: 'row', justifyContent: 'space-around', marginTop: spacing[4] }}>
-            <PillarRing label="Performance" value={sport?.breakdown.performance} color={colors.accentData} />
-            <PillarRing label="Régularité" value={sport?.breakdown.regularity} color={colors.warning} />
-            <PillarRing label="Progression" value={sport?.breakdown.progression} color={colors.accentMobility} />
-          </View>
-        </Card>
-
-        {/* État du corps */}
-        <Card style={{ marginTop: spacing[3] }}>
-          <Text variant="heading">État du corps</Text>
-          <View style={{ flexDirection: 'row', gap: spacing[4], alignItems: 'center', marginTop: spacing[3] }}>
-            <ProgressRing value={recovery ?? 0} size={72} thickness={8} gradient centerLabel={recovery != null ? `${recovery}` : '—'} />
-            <View style={{ flex: 1 }}>
-              <Text variant="caption" color="textMuted">
-                Récupération globale
-              </Text>
-              {tired.length > 0 ? (
-                <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: spacing[2], marginTop: spacing[2] }}>
-                  <Text variant="caption" color="textSubtle" style={{ alignSelf: 'center' }}>
-                    Encore fatigués :
-                  </Text>
-                  {tired.map((m) => (
-                    <View key={m} style={{ borderRadius: radii.full, paddingHorizontal: 10, paddingVertical: 4, backgroundColor: 'rgba(255,139,94,0.14)', borderWidth: 1, borderColor: 'rgba(255,139,94,0.3)' }}>
-                      <Text variant="caption" style={{ color: colors.accentStrength, fontWeight: '600' }}>
-                        {m}
-                      </Text>
+        {/* Séance du jour ↔ Score Sport ↔ État du corps ↔ Récupération musculaire */}
+        <Carousel
+          data={[
+            'seance' as const,
+            'score' as const,
+            'corps' as const,
+            'muscles' as const,
+          ]}
+          keyExtractor={(k) => k}
+          peek={20}
+          renderItem={(page) => {
+            if (page === 'seance') {
+              return (
+                <Card>
+                  <View style={{ flexDirection: 'row', gap: spacing[4], alignItems: 'center' }}>
+                    <View style={{ width: 64, height: 64, borderRadius: radii.lg, backgroundColor: colors.surfaceElevated, alignItems: 'center', justifyContent: 'center' }}>
+                      <Icon name="dumbbell" size={28} color={colors.primary} />
                     </View>
-                  ))}
+                    <View style={{ flex: 1 }}>
+                      {plannedToday ? (
+                        <>
+                          <Text variant="body" style={{ fontWeight: '700' }}>{plannedToday.name}</Text>
+                          <Text variant="caption" color="textSubtle" style={{ marginTop: 2 }}>
+                            {planLabel(plannedToday.plannedFor, todayKey)}
+                            {plannedToday.notes ? ` · ${plannedToday.notes}` : ''}
+                          </Text>
+                        </>
+                      ) : (
+                        <>
+                          <Text variant="body" style={{ fontWeight: '700' }}>
+                            {selectedDayKey === todayKey ? 'Aucune séance prévue aujourd’hui' : 'Aucune séance prévue ce jour-là'}
+                          </Text>
+                          <Text variant="caption" color="textSubtle" style={{ marginTop: 2 }}>
+                            Choisis un focus selon ta récupération
+                          </Text>
+                        </>
+                      )}
+                    </View>
+                  </View>
+                  <Pressable
+                    onPress={() => router.push(plannedToday ? '/sport/planning' : '/sport/workout/new')}
+                    style={({ pressed }) => ({ marginTop: spacing[3], height: 46, borderRadius: radii.xl, backgroundColor: colors.surfaceElevated, borderWidth: 1, borderColor: colors.border, alignItems: 'center', justifyContent: 'center', transform: [{ scale: pressed ? 0.98 : 1 }] })}
+                  >
+                    <Text variant="body" style={{ fontWeight: '600' }}>{plannedToday ? 'Voir le planning ›' : 'Créer une séance ›'}</Text>
+                  </Pressable>
+                </Card>
+              );
+            }
+            if (page === 'score') {
+              return (
+                <Card>
+                  <Text variant="heading">Score Sport</Text>
+                  <View style={{ flexDirection: 'row', gap: spacing[4], alignItems: 'center', marginTop: spacing[3] }}>
+                    <ProgressRing value={sport?.value ?? 0} size={72} thickness={8} gradient centerLabel={sport ? `${sport.value}` : '—'} />
+                    <Text variant="caption" color="textMuted" style={{ flex: 1 }}>
+                      Performance, régularité et progression combinées.
+                    </Text>
+                  </View>
+                  <View style={{ flexDirection: 'row', justifyContent: 'space-around', marginTop: spacing[4] }}>
+                    <PillarRing label="Performance" value={sport?.breakdown.performance} color={colors.accentData} />
+                    <PillarRing label="Régularité" value={sport?.breakdown.regularity} color={colors.warning} />
+                    <PillarRing label="Progression" value={sport?.breakdown.progression} color={colors.accentMobility} />
+                  </View>
+                </Card>
+              );
+            }
+            if (page === 'corps') {
+              return (
+                <Card>
+                  <Text variant="heading">État du corps</Text>
+                  <View style={{ flexDirection: 'row', gap: spacing[4], alignItems: 'center', marginTop: spacing[3] }}>
+                    <ProgressRing value={recovery ?? 0} size={72} thickness={8} gradient centerLabel={recovery != null ? `${recovery}` : '—'} />
+                    <View style={{ flex: 1 }}>
+                      <Text variant="caption" color="textMuted">
+                        Récupération globale
+                      </Text>
+                      {tired.length > 0 ? (
+                        <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: spacing[2], marginTop: spacing[2] }}>
+                          <Text variant="caption" color="textSubtle" style={{ alignSelf: 'center' }}>
+                            Encore fatigués :
+                          </Text>
+                          {tired.map((m) => (
+                            <View key={m} style={{ borderRadius: radii.full, paddingHorizontal: 10, paddingVertical: 4, backgroundColor: 'rgba(255,139,94,0.14)', borderWidth: 1, borderColor: 'rgba(255,139,94,0.3)' }}>
+                              <Text variant="caption" style={{ color: colors.accentStrength, fontWeight: '600' }}>
+                                {m}
+                              </Text>
+                            </View>
+                          ))}
+                        </View>
+                      ) : (
+                        <Text variant="body" color="accentData" style={{ marginTop: spacing[2], fontWeight: '600' }}>
+                          Tous les groupes sont rétablis 💪
+                        </Text>
+                      )}
+                      <View style={{ flexDirection: 'row', gap: spacing[5], marginTop: spacing[3] }}>
+                        <MiniStat label="Charge (ACWR)" value={acwr.ratio != null ? acwr.ratio.toFixed(2) : '—'} />
+                        <Pressable onPress={() => router.push({ pathname: '/health/[metric]', params: { metric: 'vo2max' } })}>
+                          <MiniStat label="VO₂ Max" value="—" />
+                        </Pressable>
+                      </View>
+                    </View>
+                  </View>
+                </Card>
+              );
+            }
+            return (
+              <Card>
+                <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'baseline' }}>
+                  <Text variant="heading">Récupération musculaire</Text>
+                  <Pressable onPress={() => router.push('/sport/muscles')}>
+                    <Text variant="caption" color="primary">Voir ›</Text>
+                  </Pressable>
                 </View>
-              ) : (
-                <Text variant="body" color="accentData" style={{ marginTop: spacing[2], fontWeight: '600' }}>
-                  Tous les groupes sont rétablis 💪
-                </Text>
-              )}
-              <View style={{ flexDirection: 'row', gap: spacing[5], marginTop: spacing[3] }}>
-                <MiniStat label="Charge (ACWR)" value={acwr.ratio != null ? acwr.ratio.toFixed(2) : '—'} />
-                <Pressable onPress={() => router.push({ pathname: '/health/[metric]', params: { metric: 'vo2max' } })}>
-                  <MiniStat label="VO₂ Max" value="—" />
-                </Pressable>
-              </View>
-            </View>
-          </View>
-        </Card>
-
-        {/* Récupération musculaire — silhouette en grand, carte à part */}
-        <Card>
-          <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'baseline' }}>
-            <Text variant="heading">Récupération musculaire</Text>
-            <Pressable onPress={() => router.push('/sport/muscles')}>
-              <Text variant="caption" color="primary">Voir ›</Text>
-            </Pressable>
-          </View>
-          <View style={{ alignItems: 'center', marginTop: spacing[3] }}>
-            <MuscleBody colorFor={colorFor} width={260} />
-          </View>
-        </Card>
+                <View style={{ alignItems: 'center', marginTop: spacing[3] }}>
+                  <MuscleBody colorFor={colorFor} width={260} />
+                </View>
+              </Card>
+            );
+          }}
+        />
 
         {/* 3 dernières activités */}
         <Text variant="heading" style={{ marginTop: spacing[2] }}>

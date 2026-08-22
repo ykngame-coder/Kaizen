@@ -38,3 +38,5 @@ export { Icon } from './Icon';
 export type { IconProps, IconName } from './Icon';
 export { FilterChip } from './FilterChip';
 export type { FilterChipProps } from './FilterChip';
+export { Carousel } from './Carousel';
+export type { CarouselProps } from './Carousel';
