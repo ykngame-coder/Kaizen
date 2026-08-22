@@ -3,7 +3,7 @@ import { View } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Button, Card, EmptyState, Icon, Screen, Text, useTheme } from '@supotsu/ui';
 import { radii, spacing } from '@supotsu/design-system';
-import { PICKABLE_EXERCISES } from '@supotsu/shared';
+import { EXERCISE_LIBRARY } from '@supotsu/shared';
 import { EXERCISES } from '@/features/exercises/catalog';
 import { BackButton } from '@/features/navigation/BackButton';
 import { useActivities, useCustomExercises, useWorkoutSets, useWorkouts } from '@/lib/data/queries';
@@ -64,7 +64,10 @@ export function ActivityDetailScreen(): React.JSX.Element {
 
   const exerciseName = useMemo(() => {
     const map = new Map<string, string>();
-    for (const e of PICKABLE_EXERCISES) map.set(e.id, e.name);
+    // The full library, not the pickable subset — an imported workout can
+    // reference ids (e.g. ex-garmin-*) intentionally excluded from manual
+    // search but still real entries with a real name to show here.
+    for (const e of EXERCISE_LIBRARY) map.set(e.id, e.name);
     for (const e of EXERCISES) map.set(e.id, e.name);
     for (const e of customExercises) map.set(e.id, e.name);
     return (exerciseId: string): string => map.get(exerciseId) ?? exerciseId;

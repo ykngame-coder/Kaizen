@@ -4,6 +4,7 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Badge, Button, Card, Input, Screen, Text, useTheme } from '@supotsu/ui';
 import { radii, spacing } from '@supotsu/design-system';
 import { suggestProgression } from '@supotsu/engines';
+import { EXERCISE_LIBRARY } from '@supotsu/shared';
 import { EXERCISES, MUSCLE_LABEL, toCatalogExercise, type Exercise } from '@/features/exercises/catalog';
 import { useAddWorkout, useCustomExercises, useExerciseHistory, useWorkouts, useWorkoutSets } from '@/lib/data/queries';
 import { formatDate } from '@/lib/format';
@@ -37,7 +38,16 @@ export function NewWorkoutScreen(): React.JSX.Element {
   const [importSourceId, setImportSourceId] = useState<string | undefined>();
 
   const allExercises = useMemo(() => [...customExercises.map(toCatalogExercise), ...EXERCISES], [customExercises]);
-  const byId = useMemo(() => new Map(allExercises.map((ex) => [ex.id, ex])), [allExercises]);
+  // Lookup used to resolve an exercise id to its card (name, muscles…) — wider
+  // than `allExercises` (the search/pick surface) on purpose: it also covers
+  // EXERCISE_LIBRARY ids that aren't offered in manual search (e.g.
+  // ex-garmin-*, auto-mapped from a Garmin import), so a resumed/imported
+  // session still resolves instead of silently dropping every row.
+  const byId = useMemo(() => {
+    const map = new Map(allExercises.map((ex) => [ex.id, ex]));
+    for (const ex of EXERCISE_LIBRARY) if (!map.has(ex.id)) map.set(ex.id, toCatalogExercise(ex));
+    return map;
+  }, [allExercises]);
   const isCustom = (id: string): boolean => id.startsWith('custom-');
 
   // Séances déjà faites (incl. import Garmin) qu'on peut reprendre comme point de départ.
