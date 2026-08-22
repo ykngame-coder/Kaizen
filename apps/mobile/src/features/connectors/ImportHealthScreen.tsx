@@ -144,14 +144,18 @@ export function ImportHealthScreen(): React.JSX.Element {
         });
         return;
       }
-      await importHealth.mutateAsync({ activities, healthMetrics, records, sleepSessions, workouts });
-      const workoutsNote = workouts.length > 0 ? `, ${workouts.length} séance(s) musculation` : '';
-      setImportedWorkouts(workouts.length);
+      // Use the persisted counts, not the pre-DB parsed lengths — an upsert
+      // can silently create fewer rows than were parsed (e.g. re-importing
+      // an overlapping export, where most rows are legitimate no-op dupes),
+      // and the message should reflect what's actually in the database.
+      const persisted = await importHealth.mutateAsync({ activities, healthMetrics, records, sleepSessions, workouts });
+      const workoutsNote = persisted.workouts > 0 ? `, ${persisted.workouts} séance(s) musculation` : '';
+      setImportedWorkouts(persisted.workouts);
       setStatus({
         tone: 'success',
         text:
-          `Importé : ${activities.length} activité(s), ${healthMetrics.length} donnée(s) santé, ` +
-          `${sleepSessions.length} nuit(s), ${records.length} record(s)${workoutsNote}` +
+          `Importé : ${persisted.activities} activité(s), ${persisted.health} donnée(s) santé, ` +
+          `${persisted.sleep} nuit(s), ${records.length} record(s)${workoutsNote}` +
           (failed > 0 ? ` (${failed} fichier(s) ignoré(s)).` : '.'),
       });
     } catch (e) {
