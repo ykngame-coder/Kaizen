@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { FitBaseType, FitEncoder, type FitEncoderField } from 'fit-file-parser';
-import { parseGarminFitWorkout } from './garminFit';
+import { parseGarminFitWorkout, parseGarminFitWorkoutsBatch } from './garminFit';
 
 // Field numbers/sizes/baseTypes for the 'set' message (global mesg 225) —
 // verified against Garmin's published FIT profile and round-tripped through
@@ -101,5 +101,50 @@ describe('parseGarminFitWorkout', () => {
     const bytes = encoder.close();
     const workout = await parseGarminFitWorkout(bytes, 'garmin-fit-6');
     expect(workout).toBeNull();
+  });
+});
+
+describe('parseGarminFitWorkoutsBatch', () => {
+  function fitBytes(categoryId: number, reps = 8): Uint8Array {
+    resetEncoder();
+    encodeActiveSet({ reps, categoryId });
+    return encoder.close();
+  }
+
+  // A multi-year Garmin export nests one raw .fit file per recorded activity
+  // (runs, rides, walks...), not just strength sessions — tens of thousands
+  // for a long-time user. This batches that list instead of awaiting every
+  // file in one uninterrupted loop, so the caller can yield to the UI thread
+  // and show real progress instead of freezing on a bare "…".
+  it('extracts workouts only from entries with usable strength sets', async () => {
+    const entries = [
+      { name: 'a.fit', bytes: fitBytes(0) }, // bench_press
+      { name: 'b.fit', bytes: fitBytes(32) }, // run, unmapped -> dropped
+      { name: 'c.fit', bytes: fitBytes(28) }, // squat
+    ];
+    const { workouts, failed } = await parseGarminFitWorkoutsBatch(entries);
+    expect(workouts.map((w) => w.externalId).sort()).toEqual(['a.fit', 'c.fit']);
+    expect(failed).toEqual([]);
+  });
+
+  it('reports progress once per batch, covering every entry', async () => {
+    const entries = Array.from({ length: 5 }, (_, i) => ({ name: `f${i}.fit`, bytes: fitBytes(0) }));
+    const progress: { done: number; total: number }[] = [];
+    await parseGarminFitWorkoutsBatch(entries, { batchSize: 2, onProgress: (p) => progress.push(p) });
+    expect(progress).toEqual([
+      { done: 2, total: 5 },
+      { done: 4, total: 5 },
+      { done: 5, total: 5 },
+    ]);
+  });
+
+  it('records a parse failure by name without losing the rest of the batch', async () => {
+    const entries = [
+      { name: 'good.fit', bytes: fitBytes(0) },
+      { name: 'corrupt.fit', bytes: new Uint8Array([1, 2, 3]) },
+    ];
+    const { workouts, failed } = await parseGarminFitWorkoutsBatch(entries);
+    expect(workouts.map((w) => w.externalId)).toEqual(['good.fit']);
+    expect(failed).toEqual(['corrupt.fit']);
   });
 });

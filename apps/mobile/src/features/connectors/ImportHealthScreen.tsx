@@ -5,7 +5,7 @@ import * as DocumentPicker from 'expo-document-picker';
 import { strFromU8, unzipSync } from 'fflate';
 import { Badge, Button, Card, Screen, Text } from '@supotsu/ui';
 import { spacing } from '@supotsu/design-system';
-import { parseGarminFitWorkout, parseImportFile, type ImportedWorkout } from '@supotsu/connectors';
+import { parseGarminFitWorkoutsBatch, parseImportFile, type ImportedWorkout } from '@supotsu/connectors';
 import { useImportHealth } from '@/lib/data/queries';
 import { readFileBytes } from '@/lib/fileBytes';
 
@@ -50,6 +50,7 @@ export function ImportHealthScreen(): React.JSX.Element {
   );
   const [importedWorkouts, setImportedWorkouts] = useState(0);
   const [busy, setBusy] = useState(false);
+  const [progress, setProgress] = useState<{ done: number; total: number } | null>(null);
 
   const pickAndImport = async (): Promise<void> => {
     setStatus(null);
@@ -68,11 +69,16 @@ export function ImportHealthScreen(): React.JSX.Element {
       // zip deeper, under DI-Connect-Uploaded-Files/) — those carry exercise
       // sets (reps/weight/category) no JSON file in the export has, so they're
       // decoded too and turned into structured workouts for the muscle map.
+      // A multi-year account nests one .fit per *every* recorded activity
+      // (runs, rides… not just strength), tens of thousands of files — they're
+      // collected here and parsed as a single batch below (with progress),
+      // instead of awaited one by one inline, so a long import doesn't peg the
+      // JS thread and read as a hang.
       const activities: Parameters<typeof importHealth.mutateAsync>[0]['activities'] = [];
       const healthMetrics: Parameters<typeof importHealth.mutateAsync>[0]['healthMetrics'] = [];
       const records: Parameters<typeof importHealth.mutateAsync>[0]['records'] = [];
       const sleepSessions: Parameters<typeof importHealth.mutateAsync>[0]['sleepSessions'] = [];
-      const workouts: ImportedWorkout[] = [];
+      const fitEntries: { name: string; bytes: Uint8Array }[] = [];
       let failed = 0;
       const absorb = (text: string): void => {
         const parsed = parseImportFile(JSON.parse(text));
@@ -80,10 +86,6 @@ export function ImportHealthScreen(): React.JSX.Element {
         healthMetrics.push(...parsed.healthMetrics);
         records.push(...parsed.records);
         sleepSessions.push(...parsed.sleepSessions);
-      };
-      const absorbFit = async (bytes: Uint8Array, externalId: string): Promise<void> => {
-        const workout = await parseGarminFitWorkout(bytes, externalId);
-        if (workout) workouts.push({ ...workout, source: 'garmin' });
       };
 
       for (const asset of res.assets) {
@@ -102,22 +104,14 @@ export function ImportHealthScreen(): React.JSX.Element {
                   failed += 1;
                 }
               } else if (lower.endsWith('.fit')) {
-                try {
-                  await absorbFit(data, `garmin-fit:${entryName}`);
-                } catch {
-                  failed += 1;
-                }
+                fitEntries.push({ name: `garmin-fit:${entryName}`, bytes: data });
               } else if (lower.endsWith('.zip')) {
                 // Garmin nests one more zip level for the raw per-activity .fit files.
                 try {
                   const nested = unzipSync(data);
                   for (const [innerName, innerData] of Object.entries(nested)) {
                     if (!innerName.toLowerCase().endsWith('.fit')) continue;
-                    try {
-                      await absorbFit(innerData, `garmin-fit:${entryName}/${innerName}`);
-                    } catch {
-                      failed += 1;
-                    }
+                    fitEntries.push({ name: `garmin-fit:${entryName}/${innerName}`, bytes: innerData });
                   }
                 } catch {
                   failed += 1;
@@ -125,13 +119,22 @@ export function ImportHealthScreen(): React.JSX.Element {
               }
             }
           } else if (isFit) {
-            await absorbFit(await readFileBytes(asset.uri), `garmin-fit:${asset.name}`);
+            fitEntries.push({ name: `garmin-fit:${asset.name}`, bytes: await readFileBytes(asset.uri) });
           } else {
             absorb(await readFileText(asset.uri));
           }
         } catch {
           failed += 1;
         }
+      }
+
+      let workouts: ImportedWorkout[] = [];
+      if (fitEntries.length > 0) {
+        setProgress({ done: 0, total: fitEntries.length });
+        const result = await parseGarminFitWorkoutsBatch(fitEntries, { onProgress: setProgress });
+        workouts = result.workouts.map((w) => ({ ...w, source: 'garmin' as const }));
+        failed += result.failed.length;
+        setProgress(null);
       }
 
       if (activities.length + healthMetrics.length + records.length + sleepSessions.length + workouts.length === 0) {
@@ -155,6 +158,7 @@ export function ImportHealthScreen(): React.JSX.Element {
       setStatus({ tone: 'error', text: `Échec : ${errorMessage(e)}` });
     } finally {
       setBusy(false);
+      setProgress(null);
     }
   };
 
@@ -179,6 +183,11 @@ export function ImportHealthScreen(): React.JSX.Element {
         <View style={{ alignItems: 'flex-start', marginTop: spacing[2] }}>
           <Button label={busy ? '…' : 'Choisir un fichier'} onPress={pickAndImport} disabled={busy} />
         </View>
+        {progress ? (
+          <Text variant="caption" color="textMuted" style={{ marginTop: spacing[2] }}>
+            Analyse des fichiers Garmin… {progress.done} / {progress.total}
+          </Text>
+        ) : null}
       </Card>
 
       {status ? <Badge label={status.text} tone={status.tone} /> : null}

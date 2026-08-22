@@ -124,3 +124,42 @@ export async function parseGarminFitWorkout(
   if (sets.length === 0) return null;
   return { externalId, startedAt: sets[0]!.startedAt, sets };
 }
+
+export interface FitBatchProgress {
+  done: number;
+  total: number;
+}
+
+/**
+ * Parse many raw .fit entries into workouts (e.g. every file nested in a
+ * Garmin GDPR export's UploadedFiles_*.zip — tens of thousands for a
+ * multi-year account, the vast majority non-strength and dropped by
+ * `parseGarminFitWorkout`). Awaiting all of them in one uninterrupted loop
+ * pegs the JS thread for the whole import with no visible progress, which on
+ * a phone reads as a hang; this yields to the event loop between batches so
+ * the caller can keep the UI responsive and show real progress.
+ */
+export async function parseGarminFitWorkoutsBatch(
+  entries: { name: string; bytes: Uint8Array }[],
+  options: { batchSize?: number; onProgress?: (progress: FitBatchProgress) => void } = {},
+): Promise<{ workouts: GarminFitWorkout[]; failed: string[] }> {
+  const batchSize = options.batchSize ?? 150;
+  const total = entries.length;
+  const workouts: GarminFitWorkout[] = [];
+  const failed: string[] = [];
+
+  for (let i = 0; i < total; i += batchSize) {
+    for (const entry of entries.slice(i, i + batchSize)) {
+      try {
+        const workout = await parseGarminFitWorkout(entry.bytes, entry.name);
+        if (workout) workouts.push(workout);
+      } catch {
+        failed.push(entry.name);
+      }
+    }
+    options.onProgress?.({ done: Math.min(i + batchSize, total), total });
+    await new Promise((resolve) => setTimeout(resolve, 0));
+  }
+
+  return { workouts, failed };
+}
