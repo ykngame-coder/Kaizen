@@ -1,5 +1,12 @@
 {
   "common": {
+    "tab": {
+      "index": "Accueil",
+      "sport": "Sport",
+      "sommeil": "Sommeil",
+      "nutrition": "Nutrition",
+      "profile": "Profil"
+    },
     "confidence": {
       "high": "Confiance élevée",
       "medium": "Confiance moyenne",
@@ -113,6 +120,22 @@
         "observation": "Données du jour encore limitées.",
         "analysis": "Sans santé ni activité récente, le bilan reste partiel.",
         "action": "Importe ton export Garmin ou ajoute une activité pour un bilan complet."
+      },
+      "readiness": {
+        "high": "prêt à performer",
+        "moderate": "effort modéré",
+        "low": "prudence conseillée"
+      },
+      "recoveryBand": {
+        "excellent": "excellent",
+        "correct": "correct",
+        "moyen": "moyen",
+        "faible": "faible"
+      },
+      "section": {
+        "recovery": { "title": "Récupération", "noData": "Connecte tes données santé" },
+        "readiness": { "title": "Aptitude à l'effort", "noData": "Selon récup + charge" },
+        "nutrition": { "title": "Nutrition", "today": "apports du jour", "noData": "Ajoute un repas" }
       }
     },
     "load": {
@@ -149,7 +172,7 @@
       },
       "targets": {
         "observation": "Cibles estimées pour {{weight}} kg.",
-        "observation_withGoal": "Cibles estimées pour {{weight}} kg (objectif {{goal}}).",
+        "observationWithGoal": "Cibles estimées pour {{weight}} kg (objectif {{goal}}).",
         "analysis": "Basées sur des ratios standards (protéines g/kg, hydratation, apport calorique).",
         "action": "Ajuste-les selon ta faim, ton énergie et l'évolution de ton poids."
       },
@@ -178,7 +201,7 @@
         "élevé": "Énergie estimée pour demain : {{energyScore}}/100 (risque de fatigue élevé)."
       },
       "analysis": "Estimation d'après ta trajectoire récente. C'est une probabilité, pas une certitude.",
-      "analysis_withAvg": "Estimation d'après ta trajectoire récente. Ta moyenne récente est de {{avgSleepHours}} h/nuit. C'est une probabilité, pas une certitude.",
+      "analysisWithAvg": "Estimation d'après ta trajectoire récente. Ta moyenne récente est de {{avgSleepHours}} h/nuit. C'est une probabilité, pas une certitude.",
       "action": {
         "low": "Journée propice : tu peux envisager une séance exigeante si elle est prévue.",
         "moderate": "Vise une intensité modérée et surveille tes sensations à l'échauffement.",

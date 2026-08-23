@@ -2,6 +2,7 @@ import React from 'react';
 import { Pressable, Text, View } from 'react-native';
 import { useRouter, useSegments, type Href } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useTranslation } from 'react-i18next';
 import { useTheme } from '@supotsu/ui';
 import { useAuth } from '@/features/auth/AuthProvider';
 import { useOnboarding } from '@/features/onboarding/OnboardingProvider';
@@ -9,17 +10,16 @@ import { TabIcon } from './TabIcon';
 
 interface TabDef {
   key: string;
-  label: string;
   path: Href;
 }
 
 /** The five hubs (architecture: APP → Application). Always reachable. */
 const TABS: TabDef[] = [
-  { key: 'index', label: 'Accueil', path: '/' },
-  { key: 'sport', label: 'Sport', path: '/sport' },
-  { key: 'sommeil', label: 'Sommeil', path: '/sommeil' },
-  { key: 'nutrition', label: 'Nutrition', path: '/nutrition' },
-  { key: 'profile', label: 'Profil', path: '/profile' },
+  { key: 'index', path: '/' },
+  { key: 'sport', path: '/sport' },
+  { key: 'sommeil', path: '/sommeil' },
+  { key: 'nutrition', path: '/nutrition' },
+  { key: 'profile', path: '/profile' },
 ];
 
 /**
@@ -29,6 +29,7 @@ const TABS: TabDef[] = [
  * duplicate. Emerald marks the active section; a lime dot underlines it.
  */
 export function AppTabBar(): React.JSX.Element | null {
+  const { t } = useTranslation();
   const router = useRouter();
   const segments = useSegments() as string[];
   const insets = useSafeAreaInsets();
@@ -70,7 +71,7 @@ export function AppTabBar(): React.JSX.Element | null {
               <TabIcon route={tab.key} color={tint} size={20} />
             )}
             <Text style={{ color: tint, fontSize: 10, fontWeight: active ? '700' : '500' }}>
-              {tab.label}
+              {t(`common.tab.${tab.key}`)}
             </Text>
             <View
               style={{

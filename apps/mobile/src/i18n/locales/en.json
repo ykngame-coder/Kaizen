@@ -1,1 +1,405 @@
-{}
+{
+  "common": {
+    "tab": {
+      "index": "Home",
+      "sport": "Sport",
+      "sommeil": "Sleep",
+      "nutrition": "Nutrition",
+      "profile": "Profile"
+    },
+    "confidence": {
+      "high": "High confidence",
+      "medium": "Medium confidence",
+      "toConfirm": "To confirm"
+    },
+    "send": "Send",
+    "cancel": "Cancel",
+    "save": "Save",
+    "back": "Back",
+    "close": "Close",
+    "loading": "Loading…"
+  },
+  "home": {
+    "dailyBriefing": {
+      "title": "Today's briefing"
+    }
+  },
+  "coach": {
+    "title": "AI Coach",
+    "subtitle": "Your coach analyzes your data and explains every piece of advice.",
+    "observationAnalysisAction": "OBSERVATION → ANALYSIS → ACTION",
+    "placeholder": "Ask your question…"
+  },
+  "engines": {
+    "circadian": {
+      "profile": {
+        "observation": {
+          "early": "Early chronotype — you sleep on average from {{bedtime}} to {{wake}}.",
+          "intermediate": "Intermediate chronotype — you sleep on average from {{bedtime}} to {{wake}}.",
+          "late": "Late chronotype — you sleep on average from {{bedtime}} to {{wake}}."
+        },
+        "analysis": {
+          "jetlag": "Your weekday/weekend social jetlag is {{jetlagMin}} min. The more regular your schedule, the more stable your internal clock.",
+          "nights": "Computed from your last {{nights}} nights. The more regular your schedule, the more stable your internal clock."
+        },
+        "action": "To aim for {{hours}} h, go to bed around {{bedtime}} and keep your wake time around {{wake}}."
+      }
+    },
+    "coach": {
+      "question": {
+        "today": "What should I do today?",
+        "week": "Analyze my week",
+        "fatigue": "I'm tired",
+        "plateau": "Why am I stuck?",
+        "plan": "Plan me a session",
+        "help": "Help"
+      },
+      "week": {
+        "empty": "You haven't logged any activity this week. Once you add some, I can analyze your load and consistency.",
+        "summary": {
+          "up": "This week: {{count}} activity(ies) over {{days}} day(s), {{totalMin}} min total. Your load is climbing sharply.",
+          "down": "This week: {{count}} activity(ies) over {{days}} day(s), {{totalMin}} min total. Your load is decreasing.",
+          "balanced": "This week: {{count}} activity(ies) over {{days}} day(s), {{totalMin}} min total. Your load is balanced."
+        }
+      },
+      "fatigue": {
+        "observation": "You're reporting fatigue today.",
+        "analysis": {
+          "highLoad": "Your recent load is high, so this fatigue makes sense.",
+          "normal": "Recovery is a core part of progress."
+        },
+        "action": "Prioritize rest or a light mobility session today."
+      },
+      "plateau": {
+        "lowActivity": {
+          "observation": "You've been active {{days}} day(s) over the last 4 weeks.",
+          "analysis": "Lasting progress starts with consistency.",
+          "action": "Aim for 3 sessions a week before increasing intensity."
+        },
+        "stagnating": {
+          "observation": "Your consistency is good but your performance is stalling.",
+          "analysis": "The body adapts: without a new stimulus, progress slows down.",
+          "action": "Vary your exercises or slightly increase load/volume."
+        }
+      },
+      "plan": {
+        "observation": "Your current load gives an acute/chronic ratio of {{ratio}}.",
+        "analysis": "I'm adapting the difficulty to your current load state.",
+        "action": {
+          "recovery": "I suggest a recovery session (mobility, walking, light cardio).",
+          "intense": "I suggest a more intense session to rebuild your load.",
+          "balanced": "I suggest a balanced session in line with your program."
+        }
+      },
+      "help": "I'm your Supotsu coach. I can analyze your week, tell you what to do today, adapt your session to your fatigue, and help if you're stuck. Ask me a question or pick a suggestion."
+    },
+    "community": {
+      "challenge": {
+        "reached": {
+          "observation": "Goal reached: {{progress}}/{{target}}.",
+          "analysis": "You completed the challenge in time.",
+          "action": "Aim for the top of the leaderboard or start a new challenge."
+        },
+        "pending": {
+          "observation": "{{progress}}/{{target}}, {{remaining}} to go.",
+          "analysis": "{{daysLeft}} day(s) left to finish the challenge.",
+          "action": {
+            "pace": "Plan for about {{perDay}} per day to make it.",
+            "over": "The period is over: join a new challenge."
+          }
+        }
+      }
+    },
+    "decision": {
+      "readyToTrain": {
+        "observation": "Good recovery ({{recovery}}/100) and controlled load.",
+        "analysis": "Your body is ready to handle a demanding session.",
+        "action": "Make the most of it with an intense or quality session."
+      },
+      "limitedData": {
+        "observation": "Today's data is still limited.",
+        "analysis": "Without recent health or activity data, the picture stays partial.",
+        "action": "Import your Garmin export or add an activity for a full picture."
+      },
+      "readiness": {
+        "high": "ready to perform",
+        "moderate": "moderate effort",
+        "low": "caution advised"
+      },
+      "recoveryBand": {
+        "excellent": "excellent",
+        "correct": "good",
+        "moyen": "average",
+        "faible": "low"
+      },
+      "section": {
+        "recovery": { "title": "Recovery", "noData": "Connect your health data" },
+        "readiness": { "title": "Readiness to train", "noData": "Based on recovery + load" },
+        "nutrition": { "title": "Nutrition", "today": "today's intake", "noData": "Add a meal" }
+      }
+    },
+    "load": {
+      "observation": {
+        "underLoad": "Your acute/chronic load ratio is {{ratio}} (under-load).",
+        "optimal": "Your acute/chronic load ratio is {{ratio}} (optimal).",
+        "high": "Your acute/chronic load ratio is {{ratio}} (high).",
+        "risk": "Your acute/chronic load ratio is {{ratio}} (risk zone)."
+      },
+      "analysis": "Compares your load over the last 7 days to your average over the last 4 weeks.",
+      "action": {
+        "underLoad": "You can gradually increase volume this week.",
+        "optimal": "Well-balanced load: keep up this steady progression.",
+        "high": "Load rising fast — watch your recovery before adding more.",
+        "risk": "Load spike: ease off a bit this week to limit injury risk."
+      }
+    },
+    "marketplace": {
+      "observation": "\"{{title}}\" ({{focus}}, level {{level}}).",
+      "analysis": {
+        "default": "Default pick: complete your profile for a personalized recommendation.",
+        "goal": "Matches your goal.",
+        "goalAndAvailability": "Matches your goal and weekly availability.",
+        "profile": "Matches your profile.",
+        "profileAndAvailability": "Matches your profile and weekly availability."
+      },
+      "action": "Open the program to see its structure before signing up."
+    },
+    "nutrition": {
+      "noWeight": {
+        "observation": "Your weight isn't set yet.",
+        "analysis": "Without a weight, needs are approximated with average values.",
+        "action": "Add your weight to your profile for personalized targets."
+      },
+      "targets": {
+        "observation": "Estimated targets for {{weight}} kg.",
+        "observationWithGoal": "Estimated targets for {{weight}} kg (goal: {{goal}}).",
+        "analysis": "Based on standard ratios (protein g/kg, hydration, calorie intake).",
+        "action": "Adjust them based on your hunger, energy, and how your weight evolves."
+      },
+      "day": {
+        "lowProtein": {
+          "observation": "You're at {{proteinG}} g of protein ({{proteinPct}}% of your target).",
+          "analysis": "Low protein intake slows recovery and muscle maintenance.",
+          "action": "Add a protein source to your next meal (eggs, fish, legumes)."
+        },
+        "lowHydration": {
+          "observation": "Hydration at {{hydrationMl}} ml ({{hydrationPct}}% of your target).",
+          "analysis": "Insufficient hydration hurts alertness and performance.",
+          "action": "Drink a glass of water now and keep a bottle handy."
+        },
+        "onTrack": {
+          "observation": "{{kcal}} kcal and {{proteinG}} g of protein today.",
+          "analysis": "Your intake is consistent with your estimated targets.",
+          "action": "Keep it up; adjust if your hunger or energy changes."
+        }
+      }
+    },
+    "prediction": {
+      "observation": {
+        "faible": "Estimated energy for tomorrow: {{energyScore}}/100 (low fatigue risk).",
+        "modéré": "Estimated energy for tomorrow: {{energyScore}}/100 (moderate fatigue risk).",
+        "élevé": "Estimated energy for tomorrow: {{energyScore}}/100 (high fatigue risk)."
+      },
+      "analysis": "Estimated from your recent trajectory. This is a probability, not a certainty.",
+      "analysisWithAvg": "Estimated from your recent trajectory. Your recent average is {{avgSleepHours}} h/night. This is a probability, not a certainty.",
+      "action": {
+        "low": "Good day for it: consider a demanding session if one's planned.",
+        "moderate": "Aim for moderate intensity and monitor how you feel while warming up.",
+        "high": "Prioritize recovery: active rest, mobility, and an early bedtime tonight."
+      },
+      "driver": {
+        "sleepDebt": "sleep debt (−{{debt}} h over {{windowDays}} d)",
+        "irregularBedtime": "irregular bedtimes",
+        "risingLoad": "training load rising fast",
+        "goodRecovery": "good recovery trajectory",
+        "stableRecovery": "stable recovery over recent days"
+      }
+    },
+    "recommendation": {
+      "acwrRisk": {
+        "title": "Ease your load this week",
+        "observation": "Your acute/chronic load ratio is {{ratio}} (risk zone).",
+        "analysis": "A rapid load increase significantly raises injury risk.",
+        "action": "Cut volume by ~20% and keep one easy session to absorb the spike."
+      },
+      "lowRecovery": {
+        "title": "Prioritize recovery",
+        "observation": "Your recovery is low ({{recovery}}/100).",
+        "analysis": "Your body hasn't yet absorbed recent load (sleep, HRV, HR).",
+        "action": "Aim for active rest or mobility today, not intensity."
+      },
+      "poorSleep": {
+        "title": "Catch up on sleep",
+        "observation": "Your sleep score is low ({{sleep}}/100).",
+        "analysis": "Poor sleep hurts recovery, mood, and performance.",
+        "action": "Go to bed 30–60 min earlier tonight and cut screens before bed."
+      },
+      "lowWellness": {
+        "title": "Take care of your mind",
+        "observation": "Your wellness index is low ({{wellness}}/100).",
+        "analysis": "Stress and mental fatigue weigh as much as physical fatigue.",
+        "action": "Give yourself a real break: a few minutes of breathing or a walk."
+      },
+      "roomToPush": {
+        "title": "You can pick up the load",
+        "observation": "Your recent load is low (ratio {{ratio}}).",
+        "analysis": "You're below your usual level and well recovered — there's room.",
+        "action": "Add a bit of volume or intensity, gradually."
+      },
+      "allGood": {
+        "title": "Everything's green — keep going",
+        "observation": "Your indicators are in good ranges today.",
+        "analysis": "Nothing calls for a particular adjustment.",
+        "action": "Stick to your plan and keep the consistency — that's what pays off."
+      },
+      "noData": {
+        "title": "Add data for a recommendation",
+        "observation": "Not enough data yet.",
+        "analysis": "Log an activity or connect a device.",
+        "action": "Come back here once you've tracked a few days."
+      }
+    },
+    "recovery": {
+      "observation": {
+        "excellent": "Your recovery is {{score}}/100 (excellent).",
+        "correct": "Your recovery is {{score}}/100 (good).",
+        "moyen": "Your recovery is {{score}}/100 (average).",
+        "faible": "Your recovery is {{score}}/100 (low)."
+      },
+      "analysis": "Computed from your sleep, HRV and heart rate.",
+      "action": {
+        "excellent": "Your body is ready: an intense session fits well.",
+        "correct": "A normal workout is recommended today.",
+        "moyen": "Adjust intensity: favor technique or moderate volume.",
+        "faible": "Prioritize recovery: mobility or active rest."
+      }
+    },
+    "scoring": {
+      "trend": {
+        "observation": {
+          "up": "Your training load is climbing {{pct}}%/week on average over {{weeks}} weeks.",
+          "down": "Your training load is dropping {{pct}}%/week on average over {{weeks}} weeks."
+        },
+        "analysis": {
+          "up": "Progressive overload is in place — good for continued gains.",
+          "down": "A declining load slows progress, unless this is a planned deload week.",
+          "stable": "Your load is stable — neither clear progress nor regression."
+        },
+        "action": {
+          "up": "Keep this momentum going, while watching your recovery.",
+          "down": "If this isn't a planned recovery week, increase volume slightly.",
+          "stable": "Add a bit of volume or load to restart progress."
+        }
+      },
+      "sport": {
+        "observation": "Sport score {{value}}/100 — performance {{performance}}, consistency {{regularity}}, progression {{progression}}.",
+        "analysis": {
+          "weak": {
+            "progression": "The weakest point is progression ({{value}}/100).",
+            "regularity": "The weakest point is consistency ({{value}}/100).",
+            "performance": "The weakest point is performance ({{value}}/100)."
+          },
+          "balanced": "All three components are in a solid range."
+        },
+        "action": {
+          "weak": {
+            "progression": "Aim for a small load or volume increase this week.",
+            "regularity": "Add a session this week to get back into a regular rhythm.",
+            "performance": "Ease back in — one more session this week will restart your momentum."
+          },
+          "balanced": "Keep up this pace."
+        }
+      },
+      "daily": {
+        "lowRecovery": {
+          "observation": "Your recovery is low ({{recovery}}/100).",
+          "analysis": "Training hard on low recovery slows down progress.",
+          "action": "Today's priority: rest or light mobility."
+        },
+        "noActivity": {
+          "observation": "No activity logged in the last 7 days.",
+          "analysis": "Your consistency is dipping — the hardest part is starting again.",
+          "action": "Plan a light session today to restart momentum."
+        },
+        "highLoad": {
+          "observation": "Your recent load is clearly above your usual.",
+          "analysis": "A too-fast increase raises the risk of fatigue and injury.",
+          "action": "Prioritize active recovery or mobility today."
+        },
+        "roomToPush": {
+          "observation": "Your load is dropping while your consistency stays good.",
+          "analysis": "Your body has room to take on more.",
+          "action": "You can plan a slightly more intense session."
+        },
+        "balanced": {
+          "observation": "You've been active {{days}} day(s) over the last 7.",
+          "analysis": "Your load and consistency are well balanced.",
+          "action": "Keep this pace up, progress is sustainable."
+        }
+      }
+    },
+    "sleep": {
+      "score": {
+        "observation": {
+          "excellent": "Your sleep score is {{score}}/100 (excellent), for your night.",
+          "correct": "Your sleep score is {{score}}/100 (good), for your night.",
+          "moyen": "Your sleep score is {{score}}/100 (average), for your night.",
+          "faible": "Your sleep score is {{score}}/100 (low), for your night.",
+          "withHours": {
+            "excellent": "Your sleep score is {{score}}/100 (excellent), for {{hours}} h.",
+            "correct": "Your sleep score is {{score}}/100 (good), for {{hours}} h.",
+            "moyen": "Your sleep score is {{score}}/100 (average), for {{hours}} h.",
+            "faible": "Your sleep score is {{score}}/100 (low), for {{hours}} h."
+          }
+        },
+        "analysis": "Computed from the duration and efficiency of your last night.",
+        "action": {
+          "excellent": "Keep it up: this rhythm supports your recovery well.",
+          "correct": "Good sleep — aim for regular bedtimes.",
+          "moyen": "Try going to bed 30 min earlier tonight.",
+          "faible": "Short night: ease off intensity and prioritize sleep today."
+        }
+      },
+      "coaching": {
+        "observation": {
+          "excellent": "Your overall sleep is at {{score}}/100 (excellent).",
+          "correct": "Your overall sleep is at {{score}}/100 (good).",
+          "moyen": "Your overall sleep is at {{score}}/100 (average).",
+          "faible": "Your overall sleep is at {{score}}/100 (low)."
+        },
+        "allGood": {
+          "analysis": "All measured components are in the green.",
+          "action": "Keep it up: maintain this steady rhythm to consolidate your recovery."
+        },
+        "weak": {
+          "analysis": {
+            "single": "This score seems mainly tied to one factor below — a correlation observed in your data, not a certainty.",
+            "multi": "This score seems mainly tied to the factors below — a correlation observed in your data, not a certainty."
+          }
+        },
+        "action": {
+          "quantity": "Aim for 30 to 60 min more sleep: go to bed a bit earlier tonight.",
+          "quality": "For quality: limit screens and alcohol in the evening, and keep the room cool and dark.",
+          "regularity": "Aim for a stable bedtime window (±30 min), weekends included.",
+          "debt": "Debt built up over several months: catch up gradually (30-60 min more sleep per night, over several weeks), not all at once.",
+          "recovery": "Low recovery: ease off intensity today and favor active rest."
+        }
+      }
+    },
+    "wellness": {
+      "observation": {
+        "rayonnant": "Your wellness index is {{index}}/100 (thriving).",
+        "stable": "Your wellness index is {{index}}/100 (stable).",
+        "fragile": "Your wellness index is {{index}}/100 (fragile).",
+        "difficile": "Your wellness index is {{index}}/100 (tough)."
+      },
+      "analysis": "Based on your mood, energy, and stress felt today.",
+      "action": {
+        "rayonnant": "Great energy — make the most of it for what matters.",
+        "stable": "Everything's fine: keep the routines that do you good.",
+        "fragile": "Give yourself a break: a few minutes of breathing can help.",
+        "difficile": "Demanding day — be kind to yourself and prioritize rest."
+      }
+    }
+  }
+}

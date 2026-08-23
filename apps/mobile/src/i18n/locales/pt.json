@@ -1,1 +1,405 @@
-{}
+{
+  "common": {
+    "tab": {
+      "index": "Início",
+      "sport": "Esporte",
+      "sommeil": "Sono",
+      "nutrition": "Nutrição",
+      "profile": "Perfil"
+    },
+    "confidence": {
+      "high": "Confiança alta",
+      "medium": "Confiança média",
+      "toConfirm": "A confirmar"
+    },
+    "send": "Enviar",
+    "cancel": "Cancelar",
+    "save": "Salvar",
+    "back": "Voltar",
+    "close": "Fechar",
+    "loading": "Carregando…"
+  },
+  "home": {
+    "dailyBriefing": {
+      "title": "Resumo do dia"
+    }
+  },
+  "coach": {
+    "title": "Coach IA",
+    "subtitle": "Seu coach analisa seus dados e explica cada conselho.",
+    "observationAnalysisAction": "OBSERVAÇÃO → ANÁLISE → AÇÃO",
+    "placeholder": "Faça sua pergunta…"
+  },
+  "engines": {
+    "circadian": {
+      "profile": {
+        "observation": {
+          "early": "Cronotipo matutino — você dorme em média das {{bedtime}} às {{wake}}.",
+          "intermediate": "Cronotipo intermediário — você dorme em média das {{bedtime}} às {{wake}}.",
+          "late": "Cronotipo vespertino — você dorme em média das {{bedtime}} às {{wake}}."
+        },
+        "analysis": {
+          "jetlag": "Seu jetlag social entre semana e fim de semana é de {{jetlagMin}} min. Quanto mais regulares seus horários, mais estável seu relógio interno.",
+          "nights": "Calculado com base nas suas últimas {{nights}} noites. Quanto mais regulares seus horários, mais estável seu relógio interno."
+        },
+        "action": "Para atingir {{hours}} h, deite-se por volta das {{bedtime}} mantendo seu horário de acordar por volta das {{wake}}."
+      }
+    },
+    "coach": {
+      "question": {
+        "today": "O que devo fazer hoje?",
+        "week": "Analise minha semana",
+        "fatigue": "Estou cansado",
+        "plateau": "Por que estou estagnado?",
+        "plan": "Prepare um treino para mim",
+        "help": "Ajuda"
+      },
+      "week": {
+        "empty": "Você não tem nenhuma atividade registrada esta semana. Assim que adicionar, poderei analisar sua carga e regularidade.",
+        "summary": {
+          "up": "Esta semana: {{count}} atividade(s) em {{days}} dia(s), {{totalMin}} min no total. Sua carga está subindo forte.",
+          "down": "Esta semana: {{count}} atividade(s) em {{days}} dia(s), {{totalMin}} min no total. Sua carga está caindo.",
+          "balanced": "Esta semana: {{count}} atividade(s) em {{days}} dia(s), {{totalMin}} min no total. Sua carga está equilibrada."
+        }
+      },
+      "fatigue": {
+        "observation": "Você indicou cansaço hoje.",
+        "analysis": {
+          "highLoad": "Sua carga recente está alta, esse cansaço faz sentido.",
+          "normal": "A recuperação é parte essencial do progresso."
+        },
+        "action": "Priorize hoje o descanso ou uma sessão leve de mobilidade."
+      },
+      "plateau": {
+        "lowActivity": {
+          "observation": "Você esteve ativo {{days}} dia(s) nas últimas 4 semanas.",
+          "analysis": "Um progresso duradouro começa pela regularidade.",
+          "action": "Busque 3 sessões por semana antes de aumentar a intensidade."
+        },
+        "stagnating": {
+          "observation": "Sua regularidade é boa, mas seu desempenho está estagnado.",
+          "analysis": "O corpo se adapta: sem um novo estímulo, o progresso desacelera.",
+          "action": "Varie seus exercícios ou aumente levemente a carga/o volume."
+        }
+      },
+      "plan": {
+        "observation": "Sua carga atual dá um índice agudo/crônico de {{ratio}}.",
+        "analysis": "Estou adaptando a dificuldade ao seu estado de carga atual.",
+        "action": {
+          "recovery": "Sugiro uma sessão de recuperação (mobilidade, caminhada, cardio leve).",
+          "intense": "Sugiro uma sessão mais intensa para retomar a carga.",
+          "balanced": "Sugiro uma sessão equilibrada, na linha do seu programa."
+        }
+      },
+      "help": "Sou seu coach Supotsu. Posso analisar sua semana, dizer o que fazer hoje, adaptar seu treino conforme seu cansaço e ajudar se você estiver estagnado. Faça uma pergunta ou escolha uma sugestão."
+    },
+    "community": {
+      "challenge": {
+        "reached": {
+          "observation": "Meta atingida: {{progress}}/{{target}}.",
+          "analysis": "Você completou o desafio dentro do prazo.",
+          "action": "Busque o topo do ranking ou comece um novo desafio."
+        },
+        "pending": {
+          "observation": "{{progress}}/{{target}}, faltam {{remaining}}.",
+          "analysis": "Restam {{daysLeft}} dia(s) para terminar o desafio.",
+          "action": {
+            "pace": "Planeje cerca de {{perDay}} por dia para conseguir.",
+            "over": "O período terminou: junte-se a um novo desafio."
+          }
+        }
+      }
+    },
+    "decision": {
+      "readyToTrain": {
+        "observation": "Boa recuperação ({{recovery}}/100) e carga controlada.",
+        "analysis": "Seu corpo está pronto para encarar uma sessão exigente.",
+        "action": "Aproveite para uma sessão intensa ou um treino de qualidade."
+      },
+      "limitedData": {
+        "observation": "Os dados de hoje ainda são limitados.",
+        "analysis": "Sem saúde nem atividade recente, o panorama fica parcial.",
+        "action": "Importe sua exportação do Garmin ou adicione uma atividade para um panorama completo."
+      },
+      "readiness": {
+        "high": "pronto para render",
+        "moderate": "esforço moderado",
+        "low": "cautela recomendada"
+      },
+      "recoveryBand": {
+        "excellent": "excelente",
+        "correct": "boa",
+        "moyen": "média",
+        "faible": "baixa"
+      },
+      "section": {
+        "recovery": { "title": "Recuperação", "noData": "Conecte seus dados de saúde" },
+        "readiness": { "title": "Aptidão para treinar", "noData": "Conforme recuperação + carga" },
+        "nutrition": { "title": "Nutrição", "today": "consumo de hoje", "noData": "Adicione uma refeição" }
+      }
+    },
+    "load": {
+      "observation": {
+        "underLoad": "Seu índice de carga aguda/crônica é {{ratio}} (subcarga).",
+        "optimal": "Seu índice de carga aguda/crônica é {{ratio}} (ótimo).",
+        "high": "Seu índice de carga aguda/crônica é {{ratio}} (alto).",
+        "risk": "Seu índice de carga aguda/crônica é {{ratio}} (zona de risco)."
+      },
+      "analysis": "Compara sua carga dos últimos 7 dias com sua média das últimas 4 semanas.",
+      "action": {
+        "underLoad": "Você pode aumentar progressivamente o volume esta semana.",
+        "optimal": "Carga bem equilibrada: mantenha essa progressão constante.",
+        "high": "Carga subindo rápido — observe sua recuperação antes de adicionar mais.",
+        "risk": "Pico de carga: reduza um pouco esta semana para limitar o risco de lesão."
+      }
+    },
+    "marketplace": {
+      "observation": "\"{{title}}\" ({{focus}}, nível {{level}}).",
+      "analysis": {
+        "default": "Seleção padrão: complete seu perfil para uma recomendação personalizada.",
+        "goal": "Corresponde ao seu objetivo.",
+        "goalAndAvailability": "Corresponde ao seu objetivo e à sua disponibilidade semanal.",
+        "profile": "Corresponde ao seu perfil.",
+        "profileAndAvailability": "Corresponde ao seu perfil e à sua disponibilidade semanal."
+      },
+      "action": "Abra o programa para ver sua estrutura antes de se inscrever."
+    },
+    "nutrition": {
+      "noWeight": {
+        "observation": "Seu peso ainda não foi informado.",
+        "analysis": "Sem o peso, as necessidades são aproximadas com valores médios.",
+        "action": "Adicione seu peso ao seu perfil para metas personalizadas."
+      },
+      "targets": {
+        "observation": "Metas estimadas para {{weight}} kg.",
+        "observationWithGoal": "Metas estimadas para {{weight}} kg (objetivo: {{goal}}).",
+        "analysis": "Baseadas em índices padrão (proteína g/kg, hidratação, ingestão calórica).",
+        "action": "Ajuste-as conforme sua fome, sua energia e a evolução do seu peso."
+      },
+      "day": {
+        "lowProtein": {
+          "observation": "Você está com {{proteinG}} g de proteína ({{proteinPct}}% da sua meta).",
+          "analysis": "Uma ingestão baixa de proteína atrapalha a recuperação e a manutenção muscular.",
+          "action": "Adicione uma fonte de proteína à sua próxima refeição (ovos, peixe, leguminosas)."
+        },
+        "lowHydration": {
+          "observation": "Hidratação de {{hydrationMl}} ml ({{hydrationPct}}% da sua meta).",
+          "analysis": "Uma hidratação insuficiente prejudica a atenção e o desempenho.",
+          "action": "Beba um copo de água agora e mantenha uma garrafa por perto."
+        },
+        "onTrack": {
+          "observation": "{{kcal}} kcal e {{proteinG}} g de proteína hoje.",
+          "analysis": "Sua ingestão está de acordo com suas metas estimadas.",
+          "action": "Continue assim; ajuste se sua fome ou energia mudar."
+        }
+      }
+    },
+    "prediction": {
+      "observation": {
+        "faible": "Energia estimada para amanhã: {{energyScore}}/100 (risco de fadiga baixo).",
+        "modéré": "Energia estimada para amanhã: {{energyScore}}/100 (risco de fadiga moderado).",
+        "élevé": "Energia estimada para amanhã: {{energyScore}}/100 (risco de fadiga alto)."
+      },
+      "analysis": "Estimativa baseada na sua trajetória recente. É uma probabilidade, não uma certeza.",
+      "analysisWithAvg": "Estimativa baseada na sua trajetória recente. Sua média recente é de {{avgSleepHours}} h/noite. É uma probabilidade, não uma certeza.",
+      "action": {
+        "low": "Bom dia para isso: você pode considerar uma sessão exigente se houver uma planejada.",
+        "moderate": "Busque uma intensidade moderada e observe suas sensações no aquecimento.",
+        "high": "Priorize a recuperação: descanso ativo, mobilidade, e deite-se cedo hoje."
+      },
+      "driver": {
+        "sleepDebt": "dívida de sono (−{{debt}} h em {{windowDays}} d)",
+        "irregularBedtime": "horários de dormir irregulares",
+        "risingLoad": "carga de treino subindo rápido",
+        "goodRecovery": "boa trajetória de recuperação",
+        "stableRecovery": "recuperação estável nos últimos dias"
+      }
+    },
+    "recommendation": {
+      "acwrRisk": {
+        "title": "Reduza sua carga esta semana",
+        "observation": "Seu índice de carga aguda/crônica é {{ratio}} (zona de risco).",
+        "analysis": "Um aumento rápido da carga eleva claramente o risco de lesão.",
+        "action": "Reduza o volume em ~20% e mantenha uma sessão leve para absorver o pico."
+      },
+      "lowRecovery": {
+        "title": "Prioridade para a recuperação",
+        "observation": "Sua recuperação está baixa ({{recovery}}/100).",
+        "analysis": "Seu corpo ainda não absorveu a carga recente (sono, VFC, FC).",
+        "action": "Busque descanso ativo ou mobilidade hoje, não intensidade."
+      },
+      "poorSleep": {
+        "title": "Recupere seu sono",
+        "observation": "Sua pontuação de sono está baixa ({{sleep}}/100).",
+        "analysis": "A falta de sono prejudica a recuperação, o humor e o desempenho.",
+        "action": "Deite-se 30–60 min mais cedo hoje e reduza as telas antes de dormir."
+      },
+      "lowWellness": {
+        "title": "Cuide da sua mente",
+        "observation": "Seu índice de bem-estar está baixo ({{wellness}}/100).",
+        "analysis": "O estresse e a fadiga mental pesam tanto quanto a fadiga física.",
+        "action": "Dê a si mesmo uma pausa de verdade: alguns minutos de respiração ou uma caminhada."
+      },
+      "roomToPush": {
+        "title": "Você pode aumentar a carga",
+        "observation": "Sua carga recente está baixa (índice {{ratio}}).",
+        "analysis": "Você está abaixo do seu nível habitual e bem recuperado — há margem.",
+        "action": "Adicione um pouco de volume ou intensidade, gradualmente."
+      },
+      "allGood": {
+        "title": "Tudo certo — continue assim",
+        "observation": "Seus indicadores estão em boas faixas hoje.",
+        "analysis": "Nada exige um ajuste específico.",
+        "action": "Siga seu plano e mantenha a regularidade — é ela que compensa."
+      },
+      "noData": {
+        "title": "Adicione dados para uma recomendação",
+        "observation": "Ainda não há dados suficientes.",
+        "analysis": "Registre uma atividade ou conecte um dispositivo.",
+        "action": "Volte aqui depois de alguns dias registrados."
+      }
+    },
+    "recovery": {
+      "observation": {
+        "excellent": "Sua recuperação está em {{score}}/100 (excelente).",
+        "correct": "Sua recuperação está em {{score}}/100 (boa).",
+        "moyen": "Sua recuperação está em {{score}}/100 (média).",
+        "faible": "Sua recuperação está em {{score}}/100 (baixa)."
+      },
+      "analysis": "Calculada a partir do seu sono, sua VFC e sua frequência cardíaca.",
+      "action": {
+        "excellent": "Seu corpo está pronto: uma sessão intensa é adequada.",
+        "correct": "Um treino normal é recomendado hoje.",
+        "moyen": "Ajuste a intensidade: priorize técnica ou volume moderado.",
+        "faible": "Prioridade para a recuperação: mobilidade ou descanso ativo."
+      }
+    },
+    "scoring": {
+      "trend": {
+        "observation": {
+          "up": "Sua carga de treino sobe {{pct}} %/semana em média ao longo de {{weeks}} semanas.",
+          "down": "Sua carga de treino cai {{pct}} %/semana em média ao longo de {{weeks}} semanas."
+        },
+        "analysis": {
+          "up": "A sobrecarga progressiva está em curso — favorece ganhos contínuos.",
+          "down": "Uma carga em queda freia o progresso, a menos que seja uma semana de descarga planejada.",
+          "stable": "Sua carga está estável — nem progresso claro, nem regressão."
+        },
+        "action": {
+          "up": "Continue nesse ritmo, observando sua recuperação.",
+          "down": "Se não for uma semana de recuperação planejada, aumente levemente o volume.",
+          "stable": "Adicione um pouco de volume ou carga para retomar o progresso."
+        }
+      },
+      "sport": {
+        "observation": "Pontuação esportiva {{value}}/100 — desempenho {{performance}}, regularidade {{regularity}}, progressão {{progression}}.",
+        "analysis": {
+          "weak": {
+            "progression": "O ponto mais fraco é a progressão ({{value}}/100).",
+            "regularity": "O ponto mais fraco é a regularidade ({{value}}/100).",
+            "performance": "O ponto mais fraco é o desempenho ({{value}}/100)."
+          },
+          "balanced": "Os três componentes estão em uma faixa correta."
+        },
+        "action": {
+          "weak": {
+            "progression": "Busque um pequeno aumento de carga ou volume esta semana.",
+            "regularity": "Adicione uma sessão esta semana para retomar um ritmo regular.",
+            "performance": "Retome progressivamente — mais uma sessão esta semana vai retomar o embalo."
+          },
+          "balanced": "Continue nesse ritmo."
+        }
+      },
+      "daily": {
+        "lowRecovery": {
+          "observation": "Sua recuperação está baixa ({{recovery}}/100).",
+          "analysis": "Treinar forte com recuperação baixa freia o progresso.",
+          "action": "Prioridade de hoje: descanso ou mobilidade leve."
+        },
+        "noActivity": {
+          "observation": "Nenhuma atividade registrada nos últimos 7 dias.",
+          "analysis": "Sua regularidade está caindo, a parte mais difícil é retomar.",
+          "action": "Planeje uma sessão leve hoje para retomar o embalo."
+        },
+        "highLoad": {
+          "observation": "Sua carga recente está claramente acima do habitual.",
+          "analysis": "Um aumento rápido demais eleva o risco de fadiga e lesão.",
+          "action": "Priorize hoje a recuperação ativa ou a mobilidade."
+        },
+        "roomToPush": {
+          "observation": "Sua carga está caindo enquanto sua regularidade segue boa.",
+          "analysis": "Seu corpo tem margem para assumir mais.",
+          "action": "Você pode prever uma sessão um pouco mais intensa."
+        },
+        "balanced": {
+          "observation": "Você esteve ativo {{days}} dia(s) nos últimos 7.",
+          "analysis": "Sua carga e sua regularidade estão bem equilibradas.",
+          "action": "Continue nesse ritmo, o progresso é duradouro."
+        }
+      }
+    },
+    "sleep": {
+      "score": {
+        "observation": {
+          "excellent": "Sua pontuação de sono é {{score}}/100 (excelente), pela sua noite.",
+          "correct": "Sua pontuação de sono é {{score}}/100 (boa), pela sua noite.",
+          "moyen": "Sua pontuação de sono é {{score}}/100 (média), pela sua noite.",
+          "faible": "Sua pontuação de sono é {{score}}/100 (baixa), pela sua noite.",
+          "withHours": {
+            "excellent": "Sua pontuação de sono é {{score}}/100 (excelente), por {{hours}} h.",
+            "correct": "Sua pontuação de sono é {{score}}/100 (boa), por {{hours}} h.",
+            "moyen": "Sua pontuação de sono é {{score}}/100 (média), por {{hours}} h.",
+            "faible": "Sua pontuação de sono é {{score}}/100 (baixa), por {{hours}} h."
+          }
+        },
+        "analysis": "Calculada a partir da duração e da eficiência da sua última noite.",
+        "action": {
+          "excellent": "Continue assim: esse ritmo apoia bem sua recuperação.",
+          "correct": "Sono correto — busque regularidade nos horários de dormir.",
+          "moyen": "Tente deitar-se 30 min mais cedo hoje.",
+          "faible": "Noite curta: reduza a intensidade e priorize o sono hoje."
+        }
+      },
+      "coaching": {
+        "observation": {
+          "excellent": "Seu sono geral está em {{score}}/100 (excelente).",
+          "correct": "Seu sono geral está em {{score}}/100 (bom).",
+          "moyen": "Seu sono geral está em {{score}}/100 (médio).",
+          "faible": "Seu sono geral está em {{score}}/100 (baixo)."
+        },
+        "allGood": {
+          "analysis": "Todos os componentes medidos estão no verde.",
+          "action": "Continue assim: mantenha esse ritmo constante para consolidar sua recuperação."
+        },
+        "weak": {
+          "analysis": {
+            "single": "Essa pontuação parece estar ligada principalmente a um fator abaixo — uma correlação observada nos seus dados, não uma certeza.",
+            "multi": "Essa pontuação parece estar ligada principalmente aos fatores abaixo — uma correlação observada nos seus dados, não uma certeza."
+          }
+        },
+        "action": {
+          "quantity": "Busque 30 a 60 min a mais de sono: deite-se um pouco mais cedo hoje.",
+          "quality": "Para a qualidade: limite telas e álcool à noite, e mantenha o quarto fresco e escuro.",
+          "regularity": "Busque uma janela de horário de dormir estável (±30 min), incluindo os fins de semana.",
+          "debt": "Dívida acumulada ao longo de vários meses: recupere-a gradualmente (30-60 min a mais de sono por noite, ao longo de várias semanas), não de uma vez.",
+          "recovery": "Recuperação baixa: reduza a intensidade hoje e priorize o descanso ativo."
+        }
+      }
+    },
+    "wellness": {
+      "observation": {
+        "rayonnant": "Seu índice de bem-estar é {{index}}/100 (radiante).",
+        "stable": "Seu índice de bem-estar é {{index}}/100 (estável).",
+        "fragile": "Seu índice de bem-estar é {{index}}/100 (frágil).",
+        "difficile": "Seu índice de bem-estar é {{index}}/100 (difícil)."
+      },
+      "analysis": "Baseado no seu humor, sua energia e seu estresse sentidos hoje.",
+      "action": {
+        "rayonnant": "Ótima energia — aproveite para avançar no que importa.",
+        "stable": "Está tudo bem: mantenha as rotinas que fazem bem a você.",
+        "fragile": "Dê a si mesmo uma pausa: alguns minutos de respiração podem ajudar.",
+        "difficile": "Dia exigente — seja gentil consigo mesmo e priorize o descanso."
+      }
+    }
+  }
+}
