@@ -73,6 +73,15 @@ export function SleepTrackingScreen(): React.JSX.Element {
   const rampTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const hapticsTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const snoozeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // deactivateKeepAwake() throws if the wake lock was never activated (e.g.
+  // the screen is opened and left without starting tracking) — only call it
+  // once activateKeepAwakeAsync() has actually succeeded.
+  const keepAwakeActiveRef = useRef(false);
+  const releaseKeepAwake = (): void => {
+    if (!keepAwakeActiveRef.current) return;
+    keepAwakeActiveRef.current = false;
+    deactivateKeepAwake();
+  };
 
   // Clock tick while tracking/ringing — elapsed time + current time display.
   useEffect(() => {
@@ -84,7 +93,7 @@ export function SleepTrackingScreen(): React.JSX.Element {
   useEffect(
     () => () => {
       stopTrackingRef.current?.();
-      deactivateKeepAwake();
+      releaseKeepAwake();
       if (rampTimerRef.current) clearInterval(rampTimerRef.current);
       if (hapticsTimerRef.current) clearInterval(hapticsTimerRef.current);
       if (snoozeTimerRef.current) clearTimeout(snoozeTimerRef.current);
@@ -200,18 +209,19 @@ export function SleepTrackingScreen(): React.JSX.Element {
     alarmTargetRef.current =
       preferences.sleepAlarm?.enabled ? computeAlarmTarget(preferences.sleepAlarm.hour, preferences.sleepAlarm.minute, new Date()) : null;
     await activateKeepAwakeAsync();
+    keepAwakeActiveRef.current = true;
     stopTrackingRef.current = startNightTracking((epoch) => epochsRef.current.push(epoch), EPOCH_SEC);
     setPhase('tracking');
   };
 
   const stopManually = async (): Promise<void> => {
-    deactivateKeepAwake();
+    releaseKeepAwake();
     await finishTracking(new Date().toISOString());
     setPhase('summary');
   };
 
   const dismissAlarm = (): void => {
-    deactivateKeepAwake();
+    releaseKeepAwake();
     stopRingtone();
     setPhase('summary');
   };
