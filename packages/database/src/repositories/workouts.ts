@@ -4,6 +4,8 @@ import type { Database } from '../generated/database.types';
 export type WorkoutRow = Database['public']['Tables']['workouts']['Row'];
 export type WorkoutInsertRow = Database['public']['Tables']['workouts']['Insert'];
 export type WorkoutSetInsertRow = Database['public']['Tables']['workout_sets']['Insert'];
+export type WorkoutBlockRow = Database['public']['Tables']['workout_blocks']['Row'];
+export type WorkoutBlockInsertRow = Database['public']['Tables']['workout_blocks']['Insert'];
 
 /** Insert a workout and its sets; returns the created workout. */
 export async function insertWorkout(
@@ -19,6 +21,94 @@ export async function insertWorkout(
       .insert(sets.map((s) => ({ ...s, workout_id: data.id })));
     if (setError) throw setError;
   }
+  return data;
+}
+
+/**
+ * Create a session made of one or more ordered blocks (AMRAP/EMOM/Pour le
+ * temps/strength) — each block's exercises are its own workout_sets rows,
+ * tagged with block_id. Sequential inserts (workout, then each block, then
+ * that block's sets) rather than one giant statement: a session is created
+ * once by hand, not in a hot loop, and this keeps error attribution clear
+ * (which block failed) over a marginal round-trip savings.
+ */
+export async function insertWorkoutWithBlocks(
+  client: SupotsuClient,
+  workout: WorkoutInsertRow,
+  blocks: {
+    format: WorkoutBlockRow['format'];
+    timeCapSec?: number;
+    targetRounds?: number;
+    sets: Omit<WorkoutSetInsertRow, 'workout_id' | 'block_id'>[];
+  }[],
+): Promise<WorkoutRow> {
+  const { data: workoutRow, error } = await client.from('workouts').insert(workout).select('*').single();
+  if (error) throw error;
+
+  for (let i = 0; i < blocks.length; i++) {
+    const b = blocks[i]!;
+    const { data: blockRow, error: blockError } = await client
+      .from('workout_blocks')
+      .insert({
+        workout_id: workoutRow.id,
+        order: i,
+        format: b.format,
+        time_cap_sec: b.timeCapSec ?? null,
+        target_rounds: b.targetRounds ?? null,
+      })
+      .select('*')
+      .single();
+    if (blockError) throw blockError;
+
+    if (b.sets.length > 0) {
+      const { error: setError } = await client
+        .from('workout_sets')
+        .insert(b.sets.map((s) => ({ ...s, workout_id: workoutRow.id, block_id: blockRow.id })));
+      if (setError) throw setError;
+    }
+  }
+
+  return workoutRow;
+}
+
+/** A session's blocks, in order. */
+export async function listBlocksForWorkout(client: SupotsuClient, workoutId: string): Promise<WorkoutBlockRow[]> {
+  const { data, error } = await client
+    .from('workout_blocks')
+    .select('*')
+    .eq('workout_id', workoutId)
+    .order('order', { ascending: true });
+  if (error) throw error;
+  return data ?? [];
+}
+
+/** One block's exercises, in order (RLS scopes workout_blocks/workout_sets to the caller's own workouts). */
+export async function listSetsForBlock(client: SupotsuClient, blockId: string): Promise<WorkoutSetRow[]> {
+  const { data, error } = await client
+    .from('workout_sets')
+    .select('*')
+    .eq('block_id', blockId)
+    .order('order', { ascending: true });
+  if (error) throw error;
+  return data ?? [];
+}
+
+/** Record a finished timed block's result (rounds completed / elapsed time). */
+export async function updateBlockResult(
+  client: SupotsuClient,
+  blockId: string,
+  result: { completedRounds?: number; resultTimeSec?: number },
+): Promise<WorkoutBlockRow> {
+  const { data, error } = await client
+    .from('workout_blocks')
+    .update({
+      completed_rounds: result.completedRounds ?? null,
+      result_time_sec: result.resultTimeSec ?? null,
+    })
+    .eq('id', blockId)
+    .select('*')
+    .single();
+  if (error) throw error;
   return data;
 }
 
