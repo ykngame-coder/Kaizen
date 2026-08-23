@@ -10,5 +10,6 @@ export * from './healthAutoExport';
 export * from './garminExport';
 export * from './garminFit';
 export * from './openFoodFacts';
+export * from './workoutOcr';
 export { CONNECTORS, getConnector } from './registry';
 export type { ConnectorInfo } from './registry';

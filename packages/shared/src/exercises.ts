@@ -840,3 +840,6 @@ export const EXERCISE_LIBRARY: Exercise[] = [
  * "(import Garmin)" names would just be clutter in a manual exercise picker.
  */
 export const PICKABLE_EXERCISES: Exercise[] = EXERCISE_LIBRARY.filter((e) => !e.id.startsWith('ex-garmin-'));
+
+/** Fast id → exercise lookup — same source, indexed for O(1) reads (screenshot-import resolution, history display). */
+export const EXERCISE_BY_ID: Record<string, Exercise> = Object.fromEntries(EXERCISE_LIBRARY.map((e) => [e.id, e]));
