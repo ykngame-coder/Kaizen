@@ -48,10 +48,36 @@ export interface Workout extends OwnedEntity {
   notes?: string;
 }
 
+export type BlockFormat = 'strength' | 'amrap' | 'emom' | 'for_time';
+
+/**
+ * One ordered segment of a session (Master Prompt — circuit workout
+ * formats). A plain strength-only workout has zero blocks; its sets hang
+ * directly off `workoutId` with no `blockId`, exactly as before this
+ * existed. A session with one or more blocks (AMRAP/EMOM/Pour le temps, or
+ * even a single strength block) runs them in order.
+ */
+export interface WorkoutBlock {
+  id: UUID;
+  workoutId: UUID;
+  order: number;
+  format: BlockFormat;
+  /** AMRAP cap, or EMOM interval length, in seconds. */
+  timeCapSec?: number;
+  /** EMOM interval count, or "pour le temps" round count. */
+  targetRounds?: number;
+  /** Rounds actually completed — set once the block finishes. */
+  completedRounds?: number;
+  /** "Pour le temps" finish time, in seconds — set once the block finishes. */
+  resultTimeSec?: number;
+}
+
 /** A single performed set (Master Prompt P32.9, P51.7). */
 export interface SetEntry {
   id: UUID;
   workoutId: UUID;
+  /** The block this set belongs to, for a circuit-format session — absent for a plain strength set. */
+  blockId?: UUID;
   exerciseId: UUID;
   order: number;
   reps?: number;
