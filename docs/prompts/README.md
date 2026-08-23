@@ -10,6 +10,7 @@ indépendants et peuvent être lancés dans n'importe quel ordre, sauf indicatio
 | `carrousel-peek.md` | Composant `Carousel` réutilisable (effet peek + points), appliqué partout où c'est pertinent | À tout moment |
 | `import-ocr-seances.md` | Import d'une séance depuis une **capture d'écran** — OCR 100 % local (Voie A) + écran de revue éditable | À tout moment |
 | `apple-watch-niveau1.md` | App **Apple Watch** compagnon (suivre sa séance au poignet) — Niveau 1 | **Post-TestFlight** |
+| `apple-watch-niveau2.md` | Apple Watch — séance **live** (FC temps réel, calories, HealthKit workout) | **Après le Niveau 1** |
 
 Règles communes (rappelées dans chaque prompt) : développer sur
 `claude/spot-wellness-app-r6l5bj`, `git pull --rebase` avant push, pas de PR sauf
