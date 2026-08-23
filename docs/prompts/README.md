@@ -10,6 +10,7 @@ indépendants et peuvent être lancés dans n'importe quel ordre, sauf indicatio
 | `carrousel-peek.md` | Composant `Carousel` réutilisable (effet peek + points), appliqué partout où c'est pertinent | À tout moment |
 | `import-ocr-seances.md` | Import d'une séance depuis une **capture d'écran** — OCR 100 % local (Voie A) + écran de revue éditable | À tout moment |
 | `sommeil-telephone-reveil.md` | Suivi du sommeil par le **téléphone** (actigraphie) + **réveil intelligent programmable** | À tout moment |
+| `i18n-multilingue.md` | **Multilingue** FR/EN/ES/PT/DE (infra i18n + sélecteur + extraction par lots) | Tôt (i18n-ready) |
 | `apple-watch-niveau1.md` | App **Apple Watch** compagnon (suivre sa séance au poignet) — Niveau 1 | **Post-TestFlight** |
 | `apple-watch-niveau2.md` | Apple Watch — séance **live** (FC temps réel, calories, HealthKit workout) | **Après le Niveau 1** |
 
