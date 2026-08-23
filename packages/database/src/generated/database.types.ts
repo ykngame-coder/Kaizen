@@ -174,6 +174,7 @@ export interface Database {
           duration_sec: number | null;
           rest_sec: number | null;
           rpe: number | null;
+          block_id: string | null;
         };
         Insert: {
           workout_id: string;
@@ -184,8 +185,32 @@ export interface Database {
           duration_sec?: number | null;
           rest_sec?: number | null;
           rpe?: number | null;
+          block_id?: string | null;
         };
         Update: Partial<Database['public']['Tables']['workout_sets']['Insert']>;
+        Relationships: [];
+      };
+      workout_blocks: {
+        Row: {
+          id: string;
+          workout_id: string;
+          order: number;
+          format: 'strength' | 'amrap' | 'emom' | 'for_time';
+          time_cap_sec: number | null;
+          target_rounds: number | null;
+          completed_rounds: number | null;
+          result_time_sec: number | null;
+        };
+        Insert: {
+          workout_id: string;
+          order?: number;
+          format: 'strength' | 'amrap' | 'emom' | 'for_time';
+          time_cap_sec?: number | null;
+          target_rounds?: number | null;
+          completed_rounds?: number | null;
+          result_time_sec?: number | null;
+        };
+        Update: Partial<Database['public']['Tables']['workout_blocks']['Insert']>;
         Relationships: [];
       };
       health_metrics: {
