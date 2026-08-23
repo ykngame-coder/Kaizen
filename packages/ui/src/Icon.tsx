@@ -38,6 +38,7 @@ const REGISTRY = {
   scale: community('scale-bathroom'),
   brain: community('brain'),
   bedtime: material('bedtime'),
+  alarm: material('alarm'),
   trendingDown: community('trending-down'),
   trendingUp: community('trending-up'),
   water: community('cup-water'),

@@ -72,7 +72,13 @@
         }
       ],
       "expo-audio",
-      "expo-font"
+      "expo-font",
+      [
+        "expo-sensors",
+        {
+          "motionPermission": "Kaizen Supotsu utilise l'accéléromètre pour détecter tes mouvements pendant la nuit et estimer ton sommeil — uniquement quand tu lances le suivi, rien n'est envoyé hors de l'appareil."
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true

@@ -14,3 +14,9 @@ declare module '*.png' {
   const asset: number;
   export default asset;
 }
+
+/** Static audio assets (e.g. the alarm tone) resolve to an opaque asset id too. */
+declare module '*.wav' {
+  const asset: number;
+  export default asset;
+}

@@ -5,6 +5,33 @@ import { secureStorage } from '@/lib/secure-storage';
 export type UnitSystem = 'metric' | 'imperial';
 export type TimeFormat = '24h' | '12h';
 
+/** Réveil intelligent, stored locally (Master Prompt : 100% offline). Rings only reliably while the app is open — see SleepTrackingScreen / AlarmSettingsScreen. */
+export interface SleepAlarmSettings {
+  enabled: boolean;
+  hour: number;
+  minute: number;
+  /** 0=dimanche … 6=samedi. Empty = tous les jours. */
+  repeatDays: number[];
+  /** Fenêtre de déclenchement intelligent avant l'heure réglée, en minutes ; 0 = alarme simple. */
+  windowMin: 0 | 15 | 30;
+  volumeRampSec: number;
+  vibration: boolean;
+  /** Minutes de report ; 0 = snooze désactivé. */
+  snoozeMin: number;
+}
+
+/** Starting point for the alarm settings form before the user has configured one — spec defaults (fenêtre 30 min). */
+export const DEFAULT_SLEEP_ALARM: SleepAlarmSettings = {
+  enabled: false,
+  hour: 7,
+  minute: 0,
+  repeatDays: [],
+  windowMin: 30,
+  volumeRampSec: 30,
+  vibration: true,
+  snoozeMin: 9,
+};
+
 /** One customizable Dashboard card's visibility, in display order. */
 export interface DashboardCardPref {
   id: string;
@@ -36,6 +63,8 @@ export interface Preferences {
    * this only needs writing when the user actually changes something.
    */
   dashboardCards?: DashboardCardPref[];
+  /** Undefined until the user configures the phone-tracking smart alarm. */
+  sleepAlarm?: SleepAlarmSettings;
 }
 
 const DEFAULTS: Preferences = {

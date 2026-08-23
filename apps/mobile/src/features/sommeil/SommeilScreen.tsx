@@ -139,7 +139,10 @@ function PhasesCard({ session, timeFormat }: { session: SleepSession; timeFormat
 
   return (
     <Card>
-      <Text variant="heading">Phases de sommeil</Text>
+      <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing[2] }}>
+        <Text variant="heading">Phases de sommeil</Text>
+        {session.source === 'phone' && <Badge label="Estimé — téléphone" tone="warning" />}
+      </View>
       <Text variant="caption" color="textSubtle">
         {formatClockFromIso(session.startedAt, timeFormat)} → {formatClockFromIso(session.endedAt, timeFormat)} · {fmtHM(session.inBedMin)} au
         lit, {fmtHM(session.asleepMin)} dormies
@@ -181,6 +184,12 @@ function PhasesCard({ session, timeFormat }: { session: SleepSession; timeFormat
         <Text variant="caption" color="textSubtle" style={{ marginTop: spacing[3] }}>
           Chronologie minute par minute non fournie par cet export — seules les durées par phase
           sont disponibles.
+        </Text>
+      )}
+      {session.source === 'phone' && (
+        <Text variant="caption" color="textSubtle" style={{ marginTop: spacing[3] }}>
+          Sommeil paradoxal non mesurable par téléphone (nécessite une montre) — profond/léger
+          sont estimés à partir des mouvements.
         </Text>
       )}
     </Card>
@@ -495,6 +504,8 @@ export function SommeilScreen(): React.JSX.Element {
             <ToolTile icon={<Icon name="lungs" size={16} color={colors.text} />} label="Stomach Vacuum" path="/sport/stomach-vacuum" />
             <ToolTile icon={<Icon name="puzzle" size={16} color={colors.text} />} label="Neuro-récupération" path="/sommeil/neuro-recovery" />
             <ToolTile icon={<Icon name="headphones" size={16} color={colors.text} />} label="Sons" path="/sommeil/sound" />
+            <ToolTile icon={<Icon name="moon" size={16} color={colors.text} />} label="Suivi téléphone" path="/sommeil/track" />
+            <ToolTile icon={<Icon name="alarm" size={16} color={colors.text} />} label="Réveil intelligent" path="/sommeil/alarm" />
           </View>
 
           {/* 10. Comprendre + Objectifs */}
