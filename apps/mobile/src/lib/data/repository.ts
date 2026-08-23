@@ -37,7 +37,7 @@ import type {
   UserSessionInput,
   WellnessCheckinInput,
 } from '@supotsu/shared';
-import { computeGoalProgress, generateProgramSchedule } from '@supotsu/engines';
+import { computeGoalProgress, generateProgramSchedule, nightDateKey, resolveSleepSessionInsert } from '@supotsu/engines';
 import { PROGRAM_CATALOG } from '@supotsu/shared';
 import type {
   ImportedActivity,
@@ -73,6 +73,7 @@ import {
   insertHealthMetrics,
   listHealthMetrics as listHealthMetricsDb,
   deleteHealthMetric as deleteHealthMetricDb,
+  insertSleepSession,
   insertSleepSessions,
   listSleepSessions as listSleepSessionsDb,
   insertNutritionEntry,
@@ -183,6 +184,15 @@ export interface HealthMetricInput {
   measuredAt?: string;
 }
 
+export type NewSleepSession = Omit<SleepSession, 'id' | 'userId' | 'createdAt' | 'updatedAt'>;
+
+export interface AddSleepSessionResult {
+  /** The session actually on record for that night — the new one, or the pre-existing one when skipped. */
+  session: SleepSession;
+  /** False when a same-night session from an equal-or-more-reliable source already existed (anti-doublon — see resolveSleepSessionInsert). */
+  inserted: boolean;
+}
+
 export interface ImportPayload {
   activities: ImportedActivity[];
   healthMetrics: ImportedHealthMetric[];
@@ -232,6 +242,14 @@ export interface DataRepository {
   /** Remove a single health metric entry (e.g. to resolve a duplicate reading). */
   deleteHealthMetric(userId: string, metricId: string): Promise<void>;
   listSleepSessions(userId: string): Promise<SleepSession[]>;
+  /**
+   * Record a phone-tracked (or otherwise single) night. Also writes the
+   * matching sleep_duration/sleep_efficiency health metrics so
+   * computeSleepScore2's "quantité" component (which reads HealthMetric[],
+   * not sessions) still sees the night. Applies the anti-doublon rule
+   * (resolveSleepSessionInsert) first — see AddSleepSessionResult.
+   */
+  addSleepSession(userId: string, session: NewSleepSession): Promise<AddSleepSessionResult>;
   listRecords(userId: string): Promise<PersonalRecord[]>;
   listMuscleSessions(userId: string): Promise<MuscleSession[]>;
   /** Per-muscle training volume over time (real progression). */
@@ -385,6 +403,37 @@ function rowToSleepSession(r: SleepSessionRow): SleepSession {
     createdAt: r.created_at,
     updatedAt: r.created_at,
   };
+}
+
+/**
+ * sleep_duration / sleep_efficiency health metrics derived from a session —
+ * computeSleepScore2's "quantité" component reads HealthMetric[], not
+ * sessions, so a session recorded on its own (no import alongside it, e.g.
+ * phone tracking) needs these written too or that component stays null.
+ * Same measuredAt-at-bedtime convention as healthAutoExport.ts.
+ */
+function sleepSessionMetrics(session: NewSleepSession): { type: HealthMetricType; value: number; unit: string; source: SleepSession['source']; reliability: SleepSession['reliability']; measuredAt: string }[] {
+  const out = [
+    {
+      type: 'sleep_duration' as HealthMetricType,
+      value: Number((session.asleepMin / 60).toFixed(2)),
+      unit: 'h',
+      source: session.source,
+      reliability: session.reliability,
+      measuredAt: session.startedAt,
+    },
+  ];
+  if (session.inBedMin > 0) {
+    out.push({
+      type: 'sleep_efficiency' as HealthMetricType,
+      value: Number(Math.min(100, (session.asleepMin / session.inBedMin) * 100).toFixed(1)),
+      unit: 'score',
+      source: session.source,
+      reliability: session.reliability,
+      measuredAt: session.startedAt,
+    });
+  }
+  return out;
 }
 
 function rowToNutrition(r: NutritionEntryRow): NutritionEntry {
@@ -1079,6 +1128,26 @@ function createDemoRepository(): DataRepository {
       const items = await readJson<SleepSession>(sleepKey(userId));
       return items.sort((a, b) => b.startedAt.localeCompare(a.startedAt));
     },
+    async addSleepSession(userId, session) {
+      const existing = await readJson<SleepSession>(sleepKey(userId));
+      const sameNight = existing.filter((s) => nightDateKey(s.endedAt) === nightDateKey(session.endedAt));
+      const action = resolveSleepSessionInsert(sameNight, session.reliability ?? 'high');
+      if (action === 'skip') {
+        const rank = { low: 0, medium: 1, high: 2 } as const;
+        const winner = [...sameNight].sort((a, b) => rank[b.reliability ?? 'high'] - rank[a.reliability ?? 'high'])[0]!;
+        return { session: winner, inserted: false };
+      }
+      const now = new Date().toISOString();
+      const created: SleepSession = { id: randomId(), userId, ...session, createdAt: now, updatedAt: now };
+      await writeJson(sleepKey(userId), [created, ...existing]);
+      const metrics = sleepSessionMetrics(session);
+      if (metrics.length > 0) {
+        const existingH = await readJson<HealthMetric>(hmKey(userId));
+        const newH: HealthMetric[] = metrics.map((m) => ({ id: randomId(), userId, ...m, createdAt: now, updatedAt: now }));
+        await writeJson(hmKey(userId), [...newH, ...existingH]);
+      }
+      return { session: created, inserted: true };
+    },
     async listRecords(userId) {
       const items = await readJson<PersonalRecord>(recKey(userId));
       return items.sort((a, b) => b.achievedAt.localeCompare(a.achievedAt));
@@ -1664,6 +1733,38 @@ function createSupabaseRepository(
     },
     async listSleepSessions(userId) {
       return (await listSleepSessionsDb(client, userId)).map(rowToSleepSession);
+    },
+    async addSleepSession(userId, session) {
+      const existing = (await listSleepSessionsDb(client, userId)).map(rowToSleepSession);
+      const sameNight = existing.filter((s) => nightDateKey(s.endedAt) === nightDateKey(session.endedAt));
+      const action = resolveSleepSessionInsert(sameNight, session.reliability ?? 'high');
+      if (action === 'skip') {
+        const rank = { low: 0, medium: 1, high: 2 } as const;
+        const winner = [...sameNight].sort((a, b) => rank[b.reliability ?? 'high'] - rank[a.reliability ?? 'high'])[0]!;
+        return { session: winner, inserted: false };
+      }
+      const row = await insertSleepSession(client, {
+        user_id: userId,
+        source: session.source,
+        reliability: session.reliability ?? null,
+        started_at: session.startedAt,
+        ended_at: session.endedAt,
+        deep_min: session.deepMin,
+        light_min: session.lightMin,
+        rem_min: session.remMin,
+        awake_min: session.awakeMin,
+        asleep_min: session.asleepMin,
+        in_bed_min: session.inBedMin,
+        segments: (session.segments ?? null) as unknown as SleepSessionRow['segments'],
+      });
+      const metrics = sleepSessionMetrics(session);
+      if (metrics.length > 0) {
+        await insertHealthMetrics(
+          client,
+          metrics.map((m) => ({ user_id: userId, type: m.type, value: m.value, unit: m.unit, source: m.source, reliability: m.reliability ?? null, measured_at: m.measuredAt })),
+        );
+      }
+      return { session: rowToSleepSession(row), inserted: true };
     },
     async listRecords(userId) {
       return (await listRecordsDb(client, userId)).map(rowToRecord);

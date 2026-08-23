@@ -23,7 +23,7 @@ import type {
   ImportedWorkout,
 } from '@supotsu/connectors';
 import { useAuth } from '@/features/auth/AuthProvider';
-import { createDataRepository, type HealthMetricInput, type NewCircuitWorkout, type NewWorkout, type PlannedInput } from './repository';
+import { createDataRepository, type HealthMetricInput, type NewCircuitWorkout, type NewSleepSession, type NewWorkout, type PlannedInput } from './repository';
 import { isHealthKitConnected } from '@/features/connectors/useHealthKitAutoSync';
 import { saveActivityToHealthKit, saveNutritionToHealthKit, saveWorkoutToHealthKit } from '@/features/connectors/healthKitClient';
 
@@ -114,6 +114,19 @@ export function useSleepSessions() {
     queryKey: ['sleepSessions', user?.id],
     enabled: !!user,
     queryFn: () => repo.listSleepSessions(user!.id),
+  });
+}
+
+export function useAddSleepSession() {
+  const { user } = useAuth();
+  const repo = useRepository();
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (session: NewSleepSession) => repo.addSleepSession(user!.id, session),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['sleepSessions', user?.id] });
+      qc.invalidateQueries({ queryKey: ['health', user?.id] });
+    },
   });
 }
 
