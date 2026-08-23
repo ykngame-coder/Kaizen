@@ -26,6 +26,7 @@ export type DataSource =
   | 'fitbit'
   | 'oura'
   | 'withings'
+  | 'phone' // on-device accelerometer actigraphy (no wearable)
   | 'supotsu'; // produced by our own engines
 
 /** How a datum was obtained — the P1 measured/calculated/estimated/proprietary distinction. */

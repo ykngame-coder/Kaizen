@@ -4,6 +4,7 @@ export { EngineRegistry } from './registry';
 export * from './scoring';
 export * from './recovery';
 export * from './sleep';
+export * from './sleepActigraphy';
 export * from './circadian';
 export * from './prediction';
 export * from './wellness';

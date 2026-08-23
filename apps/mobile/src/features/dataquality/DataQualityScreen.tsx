@@ -37,6 +37,7 @@ const SOURCE_LABEL: Record<DataSource, string> = {
   fitbit: 'Fitbit',
   oura: 'Oura',
   withings: 'Withings',
+  phone: 'Téléphone (estimé)',
   supotsu: 'Calculé par SUPOTSU',
 };
 

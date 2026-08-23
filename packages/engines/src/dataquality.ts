@@ -22,6 +22,7 @@ const SOURCE_RELIABILITY: Record<DataSource, Reliability> = {
   strava: 'medium',
   supotsu: 'medium',
   manual: 'low',
+  phone: 'low', // accelerometer-only actigraphy, no wearable — Master Prompt P38.10
 };
 
 export function sourceReliability(source: DataSource): Reliability {
