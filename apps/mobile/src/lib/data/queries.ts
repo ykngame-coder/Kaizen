@@ -23,7 +23,7 @@ import type {
   ImportedWorkout,
 } from '@supotsu/connectors';
 import { useAuth } from '@/features/auth/AuthProvider';
-import { createDataRepository, type HealthMetricInput, type NewWorkout, type PlannedInput } from './repository';
+import { createDataRepository, type HealthMetricInput, type NewCircuitWorkout, type NewWorkout, type PlannedInput } from './repository';
 import { isHealthKitConnected } from '@/features/connectors/useHealthKitAutoSync';
 import { saveActivityToHealthKit, saveNutritionToHealthKit, saveWorkoutToHealthKit } from '@/features/connectors/healthKitClient';
 
@@ -711,6 +711,52 @@ export function useAddWorkout() {
       qc.invalidateQueries({ queryKey: ['muscleSessions', user?.id] });
       qc.invalidateQueries({ queryKey: ['exerciseHistory', user?.id] });
       void mirrorToHealthKit(() => saveWorkoutToHealthKit(workout.sets.length));
+    },
+  });
+}
+
+export function useAddCircuitWorkout() {
+  const { user } = useAuth();
+  const repo = useRepository();
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (workout: NewCircuitWorkout) => repo.addCircuitWorkout(user!.id, workout),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['workouts', user?.id] });
+      qc.invalidateQueries({ queryKey: ['muscleSessions', user?.id] });
+    },
+  });
+}
+
+export function useWorkoutBlocks(workoutId: string | undefined) {
+  const { user } = useAuth();
+  const repo = useRepository();
+  return useQuery({
+    queryKey: ['workoutBlocks', workoutId],
+    enabled: !!user && !!workoutId,
+    queryFn: () => repo.getWorkoutBlocks(user!.id, workoutId!),
+  });
+}
+
+export function useBlockSets(blockId: string | undefined) {
+  const { user } = useAuth();
+  const repo = useRepository();
+  return useQuery({
+    queryKey: ['blockSets', blockId],
+    enabled: !!user && !!blockId,
+    queryFn: () => repo.getBlockSets(user!.id, blockId!),
+  });
+}
+
+export function useCompleteBlock() {
+  const { user } = useAuth();
+  const repo = useRepository();
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (input: { blockId: string; workoutId: string; completedRounds?: number; resultTimeSec?: number }) =>
+      repo.completeBlock(user!.id, input.blockId, { completedRounds: input.completedRounds, resultTimeSec: input.resultTimeSec }),
+    onSuccess: (_data, input) => {
+      qc.invalidateQueries({ queryKey: ['workoutBlocks', input.workoutId] });
     },
   });
 }
