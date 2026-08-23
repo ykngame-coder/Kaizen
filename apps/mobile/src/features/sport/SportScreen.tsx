@@ -31,6 +31,7 @@ const MUSCLE_INLINE: Partial<Record<MuscleGroup, string>> = {
 
 const NAV: { title: string; subtitle: string; icon: IconName; path?: Href; soon?: boolean }[] = [
   { title: 'Activités', subtitle: 'Course, marche, vélo… historique et ajout', icon: 'run', path: '/sport/activities' },
+  { title: 'Importer une capture', subtitle: 'Photo de séance → lue automatiquement, en local', icon: 'camera', path: '/sport/workout/import' },
   { title: 'Planification', subtitle: 'Programme tes séances + prévision récup', icon: 'calendarClock', path: '/sport/planning' },
   { title: 'Calendrier', subtitle: 'Tes séances et événements', icon: 'calendar', path: '/sport/calendar' },
   { title: 'Programmes', subtitle: 'Programmes structurés et recommandés', icon: 'clipboardText', path: '/marketplace' },

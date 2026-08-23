@@ -218,12 +218,13 @@ export function NewWorkoutScreen(): React.JSX.Element {
         Enchaîne plusieurs formats dans la même séance — chaque bloc a son propre chrono.
       </Text>
 
-      <View style={{ marginTop: spacing[2], alignItems: 'flex-start' }}>
+      <View style={{ marginTop: spacing[2], flexDirection: 'row', flexWrap: 'wrap', gap: spacing[2] }}>
         <Button
           label={pickerOpen ? 'Fermer' : 'Importer une séance déjà faite (ex : Garmin)'}
           variant="secondary"
           onPress={() => setPickerOpen((v) => !v)}
         />
+        <Button label="Importer depuis une capture d'écran" variant="secondary" onPress={() => router.push('/sport/workout/import')} />
       </View>
       {pickerOpen && (
         <Card style={{ marginTop: spacing[2] }}>
