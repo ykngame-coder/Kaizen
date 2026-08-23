@@ -86,6 +86,8 @@ Suivre, dans l'ordre :
 
 ## Docs de référence
 
+- `docs/overview.md` — vue d'ensemble de l'app (features, stack, scores) — à lire d'abord
+
 - `docs/backend.md` — Supabase + injection des clés dans EAS
 - `docs/testflight.md` — build & envoi TestFlight pas à pas
 - `docs/test-checklist.md` — checklist testeurs
