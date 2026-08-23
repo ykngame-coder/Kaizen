@@ -9,6 +9,7 @@ indépendants et peuvent être lancés dans n'importe quel ordre, sauf indicatio
 | `scores-sport-nutrition-sommeil.md` | Score Sport (perf + régularité + progression), nutrition dans le score Supotsu global, sommeil via `computeSleepScore2` (régularité + dette) | À tout moment |
 | `carrousel-peek.md` | Composant `Carousel` réutilisable (effet peek + points), appliqué partout où c'est pertinent | À tout moment |
 | `import-ocr-seances.md` | Import d'une séance depuis une **capture d'écran** — OCR 100 % local (Voie A) + écran de revue éditable | À tout moment |
+| `sommeil-telephone-reveil.md` | Suivi du sommeil par le **téléphone** (actigraphie) + **réveil intelligent programmable** | À tout moment |
 | `apple-watch-niveau1.md` | App **Apple Watch** compagnon (suivre sa séance au poignet) — Niveau 1 | **Post-TestFlight** |
 | `apple-watch-niveau2.md` | Apple Watch — séance **live** (FC temps réel, calories, HealthKit workout) | **Après le Niveau 1** |
 
