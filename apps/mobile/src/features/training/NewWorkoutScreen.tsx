@@ -1,17 +1,26 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Pressable, View } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { Badge, Button, Card, Input, Screen, Text, useTheme } from '@supotsu/ui';
+import { Badge, Button, Card, Input, Screen, SegmentedControl, Text, useTheme } from '@supotsu/ui';
 import { radii, spacing } from '@supotsu/design-system';
 import { suggestProgression } from '@supotsu/engines';
 import { EXERCISE_LIBRARY } from '@supotsu/shared';
+import type { BlockFormat } from '@supotsu/core';
 import { EXERCISES, MUSCLE_LABEL, toCatalogExercise, type Exercise } from '@/features/exercises/catalog';
-import { useAddWorkout, useCustomExercises, useExerciseHistory, useWorkouts, useWorkoutSets } from '@/lib/data/queries';
+import { useAddCircuitWorkout, useAddWorkout, useCustomExercises, useExerciseHistory, useWorkouts, useWorkoutSets } from '@/lib/data/queries';
 import { formatDate } from '@/lib/format';
 
 const LIMIT = 60;
 /** Name Garmin imports are stored under (repository.ts upsertImportedWorkouts) — flags the badge below. */
 const GARMIN_IMPORT_NAME = 'Musculation (import Garmin)';
+
+const FORMAT_OPTIONS: { value: BlockFormat; label: string }[] = [
+  { value: 'strength', label: 'Musculation' },
+  { value: 'amrap', label: 'AMRAP' },
+  { value: 'emom', label: 'EMOM' },
+  { value: 'for_time', label: 'Pour le temps' },
+];
+const FORMAT_LABEL: Record<BlockFormat, string> = { strength: 'Musculation', amrap: 'AMRAP', emom: 'EMOM', for_time: 'Pour le temps' };
 
 interface SetDraft {
   reps: string;
@@ -19,23 +28,46 @@ interface SetDraft {
   rest: string;
 }
 
-/** Create a session plan: name, search + add exercises, set target reps/charge. It's saved "planned" — the muscle map, ACWR etc. only count it once the user actually marks it done from Planification. */
+interface BlockDraft {
+  format: BlockFormat;
+  timeCapSec: string;
+  targetRounds: string;
+  order: string[];
+  selected: Record<string, SetDraft>;
+}
+
+const emptyBlock = (): BlockDraft => ({ format: 'strength', timeCapSec: '12', targetRounds: '10', order: [], selected: {} });
+
+/**
+ * Create a session plan: name, one or more blocks (Musculation/AMRAP/EMOM/
+ * Pour le temps), each with its own search + add exercises, set target
+ * reps/charge. It's saved "planned" — the muscle map, ACWR etc. only count
+ * it once the user actually marks it done from Planification (or runs it
+ * live via CircuitRunnerScreen for a circuit-format session).
+ */
 export function NewWorkoutScreen(): React.JSX.Element {
   const router = useRouter();
   const { colors } = useTheme();
   const params = useLocalSearchParams<{ openPicker?: string }>();
   const addWorkout = useAddWorkout();
+  const addCircuitWorkout = useAddCircuitWorkout();
   const { data: history = {} } = useExerciseHistory();
   const { data: customExercises = [] } = useCustomExercises();
   const { data: allWorkouts = [] } = useWorkouts();
 
   const [name, setName] = useState('');
   const [query, setQuery] = useState('');
-  const [order, setOrder] = useState<string[]>([]);
-  const [selected, setSelected] = useState<Record<string, SetDraft>>({});
+  const [blocks, setBlocks] = useState<BlockDraft[]>([emptyBlock()]);
+  const [activeBlock, setActiveBlock] = useState(0);
   const [error, setError] = useState<string | null>(null);
   const [pickerOpen, setPickerOpen] = useState(params.openPicker === '1');
   const [importSourceId, setImportSourceId] = useState<string | undefined>();
+
+  const order = blocks[activeBlock]!.order;
+  const selected = blocks[activeBlock]!.selected;
+  const updateActiveBlock = (patch: Partial<BlockDraft>): void => {
+    setBlocks((prev) => prev.map((b, i) => (i === activeBlock ? { ...b, ...patch } : b)));
+  };
 
   const allExercises = useMemo(() => [...customExercises.map(toCatalogExercise), ...EXERCISES], [customExercises]);
   // Lookup used to resolve an exercise id to its card (name, muscles…) — wider
@@ -62,6 +94,8 @@ export function NewWorkoutScreen(): React.JSX.Element {
 
   // Une fois les séries de la séance choisie chargées, préremplit le formulaire — même
   // logique que le préremplissage d'EditWorkoutScreen, mais ça reste une nouvelle séance.
+  // Un import démarre toujours une séance à un seul bloc musculation (les séances
+  // reprises/importées, notamment Garmin, sont toujours de ce format aujourd'hui).
   useEffect(() => {
     if (!importSourceId || !importSets) return;
     const source = allWorkouts.find((w) => w.id === importSourceId);
@@ -80,8 +114,8 @@ export function NewWorkoutScreen(): React.JSX.Element {
     if (source && source.name !== GARMIN_IMPORT_NAME) {
       setName((prev) => (prev.trim() ? prev : source.name));
     }
-    setOrder(nextOrder);
-    setSelected(nextSelected);
+    setBlocks([{ ...emptyBlock(), order: nextOrder, selected: nextSelected }]);
+    setActiveBlock(0);
     setImportSourceId(undefined);
     setPickerOpen(false);
   }, [importSourceId, importSets, allWorkouts]);
@@ -98,42 +132,80 @@ export function NewWorkoutScreen(): React.JSX.Element {
     : [];
 
   const add = (id: string): void => {
-    setSelected((prev) => ({ ...prev, [id]: { reps: '', weight: '', rest: '' } }));
-    setOrder((prev) => [...prev, id]);
+    updateActiveBlock({ selected: { ...selected, [id]: { reps: '', weight: '', rest: '' } }, order: [...order, id] });
     setQuery('');
   };
   const remove = (id: string): void => {
-    setSelected((prev) => {
-      const next = { ...prev };
-      delete next[id];
-      return next;
-    });
-    setOrder((prev) => prev.filter((x) => x !== id));
+    const nextSelected = { ...selected };
+    delete nextSelected[id];
+    updateActiveBlock({ selected: nextSelected, order: order.filter((x) => x !== id) });
   };
   const update = (id: string, patch: Partial<SetDraft>): void => {
-    setSelected((prev) => ({ ...prev, [id]: { ...prev[id], ...patch } }));
+    updateActiveBlock({ selected: { ...selected, [id]: { ...selected[id], ...patch } } });
+  };
+
+  const addBlock = (): void => {
+    setBlocks((prev) => [...prev, emptyBlock()]);
+    setActiveBlock(blocks.length);
+  };
+  const removeBlock = (index: number): void => {
+    setBlocks((prev) => prev.filter((_, i) => i !== index));
+    setActiveBlock(0);
   };
 
   const submit = async (): Promise<void> => {
     setError(null);
-    if (!name.trim() || order.length === 0) {
-      setError('Donne un nom et ajoute au moins un exercice.');
+    if (!name.trim()) {
+      setError('Donne un nom à ta séance.');
       return;
     }
-    const sets = order.map((exerciseId, index) => ({
-      exerciseId,
-      order: index,
-      reps: selected[exerciseId]!.reps ? Number(selected[exerciseId]!.reps) : undefined,
-      weightKg: selected[exerciseId]!.weight ? Number(selected[exerciseId]!.weight) : undefined,
-      restSec: selected[exerciseId]!.rest ? Number(selected[exerciseId]!.rest) : undefined,
-    }));
+    if (blocks.every((b) => b.order.length === 0)) {
+      setError('Ajoute au moins un exercice.');
+      return;
+    }
+    const isSingleStrength = blocks.length === 1 && blocks[0]!.format === 'strength';
     try {
-      await addWorkout.mutateAsync({ name: name.trim(), sets });
+      if (isSingleStrength) {
+        await addWorkout.mutateAsync({
+          name: name.trim(),
+          sets: blocks[0]!.order.map((id, i) => {
+            const s = blocks[0]!.selected[id]!;
+            return {
+              exerciseId: id,
+              order: i,
+              reps: s.reps ? Number(s.reps) : undefined,
+              weightKg: s.weight ? Number(s.weight) : undefined,
+              restSec: s.rest ? Number(s.rest) : undefined,
+            };
+          }),
+        });
+      } else {
+        await addCircuitWorkout.mutateAsync({
+          name: name.trim(),
+          blocks: blocks.map((b) => ({
+            format: b.format,
+            timeCapSec: b.format === 'amrap' || b.format === 'emom' ? Number(b.timeCapSec) || undefined : undefined,
+            targetRounds: b.format === 'emom' || b.format === 'for_time' ? Number(b.targetRounds) || undefined : undefined,
+            sets: b.order.map((id, i) => {
+              const s = b.selected[id]!;
+              return {
+                exerciseId: id,
+                order: i,
+                reps: s.reps ? Number(s.reps) : undefined,
+                weightKg: b.format === 'strength' && s.weight ? Number(s.weight) : undefined,
+                restSec: b.format === 'strength' && s.rest ? Number(s.rest) : undefined,
+              };
+            }),
+          })),
+        });
+      }
       router.back();
     } catch {
       setError('Enregistrement impossible.');
     }
   };
+
+  const isPending = addWorkout.isPending || addCircuitWorkout.isPending;
 
   const exerciseSubtitle = (ex: Exercise): string =>
     `${isCustom(ex.id) ? '✨ Perso · ' : ''}${[ex.primary, ...ex.secondary].map((m) => MUSCLE_LABEL[m]).join(', ')} · ${ex.equipment}`;
@@ -142,7 +214,7 @@ export function NewWorkoutScreen(): React.JSX.Element {
     <Screen scroll>
       <Text variant="title">Nouvelle séance</Text>
       <Text variant="caption" color="textMuted">
-        Crée ta séance maintenant, tu la commenceras quand tu veux depuis Planification.
+        Enchaîne plusieurs formats dans la même séance — chaque bloc a son propre chrono.
       </Text>
 
       <View style={{ marginTop: spacing[2], alignItems: 'flex-start' }}>
@@ -203,6 +275,56 @@ export function NewWorkoutScreen(): React.JSX.Element {
         onChangeText={setName}
       />
 
+      <View style={{ gap: spacing[3] }}>
+        {blocks.map((b, i) => (
+          <Pressable key={i} onPress={() => setActiveBlock(i)}>
+            <Card elevated={i === activeBlock} style={i === activeBlock ? { borderColor: colors.primary } : undefined}>
+              <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing[2] }}>
+                  <View style={{ width: 22, height: 22, borderRadius: 11, backgroundColor: colors.primary, alignItems: 'center', justifyContent: 'center' }}>
+                    <Text variant="caption" style={{ color: '#04140b', fontWeight: '700' }}>{i + 1}</Text>
+                  </View>
+                  <Text variant="body" style={{ fontWeight: '700' }}>{FORMAT_LABEL[b.format]}</Text>
+                </View>
+                {blocks.length > 1 ? (
+                  <Pressable onPress={() => removeBlock(i)} hitSlop={8}>
+                    <Text variant="body" style={{ color: colors.error }}>×</Text>
+                  </Pressable>
+                ) : null}
+              </View>
+              {i === activeBlock ? (
+                <>
+                  <SegmentedControl options={FORMAT_OPTIONS} value={b.format} onChange={(v) => updateActiveBlock({ format: v })} />
+                  {b.format === 'amrap' ? (
+                    <Input label="Temps limite (min)" keyboardType="numeric" value={b.timeCapSec} onChangeText={(v) => updateActiveBlock({ timeCapSec: v })} />
+                  ) : null}
+                  {b.format === 'emom' ? (
+                    <View style={{ flexDirection: 'row', gap: spacing[3] }}>
+                      <View style={{ flex: 1 }}>
+                        <Input label="Intervalle (s)" keyboardType="numeric" value={b.timeCapSec} onChangeText={(v) => updateActiveBlock({ timeCapSec: v })} />
+                      </View>
+                      <View style={{ flex: 1 }}>
+                        <Input label="Nombre d'intervalles" keyboardType="numeric" value={b.targetRounds} onChangeText={(v) => updateActiveBlock({ targetRounds: v })} />
+                      </View>
+                    </View>
+                  ) : null}
+                  {b.format === 'for_time' ? (
+                    <Input label="Nombre de rounds" keyboardType="numeric" value={b.targetRounds} onChangeText={(v) => updateActiveBlock({ targetRounds: v })} />
+                  ) : null}
+                </>
+              ) : (
+                <Text variant="caption" color="textSubtle">{b.order.length} exercice{b.order.length > 1 ? 's' : ''}</Text>
+              )}
+            </Card>
+          </Pressable>
+        ))}
+        <Pressable onPress={addBlock}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: spacing[2], borderWidth: 1, borderStyle: 'dashed', borderColor: colors.border, borderRadius: radii.lg, padding: spacing[4] }}>
+            <Text variant="body" color="textMuted">+ Ajouter un bloc</Text>
+          </View>
+        </Pressable>
+      </View>
+
       <Text variant="heading">Ajouter un exercice</Text>
       <Input
         label="Rechercher un exercice"
@@ -248,6 +370,7 @@ export function NewWorkoutScreen(): React.JSX.Element {
           {order.map((id) => {
             const ex = byId.get(id);
             if (!ex) return null;
+            const activeFormat = blocks[activeBlock]!.format;
             return (
               <Card key={id} elevated>
                 <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -260,37 +383,38 @@ export function NewWorkoutScreen(): React.JSX.Element {
                   </Pressable>
                 </View>
 
-                {(() => {
-                  const suggestion = history[id] ? suggestProgression(history[id]) : undefined;
-                  if (!suggestion) return null;
-                  return (
-                    <View
-                      style={{
-                        marginTop: spacing[2],
-                        padding: spacing[2],
-                        borderRadius: radii.md,
-                        backgroundColor: colors.surfaceElevated,
-                        gap: spacing[1],
-                      }}
-                    >
-                      <Text variant="caption" color="textMuted">
-                        💡 Surcharge progressive : {suggestion.rationale}
-                      </Text>
-                      <View style={{ alignItems: 'flex-start' }}>
-                        <Button
-                          label="Utiliser la suggestion"
-                          variant="secondary"
-                          onPress={() =>
-                            update(id, {
-                              reps: suggestion.reps !== undefined ? String(suggestion.reps) : '',
-                              weight: suggestion.weightKg !== undefined ? String(suggestion.weightKg) : '',
-                            })
-                          }
-                        />
+                {activeFormat === 'strength' &&
+                  (() => {
+                    const suggestion = history[id] ? suggestProgression(history[id]) : undefined;
+                    if (!suggestion) return null;
+                    return (
+                      <View
+                        style={{
+                          marginTop: spacing[2],
+                          padding: spacing[2],
+                          borderRadius: radii.md,
+                          backgroundColor: colors.surfaceElevated,
+                          gap: spacing[1],
+                        }}
+                      >
+                        <Text variant="caption" color="textMuted">
+                          💡 Surcharge progressive : {suggestion.rationale}
+                        </Text>
+                        <View style={{ alignItems: 'flex-start' }}>
+                          <Button
+                            label="Utiliser la suggestion"
+                            variant="secondary"
+                            onPress={() =>
+                              update(id, {
+                                reps: suggestion.reps !== undefined ? String(suggestion.reps) : '',
+                                weight: suggestion.weightKg !== undefined ? String(suggestion.weightKg) : '',
+                              })
+                            }
+                          />
+                        </View>
                       </View>
-                    </View>
-                  );
-                })()}
+                    );
+                  })()}
                 <View style={{ flexDirection: 'row', gap: spacing[4], marginTop: spacing[2] }}>
                   <View style={{ flex: 1 }}>
                     <Input
@@ -300,24 +424,28 @@ export function NewWorkoutScreen(): React.JSX.Element {
                       onChangeText={(v) => update(id, { reps: v })}
                     />
                   </View>
-                  <View style={{ flex: 1 }}>
+                  {activeFormat === 'strength' ? (
+                    <View style={{ flex: 1 }}>
+                      <Input
+                        label="Charge (kg)"
+                        keyboardType="numeric"
+                        value={selected[id]!.weight}
+                        onChangeText={(v) => update(id, { weight: v })}
+                      />
+                    </View>
+                  ) : null}
+                </View>
+                {activeFormat === 'strength' ? (
+                  <View style={{ marginTop: spacing[2] }}>
                     <Input
-                      label="Charge (kg)"
+                      label="Repos entre séries (sec)"
+                      placeholder="Ex : 90"
                       keyboardType="numeric"
-                      value={selected[id]!.weight}
-                      onChangeText={(v) => update(id, { weight: v })}
+                      value={selected[id]!.rest}
+                      onChangeText={(v) => update(id, { rest: v })}
                     />
                   </View>
-                </View>
-                <View style={{ marginTop: spacing[2] }}>
-                  <Input
-                    label="Repos entre séries (sec)"
-                    placeholder="Ex : 90"
-                    keyboardType="numeric"
-                    value={selected[id]!.rest}
-                    onChangeText={(v) => update(id, { rest: v })}
-                  />
-                </View>
+                ) : null}
               </Card>
             );
           })}
@@ -330,9 +458,9 @@ export function NewWorkoutScreen(): React.JSX.Element {
         <Button label="Annuler" variant="secondary" onPress={() => router.back()} />
         <View style={{ flex: 1 }} />
         <Button
-          label={addWorkout.isPending ? '…' : 'Créer la séance'}
+          label={isPending ? '…' : 'Créer la séance'}
           onPress={submit}
-          disabled={addWorkout.isPending}
+          disabled={isPending}
         />
       </View>
     </Screen>
