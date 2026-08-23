@@ -7,7 +7,7 @@ import type { WorkoutStatus } from '@supotsu/core';
 import { PICKABLE_EXERCISES } from '@supotsu/shared';
 import { EXERCISES } from '@/features/exercises/catalog';
 import { BackButton } from '@/features/navigation/BackButton';
-import { useCustomExercises, useDeletePlannedWorkout, useWorkoutSets, useWorkouts } from '@/lib/data/queries';
+import { useCustomExercises, useDeletePlannedWorkout, useWorkoutBlocks, useWorkoutSets, useWorkouts } from '@/lib/data/queries';
 import { formatDate } from '@/lib/format';
 
 const STATUS: Record<WorkoutStatus, { label: string; tone: BadgeTone }> = {
@@ -45,6 +45,7 @@ export function WorkoutDetailScreen(): React.JSX.Element {
   const { id } = useLocalSearchParams<{ id: string }>();
   const { data: workouts = [], isLoading } = useWorkouts();
   const { data: sets = [] } = useWorkoutSets(id);
+  const { data: blocks = [] } = useWorkoutBlocks(id);
   const { data: customExercises = [] } = useCustomExercises();
   const deleteWorkout = useDeletePlannedWorkout();
   const [confirmingDelete, setConfirmingDelete] = useState(false);
@@ -152,6 +153,12 @@ export function WorkoutDetailScreen(): React.JSX.Element {
           </View>
         )}
       </Card>
+
+      {!confirmingDelete && workout.status === 'planned' && blocks.length > 0 ? (
+        <View style={{ alignItems: 'flex-start' }}>
+          <Button label="Lancer" onPress={() => router.push({ pathname: '/sport/workout/[id]/run', params: { id: workout.id } })} />
+        </View>
+      ) : null}
 
       {confirmingDelete ? (
         <Card>

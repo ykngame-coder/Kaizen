@@ -184,7 +184,8 @@ export function NewWorkoutScreen(): React.JSX.Element {
           name: name.trim(),
           blocks: blocks.map((b) => ({
             format: b.format,
-            timeCapSec: b.format === 'amrap' || b.format === 'emom' ? Number(b.timeCapSec) || undefined : undefined,
+            // AMRAP's field is minutes ("Temps limite (min)"); EMOM's is already seconds ("Intervalle (s)") — timeCapSec is always stored in seconds.
+            timeCapSec: b.format === 'amrap' ? (Number(b.timeCapSec) || 0) * 60 || undefined : b.format === 'emom' ? Number(b.timeCapSec) || undefined : undefined,
             targetRounds: b.format === 'emom' || b.format === 'for_time' ? Number(b.targetRounds) || undefined : undefined,
             sets: b.order.map((id, i) => {
               const s = b.selected[id]!;
