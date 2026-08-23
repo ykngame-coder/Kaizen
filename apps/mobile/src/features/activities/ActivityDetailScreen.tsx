@@ -6,8 +6,9 @@ import { radii, spacing } from '@supotsu/design-system';
 import { EXERCISE_LIBRARY } from '@supotsu/shared';
 import { EXERCISES } from '@/features/exercises/catalog';
 import { BackButton } from '@/features/navigation/BackButton';
-import { useActivities, useCustomExercises, useWorkoutSets, useWorkouts } from '@/lib/data/queries';
+import { useActivities, useCustomExercises, useWorkoutBlocks, useWorkoutSets, useWorkouts } from '@/lib/data/queries';
 import { activityLabel, formatDate, formatDistance, formatDuration } from '@/lib/format';
+import { BlockSummaryCard } from '@/features/training/WorkoutDetailScreen';
 
 const INTENSITY_LABEL: Record<string, string> = {
   low: 'Faible',
@@ -61,6 +62,7 @@ export function ActivityDetailScreen(): React.JSX.Element {
   }, [activity, workouts]);
 
   const { data: sets = [] } = useWorkoutSets(matchedWorkout?.id);
+  const { data: blocks = [] } = useWorkoutBlocks(matchedWorkout?.id);
 
   const exerciseName = useMemo(() => {
     const map = new Map<string, string>();
@@ -128,7 +130,20 @@ export function ActivityDetailScreen(): React.JSX.Element {
         </Card>
       ) : null}
 
-      {matchedWorkout ? (
+      {matchedWorkout && blocks.length > 0 ? (
+        <View style={{ gap: spacing[3] }}>
+          {blocks.map((b, i) => (
+            <BlockSummaryCard key={b.id} block={b} index={i} exerciseName={exerciseName} />
+          ))}
+          <View style={{ alignItems: 'flex-start' }}>
+            <Button
+              label="Voir la séance complète"
+              variant="secondary"
+              onPress={() => router.push({ pathname: '/sport/workout/[id]', params: { id: matchedWorkout.id } })}
+            />
+          </View>
+        </View>
+      ) : matchedWorkout ? (
         <Card>
           <Text variant="heading">Exercices</Text>
           {byExercise.length === 0 ? (

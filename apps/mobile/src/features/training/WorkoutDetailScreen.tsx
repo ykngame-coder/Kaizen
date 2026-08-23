@@ -3,11 +3,11 @@ import { View } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Badge, Button, Card, EmptyState, Icon, Screen, Text, useTheme, type BadgeTone } from '@supotsu/ui';
 import { radii, spacing } from '@supotsu/design-system';
-import type { WorkoutStatus } from '@supotsu/core';
-import { PICKABLE_EXERCISES } from '@supotsu/shared';
+import type { WorkoutBlock, WorkoutStatus } from '@supotsu/core';
+import { EXERCISE_LIBRARY } from '@supotsu/shared';
 import { EXERCISES } from '@/features/exercises/catalog';
 import { BackButton } from '@/features/navigation/BackButton';
-import { useCustomExercises, useDeletePlannedWorkout, useWorkoutBlocks, useWorkoutSets, useWorkouts } from '@/lib/data/queries';
+import { useBlockSets, useCustomExercises, useDeletePlannedWorkout, useWorkoutBlocks, useWorkoutSets, useWorkouts } from '@/lib/data/queries';
 import { formatDate } from '@/lib/format';
 
 const STATUS: Record<WorkoutStatus, { label: string; tone: BadgeTone }> = {
@@ -53,7 +53,7 @@ export function WorkoutDetailScreen(): React.JSX.Element {
 
   const exerciseName = useMemo(() => {
     const map = new Map<string, string>();
-    for (const e of PICKABLE_EXERCISES) map.set(e.id, e.name);
+    for (const e of EXERCISE_LIBRARY) map.set(e.id, e.name);
     for (const e of EXERCISES) map.set(e.id, e.name);
     for (const e of customExercises) map.set(e.id, e.name);
     return (exerciseId: string): string => map.get(exerciseId) ?? exerciseId;
@@ -124,35 +124,43 @@ export function WorkoutDetailScreen(): React.JSX.Element {
         </Card>
       ) : null}
 
-      {/* Exercices */}
-      <Card>
-        <Text variant="heading">Exercices</Text>
-        {byExercise.length === 0 ? (
-          <Text variant="body" color="textMuted" style={{ marginTop: spacing[1], lineHeight: 21 }}>
-            Aucun exercice enregistré pour cette séance.
-          </Text>
-        ) : (
-          <View style={{ marginTop: spacing[2], gap: spacing[3] }}>
-            {byExercise.map((g) => (
-              <View key={g.exerciseId}>
-                <Text variant="body" style={{ fontWeight: '700' }}>{exerciseName(g.exerciseId)}</Text>
-                <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: spacing[2], marginTop: spacing[1] }}>
-                  {g.sets.map((s, i) => (
-                    <View
-                      key={s.id}
-                      style={{ paddingHorizontal: 10, paddingVertical: 6, borderRadius: radii.md, backgroundColor: colors.surfaceElevated }}
-                    >
-                      <Text variant="caption" color="textMuted">
-                        Série {i + 1} · {s.reps != null ? `${s.reps} reps` : '—'}{s.weightKg != null ? ` · ${s.weightKg} kg` : ''}
-                      </Text>
-                    </View>
-                  ))}
+      {/* Exercices — par bloc si la séance en a, sinon la liste à plat comme avant */}
+      {blocks.length > 0 ? (
+        <View style={{ gap: spacing[3] }}>
+          {blocks.map((b, i) => (
+            <BlockSummaryCard key={b.id} block={b} index={i} exerciseName={exerciseName} />
+          ))}
+        </View>
+      ) : (
+        <Card>
+          <Text variant="heading">Exercices</Text>
+          {byExercise.length === 0 ? (
+            <Text variant="body" color="textMuted" style={{ marginTop: spacing[1], lineHeight: 21 }}>
+              Aucun exercice enregistré pour cette séance.
+            </Text>
+          ) : (
+            <View style={{ marginTop: spacing[2], gap: spacing[3] }}>
+              {byExercise.map((g) => (
+                <View key={g.exerciseId}>
+                  <Text variant="body" style={{ fontWeight: '700' }}>{exerciseName(g.exerciseId)}</Text>
+                  <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: spacing[2], marginTop: spacing[1] }}>
+                    {g.sets.map((s, i) => (
+                      <View
+                        key={s.id}
+                        style={{ paddingHorizontal: 10, paddingVertical: 6, borderRadius: radii.md, backgroundColor: colors.surfaceElevated }}
+                      >
+                        <Text variant="caption" color="textMuted">
+                          Série {i + 1} · {s.reps != null ? `${s.reps} reps` : '—'}{s.weightKg != null ? ` · ${s.weightKg} kg` : ''}
+                        </Text>
+                      </View>
+                    ))}
+                  </View>
                 </View>
-              </View>
-            ))}
-          </View>
-        )}
-      </Card>
+              ))}
+            </View>
+          )}
+        </Card>
+      )}
 
       {!confirmingDelete && workout.status === 'planned' && blocks.length > 0 ? (
         <View style={{ alignItems: 'flex-start' }}>
@@ -185,5 +193,45 @@ export function WorkoutDetailScreen(): React.JSX.Element {
         </View>
       )}
     </Screen>
+  );
+}
+
+const BLOCK_FORMAT_LABEL: Record<WorkoutBlock['format'], string> = {
+  strength: 'Musculation',
+  amrap: 'AMRAP',
+  emom: 'EMOM',
+  for_time: 'Pour le temps',
+};
+
+function blockResultLine(b: WorkoutBlock): string {
+  if (b.format === 'amrap') return `AMRAP ${b.timeCapSec ? Math.round(b.timeCapSec / 60) : '?'} min${b.completedRounds != null ? ` — ${b.completedRounds} rounds` : ''}`;
+  if (b.format === 'emom') return `EMOM ${b.targetRounds ?? '?'}×${b.timeCapSec ?? '?'} s`;
+  if (b.format === 'for_time') return `Pour le temps${b.resultTimeSec != null ? ` — ${Math.floor(b.resultTimeSec / 60)} min ${b.resultTimeSec % 60}` : ''}`;
+  return 'Musculation';
+}
+
+/** One block's summary + exercises — reused by ActivityDetailScreen for a matched Garmin/circuit workout. */
+export function BlockSummaryCard({
+  block,
+  index,
+  exerciseName,
+}: {
+  block: WorkoutBlock;
+  index: number;
+  exerciseName: (id: string) => string;
+}): React.JSX.Element {
+  const { data: sets = [] } = useBlockSets(block.id);
+  return (
+    <Card>
+      <Text variant="heading">Bloc {index + 1} · {BLOCK_FORMAT_LABEL[block.format]}</Text>
+      <Text variant="caption" color="textMuted">{blockResultLine(block)}</Text>
+      <View style={{ marginTop: spacing[2], gap: spacing[1] }}>
+        {sets.map((s) => (
+          <Text key={s.id} variant="caption" color="textSubtle">
+            {exerciseName(s.exerciseId)}{s.reps != null ? ` · ${s.reps} reps` : ''}{block.format === 'strength' && s.weightKg != null ? ` · ${s.weightKg} kg` : ''}
+          </Text>
+        ))}
+      </View>
+    </Card>
   );
 }
