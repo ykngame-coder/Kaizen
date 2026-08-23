@@ -28,7 +28,7 @@
 **Interfaces:**
 - Produces: table `public.workout_blocks` (columns: `id uuid`, `workout_id uuid`, `"order" smallint`, `format text`, `time_cap_sec integer`, `target_rounds smallint`, `completed_rounds smallint`, `result_time_sec integer`); `public.workout_sets.block_id uuid` (nullable, FK to `workout_blocks.id`).
 
-- [ ] **Step 1: Write the migration**
+- [x] **Step 1: Write the migration**
 
 ```sql
 -- Circuit workout formats (AMRAP/EMOM/Pour le temps): a session becomes a
@@ -66,7 +66,7 @@ create policy "workout_blocks follow workout ownership"
   );
 ```
 
-- [ ] **Step 2: Verify the SQL is syntactically valid**
+- [x] **Step 2: Verify the SQL is syntactically valid**
 
 There is no local Postgres in this environment. Sanity-check by eye against
 `supabase/migrations/0001_init.sql`'s `workout_sets`/`workouts` block (same
@@ -75,7 +75,7 @@ column/constraint style) and `supabase/migrations/0022_fix_workouts_dedup_confli
 migration themselves (`supabase db push` or the dashboard SQL editor) — flag
 that explicitly when this task is done.
 
-- [ ] **Step 3: Commit**
+- [x] **Step 3: Commit**
 
 ```bash
 git add supabase/migrations/0023_circuit_workout_formats.sql
@@ -93,7 +93,7 @@ git commit -m "Add workout_blocks table for multi-format circuit sessions"
 - Consumes: nothing new.
 - Produces: `Database['public']['Tables']['workout_blocks']` (Row/Insert/Update), `Database['public']['Tables']['workout_sets']['Row'|'Insert']` gains `block_id`.
 
-- [ ] **Step 1: Add `block_id` to the existing `workout_sets` entry**
+- [x] **Step 1: Add `block_id` to the existing `workout_sets` entry**
 
 In the `workout_sets` block (currently `id`, `workout_id`, `exercise_id`,
 `order`, `reps`, `weight_kg`, `duration_sec`, `rest_sec`, `rpe`), add
@@ -130,7 +130,7 @@ In the `workout_sets` block (currently `id`, `workout_id`, `exercise_id`,
       };
 ```
 
-- [ ] **Step 2: Add the `workout_blocks` table entry**
+- [x] **Step 2: Add the `workout_blocks` table entry**
 
 Insert this new block directly after `workout_sets` (same file, same
 nesting level as `workouts`/`workout_sets`):
@@ -161,12 +161,12 @@ nesting level as `workouts`/`workout_sets`):
       };
 ```
 
-- [ ] **Step 3: Typecheck**
+- [x] **Step 3: Typecheck**
 
 Run: `cd packages/database && npx tsc --noEmit`
 Expected: no errors.
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 
 ```bash
 git add packages/database/src/generated/database.types.ts
@@ -183,7 +183,7 @@ git commit -m "Add workout_blocks to generated Supabase types"
 **Interfaces:**
 - Produces: `BlockFormat`, `WorkoutBlock` (exported from `@supotsu/core`); `SetEntry` gains optional `blockId`.
 
-- [ ] **Step 1: Add `BlockFormat` and `WorkoutBlock`, extend `SetEntry`**
+- [x] **Step 1: Add `BlockFormat` and `WorkoutBlock`, extend `SetEntry`**
 
 In `packages/core/src/training.ts`, right after the existing `WorkoutStatus`/`Workout` block (after line 49, before `SetEntry`):
 
@@ -233,7 +233,7 @@ export interface SetEntry {
 }
 ```
 
-- [ ] **Step 2: Export from the package index**
+- [x] **Step 2: Export from the package index**
 
 Check `packages/core/src/index.ts` re-exports `training.ts` with `export *`
 (it already does for `Workout`/`SetEntry` to work today) — no change needed
@@ -242,12 +242,12 @@ there, just confirm:
 Run: `grep -n "training" packages/core/src/index.ts`
 Expected: a line like `export * from './training';`
 
-- [ ] **Step 3: Typecheck**
+- [x] **Step 3: Typecheck**
 
 Run: `cd packages/core && npx tsc --noEmit`
 Expected: no errors.
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 
 ```bash
 git add packages/core/src/training.ts
@@ -266,7 +266,7 @@ git commit -m "Add BlockFormat/WorkoutBlock domain types"
 - Consumes: `BlockFormat` from `@supotsu/core` (Task 3).
 - Produces: `BlockRunnerState { displaySec: number; currentRound: number; isFinished: boolean }`, `computeAmrapState(elapsedSec, timeCapSec, roundsCompleted)`, `computeEmomState(elapsedSec, intervalSec, targetRounds)`, `computeForTimeState(elapsedSec, roundsCompleted, targetRounds)`, `formatClock(totalSec): string` — all pure functions, no React/timer state. `CircuitRunnerScreen` (Task 9) is the only consumer.
 
-- [ ] **Step 1: Write the failing tests**
+- [x] **Step 1: Write the failing tests**
 
 ```ts
 import { describe, expect, it } from 'vitest';
@@ -324,12 +324,12 @@ describe('formatClock', () => {
 });
 ```
 
-- [ ] **Step 2: Run tests to verify they fail**
+- [x] **Step 2: Run tests to verify they fail**
 
 Run: `npx vitest run apps/mobile/src/features/training/blockRunnerEngine.test.ts`
 Expected: FAIL — `blockRunnerEngine.ts` does not exist yet.
 
-- [ ] **Step 3: Write the implementation**
+- [x] **Step 3: Write the implementation**
 
 ```ts
 export interface BlockRunnerState {
@@ -384,12 +384,12 @@ export function formatClock(totalSec: number): string {
 }
 ```
 
-- [ ] **Step 4: Run tests to verify they pass**
+- [x] **Step 4: Run tests to verify they pass**
 
 Run: `npx vitest run apps/mobile/src/features/training/blockRunnerEngine.test.ts`
 Expected: PASS — 9 tests.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add apps/mobile/src/features/training/blockRunnerEngine.ts apps/mobile/src/features/training/blockRunnerEngine.test.ts
@@ -407,7 +407,7 @@ git commit -m "Add pure AMRAP/EMOM/for-time block timing engine"
 - Consumes: `SupotsuClient`, `Database` (existing), Task 2's `workout_blocks` types.
 - Produces: `WorkoutBlockRow`, `WorkoutBlockInsertRow`, `insertWorkoutWithBlocks(client, workout, blocks)`, `listBlocksForWorkout(client, workoutId)`, `listSetsForBlock(client, blockId)`, `updateBlockResult(client, blockId, result)` — Task 6 consumes all four.
 
-- [ ] **Step 1: Add the row types**
+- [x] **Step 1: Add the row types**
 
 Right after the existing `export type WorkoutSetInsertRow = ...` line near
 the top of `packages/database/src/repositories/workouts.ts`:
@@ -417,7 +417,7 @@ export type WorkoutBlockRow = Database['public']['Tables']['workout_blocks']['Ro
 export type WorkoutBlockInsertRow = Database['public']['Tables']['workout_blocks']['Insert'];
 ```
 
-- [ ] **Step 2: Add `insertWorkoutWithBlocks`**
+- [x] **Step 2: Add `insertWorkoutWithBlocks`**
 
 Add after `insertWorkout` (which stays untouched — plain strength workouts
 keep using it exactly as today):
@@ -517,12 +517,12 @@ appears later in the file (around line 162 in the pre-existing file) — place
 `listSetsForBlock` right next to it for readability; exact position doesn't
 matter, only that it's a top-level export in this file.
 
-- [ ] **Step 3: Typecheck**
+- [x] **Step 3: Typecheck**
 
 Run: `cd packages/database && npx tsc --noEmit`
 Expected: no errors.
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 
 ```bash
 git add packages/database/src/repositories/workouts.ts
@@ -540,7 +540,7 @@ git commit -m "Add workout_blocks repository functions"
 - Consumes: Task 3's `BlockFormat`/`WorkoutBlock`/`SetEntry.blockId`; Task 5's `insertWorkoutWithBlocks`, `listBlocksForWorkout`, `listSetsForBlock`, `updateBlockResult`, `WorkoutBlockRow`.
 - Produces: `NewCircuitBlockInput`, `NewCircuitWorkout` types; `DataRepository.addCircuitWorkout`, `.getWorkoutBlocks`, `.getBlockSets`, `.completeBlock` — Task 7's hooks consume all four.
 
-- [ ] **Step 1: Import the new repository functions**
+- [x] **Step 1: Import the new repository functions**
 
 In the `@supotsu/database` import block (where `updateWorkoutStatus as
 updateWorkoutStatusDb` already is), add, aliased the same way as the rest of
@@ -554,7 +554,7 @@ that block:
   type WorkoutBlockRow,
 ```
 
-- [ ] **Step 2: Add the input types**
+- [x] **Step 2: Add the input types**
 
 Right after the existing `NewWorkout` interface:
 
@@ -578,7 +578,7 @@ this file — confirm with `grep -n "BlockFormat\|SetEntry" apps/mobile/src/lib/
 and add `BlockFormat` and `WorkoutBlock` to that import line if they aren't
 already there.)
 
-- [ ] **Step 3: Extend the `DataRepository` interface**
+- [x] **Step 3: Extend the `DataRepository` interface**
 
 Right after the existing `getWorkoutSets` line:
 
@@ -593,7 +593,7 @@ Right after the existing `getWorkoutSets` line:
   completeBlock(userId: string, blockId: string, result: { completedRounds?: number; resultTimeSec?: number }): Promise<WorkoutBlock>;
 ```
 
-- [ ] **Step 4: Add `blockId` to the demo-mode local row shape**
+- [x] **Step 4: Add `blockId` to the demo-mode local row shape**
 
 `LoggedSetRow` (the demo-mode local-storage row shape) gets an optional
 `blockId`:
@@ -616,7 +616,7 @@ Add the storage key helper next to `wkKey`/`setKey`:
 const blockKey = (u: string): string => `supotsu.blocks.${u}`;
 ```
 
-- [ ] **Step 5: Implement the four methods on `createDemoRepository`**
+- [x] **Step 5: Implement the four methods on `createDemoRepository`**
 
 Add after the existing `getWorkoutSets` method in `createDemoRepository()`:
 
@@ -700,7 +700,7 @@ Add after the existing `getWorkoutSets` method in `createDemoRepository()`:
     },
 ```
 
-- [ ] **Step 6: Add `rowToWorkoutBlock` and implement the four methods on `createSupabaseRepository`**
+- [x] **Step 6: Add `rowToWorkoutBlock` and implement the four methods on `createSupabaseRepository`**
 
 Add the mapping helper right after `rowToWorkout`:
 
@@ -765,7 +765,7 @@ Add after the existing `getWorkoutSets` method in `createSupabaseRepository()`:
     },
 ```
 
-- [ ] **Step 7: Add `blockId` to the existing `getWorkoutSets` mapping (both implementations)**
+- [x] **Step 7: Add `blockId` to the existing `getWorkoutSets` mapping (both implementations)**
 
 The demo `getWorkoutSets` method's returned object literal gets `blockId:
 r.blockId,` added; the Supabase `getWorkoutSets` method's returned object
@@ -773,12 +773,12 @@ literal gets `blockId: r.block_id ?? undefined,` added — same shape as
 `getBlockSets` above, so a set's block membership is visible everywhere it's
 read, not just from `getBlockSets`.
 
-- [ ] **Step 8: Typecheck**
+- [x] **Step 8: Typecheck**
 
 Run: `cd apps/mobile && npx tsc --noEmit -p .`
 Expected: no errors.
 
-- [ ] **Step 9: Commit**
+- [x] **Step 9: Commit**
 
 ```bash
 git add apps/mobile/src/lib/data/repository.ts
@@ -796,12 +796,12 @@ git commit -m "Wire circuit-workout blocks into the app data repository"
 - Consumes: Task 6's `NewCircuitWorkout`, `DataRepository.addCircuitWorkout/getWorkoutBlocks/getBlockSets/completeBlock`.
 - Produces: `useAddCircuitWorkout()`, `useWorkoutBlocks(workoutId)`, `useBlockSets(blockId)`, `useCompleteBlock()` — Task 9 (`CircuitRunnerScreen`) and Task 8/10 consume these.
 
-- [ ] **Step 1: Add the import**
+- [x] **Step 1: Add the import**
 
 In the `./repository` import line (where `NewWorkout`/`PlannedInput` are
 already imported), add `type NewCircuitWorkout`.
 
-- [ ] **Step 2: Add the hooks**
+- [x] **Step 2: Add the hooks**
 
 Add right after `useAddWorkout`:
 
@@ -853,12 +853,12 @@ export function useCompleteBlock() {
 }
 ```
 
-- [ ] **Step 3: Typecheck**
+- [x] **Step 3: Typecheck**
 
 Run: `cd apps/mobile && npx tsc --noEmit -p .`
 Expected: no errors.
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 
 ```bash
 git add apps/mobile/src/lib/data/queries.ts
@@ -883,7 +883,7 @@ into an array of block drafts, keeping today's single-strength-block case
 fully backward compatible (same `addWorkout` call, same UI look, when the
 user never touches the block picker).
 
-- [ ] **Step 1: Add block draft state above the existing `order`/`selected` state**
+- [x] **Step 1: Add block draft state above the existing `order`/`selected` state**
 
 Replace:
 
@@ -914,7 +914,7 @@ with:
 
 Add `import type { BlockFormat } from '@supotsu/core';` to the top imports.
 
-- [ ] **Step 2: Rewire every existing `setOrder`/`setSelected` call to go through `updateActiveBlock`**
+- [x] **Step 2: Rewire every existing `setOrder`/`setSelected` call to go through `updateActiveBlock`**
 
 Search the file for `setOrder(` and `setSelected(` (both take a function or
 value updater) — each becomes `updateActiveBlock({ order: ... })` /
@@ -936,7 +936,7 @@ updateActiveBlock({ selected: { ...selected, [id]: draft } });
 in the file's body. Convert each the same way: read `order`/`selected` from
 the destructured `const`s above, write through `updateActiveBlock`.)
 
-- [ ] **Step 3: Add the block-list UI above the existing exercise-search section**
+- [x] **Step 3: Add the block-list UI above the existing exercise-search section**
 
 Insert, right before the existing `<Text variant="heading" ...>Ajouter un
 exercice</Text>` block:
@@ -1007,14 +1007,14 @@ exercice</Text>` block:
 Add `SegmentedControl` and `Input` to the existing `@supotsu/ui` import line
 if not already imported.
 
-- [ ] **Step 4: Change the exercise-search section's title to reference the active block**
+- [x] **Step 4: Change the exercise-search section's title to reference the active block**
 
 Where the file currently renders a static `<Text variant="heading">Ajouter
 un exercice</Text>`, leave it as-is (it now implicitly applies to the active
 block, consistent with the mockup) — no change needed here beyond what Step
 3 already added above it.
 
-- [ ] **Step 5: Wire submit to branch on block count/format**
+- [x] **Step 5: Wire submit to branch on block count/format**
 
 Find the existing submit handler (the function passed to "Créer la séance",
 currently calling `addWorkout.mutateAsync` with `{ name, sets: order.map(...)
@@ -1072,17 +1072,17 @@ currently calling `addWorkout.mutateAsync` with `{ name, sets: order.map(...)
 function was named with this `submit`, updating the "Créer la séance"
 button's `onPress` to call it.)
 
-- [ ] **Step 6: Typecheck**
+- [x] **Step 6: Typecheck**
 
 Run: `cd apps/mobile && npx tsc --noEmit -p .`
 Expected: no errors.
 
-- [ ] **Step 7: Lint**
+- [x] **Step 7: Lint**
 
 Run: `npx eslint apps/mobile/src/features/training/NewWorkoutScreen.tsx`
 Expected: no errors.
 
-- [ ] **Step 8: Manual check**
+- [x] **Step 8: Manual check**
 
 Run the app (`run` skill or `npx expo start`), open Sport → Nouvelle
 séance: confirm a single default Musculation block behaves exactly like
@@ -1090,7 +1090,7 @@ before (search, add exercise, create — same as pre-change), then add a
 second block, switch its format to AMRAP, confirm the time-cap field
 appears, and create a mixed session without errors.
 
-- [ ] **Step 9: Commit**
+- [x] **Step 9: Commit**
 
 ```bash
 git add apps/mobile/src/features/training/NewWorkoutScreen.tsx
@@ -1110,7 +1110,7 @@ git commit -m "NewWorkoutScreen: build sessions as a sequence of blocks"
 - Consumes: Task 4's `computeAmrapState`/`computeEmomState`/`computeForTimeState`/`formatClock`; Task 7's `useWorkoutBlocks`, `useBlockSets`, `useCompleteBlock`; existing `useSetWorkoutStatus`, `EXERCISE_LIBRARY`.
 - Produces: route `/sport/workout/[id]/run` — nothing else consumes this screen.
 
-- [ ] **Step 1: Write `CircuitRunnerScreen.tsx`**
+- [x] **Step 1: Write `CircuitRunnerScreen.tsx`**
 
 ```tsx
 import React, { useEffect, useMemo, useRef, useState } from 'react';
@@ -1269,7 +1269,7 @@ export function CircuitRunnerScreen(): React.JSX.Element {
 }
 ```
 
-- [ ] **Step 2: Add the route file**
+- [x] **Step 2: Add the route file**
 
 ```tsx
 import React from 'react';
@@ -1280,7 +1280,7 @@ export default function WorkoutRun(): React.JSX.Element {
 }
 ```
 
-- [ ] **Step 3: Add a "Lancer" button to `WorkoutDetailScreen`**
+- [x] **Step 3: Add a "Lancer" button to `WorkoutDetailScreen`**
 
 In `WorkoutDetailScreen.tsx`, add the hook and a conditional button. Import
 `useWorkoutBlocks` from `@/lib/data/queries`, and inside the component:
@@ -1302,17 +1302,17 @@ In the button row near the bottom (currently `Retour` / `Modifier` /
 
 Place it right above the existing `{confirmingDelete ? (...) : (...)}` block.
 
-- [ ] **Step 4: Typecheck**
+- [x] **Step 4: Typecheck**
 
 Run: `cd apps/mobile && npx tsc --noEmit -p .`
 Expected: no errors.
 
-- [ ] **Step 5: Lint**
+- [x] **Step 5: Lint**
 
 Run: `npx eslint apps/mobile/src/features/training/CircuitRunnerScreen.tsx apps/mobile/src/features/training/WorkoutDetailScreen.tsx`
 Expected: no errors.
 
-- [ ] **Step 6: Manual check**
+- [x] **Step 6: Manual check**
 
 Create a mixed EMOM+AMRAP session via Task 8's UI, open its detail page,
 tap "Lancer": confirm the EMOM block's ring counts down and advances
@@ -1320,7 +1320,7 @@ intervals automatically, then the AMRAP block appears with a working "Round
 terminé" button and finishes at 0:00, then the workout's status becomes
 "Terminée" and you land back on the detail screen.
 
-- [ ] **Step 7: Commit**
+- [x] **Step 7: Commit**
 
 ```bash
 git add apps/mobile/src/features/training/CircuitRunnerScreen.tsx "apps/mobile/app/(tabs)/sport/workout/[id]/run.tsx" apps/mobile/src/features/training/WorkoutDetailScreen.tsx
@@ -1338,7 +1338,7 @@ git commit -m "Add live block-by-block circuit workout execution"
 **Interfaces:**
 - Consumes: Task 7's `useWorkoutBlocks`, `useBlockSets`.
 
-- [ ] **Step 1: `WorkoutDetailScreen` — show blocks instead of the flat exercise list when the session has any**
+- [x] **Step 1: `WorkoutDetailScreen` — show blocks instead of the flat exercise list when the session has any**
 
 The screen already calls `useWorkoutBlocks(id)` (Task 9, Step 3). Replace
 the existing "Exercices" `<Card>` block with a conditional: when `blocks.length
@@ -1408,7 +1408,7 @@ Import `useBlockSets` alongside `useWorkoutBlocks`, and `type { WorkoutBlock
 }` from `@supotsu/core` (already imported for `WorkoutStatus` in this file —
 add `WorkoutBlock` to that same import line).
 
-- [ ] **Step 2: `ActivityDetailScreen` — same block-aware summary for a matched workout**
+- [x] **Step 2: `ActivityDetailScreen` — same block-aware summary for a matched workout**
 
 The screen already computes `matchedWorkout` and reads its sets via
 `useWorkoutSets(matchedWorkout?.id)`. Import `BlockSummaryCard` from
@@ -1440,24 +1440,24 @@ Then, in the JSX where the screen currently renders `byExercise` groups for
 `matchedWorkout ? (...)` branch — only the `blocks.length > 0` branch above
 it is new.)
 
-- [ ] **Step 3: Typecheck**
+- [x] **Step 3: Typecheck**
 
 Run: `cd apps/mobile && npx tsc --noEmit -p .`
 Expected: no errors.
 
-- [ ] **Step 4: Lint**
+- [x] **Step 4: Lint**
 
 Run: `npx eslint apps/mobile/src/features/training/WorkoutDetailScreen.tsx apps/mobile/src/features/activities/ActivityDetailScreen.tsx`
 Expected: no errors.
 
-- [ ] **Step 5: Manual check**
+- [x] **Step 5: Manual check**
 
 Open the detail page and the matched activity page for the mixed session
 created in Task 9's manual check: confirm both show "Bloc 1 · EMOM" / "Bloc
 2 · AMRAP" with their own exercises and result lines instead of one flat
 list.
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add apps/mobile/src/features/training/WorkoutDetailScreen.tsx apps/mobile/src/features/activities/ActivityDetailScreen.tsx
@@ -1470,28 +1470,28 @@ git commit -m "Show block-by-block summaries in workout/activity history"
 
 **Files:** none (verification only).
 
-- [ ] **Step 1: Run the full test suite**
+- [x] **Step 1: Run the full test suite**
 
 Run: `npx vitest run`
 Expected: all tests pass, including Task 4's 9 new ones.
 
-- [ ] **Step 2: Full typecheck**
+- [x] **Step 2: Full typecheck**
 
 Run: `cd apps/mobile && npx tsc --noEmit -p .`
 Expected: no errors.
 
-- [ ] **Step 3: Full lint**
+- [x] **Step 3: Full lint**
 
 Run: `cd /path/to/repo && npx eslint apps/mobile/src apps/mobile/app`
 Expected: no errors.
 
-- [ ] **Step 4: Web bundle sanity check**
+- [x] **Step 4: Web bundle sanity check**
 
 Run: `npx pnpm --filter @supotsu/mobile export:web`
 Expected: exports successfully (catches any RN-only API used somewhere it
 shouldn't be, same check used throughout this project for UI changes).
 
-- [ ] **Step 5: Remind the user about the migration**
+- [x] **Step 5: Remind the user about the migration**
 
 State explicitly at the end of this task: migration `0023` (Task 1) still
 needs to be applied to the live Supabase project by the user
