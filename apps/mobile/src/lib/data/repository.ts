@@ -1,5 +1,6 @@
 import type {
   Activity,
+  BlockFormat,
   Challenge,
   Exercise,
   Goal,
@@ -13,6 +14,7 @@ import type {
   PersonalRecord,
   Program,
   Workout,
+  WorkoutBlock,
   SetEntry,
   SleepSession,
   UserProgram,
@@ -52,6 +54,11 @@ import {
   upsertActivities,
   listActivities as listActivitiesDb,
   insertWorkout,
+  insertWorkoutWithBlocks as insertWorkoutWithBlocksDb,
+  listBlocksForWorkout as listBlocksForWorkoutDb,
+  listSetsForBlock as listSetsForBlockDb,
+  updateBlockResult as updateBlockResultDb,
+  type WorkoutBlockRow,
   upsertImportedWorkouts,
   insertPlannedWorkout,
   listPlannedWorkouts as listPlannedWorkoutsDb,
@@ -144,6 +151,19 @@ export interface NewWorkout {
   sets: Omit<SetEntry, 'id' | 'workoutId'>[];
 }
 
+export interface NewCircuitBlockInput {
+  format: BlockFormat;
+  timeCapSec?: number;
+  targetRounds?: number;
+  sets: Omit<SetEntry, 'id' | 'workoutId' | 'blockId'>[];
+}
+
+/** A session made of one or more ordered blocks (Musculation/AMRAP/EMOM/Pour le temps). */
+export interface NewCircuitWorkout {
+  name: string;
+  blocks: NewCircuitBlockInput[];
+}
+
 /** A future training session to schedule. */
 export interface PlannedInput {
   name: string;
@@ -196,6 +216,14 @@ export interface DataRepository {
   deletePlannedWorkout(userId: string, workoutId: string): Promise<void>;
   /** The exercises/sets logged for one specific workout, in order. */
   getWorkoutSets(userId: string, workoutId: string): Promise<SetEntry[]>;
+  /** Create a multi-block session (AMRAP/EMOM/Pour le temps/strength blocks in sequence). */
+  addCircuitWorkout(userId: string, workout: NewCircuitWorkout): Promise<Workout>;
+  /** A session's blocks, in order. */
+  getWorkoutBlocks(userId: string, workoutId: string): Promise<WorkoutBlock[]>;
+  /** The exercises logged for one specific block, in order. */
+  getBlockSets(userId: string, blockId: string): Promise<SetEntry[]>;
+  /** Record a finished block's result (rounds completed / elapsed time). */
+  completeBlock(userId: string, blockId: string, result: { completedRounds?: number; resultTimeSec?: number }): Promise<WorkoutBlock>;
   /** Edit a session's name/notes and replace its exercise list wholesale. */
   editWorkout(userId: string, workoutId: string, patch: { name: string; notes?: string; sets: Omit<SetEntry, 'id' | 'workoutId'>[] }): Promise<void>;
   listHealthMetrics(userId: string): Promise<HealthMetric[]>;
@@ -308,6 +336,19 @@ function rowToWorkout(r: WorkoutRow): Workout {
     notes: r.notes ?? undefined,
     createdAt: r.created_at,
     updatedAt: r.updated_at,
+  };
+}
+
+function rowToWorkoutBlock(r: WorkoutBlockRow): WorkoutBlock {
+  return {
+    id: r.id,
+    workoutId: r.workout_id,
+    order: r.order,
+    format: r.format,
+    timeCapSec: r.time_cap_sec ?? undefined,
+    targetRounds: r.target_rounds ?? undefined,
+    completedRounds: r.completed_rounds ?? undefined,
+    resultTimeSec: r.result_time_sec ?? undefined,
   };
 }
 
@@ -635,6 +676,7 @@ function buildMuscleWork(dates: Map<string, string>, sets: LoggedSetRow[]): Musc
 
 interface LoggedSetRow {
   workoutId: string;
+  blockId?: string;
   exerciseId: string;
   order: number;
   reps: number | null;
@@ -752,6 +794,7 @@ function importedToSleepSession(userId: string, s: ImportedSleepSession): SleepS
 const actKey = (u: string): string => `supotsu.activities.${u}`;
 const wkKey = (u: string): string => `supotsu.workouts.${u}`;
 const setKey = (u: string): string => `supotsu.sets.${u}`;
+const blockKey = (u: string): string => `supotsu.blocks.${u}`;
 const hmKey = (u: string): string => `supotsu.health.${u}`;
 const sleepKey = (u: string): string => `supotsu.sleep.${u}`;
 const nutKey = (u: string): string => `supotsu.nutrition.${u}`;
@@ -910,12 +953,90 @@ function createDemoRepository(): DataRepository {
         .map((r) => ({
           id: `${r.workoutId}-${r.order}`,
           workoutId: r.workoutId,
+          blockId: r.blockId,
           exerciseId: r.exerciseId,
           order: r.order,
           reps: r.reps ?? undefined,
           weightKg: r.weightKg ?? undefined,
           restSec: r.restSec ?? undefined,
         }));
+    },
+    async addCircuitWorkout(userId, workout) {
+      const now = new Date().toISOString();
+      const created: Workout = {
+        id: randomId(),
+        userId,
+        name: workout.name,
+        status: 'planned',
+        plannedFor: todayKey(),
+        createdAt: now,
+        updatedAt: now,
+      };
+      const workouts = await readJson<Workout>(wkKey(userId));
+      await writeJson(wkKey(userId), [created, ...workouts]);
+
+      const existingBlocks = await readJson<WorkoutBlock>(blockKey(userId));
+      const existingSets = await readJson<LoggedSetRow & { date: string }>(setKey(userId));
+      const newBlocks: WorkoutBlock[] = [];
+      const newSets: (LoggedSetRow & { date: string })[] = [];
+      workout.blocks.forEach((b, i) => {
+        const block: WorkoutBlock = {
+          id: randomId(),
+          workoutId: created.id,
+          order: i,
+          format: b.format,
+          timeCapSec: b.timeCapSec,
+          targetRounds: b.targetRounds,
+        };
+        newBlocks.push(block);
+        b.sets.forEach((s) => {
+          newSets.push({
+            workoutId: created.id,
+            blockId: block.id,
+            exerciseId: s.exerciseId,
+            order: s.order,
+            reps: s.reps ?? null,
+            weightKg: s.weightKg ?? null,
+            restSec: s.restSec ?? null,
+            date: now,
+          });
+        });
+      });
+      await writeJson(blockKey(userId), [...newBlocks, ...existingBlocks]);
+      await writeJson(setKey(userId), [...newSets, ...existingSets]);
+      return created;
+    },
+    async getWorkoutBlocks(userId, workoutId) {
+      const items = await readJson<WorkoutBlock>(blockKey(userId));
+      return items.filter((b) => b.workoutId === workoutId).sort((a, b) => a.order - b.order);
+    },
+    async getBlockSets(userId, blockId) {
+      const rows = await readJson<LoggedSetRow & { date: string }>(setKey(userId));
+      return rows
+        .filter((r) => r.blockId === blockId)
+        .sort((a, b) => a.order - b.order)
+        .map((r) => ({
+          id: `${r.workoutId}-${r.blockId}-${r.order}`,
+          workoutId: r.workoutId,
+          blockId: r.blockId,
+          exerciseId: r.exerciseId,
+          order: r.order,
+          reps: r.reps ?? undefined,
+          weightKg: r.weightKg ?? undefined,
+          restSec: r.restSec ?? undefined,
+        }));
+    },
+    async completeBlock(userId, blockId, result) {
+      const items = await readJson<WorkoutBlock>(blockKey(userId));
+      let updated: WorkoutBlock | undefined;
+      const next = items.map((b) => {
+        if (b.id !== blockId) return b;
+        updated = { ...b, ...result };
+        return updated;
+      });
+      await writeJson(blockKey(userId), next);
+      if (!updated) throw new Error('Bloc introuvable.');
+      return updated;
     },
     async editWorkout(userId, workoutId, patch) {
       const now = new Date().toISOString();
@@ -2046,6 +2167,7 @@ function createSupabaseRepository(
       return rows.map((r) => ({
         id: r.id,
         workoutId: r.workout_id,
+        blockId: r.block_id ?? undefined,
         exerciseId: r.exercise_id,
         order: r.order,
         reps: r.reps ?? undefined,
@@ -2054,6 +2176,47 @@ function createSupabaseRepository(
         restSec: r.rest_sec ?? undefined,
         rpe: r.rpe ?? undefined,
       }));
+    },
+    async addCircuitWorkout(userId, workout) {
+      const row = await insertWorkoutWithBlocksDb(
+        client,
+        { user_id: userId, name: workout.name, status: 'planned' },
+        workout.blocks.map((b) => ({
+          format: b.format,
+          timeCapSec: b.timeCapSec,
+          targetRounds: b.targetRounds,
+          sets: b.sets.map((s) => ({
+            exercise_id: s.exerciseId,
+            order: s.order,
+            reps: s.reps ?? null,
+            weight_kg: s.weightKg ?? null,
+            duration_sec: s.durationSec ?? null,
+            rest_sec: s.restSec ?? null,
+          })),
+        })),
+      );
+      return rowToWorkout(row);
+    },
+    async getWorkoutBlocks(_userId, workoutId) {
+      return (await listBlocksForWorkoutDb(client, workoutId)).map(rowToWorkoutBlock);
+    },
+    async getBlockSets(_userId, blockId) {
+      const rows = await listSetsForBlockDb(client, blockId);
+      return rows.map((r) => ({
+        id: r.id,
+        workoutId: r.workout_id,
+        blockId: r.block_id ?? undefined,
+        exerciseId: r.exercise_id,
+        order: r.order,
+        reps: r.reps ?? undefined,
+        weightKg: r.weight_kg ?? undefined,
+        durationSec: r.duration_sec ?? undefined,
+        restSec: r.rest_sec ?? undefined,
+        rpe: r.rpe ?? undefined,
+      }));
+    },
+    async completeBlock(_userId, blockId, result) {
+      return rowToWorkoutBlock(await updateBlockResultDb(client, blockId, result));
     },
     async editWorkout(_userId, workoutId, patch) {
       await updateWorkoutDb(client, workoutId, { name: patch.name, notes: patch.notes ?? null });
