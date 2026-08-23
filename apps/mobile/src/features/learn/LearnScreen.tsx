@@ -1,6 +1,7 @@
 import React, { useMemo } from 'react';
 import { Pressable, View } from 'react-native';
 import { useRouter } from 'expo-router';
+import { useTranslation } from 'react-i18next';
 import { Badge, Button, Card, Carousel, Screen, Text } from '@supotsu/ui';
 import { spacing } from '@supotsu/design-system';
 import type { Confidence, Pillar } from '@supotsu/core';
@@ -30,6 +31,7 @@ const CONF_LABEL: Record<Confidence, { label: string; tone: 'success' | 'info' |
 
 /** Understanding pillar (Master Prompt P18): daily reco + knowledge library. */
 export function LearnScreen(): React.JSX.Element {
+  const { t } = useTranslation();
   const router = useRouter();
   const { data: activities = [] } = useActivities();
   const { data: healthMetrics = [] } = useHealthMetrics();
@@ -62,13 +64,13 @@ export function LearnScreen(): React.JSX.Element {
             <Badge label={CONF_LABEL[top.confidence].label} tone={CONF_LABEL[top.confidence].tone} />
           </View>
           <Text variant="heading" style={{ marginTop: spacing[1] }}>
-            {top.title}
+            {t(top.title.key, top.title.params)}
           </Text>
           <Text variant="caption" color="textMuted">
-            {top.explanation.observation}
+            {t(top.explanation.observation.key, top.explanation.observation.params)}
           </Text>
           <Text variant="body" style={{ marginTop: spacing[1] }}>
-            {top.explanation.action}
+            {t(top.explanation.action.key, top.explanation.action.params)}
           </Text>
           {top.articleId && (
             <View style={{ alignItems: 'flex-start', marginTop: spacing[2] }}>
@@ -87,11 +89,11 @@ export function LearnScreen(): React.JSX.Element {
           <Text variant="heading">Autres pistes</Text>
           <View style={{ gap: spacing[2], marginTop: spacing[1] }}>
             {recs.slice(1).map((r) => (
-              <View key={r.title} style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+              <View key={r.title.key + r.pillar} style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
                 <View style={{ flex: 1, paddingRight: spacing[2] }}>
-                  <Text variant="body">{r.title}</Text>
+                  <Text variant="body">{t(r.title.key, r.title.params)}</Text>
                   <Text variant="caption" color="textMuted" numberOfLines={1}>
-                    {r.explanation.action}
+                    {t(r.explanation.action.key, r.explanation.action.params)}
                   </Text>
                 </View>
                 <Badge label={PILLAR_LABEL[r.pillar]} tone="info" />

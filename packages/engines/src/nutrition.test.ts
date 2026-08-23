@@ -43,7 +43,7 @@ describe('estimateTargets', () => {
   it('falls back to defaults without a weight', () => {
     const r = estimateTargets({}, ASOF);
     expect(r.value.kcal).toBeGreaterThan(0);
-    expect(r.explanation?.action).toContain('poids');
+    expect(r.explanation?.action.key).toBe('engines.nutrition.noWeight.action');
   });
 });
 
@@ -87,7 +87,7 @@ describe('computeNutritionScore', () => {
 describe('nutritionExplanation', () => {
   it('flags low protein first', () => {
     const ex = nutritionExplanation([entry({ kcal: 1800, proteinG: 40 })], TARGETS, ASOF);
-    expect(ex?.action.toLowerCase()).toContain('protéines');
+    expect(ex?.action.key).toBe('engines.nutrition.day.lowProtein.action');
   });
 
   it('is undefined with nothing logged', () => {

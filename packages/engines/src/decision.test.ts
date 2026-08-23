@@ -41,7 +41,7 @@ describe('buildDailyBriefing', () => {
     ];
     const b = buildDailyBriefing({ activities: [], healthMetrics: health, nutritionEntries: [], targets: TARGETS, asOf: ASOF });
     expect(b.headlinePillar).toBe('recovery');
-    expect(b.headline.action.toLowerCase()).toMatch(/repos|mobilité|récup/);
+    expect(b.headline.action.key).toMatch(/recovery\.action\.(faible|moyen)/);
   });
 
   it('surfaces a nutrition gap when recovery is fine but protein is low', () => {

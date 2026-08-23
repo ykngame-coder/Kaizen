@@ -56,14 +56,14 @@ describe('buildDailySnapshot', () => {
   it('recommends restarting when there is no recent activity', () => {
     const snap = buildDailySnapshot([], [], ASOF);
     expect(snap.value.overall).toBe(0);
-    expect(snap.value.recommendation.explanation.observation).toMatch(/aucune activité/i);
+    expect(snap.value.recommendation.explanation.observation.key).toBe('engines.scoring.daily.noActivity.observation');
     expect(snap.value.recommendation.pillar).toBe('decision');
   });
 
   it('recommends recovery on a workload spike', () => {
     const snap = buildDailySnapshot([activity(1, 7200, 'max')], [], ASOF);
     expect(snap.value.acwr).toBeGreaterThan(1.5);
-    expect(snap.value.recommendation.explanation.action).toMatch(/récupération|mobilité/i);
+    expect(snap.value.recommendation.explanation.action.key).toBe('engines.scoring.daily.highLoad.action');
     expect(snap.value.recommendation.confidence).toBe('high');
   });
 

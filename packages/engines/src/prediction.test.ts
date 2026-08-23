@@ -47,14 +47,14 @@ describe('predictNextDayEnergy', () => {
     const good = predictNextDayEnergy([...nights(8, 5), metric('stress', 20, 0)], ASOF);
     const poor = predictNextDayEnergy([...nights(5, 5), metric('stress', 20, 0)], ASOF);
     expect(poor.value!.energyScore).toBeLessThan(good.value!.energyScore);
-    expect(poor.value!.drivers.some((d) => d.includes('dette'))).toBe(true);
+    expect(poor.value!.drivers.some((d) => d.key === 'engines.prediction.driver.sleepDebt')).toBe(true);
   });
 
   it('raises fatigue risk and names load when ACWR is high', () => {
     const base = [...nights(8, 5), metric('stress', 20, 0)];
     const calm = predictNextDayEnergy(base, ASOF, { acwr: 1.0 });
     const spiked = predictNextDayEnergy(base, ASOF, { acwr: 1.7 });
-    expect(spiked.value!.drivers.some((d) => d.includes('charge'))).toBe(true);
+    expect(spiked.value!.drivers.some((d) => d.key === 'engines.prediction.driver.risingLoad')).toBe(true);
     expect(spiked.value!.energyScore).toBeLessThanOrEqual(calm.value!.energyScore);
   });
 });

@@ -64,12 +64,13 @@ describe('computeLeaderboard', () => {
 describe('challengeExplanation', () => {
   it('states remaining count and days left when not done', () => {
     const r = challengeExplanation(CH, 2, '2026-07-18T12:00:00.000Z');
-    expect(r.explanation?.observation).toContain('2/5');
+    expect(r.explanation?.observation.key).toBe('engines.community.challenge.pending.observation');
+    expect(r.explanation?.observation.params).toMatchObject({ progress: 2, target: 5 });
     expect(r.value).toBe(2);
   });
 
   it('congratulates when the target is met', () => {
     const r = challengeExplanation(CH, 5, '2026-07-18T12:00:00.000Z');
-    expect(r.explanation?.observation.toLowerCase()).toContain('atteint');
+    expect(r.explanation?.observation.key).toBe('engines.community.challenge.reached.observation');
   });
 });

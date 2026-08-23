@@ -75,9 +75,9 @@ export function estimateTargets(inputs: TargetInputs, asOf: ISODateString): Engi
       value: { kcal: 2200, proteinG: 110, hydrationMl: 2500 },
       confidence: 'to_confirm',
       explanation: {
-        observation: 'Ton poids n’est pas encore renseigné.',
-        analysis: 'Sans poids, les besoins sont approximés par des valeurs moyennes.',
-        action: 'Ajoute ton poids dans ton profil pour des cibles personnalisées.',
+        observation: { key: 'engines.nutrition.noWeight.observation' },
+        analysis: { key: 'engines.nutrition.noWeight.analysis' },
+        action: { key: 'engines.nutrition.noWeight.action' },
       },
       sourcesUsed: ['manual'],
       generatedAt: asOf,
@@ -93,9 +93,11 @@ export function estimateTargets(inputs: TargetInputs, asOf: ISODateString): Engi
     },
     confidence: 'to_confirm',
     explanation: {
-      observation: `Cibles estimées pour ${weight} kg${inputs.goal ? ` (objectif ${inputs.goal})` : ''}.`,
-      analysis: 'Basées sur des ratios standards (protéines g/kg, hydratation, apport calorique).',
-      action: 'Ajuste-les selon ta faim, ton énergie et l’évolution de ton poids.',
+      observation: inputs.goal
+        ? { key: 'engines.nutrition.targets.observationWithGoal', params: { weight, goal: inputs.goal } }
+        : { key: 'engines.nutrition.targets.observation', params: { weight } },
+      analysis: { key: 'engines.nutrition.targets.analysis' },
+      action: { key: 'engines.nutrition.targets.action' },
     },
     sourcesUsed: ['manual'],
     generatedAt: asOf,
@@ -220,21 +222,21 @@ export function nutritionExplanation(
   // Priority: flag the biggest health gap first.
   if (day.some((e) => e.proteinG !== undefined) && proteinPct < 70) {
     return {
-      observation: `Tu es à ${totals.proteinG} g de protéines (${proteinPct}% de ta cible).`,
-      analysis: 'Un apport protéique bas freine la récupération et le maintien musculaire.',
-      action: 'Ajoute une source de protéines à ton prochain repas (œufs, poisson, légumineuses).',
+      observation: { key: 'engines.nutrition.day.lowProtein.observation', params: { proteinG: totals.proteinG, proteinPct } },
+      analysis: { key: 'engines.nutrition.day.lowProtein.analysis' },
+      action: { key: 'engines.nutrition.day.lowProtein.action' },
     };
   }
   if (totals.hydrationMl > 0 && hydrationPct < 60) {
     return {
-      observation: `Hydratation à ${Math.round(totals.hydrationMl)} ml (${hydrationPct}% de ta cible).`,
-      analysis: 'Une hydratation insuffisante dégrade la vigilance et la performance.',
-      action: 'Bois un verre d’eau maintenant et garde une gourde à portée.',
+      observation: { key: 'engines.nutrition.day.lowHydration.observation', params: { hydrationMl: Math.round(totals.hydrationMl), hydrationPct } },
+      analysis: { key: 'engines.nutrition.day.lowHydration.analysis' },
+      action: { key: 'engines.nutrition.day.lowHydration.action' },
     };
   }
   return {
-    observation: `${totals.kcal} kcal et ${totals.proteinG} g de protéines aujourd’hui.`,
-    analysis: 'Ton apport est cohérent avec tes cibles estimées.',
-    action: 'Continue ainsi ; ajuste si ta faim ou ton énergie changent.',
+    observation: { key: 'engines.nutrition.day.onTrack.observation', params: { kcal: totals.kcal, proteinG: totals.proteinG } },
+    analysis: { key: 'engines.nutrition.day.onTrack.analysis' },
+    action: { key: 'engines.nutrition.day.onTrack.action' },
   };
 }

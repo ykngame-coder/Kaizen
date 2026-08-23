@@ -78,18 +78,18 @@ export function challengeExplanation(
   let explanation: Explanation;
   if (progress >= challenge.target) {
     explanation = {
-      observation: `Objectif atteint : ${progress}/${challenge.target}.`,
-      analysis: 'Tu as rempli le défi sur la période.',
-      action: 'Vise le haut du classement ou lance un nouveau défi.',
+      observation: { key: 'engines.community.challenge.reached.observation', params: { progress, target: challenge.target } },
+      analysis: { key: 'engines.community.challenge.reached.analysis' },
+      action: { key: 'engines.community.challenge.reached.action' },
     };
   } else {
     explanation = {
-      observation: `${progress}/${challenge.target}, il te reste ${remaining}.`,
-      analysis: `Il reste ${daysLeft} jour(s) pour finir le défi.`,
+      observation: { key: 'engines.community.challenge.pending.observation', params: { progress, target: challenge.target, remaining } },
+      analysis: { key: 'engines.community.challenge.pending.analysis', params: { daysLeft } },
       action:
         daysLeft > 0
-          ? `Planifie environ ${Math.ceil(remaining / Math.max(1, daysLeft))} par jour pour y arriver.`
-          : 'La période est terminée : rejoins un nouveau défi.',
+          ? { key: 'engines.community.challenge.pending.action.pace', params: { perDay: Math.ceil(remaining / Math.max(1, daysLeft)) } }
+          : { key: 'engines.community.challenge.pending.action.over' },
     };
   }
   return {

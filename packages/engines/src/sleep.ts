@@ -1,5 +1,5 @@
 import type { Confidence, HealthMetric, ISODateString, SleepSession } from '@supotsu/core';
-import type { EngineResult, Explanation } from './result';
+import type { EngineResult, Explanation, I18nText } from './result';
 import { computeRecoveryScore } from './recovery';
 
 /**
@@ -121,17 +121,19 @@ export function sleepExplanation(
   if (score.confidence === 'to_confirm') return undefined;
   const hours = latest(metrics, 'sleep_duration', asOf);
   const band = sleepBand(score.value);
-  const action: Record<SleepBand, string> = {
-    excellent: 'Continue ainsi : ce rythme soutient bien ta récupération.',
-    correct: 'Sommeil correct — vise la régularité des heures de coucher.',
-    moyen: 'Essaie de te coucher 30 min plus tôt ce soir.',
-    faible: 'Nuit courte : allège l’intensité et priorise le sommeil aujourd’hui.',
+  const actionKey: Record<SleepBand, string> = {
+    excellent: 'engines.sleep.score.action.excellent',
+    correct: 'engines.sleep.score.action.correct',
+    moyen: 'engines.sleep.score.action.moyen',
+    faible: 'engines.sleep.score.action.faible',
   };
-  const h = hours !== undefined ? `${hours.toFixed(1)} h` : 'ta nuit';
   return {
-    observation: `Ton score de sommeil est de ${score.value}/100 (${band}), pour ${h}.`,
-    analysis: 'Calculé à partir de la durée et de l’efficacité de ta dernière nuit.',
-    action: action[band],
+    observation:
+      hours !== undefined
+        ? { key: `engines.sleep.score.observation.withHours.${band}`, params: { score: score.value, hours: hours.toFixed(1) } }
+        : { key: `engines.sleep.score.observation.${band}`, params: { score: score.value } },
+    analysis: { key: 'engines.sleep.score.analysis' },
+    action: { key: actionKey[band] },
   };
 }
 
@@ -424,39 +426,17 @@ export function computeSleepScore2(
 // never as absolute causal certainties.
 // ---------------------------------------------------------------------------
 
-const BAND_FR: Record<SleepBand, string> = {
-  excellent: 'excellent',
-  correct: 'correct',
-  moyen: 'moyen',
-  faible: 'faible',
-};
-
-/** How each component reads when it's the weak link (for the analysis line). */
-const WEAK_FACTOR: Record<SleepComponentKey, string> = {
-  quantity: 'une durée de sommeil un peu courte',
-  quality: 'une qualité de sommeil en baisse',
-  regularity: 'des heures de coucher irrégulières',
-  debt: 'une dette de sommeil accumulée',
-  recovery: 'des signaux de récupération bas',
-};
-
 /** One concrete, prudent action per weak component (the action line). */
-const COACHING_ACTION: Record<SleepComponentKey, string> = {
-  quantity: 'Vise 30 à 60 min de sommeil en plus : couche-toi un peu plus tôt ce soir.',
-  quality: 'Pour la qualité : limite écrans et alcool en soirée, et garde la chambre fraîche et sombre.',
-  regularity: 'Vise un créneau de coucher stable (±30 min), y compris le week-end.',
-  debt: 'Dette accumulée sur plusieurs mois : rattrape-la progressivement (30-60 min de sommeil en plus par nuit, sur plusieurs semaines), pas en une seule fois.',
-  recovery: 'Récupération basse : allège l’intensité aujourd’hui et privilégie le repos actif.',
+const COACHING_ACTION_KEY: Record<SleepComponentKey, string> = {
+  quantity: 'engines.sleep.coaching.action.quantity',
+  quality: 'engines.sleep.coaching.action.quality',
+  regularity: 'engines.sleep.coaching.action.regularity',
+  debt: 'engines.sleep.coaching.action.debt',
+  recovery: 'engines.sleep.coaching.action.recovery',
 };
 
 /** Below this, a component is considered a weak link worth coaching on. */
 const WEAK_THRESHOLD = 70;
-
-/** Join French factors: "a", "a et b". */
-function joinFr(items: string[]): string {
-  if (items.length <= 1) return items[0] ?? '';
-  return `${items.slice(0, -1).join(', ')} et ${items[items.length - 1]}`;
-}
 
 /**
  * Explainable sleep coaching from the Score 2.0 breakdown. Returns undefined
@@ -472,7 +452,7 @@ export function sleepCoaching(
   if (s.confidence === 'to_confirm') return undefined;
 
   const band = sleepBand(s.value);
-  const observation = `Ton sommeil global est à ${s.value}/100 (${BAND_FR[band]}).`;
+  const observation: I18nText = { key: `engines.sleep.coaching.observation.${band}`, params: { score: s.value } };
 
   const weak = s.components
     .filter((c): c is SleepScoreComponent & { value: number } => c.value !== null)
@@ -483,16 +463,20 @@ export function sleepCoaching(
   if (weak.length === 0) {
     return {
       observation,
-      analysis: 'Toutes les composantes mesurées sont dans le vert.',
-      action: 'Continue ainsi : garde ce rythme régulier pour consolider ta récupération.',
+      analysis: { key: 'engines.sleep.coaching.allGood.analysis' },
+      action: { key: 'engines.sleep.coaching.allGood.action' },
     };
   }
 
-  const factors = weak.map((w) => WEAK_FACTOR[w.key]);
+  // The dominant weak factor(s) drive `action` precisely (COACHING_ACTION_KEY,
+  // one specific key); `analysis` stays generic rather than naming each factor
+  // inline — see predictionExplanation's comment on why nested-translation
+  // composition (joining several already-translated fragments into one more
+  // sentence) isn't done via plain i18next interpolation.
   const weakest = weak[0]!; // non-empty: the length === 0 case returned above
   return {
     observation,
-    analysis: `Ce score semble surtout lié à ${joinFr(factors)} — une corrélation observée sur tes données, pas une certitude.`,
-    action: COACHING_ACTION[weakest.key],
+    analysis: { key: weak.length > 1 ? 'engines.sleep.coaching.weak.analysis.multi' : 'engines.sleep.coaching.weak.analysis.single' },
+    action: { key: COACHING_ACTION_KEY[weakest.key] },
   };
 }

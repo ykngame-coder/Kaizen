@@ -4,7 +4,7 @@ import { useRouter } from 'expo-router';
 import { Badge, Button, Card, Icon, Input, ListRow, Screen, SegmentedControl, Text, Toggle, useTheme } from '@supotsu/ui';
 import { spacing } from '@supotsu/design-system';
 import { useAuth } from '@/features/auth/AuthProvider';
-import { usePreferences, type TimeFormat, type UnitSystem } from '@/lib/preferences';
+import { usePreferences, type LanguagePreference, type TimeFormat, type UnitSystem } from '@/lib/preferences';
 import { createDataRepository, exportUserData } from '@/lib/data/repository';
 import { deleteAccount } from '@/features/auth/accountClient';
 import { isBiometricSupported } from '@/lib/biometric-lock';
@@ -22,6 +22,14 @@ const THEME_OPTIONS = [
 const TIME_OPTIONS: { value: TimeFormat; label: string }[] = [
   { value: '24h', label: '24 h' },
   { value: '12h', label: '12 h' },
+];
+const LANGUAGE_OPTIONS: { value: LanguagePreference; label: string }[] = [
+  { value: 'auto', label: 'Automatique (téléphone)' },
+  { value: 'fr', label: 'Français' },
+  { value: 'en', label: 'English' },
+  { value: 'es', label: 'Español' },
+  { value: 'pt', label: 'Português' },
+  { value: 'de', label: 'Deutsch' },
 ];
 
 function GroupTitle({ children }: { children: React.ReactNode }): React.JSX.Element {
@@ -146,6 +154,8 @@ export function SettingsScreen(): React.JSX.Element {
         <SegmentedControl options={UNIT_OPTIONS} value={preferences.units} onChange={(v) => setPreference('units', v)} />
         <Text variant="body" style={{ fontWeight: '600', marginTop: spacing[4], marginBottom: spacing[2] }}>Format horaire</Text>
         <SegmentedControl options={TIME_OPTIONS} value={preferences.timeFormat} onChange={(v) => setPreference('timeFormat', v)} />
+        <Text variant="body" style={{ fontWeight: '600', marginTop: spacing[4], marginBottom: spacing[2] }}>Langue</Text>
+        <SegmentedControl vertical options={LANGUAGE_OPTIONS} value={preferences.language} onChange={(v) => setPreference('language', v)} />
         <Text variant="body" style={{ fontWeight: '600', marginTop: spacing[4], marginBottom: spacing[2] }}>Objectif de pas quotidien</Text>
         <Input
           value={String(preferences.dailyStepsGoal)}

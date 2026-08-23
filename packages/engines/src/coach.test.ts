@@ -34,7 +34,7 @@ describe('askCoach', () => {
   it('gives an explainable "today" answer from data', () => {
     const reply = askCoach("Que faire aujourd'hui ?", { activities: [], asOf: ASOF });
     expect(reply.intent).toBe('today');
-    expect(reply.explanation?.observation).toBeTruthy();
+    expect(reply.explanation?.observation.key).toBeTruthy();
     expect(reply.followUps.length).toBeGreaterThan(0);
   });
 
@@ -44,12 +44,13 @@ describe('askCoach', () => {
       asOf: ASOF,
     });
     expect(reply.intent).toBe('week');
-    expect(reply.text).toMatch(/2 activité/);
+    expect(reply.text.key).toMatch(/^engines\.coach\.week\.summary\./);
+    expect(reply.text.params).toMatchObject({ count: 2 });
   });
 
   it('advises recovery when fatigued', () => {
     const reply = askCoach('je suis fatigué', { activities: [activity(1, 'max')], asOf: ASOF });
     expect(reply.intent).toBe('fatigue');
-    expect(reply.explanation?.action).toMatch(/repos|mobilité/i);
+    expect(reply.explanation?.action.key).toBe('engines.coach.fatigue.action');
   });
 });

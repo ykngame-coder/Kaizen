@@ -86,15 +86,15 @@ export function wellnessExplanation(
   if (!latest) return undefined;
   const index = computeWellnessIndex(checkins, asOf).value;
   const band = wellnessBand(index);
-  const action: Record<WellnessBand, string> = {
-    rayonnant: 'Belle énergie — profite-en pour avancer sur ce qui compte.',
-    stable: 'Tout va bien : garde tes routines qui te font du bien.',
-    fragile: 'Accorde-toi une pause : quelques minutes de respiration peuvent aider.',
-    difficile: 'Journée exigeante — sois indulgent avec toi et privilégie le repos.',
+  const actionKey: Record<WellnessBand, string> = {
+    rayonnant: 'engines.wellness.action.rayonnant',
+    stable: 'engines.wellness.action.stable',
+    fragile: 'engines.wellness.action.fragile',
+    difficile: 'engines.wellness.action.difficile',
   };
   return {
-    observation: `Ton indice de bien-être est de ${index}/100 (${band}).`,
-    analysis: 'Basé sur ton humeur, ton énergie et ton stress ressentis aujourd’hui.',
-    action: action[band],
+    observation: { key: `engines.wellness.observation.${band}`, params: { index } },
+    analysis: { key: 'engines.wellness.analysis' },
+    action: { key: actionKey[band] },
   };
 }

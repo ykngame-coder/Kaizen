@@ -61,14 +61,20 @@ export function recommendProgram(
     value: best,
     confidence,
     explanation: {
-      observation: `« ${best.title} » (${best.focus}, niveau ${best.level}).`,
+      observation: { key: 'engines.marketplace.observation', params: { title: best.title, focus: best.focus, level: best.level } },
       analysis:
         signals === 0
-          ? 'Sélection par défaut : complète ton profil pour une reco personnalisée.'
-          : `Correspond à ${inputs.goalFocus ? 'ton objectif' : 'ton profil'}${
-              inputs.weeklyAvailability !== undefined ? ' et ta disponibilité hebdomadaire' : ''
-            }.`,
-      action: 'Ouvre le programme pour voir la structure avant de t’inscrire.',
+          ? { key: 'engines.marketplace.analysis.default' }
+          : {
+              key: inputs.goalFocus
+                ? inputs.weeklyAvailability !== undefined
+                  ? 'engines.marketplace.analysis.goalAndAvailability'
+                  : 'engines.marketplace.analysis.goal'
+                : inputs.weeklyAvailability !== undefined
+                  ? 'engines.marketplace.analysis.profileAndAvailability'
+                  : 'engines.marketplace.analysis.profile',
+            },
+      action: { key: 'engines.marketplace.action' },
     },
     sourcesUsed: ['manual'],
     generatedAt: asOf,

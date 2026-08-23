@@ -1,9 +1,11 @@
 import React, { createContext, useContext, useEffect, useMemo, useState } from 'react';
 import { setHapticsEnabled } from '@supotsu/ui';
+import i18n, { detectDeviceLanguage, type LanguagePreference } from '@/i18n';
 import { secureStorage } from '@/lib/secure-storage';
 
 export type UnitSystem = 'metric' | 'imperial';
 export type TimeFormat = '24h' | '12h';
+export type { LanguagePreference } from '@/i18n';
 
 /** Réveil intelligent, stored locally (Master Prompt : 100% offline). Rings only reliably while the app is open — see SleepTrackingScreen / AlarmSettingsScreen. */
 export interface SleepAlarmSettings {
@@ -65,6 +67,8 @@ export interface Preferences {
   dashboardCards?: DashboardCardPref[];
   /** Undefined until the user configures the phone-tracking smart alarm. */
   sleepAlarm?: SleepAlarmSettings;
+  /** 'auto' follows the phone's language (expo-localization); otherwise a specific choice. */
+  language: LanguagePreference;
 }
 
 const DEFAULTS: Preferences = {
@@ -76,6 +80,7 @@ const DEFAULTS: Preferences = {
   haptics: true,
   biometricLock: false,
   dailyStepsGoal: 10_000,
+  language: 'auto',
 };
 
 const STORAGE_KEY = 'supotsu.preferences';
@@ -121,6 +126,15 @@ export function PreferencesProvider({ children }: { children: React.ReactNode })
   useEffect(() => {
     setHapticsEnabled(preferences.haptics);
   }, [preferences.haptics]);
+
+  // Hot-swap: i18n already started on the phone's language at import time
+  // (apps/mobile/src/i18n/index.ts) — this only needs to act once the
+  // persisted choice loads, or whenever the user picks a language.
+  useEffect(() => {
+    if (!ready) return;
+    const lang = preferences.language === 'auto' ? detectDeviceLanguage() : preferences.language;
+    if (i18n.language !== lang) void i18n.changeLanguage(lang);
+  }, [preferences.language, ready]);
 
   const value = useMemo(() => ({ preferences, setPreference, ready }), [preferences, ready]);
   return <PreferencesContext.Provider value={value}>{children}</PreferencesContext.Provider>;

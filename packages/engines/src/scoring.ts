@@ -230,20 +230,24 @@ export function computeProgressionScore(
   const explanation: Explanation = {
     observation:
       pctRounded >= 0
-        ? `Ta charge d'entraînement progresse de ${pctRounded} %/semaine en moyenne sur ${weeks} semaines.`
-        : `Ta charge d'entraînement baisse de ${Math.abs(pctRounded)} %/semaine en moyenne sur ${weeks} semaines.`,
-    analysis:
-      pctRounded > 5
-        ? 'La surcharge progressive est en place — de quoi soutenir des gains continus.'
-        : pctRounded < -5
-          ? 'Une charge en baisse freine la progression, sauf si c’est une semaine de décharge volontaire.'
-          : 'Ta charge est stable — ni progression nette, ni régression.',
-    action:
-      pctRounded > 5
-        ? 'Continue sur cette lancée, en surveillant la récupération.'
-        : pctRounded < -5
-          ? 'Si ce n’est pas une semaine de récupération planifiée, augmente légèrement le volume.'
-          : 'Ajoute un peu de volume ou de charge pour relancer la progression.',
+        ? { key: 'engines.scoring.trend.observation.up', params: { pct: pctRounded, weeks } }
+        : { key: 'engines.scoring.trend.observation.down', params: { pct: Math.abs(pctRounded), weeks } },
+    analysis: {
+      key:
+        pctRounded > 5
+          ? 'engines.scoring.trend.analysis.up'
+          : pctRounded < -5
+            ? 'engines.scoring.trend.analysis.down'
+            : 'engines.scoring.trend.analysis.stable',
+    },
+    action: {
+      key:
+        pctRounded > 5
+          ? 'engines.scoring.trend.action.up'
+          : pctRounded < -5
+            ? 'engines.scoring.trend.action.down'
+            : 'engines.scoring.trend.action.stable',
+    },
   };
 
   return { value, confidence, explanation, sourcesUsed: ['supotsu'], generatedAt: asOf };
@@ -300,20 +304,20 @@ export function computeSportScore(
   const confidence = minConfidence(available.map((p) => p.result.confidence));
 
   const weakest = [...available].sort((a, b) => a.result.value - b.result.value)[0]!;
+  const weakestSlug = weakest.label === 'progression' ? 'progression' : weakest.label === 'régularité' ? 'regularity' : 'performance';
   const explanation: Explanation = {
-    observation: `Score Sport ${value}/100 — performance ${breakdown.performance}, régularité ${breakdown.regularity}, progression ${breakdown.progression}.`,
+    observation: {
+      key: 'engines.scoring.sport.observation',
+      params: { value, performance: breakdown.performance, regularity: breakdown.regularity, progression: breakdown.progression },
+    },
     analysis:
       weakest.result.value < 50
-        ? `Le point le plus faible est la ${weakest.label} (${weakest.result.value}/100).`
-        : 'Les trois composantes sont dans une plage correcte.',
-    action:
-      weakest.result.value < 50
-        ? weakest.label === 'progression'
-          ? 'Vise une petite hausse de charge ou de volume cette semaine.'
-          : weakest.label === 'régularité'
-            ? 'Ajoute une séance cette semaine pour retrouver un rythme régulier.'
-            : 'Reprends progressivement — une séance de plus cette semaine relancera la dynamique.'
-        : 'Continue sur ce rythme.',
+        ? { key: `engines.scoring.sport.analysis.weak.${weakestSlug}`, params: { value: weakest.result.value } }
+        : { key: 'engines.scoring.sport.analysis.balanced' },
+    action: {
+      key:
+        weakest.result.value < 50 ? `engines.scoring.sport.action.weak.${weakestSlug}` : 'engines.scoring.sport.action.balanced',
+    },
   };
 
   return { value, confidence, breakdown, explanation, sourcesUsed: ['supotsu'], generatedAt: asOf };
@@ -353,37 +357,37 @@ function buildRecommendation(
   // Low recovery takes priority — health before performance (Master Prompt P1).
   if (recovery !== null && recoveryBand(recovery) === 'faible') {
     explanation = {
-      observation: `Ta récupération est faible (${recovery}/100).`,
-      analysis: 'S’entraîner dur sur une récupération basse freine la progression.',
-      action: 'Priorité aujourd’hui : repos ou mobilité légère.',
+      observation: { key: 'engines.scoring.daily.lowRecovery.observation', params: { recovery } },
+      analysis: { key: 'engines.scoring.daily.lowRecovery.analysis' },
+      action: { key: 'engines.scoring.daily.lowRecovery.action' },
     };
     return { pillar: 'recovery', title: explanation.action, explanation, confidence: 'high' };
   }
 
   if (days === 0) {
     explanation = {
-      observation: 'Aucune activité enregistrée ces 7 derniers jours.',
-      analysis: 'Ta régularité est en baisse, le plus dur est de reprendre.',
-      action: 'Planifie une séance légère aujourd’hui pour relancer la dynamique.',
+      observation: { key: 'engines.scoring.daily.noActivity.observation' },
+      analysis: { key: 'engines.scoring.daily.noActivity.analysis' },
+      action: { key: 'engines.scoring.daily.noActivity.action' },
     };
   } else if (workload.acwr > 1.5) {
     explanation = {
-      observation: 'Ta charge récente est nettement supérieure à ton habitude.',
-      analysis: 'Une hausse trop rapide augmente le risque de fatigue et de blessure.',
-      action: 'Privilégie aujourd’hui la récupération active ou la mobilité.',
+      observation: { key: 'engines.scoring.daily.highLoad.observation' },
+      analysis: { key: 'engines.scoring.daily.highLoad.analysis' },
+      action: { key: 'engines.scoring.daily.highLoad.action' },
     };
     confidence = 'high';
   } else if (workload.acwr < 0.8 && days >= 3) {
     explanation = {
-      observation: 'Ta charge est en baisse alors que ta régularité est bonne.',
-      analysis: 'Ton corps a de la marge pour encaisser davantage.',
-      action: 'Tu peux prévoir une séance un peu plus intense.',
+      observation: { key: 'engines.scoring.daily.roomToPush.observation' },
+      analysis: { key: 'engines.scoring.daily.roomToPush.analysis' },
+      action: { key: 'engines.scoring.daily.roomToPush.action' },
     };
   } else {
     explanation = {
-      observation: `Tu es actif ${days} jour(s) sur les 7 derniers.`,
-      analysis: 'Ta charge et ta régularité sont équilibrées.',
-      action: 'Continue sur ce rythme, la progression est durable.',
+      observation: { key: 'engines.scoring.daily.balanced.observation', params: { days } },
+      analysis: { key: 'engines.scoring.daily.balanced.analysis' },
+      action: { key: 'engines.scoring.daily.balanced.action' },
     };
     confidence = consistency >= 60 ? 'high' : 'medium';
   }

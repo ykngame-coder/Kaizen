@@ -1,8 +1,17 @@
 import React, { useMemo, useRef, useState } from 'react';
 import { ScrollView, View, type ScrollView as ScrollViewType } from 'react-native';
+import { useTranslation } from 'react-i18next';
 import { Badge, Button, Card, Gradient, Input, Screen, Text, useTheme, type BadgeTone } from '@supotsu/ui';
 import { radii, spacing } from '@supotsu/design-system';
-import { askCoach, SUGGESTED_QUESTIONS, type CoachReply } from '@supotsu/engines';
+import {
+  askCoach,
+  askCoachByIntent,
+  COACH_INTENT_LABEL,
+  SUGGESTED_QUESTIONS,
+  type CoachIntent,
+  type CoachReply,
+  type I18nText,
+} from '@supotsu/engines';
 import type { Confidence } from '@supotsu/core';
 import { useActivities, useHealthMetrics } from '@/lib/data/queries';
 import { randomId } from '@/lib/id';
@@ -10,7 +19,8 @@ import { randomId } from '@/lib/id';
 interface Message {
   id: string;
   role: 'user' | 'coach';
-  text: string;
+  /** User messages are the literal text they typed (or their tapped suggestion's translated label); coach messages are always a translation key. */
+  text: string | I18nText;
   reply?: CoachReply;
 }
 
@@ -19,22 +29,24 @@ const CONF_TONE: Record<Confidence, BadgeTone> = {
   medium: 'info',
   to_confirm: 'warning',
 };
-const CONF_LABEL: Record<Confidence, string> = {
-  high: 'Confiance élevée',
-  medium: 'Confiance moyenne',
-  to_confirm: 'À confirmer',
-};
 
 /** Conversational coach (Master Prompt P6.3, P17.9, P25.10). Deterministic and explainable. */
 export function CoachScreen(): React.JSX.Element {
+  const { t } = useTranslation();
   const { colors } = useTheme();
   const { data: activities = [] } = useActivities();
   const { data: health = [] } = useHealthMetrics();
   const scrollRef = useRef<ScrollViewType>(null);
 
+  const CONF_LABEL: Record<Confidence, string> = {
+    high: t('common.confidence.high'),
+    medium: t('common.confidence.medium'),
+    to_confirm: t('common.confidence.toConfirm'),
+  };
+
   // Greeting is built once; live data is used on each ask().
   const greeting = useMemo(
-    () => askCoach('help', { activities: [], asOf: new Date().toISOString() }),
+    () => askCoachByIntent('help', { activities: [], asOf: new Date().toISOString() }),
     [],
   );
   const [messages, setMessages] = useState<Message[]>([
@@ -42,14 +54,12 @@ export function CoachScreen(): React.JSX.Element {
   ]);
   const [draft, setDraft] = useState('');
 
+  const ctx = { activities, healthMetrics: health, asOf: new Date().toISOString() };
+
   const ask = (question: string): void => {
     const q = question.trim();
     if (!q) return;
-    const reply = askCoach(q, {
-      activities,
-      healthMetrics: health,
-      asOf: new Date().toISOString(),
-    });
+    const reply = askCoach(q, ctx);
     setMessages((prev) => [
       ...prev,
       { id: randomId(), role: 'user', text: q },
@@ -59,12 +69,24 @@ export function CoachScreen(): React.JSX.Element {
     requestAnimationFrame(() => scrollRef.current?.scrollToEnd({ animated: true }));
   };
 
+  const askIntent = (intent: CoachIntent): void => {
+    const reply = askCoachByIntent(intent, ctx);
+    setMessages((prev) => [
+      ...prev,
+      { id: randomId(), role: 'user', text: COACH_INTENT_LABEL[intent] },
+      { id: randomId(), role: 'coach', text: reply.text, reply },
+    ]);
+    requestAnimationFrame(() => scrollRef.current?.scrollToEnd({ animated: true }));
+  };
+
+  const renderText = (text: string | I18nText): string => (typeof text === 'string' ? text : t(text.key, text.params));
+
   return (
     <Screen padded={false}>
       <View style={{ padding: spacing[4], paddingBottom: spacing[2] }}>
-        <Text variant="title">Coach IA</Text>
+        <Text variant="title">{t('coach.title')}</Text>
         <Text variant="caption" color="textMuted">
-          Ton coach analyse tes données et explique chaque conseil.
+          {t('coach.subtitle')}
         </Text>
       </View>
 
@@ -88,7 +110,7 @@ export function CoachScreen(): React.JSX.Element {
             >
               <Gradient fill start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} />
               <Text variant="body" color="onGradient">
-                {m.text}
+                {renderText(m.text)}
               </Text>
             </View>
           ) : (
@@ -104,7 +126,7 @@ export function CoachScreen(): React.JSX.Element {
                       }}
                     >
                       <Text variant="label" color="textMuted">
-                        OBSERVATION → ANALYSE → ACTION
+                        {t('coach.observationAnalysisAction')}
                       </Text>
                       {m.reply.confidence ? (
                         <Badge
@@ -114,15 +136,15 @@ export function CoachScreen(): React.JSX.Element {
                       ) : null}
                     </View>
                     <Text variant="caption" color="textMuted">
-                      {m.reply.explanation.observation}
+                      {renderText(m.reply.explanation.observation)}
                     </Text>
                     <Text variant="caption" color="textMuted">
-                      {m.reply.explanation.analysis}
+                      {renderText(m.reply.explanation.analysis)}
                     </Text>
-                    <Text variant="body">{m.reply.explanation.action}</Text>
+                    <Text variant="body">{renderText(m.reply.explanation.action)}</Text>
                   </>
                 ) : (
-                  <Text variant="body">{m.text}</Text>
+                  <Text variant="body">{renderText(m.text)}</Text>
                 )}
               </Card>
             </View>
@@ -131,9 +153,9 @@ export function CoachScreen(): React.JSX.Element {
 
         {/* Quick suggestions */}
         <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: spacing[2] }}>
-          {(messages[messages.length - 1]?.reply?.followUps ?? SUGGESTED_QUESTIONS).map((q) => (
-            <View key={q}>
-              <Button label={q} variant="secondary" onPress={() => ask(q)} />
+          {(messages[messages.length - 1]?.reply?.followUps ?? SUGGESTED_QUESTIONS).map((intent) => (
+            <View key={intent}>
+              <Button label={t(COACH_INTENT_LABEL[intent].key)} variant="secondary" onPress={() => askIntent(intent)} />
             </View>
           ))}
         </View>
@@ -151,14 +173,14 @@ export function CoachScreen(): React.JSX.Element {
       >
         <View style={{ flex: 1 }}>
           <Input
-            placeholder="Pose ta question…"
+            placeholder={t('coach.placeholder')}
             value={draft}
             onChangeText={setDraft}
             onSubmitEditing={() => ask(draft)}
             returnKeyType="send"
           />
         </View>
-        <Button label="Envoyer" onPress={() => ask(draft)} />
+        <Button label={t('common.send')} onPress={() => ask(draft)} />
       </View>
     </Screen>
   );

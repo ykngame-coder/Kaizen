@@ -261,15 +261,26 @@ export function computeCircadianProfile(
   };
 }
 
+const CHRONOTYPE_OBSERVATION_KEY: Record<Chronotype, string> = {
+  précoce: 'engines.circadian.profile.observation.early',
+  intermédiaire: 'engines.circadian.profile.observation.intermediate',
+  tardif: 'engines.circadian.profile.observation.late',
+};
+
 /** Explainable headline for the circadian profile (Observation → Analyse → Action). */
 export function circadianExplanation(profile: CircadianProfile): Explanation {
-  const jetlag =
-    profile.socialJetlagMin !== null
-      ? `Ton décalage social semaine/week-end est de ${profile.socialJetlagMin} min.`
-      : `Calculé sur tes ${profile.nights} dernières nuits.`;
   return {
-    observation: `Chronotype ${profile.chronotype} — tu dors en moyenne de ${profile.habitualBedtime} à ${profile.habitualWake}.`,
-    analysis: `${jetlag} Plus tes horaires sont réguliers, plus ton horloge interne est stable.`,
-    action: `Pour viser ${SLEEP_TARGET_HOURS} h, couche-toi vers ${profile.idealBedtime} en gardant ton réveil autour de ${profile.idealWake}.`,
+    observation: {
+      key: CHRONOTYPE_OBSERVATION_KEY[profile.chronotype],
+      params: { bedtime: profile.habitualBedtime, wake: profile.habitualWake },
+    },
+    analysis:
+      profile.socialJetlagMin !== null
+        ? { key: 'engines.circadian.profile.analysis.jetlag', params: { jetlagMin: profile.socialJetlagMin } }
+        : { key: 'engines.circadian.profile.analysis.nights', params: { nights: profile.nights } },
+    action: {
+      key: 'engines.circadian.profile.action',
+      params: { hours: SLEEP_TARGET_HOURS, bedtime: profile.idealBedtime, wake: profile.idealWake },
+    },
   };
 }

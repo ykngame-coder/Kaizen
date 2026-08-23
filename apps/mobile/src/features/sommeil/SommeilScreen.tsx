@@ -2,6 +2,7 @@ import React, { useMemo, useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { Pressable, View } from 'react-native';
 import { useRouter, type Href } from 'expo-router';
+import { useTranslation } from 'react-i18next';
 import { Badge, Button, Card, EmptyState, Icon, ProgressRing, Screen, Text, useTheme } from '@supotsu/ui';
 import { radii, spacing } from '@supotsu/design-system';
 import type { HealthMetric, SleepSession } from '@supotsu/core';
@@ -203,6 +204,7 @@ function PhasesCard({ session, timeFormat }: { session: SleepSession; timeFormat
  * plus analytique (composantes du score, prévision) et les outils.
  */
 export function SommeilScreen(): React.JSX.Element {
+  const { t } = useTranslation();
   const router = useRouter();
   const { colors } = useTheme();
   const { preferences } = usePreferences();
@@ -399,13 +401,13 @@ export function SommeilScreen(): React.JSX.Element {
             <Card>
               <Text variant="heading">Conseil</Text>
               <Text variant="caption" color="textMuted">
-                {coaching.observation}
+                {t(coaching.observation.key, coaching.observation.params)}
               </Text>
               <Text variant="caption" color="textMuted">
-                {coaching.analysis}
+                {t(coaching.analysis.key, coaching.analysis.params)}
               </Text>
               <Text variant="body" style={{ marginTop: spacing[1] }}>
-                {coaching.action}
+                {t(coaching.action.key, coaching.action.params)}
               </Text>
             </Card>
           )}
@@ -454,10 +456,10 @@ export function SommeilScreen(): React.JSX.Element {
                 Énergie estimée {prediction.value.energyScore}/100
               </Text>
               <Text variant="caption" color="textMuted" style={{ marginTop: spacing[1] }}>
-                {prediction.explanation.analysis}
+                {t(prediction.explanation.analysis.key, prediction.explanation.analysis.params)}
               </Text>
               <Text variant="body" style={{ marginTop: spacing[1] }}>
-                {prediction.explanation.action}
+                {t(prediction.explanation.action.key, prediction.explanation.action.params)}
               </Text>
             </Card>
           )}

@@ -7,12 +7,13 @@ import type {
   NutritionTargets,
   Pillar,
 } from '@supotsu/core';
-import type { Explanation } from './result';
+import type { Explanation, I18nText } from './result';
 import {
   computeRecoveryScore,
   computeTrainingReadiness,
   recoveryBand,
   recoveryExplanation,
+  type RecoveryBand,
 } from './recovery';
 import { computeWorkload } from './scoring';
 import { computeNutritionScore, nutritionExplanation } from './nutrition';
@@ -26,10 +27,10 @@ import { computeNutritionScore, nutritionExplanation } from './nutrition';
 
 export interface BriefingSection {
   key: 'recovery' | 'readiness' | 'nutrition';
-  title: string;
+  title: I18nText;
   /** 0-100, or null when there isn't enough data yet. */
   value: number | null;
-  caption: string;
+  caption: I18nText;
   explanation?: Explanation;
   confidence: Confidence;
 }
@@ -42,8 +43,15 @@ export interface DailyBriefing {
   sections: BriefingSection[];
 }
 
-const readinessLabel = (v: number): string =>
-  v >= 70 ? 'prêt à performer' : v >= 50 ? 'effort modéré' : 'prudence conseillée';
+const readinessLabelKey = (v: number): string =>
+  v >= 70 ? 'engines.decision.readiness.high' : v >= 50 ? 'engines.decision.readiness.moderate' : 'engines.decision.readiness.low';
+
+const RECOVERY_BAND_KEY: Record<RecoveryBand, string> = {
+  excellent: 'engines.decision.recoveryBand.excellent',
+  correct: 'engines.decision.recoveryBand.correct',
+  moyen: 'engines.decision.recoveryBand.moyen',
+  faible: 'engines.decision.recoveryBand.faible',
+};
 
 export interface BriefingInput {
   activities: Activity[];
@@ -71,24 +79,26 @@ export function buildDailyBriefing(input: BriefingInput): DailyBriefing {
   const sections: BriefingSection[] = [
     {
       key: 'recovery',
-      title: 'Récupération',
+      title: { key: 'engines.decision.section.recovery.title' },
       value: hasRecovery ? recovery.value : null,
-      caption: hasRecovery ? recoveryBand(recovery.value) : 'Connecte tes données santé',
+      caption: hasRecovery
+        ? { key: RECOVERY_BAND_KEY[recoveryBand(recovery.value)] }
+        : { key: 'engines.decision.section.recovery.noData' },
       explanation: recExp,
       confidence: recovery.confidence,
     },
     {
       key: 'readiness',
-      title: 'Aptitude à l’effort',
+      title: { key: 'engines.decision.section.readiness.title' },
       value: hasRecovery ? readiness.value : null,
-      caption: hasRecovery ? readinessLabel(readiness.value) : 'Selon récup + charge',
+      caption: hasRecovery ? { key: readinessLabelKey(readiness.value) } : { key: 'engines.decision.section.readiness.noData' },
       confidence: readiness.confidence,
     },
     {
       key: 'nutrition',
-      title: 'Nutrition',
+      title: { key: 'engines.decision.section.nutrition.title' },
       value: hasNutrition ? nutrition.value : null,
-      caption: hasNutrition ? 'apports du jour' : 'Ajoute un repas',
+      caption: hasNutrition ? { key: 'engines.decision.section.nutrition.today' } : { key: 'engines.decision.section.nutrition.noData' },
       explanation: nutExp,
       confidence: nutrition.confidence,
     },
@@ -109,9 +119,9 @@ export function buildDailyBriefing(input: BriefingInput): DailyBriefing {
     confidence = nutrition.confidence;
   } else if (hasRecovery && readiness.value >= 70) {
     headline = {
-      observation: `Récupération bonne (${recovery.value}/100) et charge maîtrisée.`,
-      analysis: 'Ton corps est prêt à encaisser une séance exigeante.',
-      action: 'Profites-en pour une séance intense ou un travail de qualité.',
+      observation: { key: 'engines.decision.readyToTrain.observation', params: { recovery: recovery.value } },
+      analysis: { key: 'engines.decision.readyToTrain.analysis' },
+      action: { key: 'engines.decision.readyToTrain.action' },
     };
     headlinePillar = 'performance';
     confidence = 'high';
@@ -121,9 +131,9 @@ export function buildDailyBriefing(input: BriefingInput): DailyBriefing {
     confidence = recovery.confidence;
   } else {
     headline = {
-      observation: 'Données du jour encore limitées.',
-      analysis: 'Sans santé ni activité récente, le bilan reste partiel.',
-      action: 'Importe ton export Garmin ou ajoute une activité pour un bilan complet.',
+      observation: { key: 'engines.decision.limitedData.observation' },
+      analysis: { key: 'engines.decision.limitedData.analysis' },
+      action: { key: 'engines.decision.limitedData.action' },
     };
     headlinePillar = 'decision';
     confidence = 'to_confirm';

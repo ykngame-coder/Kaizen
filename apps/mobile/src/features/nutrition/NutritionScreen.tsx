@@ -2,6 +2,7 @@ import React, { useMemo, useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { Pressable, ScrollView, TextInput, View } from 'react-native';
 import { useRouter } from 'expo-router';
+import { useTranslation } from 'react-i18next';
 import { Button, Card, Fab, FilterChip, Icon, Input, ProgressRing, Screen, Sparkline, Text, useTheme, type IconName } from '@supotsu/ui';
 import { radii, spacing } from '@supotsu/design-system';
 import {
@@ -127,6 +128,7 @@ function StepperRow({
 
 /** Nutrition (mockup #11) — kcal ring, macros, hydration, meals, score, trends, goals. */
 export function NutritionScreen(): React.JSX.Element {
+  const { t } = useTranslation();
   const router = useRouter();
   const { colors } = useTheme();
   const { data: entries = [] } = useNutritionEntries();
@@ -335,9 +337,9 @@ export function NutritionScreen(): React.JSX.Element {
         {explanation ? (
           <Card>
             <SectionTitle>Impact aujourd'hui</SectionTitle>
-            <Text variant="body" color="textMuted">{explanation.observation}</Text>
-            <Text variant="body" color="textMuted" style={{ marginTop: spacing[1] }}>{explanation.analysis}</Text>
-            <Text variant="body" style={{ marginTop: spacing[2] }}>{explanation.action}</Text>
+            <Text variant="body" color="textMuted">{t(explanation.observation.key, explanation.observation.params)}</Text>
+            <Text variant="body" color="textMuted" style={{ marginTop: spacing[1] }}>{t(explanation.analysis.key, explanation.analysis.params)}</Text>
+            <Text variant="body" style={{ marginTop: spacing[2] }}>{t(explanation.action.key, explanation.action.params)}</Text>
           </Card>
         ) : null}
 

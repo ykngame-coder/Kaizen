@@ -1,5 +1,5 @@
 import type { Confidence, HealthMetric, ISODateString } from '@supotsu/core';
-import type { EngineResult, Explanation } from './result';
+import type { EngineResult, Explanation, I18nText } from './result';
 import { computeRecoveryScore } from './recovery';
 import { averageSleepHours, bedtimeSpreadMinutes, sleepDebtHours } from './sleep';
 
@@ -29,8 +29,8 @@ export interface SleepPrediction {
   /** Predicted next-day energy, 0-100. */
   energyScore: number;
   fatigueRisk: FatigueRisk;
-  /** Human-readable factors that shaped the estimate, most important first. */
-  drivers: string[];
+  /** Factors that shaped the estimate, most important first. */
+  drivers: I18nText[];
 }
 
 export type SleepPredictionResult = EngineResult<SleepPrediction | null>;
@@ -70,20 +70,20 @@ export function predictNextDayEnergy(
     return { value: null, confidence: 'to_confirm', sourcesUsed: ['supotsu'], generatedAt: asOf };
   }
 
-  const drivers: string[] = [];
+  const drivers: I18nText[] = [];
   let score = recovery.value;
 
   const { debt } = sleepDebtHours(metrics, asOf, windowDays);
   if (debt > 0) {
     const penalty = Math.min(DEBT_PENALTY_CAP, debt * DEBT_PENALTY_PER_HOUR);
     score -= penalty;
-    if (debt >= 2) drivers.push(`dette de sommeil (−${debt.toFixed(1)} h sur ${windowDays} j)`);
+    if (debt >= 2) drivers.push({ key: 'engines.prediction.driver.sleepDebt', params: { debt: debt.toFixed(1), windowDays } });
   }
 
   const spread = bedtimeSpreadMinutes(metrics, asOf, windowDays);
   if (spread !== undefined && spread > IRREGULAR_SPREAD_MIN) {
     score -= IRREGULAR_PENALTY;
-    drivers.push('horaires de coucher irréguliers');
+    drivers.push({ key: 'engines.prediction.driver.irregularBedtime' });
   }
 
   const acwr = options.acwr ?? null;
@@ -92,16 +92,12 @@ export function predictNextDayEnergy(
     const penalty = Math.min(ACWR_PENALTY_CAP, (acwr - ACWR_HIGH) * 30);
     score -= penalty;
     highLoad = acwr > 1.5;
-    drivers.push('charge d’entraînement en hausse rapide');
+    drivers.push({ key: 'engines.prediction.driver.risingLoad' });
   }
 
   const avg = averageSleepHours(metrics, asOf, windowDays);
   if (drivers.length === 0) {
-    drivers.push(
-      recovery.value >= 70
-        ? 'bonne trajectoire de récupération'
-        : 'récupération stable sur les derniers jours',
-    );
+    drivers.push({ key: recovery.value >= 70 ? 'engines.prediction.driver.goodRecovery' : 'engines.prediction.driver.stableRecovery' });
   }
 
   const energyScore = clamp(Math.round(score));
@@ -122,24 +118,32 @@ export function predictNextDayEnergy(
   };
 }
 
-const RISK_ACTION: Record<FatigueRisk, string> = {
-  faible: 'Journée propice : tu peux envisager une séance exigeante si elle est prévue.',
-  modéré: 'Vise une intensité modérée et surveille tes sensations à l’échauffement.',
-  élevé: 'Privilégie la récupération : repos actif, mobilité, et couche-toi tôt ce soir.',
+const RISK_ACTION_KEY: Record<FatigueRisk, string> = {
+  faible: 'engines.prediction.action.low',
+  modéré: 'engines.prediction.action.moderate',
+  élevé: 'engines.prediction.action.high',
 };
 
-/** Explainable forecast (Observation → Analyse → Action), framed as an estimation. */
+/**
+ * Explainable forecast (Observation → Analyse → Action), framed as an
+ * estimation. `analysis` intentionally doesn't embed the top driver's text
+ * inline (that would require translating a nested I18nText *inside* another
+ * translated string, which plain i18next interpolation can't do) — the UI
+ * renders `prediction.drivers[0]` alongside the analysis sentence instead.
+ */
 export function predictionExplanation(
   prediction: SleepPrediction,
   avgSleepHours?: number,
 ): Explanation {
-  const sleepNote =
-    avgSleepHours !== undefined
-      ? ` Ta moyenne récente est de ${avgSleepHours.toFixed(1)} h/nuit.`
-      : '';
   return {
-    observation: `Énergie estimée pour demain : ${prediction.energyScore}/100 (risque de fatigue ${prediction.fatigueRisk}).`,
-    analysis: `Estimation d’après ta trajectoire récente — principalement ${prediction.drivers[0]}.${sleepNote} C’est une probabilité, pas une certitude.`,
-    action: RISK_ACTION[prediction.fatigueRisk],
+    observation: {
+      key: `engines.prediction.observation.${prediction.fatigueRisk}`,
+      params: { energyScore: prediction.energyScore },
+    },
+    analysis:
+      avgSleepHours !== undefined
+        ? { key: 'engines.prediction.analysisWithAvg', params: { avgSleepHours: avgSleepHours.toFixed(1) } }
+        : { key: 'engines.prediction.analysis' },
+    action: { key: RISK_ACTION_KEY[prediction.fatigueRisk] },
   };
 }

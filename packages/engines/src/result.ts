@@ -1,13 +1,24 @@
 import type { Confidence, DataSource, ISODateString, Pillar } from '@supotsu/core';
 
 /**
+ * A translation key + its interpolation values — engines stay pure/UI-free by
+ * naming *what* to say instead of writing it out; the UI resolves the key via
+ * i18next (t(key, params)). Never a literal sentence (Master Prompt: multilingual,
+ * i18n-ready).
+ */
+export interface I18nText {
+  key: string;
+  params?: Record<string, string | number>;
+}
+
+/**
  * The mandatory explanation shape for any meaningful recommendation
  * (Master Prompt P18.9: Observation → Analyse → Action).
  */
 export interface Explanation {
-  observation: string;
-  analysis: string;
-  action: string;
+  observation: I18nText;
+  analysis: I18nText;
+  action: I18nText;
 }
 
 /**
@@ -33,7 +44,7 @@ export interface EngineContext {
 /** A single actionable recommendation surfaced to the user. */
 export interface Recommendation {
   pillar: Pillar;
-  title: string;
+  title: I18nText;
   explanation: Explanation;
   confidence: Confidence;
 }

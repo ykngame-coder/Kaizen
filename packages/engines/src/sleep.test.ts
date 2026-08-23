@@ -253,8 +253,8 @@ describe('sleepCoaching', () => {
     ];
     const coaching = sleepCoaching(metrics, ASOF);
     expect(coaching).toBeDefined();
-    expect(coaching?.observation).toContain('/100');
-    expect(coaching?.analysis).toContain('corrélation');
-    expect(coaching?.action.length).toBeGreaterThan(0);
+    expect(coaching?.observation.key).toMatch(/^engines\.sleep\.coaching\.observation\./);
+    expect(coaching?.analysis.key).toMatch(/^engines\.sleep\.coaching\.weak\.analysis\./);
+    expect(coaching?.action.key).toMatch(/^engines\.sleep\.coaching\.action\./);
   });
 });

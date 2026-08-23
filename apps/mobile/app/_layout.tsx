@@ -1,4 +1,5 @@
 import '../global.css';
+import '@/i18n';
 import React, { useEffect } from 'react';
 import { ActivityIndicator, Platform, View } from 'react-native';
 import { Slot, useRouter, useSegments } from 'expo-router';

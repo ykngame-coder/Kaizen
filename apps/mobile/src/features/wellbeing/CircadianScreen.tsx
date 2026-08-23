@@ -1,6 +1,7 @@
 import React, { useMemo } from 'react';
 import { View } from 'react-native';
 import { useRouter } from 'expo-router';
+import { useTranslation } from 'react-i18next';
 import { Badge, Button, Card, EmptyState, Icon, Screen, Text, useTheme } from '@supotsu/ui';
 import { spacing } from '@supotsu/design-system';
 import { computeCircadianProfile, type Chronotype } from '@supotsu/engines';
@@ -25,6 +26,7 @@ const CHRONOTYPE_HINT: Record<Chronotype, string> = {
  * recommendations are guidance, not medical advice.
  */
 export function CircadianScreen(): React.JSX.Element {
+  const { t } = useTranslation();
   const router = useRouter();
   const { colors } = useTheme();
   const { data: metrics = [], isLoading } = useHealthMetrics();
@@ -139,13 +141,13 @@ export function CircadianScreen(): React.JSX.Element {
             <Card>
               <Text variant="heading">En résumé</Text>
               <Text variant="caption" color="textMuted">
-                {explanation.observation}
+                {t(explanation.observation.key, explanation.observation.params)}
               </Text>
               <Text variant="caption" color="textMuted">
-                {explanation.analysis}
+                {t(explanation.analysis.key, explanation.analysis.params)}
               </Text>
               <Text variant="body" style={{ marginTop: spacing[1], color: colors.text }}>
-                {explanation.action}
+                {t(explanation.action.key, explanation.action.params)}
               </Text>
             </Card>
           )}

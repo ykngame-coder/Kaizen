@@ -1,6 +1,7 @@
 import React, { useMemo } from 'react';
 import { View } from 'react-native';
 import { useRouter } from 'expo-router';
+import { useTranslation } from 'react-i18next';
 import { Badge, Button, Card, EmptyState, Icon, Screen, Text, useTheme } from '@supotsu/ui';
 import { spacing } from '@supotsu/design-system';
 import { challengeExplanation, computeChallengeProgress } from '@supotsu/engines';
@@ -22,6 +23,7 @@ function ChallengeCard({
   joined: boolean;
   activities: Activity[];
 }): React.JSX.Element {
+  const { t } = useTranslation();
   const join = useJoinChallenge();
   const { data: leaderboard = [] } = useChallengeLeaderboard(joined ? challenge : undefined);
   const asOf = new Date().toISOString();
@@ -52,9 +54,9 @@ function ChallengeCard({
       {joined ? (
         <>
           <Text variant="caption" color="textMuted">
-            {status.explanation?.observation}
+            {status.explanation?.observation ? t(status.explanation.observation.key, status.explanation.observation.params) : ''}
           </Text>
-          <Text variant="body">{status.explanation?.action}</Text>
+          <Text variant="body">{status.explanation?.action ? t(status.explanation.action.key, status.explanation.action.params) : ''}</Text>
           {ranked.length > 0 ? (
             <View style={{ marginTop: spacing[2], gap: spacing[1] }}>
               <Text variant="label" color="textMuted">

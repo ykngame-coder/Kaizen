@@ -47,13 +47,13 @@ export function buildRecommendations(input: RecommendationInput): PrioritizedRec
     recs.push({
       priority: 0,
       pillar: 'performance',
-      title: 'Allège ta charge cette semaine',
+      title: { key: 'engines.recommendation.acwrRisk.title' },
       confidence: acwr.confidence,
       articleId: 'acwr',
       explanation: {
-        observation: `Ton ratio charge aiguë/chronique est de ${acwr.ratio.toFixed(2)} (zone risque).`,
-        analysis: 'Une hausse rapide de la charge augmente nettement le risque de blessure.',
-        action: 'Réduis le volume de ~20 % et garde une séance facile pour absorber le pic.',
+        observation: { key: 'engines.recommendation.acwrRisk.observation', params: { ratio: acwr.ratio.toFixed(2) } },
+        analysis: { key: 'engines.recommendation.acwrRisk.analysis' },
+        action: { key: 'engines.recommendation.acwrRisk.action' },
       },
     });
   }
@@ -63,13 +63,13 @@ export function buildRecommendations(input: RecommendationInput): PrioritizedRec
     recs.push({
       priority: 1,
       pillar: 'recovery',
-      title: 'Priorité à la récupération',
+      title: { key: 'engines.recommendation.lowRecovery.title' },
       confidence: recovery.confidence,
       articleId: 'recovery',
       explanation: {
-        observation: `Ta récupération est basse (${recovery.value}/100).`,
-        analysis: 'Ton corps n’a pas encore encaissé la charge récente (sommeil, HRV, FC).',
-        action: 'Vise du repos actif ou de la mobilité aujourd’hui, pas d’intensité.',
+        observation: { key: 'engines.recommendation.lowRecovery.observation', params: { recovery: recovery.value } },
+        analysis: { key: 'engines.recommendation.lowRecovery.analysis' },
+        action: { key: 'engines.recommendation.lowRecovery.action' },
       },
     });
   }
@@ -79,13 +79,13 @@ export function buildRecommendations(input: RecommendationInput): PrioritizedRec
     recs.push({
       priority: 2,
       pillar: 'sleep',
-      title: 'Rattrape ton sommeil',
+      title: { key: 'engines.recommendation.poorSleep.title' },
       confidence: sleep.confidence,
       articleId: 'sleep',
       explanation: {
-        observation: `Ton score de sommeil est faible (${sleep.value}/100).`,
-        analysis: 'Le manque de sommeil dégrade la récupération, l’humeur et la performance.',
-        action: 'Couche-toi 30–60 min plus tôt ce soir et réduis les écrans avant le coucher.',
+        observation: { key: 'engines.recommendation.poorSleep.observation', params: { sleep: sleep.value } },
+        analysis: { key: 'engines.recommendation.poorSleep.analysis' },
+        action: { key: 'engines.recommendation.poorSleep.action' },
       },
     });
   }
@@ -95,13 +95,13 @@ export function buildRecommendations(input: RecommendationInput): PrioritizedRec
     recs.push({
       priority: 3,
       pillar: 'recovery',
-      title: 'Prends soin de ton mental',
+      title: { key: 'engines.recommendation.lowWellness.title' },
       confidence: wellness.confidence,
       articleId: 'wellness',
       explanation: {
-        observation: `Ton indice de bien-être est bas (${wellness.value}/100).`,
-        analysis: 'Le stress et la fatigue mentale pèsent autant que la fatigue physique.',
-        action: 'Accorde-toi une vraie pause : quelques minutes de respiration ou une marche.',
+        observation: { key: 'engines.recommendation.lowWellness.observation', params: { wellness: wellness.value } },
+        analysis: { key: 'engines.recommendation.lowWellness.analysis' },
+        action: { key: 'engines.recommendation.lowWellness.action' },
       },
     });
   }
@@ -111,13 +111,13 @@ export function buildRecommendations(input: RecommendationInput): PrioritizedRec
     recs.push({
       priority: 4,
       pillar: 'performance',
-      title: 'Tu peux monter en charge',
+      title: { key: 'engines.recommendation.roomToPush.title' },
       confidence: acwr.confidence,
       articleId: 'acwr',
       explanation: {
-        observation: `Ta charge récente est basse (ratio ${acwr.ratio.toFixed(2)}).`,
-        analysis: 'Tu es sous ton niveau habituel et bien récupéré — il y a de la marge.',
-        action: 'Ajoute un peu de volume ou d’intensité, progressivement.',
+        observation: { key: 'engines.recommendation.roomToPush.observation', params: { ratio: acwr.ratio.toFixed(2) } },
+        analysis: { key: 'engines.recommendation.roomToPush.analysis' },
+        action: { key: 'engines.recommendation.roomToPush.action' },
       },
     });
   }
@@ -127,13 +127,13 @@ export function buildRecommendations(input: RecommendationInput): PrioritizedRec
     recs.push({
       priority: 9,
       pillar: 'decision',
-      title: 'Tout est au vert — continue',
+      title: { key: 'engines.recommendation.allGood.title' },
       confidence: 'medium',
       articleId: 'supotsu-score',
       explanation: {
-        observation: 'Tes indicateurs sont dans de bonnes plages aujourd’hui.',
-        analysis: 'Rien n’appelle d’ajustement particulier.',
-        action: 'Suis ton plan et garde la régularité — c’est elle qui paie.',
+        observation: { key: 'engines.recommendation.allGood.observation' },
+        analysis: { key: 'engines.recommendation.allGood.analysis' },
+        action: { key: 'engines.recommendation.allGood.action' },
       },
     });
   }
@@ -149,12 +149,12 @@ export function dailyRecommendation(input: RecommendationInput): EngineResult<Re
     ? { pillar: top.pillar as Pillar, title: top.title, explanation: top.explanation, confidence }
     : {
         pillar: 'decision',
-        title: 'Ajoute des données pour une reco',
+        title: { key: 'engines.recommendation.noData.title' },
         confidence: 'to_confirm',
         explanation: {
-          observation: 'Pas encore assez de données.',
-          analysis: 'Enregistre une activité ou connecte un appareil.',
-          action: 'Reviens ici une fois quelques jours suivis.',
+          observation: { key: 'engines.recommendation.noData.observation' },
+          analysis: { key: 'engines.recommendation.noData.analysis' },
+          action: { key: 'engines.recommendation.noData.action' },
         },
       };
   return { value, confidence, sourcesUsed: ['supotsu'], generatedAt: input.asOf };

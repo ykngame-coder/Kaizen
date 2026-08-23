@@ -1,6 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import { View } from 'react-native';
 import { useRouter } from 'expo-router';
+import { useTranslation } from 'react-i18next';
 import {
   Badge,
   Button,
@@ -76,6 +77,7 @@ function RatingRow({
 
 /** Mental-wellness pillar (Master Prompt P14): subjective check-in + index. */
 export function WellnessScreen(): React.JSX.Element {
+  const { t } = useTranslation();
   const router = useRouter();
   const { colors } = useTheme();
   const { data: checkins = [] } = useWellnessCheckins();
@@ -153,13 +155,13 @@ export function WellnessScreen(): React.JSX.Element {
         <Card>
           <Text variant="heading">Analyse</Text>
           <Text variant="caption" color="textMuted">
-            {explanation.observation}
+            {t(explanation.observation.key, explanation.observation.params)}
           </Text>
           <Text variant="caption" color="textMuted">
-            {explanation.analysis}
+            {t(explanation.analysis.key, explanation.analysis.params)}
           </Text>
           <Text variant="body" style={{ marginTop: spacing[1] }}>
-            {explanation.action}
+            {t(explanation.action.key, explanation.action.params)}
           </Text>
         </Card>
       )}

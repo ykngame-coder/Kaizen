@@ -1,6 +1,7 @@
 import React, { useMemo } from 'react';
 import { View } from 'react-native';
 import { useRouter } from 'expo-router';
+import { useTranslation } from 'react-i18next';
 import { Badge, Button, Card, EmptyState, Icon, ProgressRing, Screen, Sparkline, Text, useTheme } from '@supotsu/ui';
 import { spacing } from '@supotsu/design-system';
 import { computeAcwr, dailyLoadSeries, loadExplanation, type LoadZone } from '@supotsu/engines';
@@ -15,6 +16,7 @@ const ZONE_TONE: Record<LoadZone, 'info' | 'success' | 'warning' | 'error'> = {
 
 /** Training load & injury-risk (Master Prompt P13/P34): explainable ACWR. */
 export function LoadScreen(): React.JSX.Element {
+  const { t } = useTranslation();
   const router = useRouter();
   const { colors } = useTheme();
   const { data: activities = [], isLoading } = useActivities();
@@ -98,13 +100,13 @@ export function LoadScreen(): React.JSX.Element {
             <Card>
               <Text variant="heading">Analyse</Text>
               <Text variant="caption" color="textMuted">
-                {explanation.observation}
+                {t(explanation.observation.key, explanation.observation.params)}
               </Text>
               <Text variant="caption" color="textMuted">
-                {explanation.analysis}
+                {t(explanation.analysis.key, explanation.analysis.params)}
               </Text>
               <Text variant="body" style={{ marginTop: spacing[1] }}>
-                {explanation.action}
+                {t(explanation.action.key, explanation.action.params)}
               </Text>
             </Card>
           )}

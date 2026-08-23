@@ -106,15 +106,16 @@ export function loadExplanation(
   const res = computeAcwr(activities, asOf);
   if (res.ratio === null || res.confidence === 'to_confirm') return undefined;
   const zone = res.zone!;
-  const action: Record<LoadZone, string> = {
-    'sous-charge': 'Tu peux augmenter progressivement le volume cette semaine.',
-    optimal: 'Charge bien équilibrée : maintiens cette progression régulière.',
-    'élevé': 'Charge en hausse rapide — surveille ta récupération avant d’en rajouter.',
-    risque: 'Pic de charge : réduis un peu cette semaine pour limiter le risque de blessure.',
+  const zoneSlug: Record<LoadZone, string> = {
+    'sous-charge': 'underLoad',
+    optimal: 'optimal',
+    'élevé': 'high',
+    risque: 'risk',
   };
+  const slug = zoneSlug[zone];
   return {
-    observation: `Ton ratio charge aiguë/chronique est de ${res.ratio.toFixed(2)} (${zone}).`,
-    analysis: 'Compare ta charge des 7 derniers jours à ta moyenne des 4 dernières semaines.',
-    action: action[zone],
+    observation: { key: `engines.load.observation.${slug}`, params: { ratio: res.ratio.toFixed(2) } },
+    analysis: { key: 'engines.load.analysis' },
+    action: { key: `engines.load.action.${slug}` },
   };
 }

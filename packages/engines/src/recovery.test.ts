@@ -59,6 +59,6 @@ describe('buildDailySnapshot with recovery', () => {
     const snap = buildDailySnapshot([], [], ASOF, metrics);
     expect(snap.value.recovery).not.toBeNull();
     expect(snap.value.recommendation.pillar).toBe('recovery');
-    expect(snap.value.recommendation.explanation.action).toMatch(/repos|mobilité/i);
+    expect(snap.value.recommendation.explanation.action.key).toBe('engines.scoring.daily.lowRecovery.action');
   });
 });

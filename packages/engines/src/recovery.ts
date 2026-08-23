@@ -140,15 +140,15 @@ export function recoveryExplanation(
   const score = computeRecoveryScore(metrics, asOf);
   if (score.confidence === 'to_confirm') return undefined;
   const band = recoveryBand(score.value);
-  const action: Record<RecoveryBand, string> = {
-    excellent: 'Ton corps est prêt : une séance intense est adaptée.',
-    correct: 'Un entraînement normal est recommandé aujourd’hui.',
-    moyen: 'Adapte l’intensité : privilégie technique ou volume modéré.',
-    faible: 'Priorité à la récupération : mobilité ou repos actif.',
+  const actionKey: Record<RecoveryBand, string> = {
+    excellent: 'engines.recovery.action.excellent',
+    correct: 'engines.recovery.action.correct',
+    moyen: 'engines.recovery.action.moyen',
+    faible: 'engines.recovery.action.faible',
   };
   return {
-    observation: `Ta récupération est de ${score.value}/100 (${band}).`,
-    analysis: 'Calculée à partir de ton sommeil, ta HRV et ta fréquence cardiaque.',
-    action: action[band],
+    observation: { key: `engines.recovery.observation.${band}`, params: { score: score.value } },
+    analysis: { key: 'engines.recovery.analysis' },
+    action: { key: actionKey[band] },
   };
 }

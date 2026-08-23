@@ -1,15 +1,16 @@
 import React, { useMemo } from 'react';
 import { View } from 'react-native';
+import { useTranslation } from 'react-i18next';
 import { Badge, Card, Text, useTheme, type BadgeTone } from '@supotsu/ui';
 import { spacing } from '@supotsu/design-system';
 import { buildDailyBriefing, estimateTargets } from '@supotsu/engines';
 import type { Confidence } from '@supotsu/core';
 import { useActivities, useHealthMetrics, useNutritionEntries } from '@/lib/data/queries';
 
-const CONFIDENCE: Record<Confidence, { label: string; tone: BadgeTone }> = {
-  high: { label: 'Confiance élevée', tone: 'success' },
-  medium: { label: 'Confiance moyenne', tone: 'info' },
-  to_confirm: { label: 'À confirmer', tone: 'warning' },
+const CONFIDENCE_TONE: Record<Confidence, BadgeTone> = {
+  high: 'success',
+  medium: 'info',
+  to_confirm: 'warning',
 };
 
 /**
@@ -19,6 +20,7 @@ const CONFIDENCE: Record<Confidence, { label: string; tone: BadgeTone }> = {
  * meals → nutrition, each explained.
  */
 export function DailyBriefingCard(): React.JSX.Element {
+  const { t } = useTranslation();
   const { colors } = useTheme();
   const { data: activities = [] } = useActivities();
   const { data: health = [] } = useHealthMetrics();
@@ -45,22 +47,26 @@ export function DailyBriefingCard(): React.JSX.Element {
     [activities, health, nutrition, weight, asOf],
   );
 
-  const conf = CONFIDENCE[briefing.confidence];
+  const CONFIDENCE_LABEL: Record<Confidence, string> = {
+    high: t('common.confidence.high'),
+    medium: t('common.confidence.medium'),
+    to_confirm: t('common.confidence.toConfirm'),
+  };
 
   return (
     <Card>
       <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-        <Text variant="heading">Bilan du jour</Text>
-        <Badge label={conf.label} tone={conf.tone} />
+        <Text variant="heading">{t('home.dailyBriefing.title')}</Text>
+        <Badge label={CONFIDENCE_LABEL[briefing.confidence]} tone={CONFIDENCE_TONE[briefing.confidence]} />
       </View>
 
       <Text variant="caption" color="textMuted">
-        {briefing.headline.observation}
+        {t(briefing.headline.observation.key, briefing.headline.observation.params)}
       </Text>
       <Text variant="caption" color="textMuted">
-        {briefing.headline.analysis}
+        {t(briefing.headline.analysis.key, briefing.headline.analysis.params)}
       </Text>
-      <Text variant="body">{briefing.headline.action}</Text>
+      <Text variant="body">{t(briefing.headline.action.key, briefing.headline.action.params)}</Text>
 
       <View style={{ flexDirection: 'row', gap: spacing[2], marginTop: spacing[2] }}>
         {briefing.sections.map((s) => (
@@ -76,11 +82,11 @@ export function DailyBriefingCard(): React.JSX.Element {
             }}
           >
             <Text variant="label" color="textMuted">
-              {s.title.toUpperCase()}
+              {t(s.title.key).toUpperCase()}
             </Text>
             <Text variant="data">{s.value !== null ? String(s.value) : '—'}</Text>
             <Text variant="caption" color="textMuted">
-              {s.caption}
+              {t(s.caption.key)}
             </Text>
           </View>
         ))}

@@ -1,22 +1,28 @@
 import type { Activity, Confidence, HealthMetric, ISODateString } from '@supotsu/core';
-import type { Explanation } from './result';
+import type { Explanation, I18nText } from './result';
 import { buildDailySnapshot, computeWorkload } from './scoring';
 
 /**
  * Deterministic conversational coach (Master Prompt MVP P20.3 "IA v1", P6.3,
- * P25.10). It composes the scoring engines into explainable French replies —
- * no black box (P1). Designed behind this reply shape so a future LLM-backed
- * coach can implement the same contract.
+ * P25.10). It composes the scoring engines into explainable, translatable
+ * replies — no black box (P1), no hardcoded language. Designed behind this
+ * reply shape so a future LLM-backed coach can implement the same contract.
+ *
+ * `detectIntent` matches French keywords only — free-text questions typed in
+ * another language fall back to 'help' for now (a known limitation; the
+ * canned suggestion chips sidestep it entirely by carrying their `CoachIntent`
+ * directly instead of round-tripping through translated text — see
+ * `SUGGESTED_QUESTIONS` / `askCoachByIntent`).
  */
 
 export type CoachIntent = 'today' | 'week' | 'fatigue' | 'plateau' | 'plan' | 'help';
 
 export interface CoachReply {
   intent: CoachIntent;
-  text: string;
+  text: I18nText;
   explanation?: Explanation;
   confidence: Confidence;
-  followUps: string[];
+  followUps: CoachIntent[];
 }
 
 export interface CoachContext {
@@ -31,7 +37,7 @@ function normalize(q: string): string {
   return q
     .toLowerCase()
     .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '');
+    .replace(/[̀-ͯ]/g, '');
 }
 
 const INTENT_KEYWORDS: Record<CoachIntent, string[]> = {
@@ -43,7 +49,7 @@ const INTENT_KEYWORDS: Record<CoachIntent, string[]> = {
   help: [],
 };
 
-/** Best-effort intent classification from free-text (deterministic). */
+/** Best-effort intent classification from free-text (deterministic, French keywords). */
 export function detectIntent(question: string): CoachIntent {
   const q = normalize(question);
   for (const intent of ['today', 'fatigue', 'plateau', 'plan', 'week'] as CoachIntent[]) {
@@ -52,14 +58,18 @@ export function detectIntent(question: string): CoachIntent {
   return 'help';
 }
 
-/** Suggested canonical questions (Master Prompt P6.2, P25.10). */
-export const SUGGESTED_QUESTIONS: string[] = [
-  "Que dois-je faire aujourd'hui ?",
-  'Analyse ma semaine',
-  'Je suis fatigué',
-  'Pourquoi je stagne ?',
-  'Prépare-moi une séance',
-];
+/** Translated label for a suggested question / follow-up chip. */
+export const COACH_INTENT_LABEL: Record<CoachIntent, I18nText> = {
+  today: { key: 'engines.coach.question.today' },
+  week: { key: 'engines.coach.question.week' },
+  fatigue: { key: 'engines.coach.question.fatigue' },
+  plateau: { key: 'engines.coach.question.plateau' },
+  plan: { key: 'engines.coach.question.plan' },
+  help: { key: 'engines.coach.question.help' },
+};
+
+/** Suggested canonical questions (Master Prompt P6.2, P25.10) — tap sends the intent directly via askCoachByIntent, no text round-trip. */
+export const SUGGESTED_QUESTIONS: CoachIntent[] = ['today', 'week', 'fatigue', 'plateau', 'plan'];
 
 function activeDays(activities: Activity[], asOf: ISODateString, days: number): number {
   const set = new Set<string>();
@@ -83,7 +93,7 @@ function answerToday(ctx: CoachContext): CoachReply {
     text: snap.value.recommendation.explanation.action,
     explanation: snap.value.recommendation.explanation,
     confidence: snap.value.recommendation.confidence,
-    followUps: ['Analyse ma semaine', 'Prépare-moi une séance'],
+    followUps: ['week', 'plan'],
   };
 }
 
@@ -95,37 +105,36 @@ function answerWeek(ctx: CoachContext): CoachReply {
   const totalMin = Math.round(recent.reduce((s, a) => s + a.durationSec, 0) / 60);
   const { acwr } = computeWorkload(ctx.activities, ctx.asOf);
 
-  const text =
+  const trendSlug = acwr > 1.5 ? 'up' : acwr < 0.8 ? 'down' : 'balanced';
+  const text: I18nText =
     recent.length === 0
-      ? "Tu n'as aucune activité enregistrée cette semaine. Dès que tu en ajoutes, je peux analyser ta charge et ta régularité."
-      : `Cette semaine : ${recent.length} activité(s) sur ${days} jour(s), ${totalMin} min au total. Ta charge est ${
-          acwr > 1.5 ? 'en forte hausse' : acwr < 0.8 ? 'en baisse' : 'équilibrée'
-        }.`;
+      ? { key: 'engines.coach.week.empty' }
+      : {
+          key: `engines.coach.week.summary.${trendSlug}`,
+          params: { count: recent.length, days, totalMin },
+        };
 
   return {
     intent: 'week',
     text,
     confidence: confidenceFromSample(recent.length),
-    followUps: ["Que dois-je faire aujourd'hui ?", 'Pourquoi je stagne ?'],
+    followUps: ['today', 'plateau'],
   };
 }
 
 function answerFatigue(ctx: CoachContext): CoachReply {
   const { acwr } = computeWorkload(ctx.activities, ctx.asOf);
   const explanation: Explanation = {
-    observation: 'Tu signales de la fatigue aujourd’hui.',
-    analysis:
-      acwr > 1.3
-        ? 'Ta charge récente est élevée, cette fatigue est cohérente.'
-        : 'La récupération fait partie intégrante de la progression.',
-    action: 'Privilégie aujourd’hui du repos ou une séance de mobilité légère.',
+    observation: { key: 'engines.coach.fatigue.observation' },
+    analysis: { key: acwr > 1.3 ? 'engines.coach.fatigue.analysis.highLoad' : 'engines.coach.fatigue.analysis.normal' },
+    action: { key: 'engines.coach.fatigue.action' },
   };
   return {
     intent: 'fatigue',
     text: explanation.action,
     explanation,
     confidence: 'medium',
-    followUps: ['Analyse ma semaine', "Que dois-je faire aujourd'hui ?"],
+    followUps: ['week', 'today'],
   };
 }
 
@@ -134,58 +143,53 @@ function answerPlateau(ctx: CoachContext): CoachReply {
   const explanation: Explanation =
     days < 8
       ? {
-          observation: `Tu es actif ${days} jour(s) sur les 4 dernières semaines.`,
-          analysis: 'Une progression durable repose d’abord sur la régularité.',
-          action: 'Vise 3 séances par semaine avant d’augmenter l’intensité.',
+          observation: { key: 'engines.coach.plateau.lowActivity.observation', params: { days } },
+          analysis: { key: 'engines.coach.plateau.lowActivity.analysis' },
+          action: { key: 'engines.coach.plateau.lowActivity.action' },
         }
       : {
-          observation: 'Ta régularité est bonne mais tes performances stagnent.',
-          analysis: 'Le corps s’adapte : sans nouvelle stimulation, la progression ralentit.',
-          action: 'Varie tes exercices ou augmente légèrement la charge/le volume.',
+          observation: { key: 'engines.coach.plateau.stagnating.observation' },
+          analysis: { key: 'engines.coach.plateau.stagnating.analysis' },
+          action: { key: 'engines.coach.plateau.stagnating.action' },
         };
   return {
     intent: 'plateau',
     text: explanation.action,
     explanation,
     confidence: confidenceFromSample(ctx.activities.length),
-    followUps: ['Prépare-moi une séance', 'Analyse ma semaine'],
+    followUps: ['plan', 'week'],
   };
 }
 
 function answerPlan(ctx: CoachContext): CoachReply {
   const { acwr } = computeWorkload(ctx.activities, ctx.asOf);
-  const focus =
-    acwr > 1.5
-      ? 'une séance de récupération (mobilité, marche, cardio léger)'
-      : acwr < 0.8
-        ? 'une séance plus intense pour relancer la charge'
-        : 'une séance équilibrée dans la continuité de ton programme';
+  const focusSlug = acwr > 1.5 ? 'recovery' : acwr < 0.8 ? 'intense' : 'balanced';
   const explanation: Explanation = {
-    observation: `Ta charge actuelle donne un ratio aigu/chronique de ${acwr.toFixed(1)}.`,
-    analysis: 'J’adapte la difficulté à ton état de charge du moment.',
-    action: `Je te propose ${focus}.`,
+    observation: { key: 'engines.coach.plan.observation', params: { ratio: acwr.toFixed(1) } },
+    analysis: { key: 'engines.coach.plan.analysis' },
+    action: { key: `engines.coach.plan.action.${focusSlug}` },
   };
   return {
     intent: 'plan',
     text: explanation.action,
     explanation,
     confidence: confidenceFromSample(ctx.activities.length),
-    followUps: ["Que dois-je faire aujourd'hui ?", 'Je suis fatigué'],
+    followUps: ['today', 'fatigue'],
   };
 }
 
 function answerHelp(): CoachReply {
   return {
     intent: 'help',
-    text: 'Je suis ton coach Supotsu. Je peux analyser ta semaine, te dire quoi faire aujourd’hui, adapter ta séance selon ta fatigue et t’aider si tu stagnes. Pose-moi une question ou choisis une suggestion.',
+    text: { key: 'engines.coach.help' },
     confidence: 'high',
     followUps: SUGGESTED_QUESTIONS.slice(0, 3),
   };
 }
 
-/** Answer a free-text question using the user's data. Pure and deterministic. */
-export function askCoach(question: string, ctx: CoachContext): CoachReply {
-  switch (detectIntent(question)) {
+/** Answer one canned suggestion/follow-up directly by intent — no text round-trip, no language dependency. */
+export function askCoachByIntent(intent: CoachIntent, ctx: CoachContext): CoachReply {
+  switch (intent) {
     case 'today':
       return answerToday(ctx);
     case 'week':
@@ -199,4 +203,9 @@ export function askCoach(question: string, ctx: CoachContext): CoachReply {
     default:
       return answerHelp();
   }
+}
+
+/** Answer a free-text question using the user's data. Pure and deterministic. */
+export function askCoach(question: string, ctx: CoachContext): CoachReply {
+  return askCoachByIntent(detectIntent(question), ctx);
 }

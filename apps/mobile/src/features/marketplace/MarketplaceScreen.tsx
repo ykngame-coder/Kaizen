@@ -1,6 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import { View } from 'react-native';
 import { useRouter } from 'expo-router';
+import { useTranslation } from 'react-i18next';
 import { Badge, Button, Card, EmptyState, Icon, Screen, SegmentedControl, Text, useTheme, type BadgeTone } from '@supotsu/ui';
 import { spacing } from '@supotsu/design-system';
 import { recommendProgram } from '@supotsu/engines';
@@ -69,6 +70,7 @@ const priceLabel = (cents: number): string => (cents === 0 ? 'Gratuit' : `${(cen
 
 /** Marketplace: explainable program recommendation + coach catalogue + community + own creations (P39). */
 export function MarketplaceScreen(): React.JSX.Element {
+  const { t } = useTranslation();
   const router = useRouter();
   const { colors } = useTheme();
   const [tab, setTab] = useState<'catalogue' | 'communaute' | 'mescreations'>('catalogue');
@@ -176,12 +178,12 @@ export function MarketplaceScreen(): React.JSX.Element {
               </View>
               <Text variant="subtitle">{reco.value.title}</Text>
               <Text variant="caption" color="textMuted">
-                {reco.explanation?.observation}
+                {reco.explanation?.observation ? t(reco.explanation.observation.key, reco.explanation.observation.params) : ''}
               </Text>
               <Text variant="caption" color="textMuted">
-                {reco.explanation?.analysis}
+                {reco.explanation?.analysis ? t(reco.explanation.analysis.key, reco.explanation.analysis.params) : ''}
               </Text>
-              <Text variant="body">{reco.explanation?.action}</Text>
+              <Text variant="body">{reco.explanation?.action ? t(reco.explanation.action.key, reco.explanation.action.params) : ''}</Text>
             </Card>
           ) : null}
 
