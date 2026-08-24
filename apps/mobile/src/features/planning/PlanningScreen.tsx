@@ -4,7 +4,7 @@ import { Swipeable } from 'react-native-gesture-handler';
 import { useTranslation } from 'react-i18next';
 import { Button, Card, Icon, Input, Screen, Text, useTheme } from '@supotsu/ui';
 import { radii, spacing } from '@supotsu/design-system';
-import type { MuscleGroup, Workout } from '@supotsu/core';
+import type { ISODateString, MuscleGroup, Workout } from '@supotsu/core';
 import { computeMuscleStates } from '@supotsu/engines';
 import {
   useAddPlannedWorkout,
@@ -18,6 +18,7 @@ import {
   useWorkouts,
 } from '@/lib/data/queries';
 import { EXERCISES, toCatalogExercise } from '@/features/exercises/catalog';
+import { DatePickerModal } from '@/features/navigation/DatePickerModal';
 
 const BUILT_IN_EXERCISE_NAME: Record<string, string> = Object.fromEntries(EXERCISES.map((e) => [e.id, e.name]));
 
@@ -105,18 +106,28 @@ export function PlanningScreen(): React.JSX.Element {
 
   const WEEKDAYS = t('sport.planning.weekdaysShort', { returnObjects: true }) as string[];
 
-  function handleReprogram(w: Workout): void {
-    const base = w.plannedFor ? new Date(`${w.plannedFor.slice(0, 10)}T12:00:00`) : new Date();
-    const nextDate = new Date(base.getTime() + 7 * DAY_MS);
-    const nextKey = dayKey(nextDate);
+  // Reprogramming now asks which day instead of silently jumping +7 days
+  // (TestFlight feedback) — `reprogramTarget` holds the session while its
+  // date picker is open.
+  const [reprogramTarget, setReprogramTarget] = useState<Workout | null>(null);
+
+  function confirmReprogram(w: Workout, plannedFor: ISODateString): void {
+    const nextKey = plannedFor.slice(0, 10);
     reprogram.mutate(
-      { workoutId: w.id, name: w.name, notes: w.notes, plannedFor: nextKey },
+      { workoutId: w.id, name: w.name, notes: w.notes, plannedFor },
       {
         onSuccess: () => Alert.alert(t('sport.planning.reprogramSuccessTitle'), t('sport.planning.reprogramSuccessMessage', { name: w.name, date: longDate(nextKey) })),
         onError: () => Alert.alert(t('sport.planning.reprogramErrorTitle'), t('sport.planning.reprogramErrorMessage')),
       },
     );
   }
+
+  const reprogramDefaultValue: ISODateString = useMemo(() => {
+    const base = reprogramTarget?.plannedFor ? new Date(`${reprogramTarget.plannedFor.slice(0, 10)}T12:00:00`) : new Date();
+    const next = new Date(base.getTime() + 7 * DAY_MS);
+    next.setHours(23, 59, 59, 999);
+    return next.toISOString();
+  }, [reprogramTarget]);
 
   const todayKey = dayKey(new Date());
 
@@ -333,7 +344,7 @@ export function PlanningScreen(): React.JSX.Element {
               onDone={() => setStatus.mutate({ workoutId: w.id, status: 'completed', completedAt: new Date().toISOString() })}
               onSkip={() => setStatus.mutate({ workoutId: w.id, status: 'skipped' })}
               onDelete={() => removePlanned.mutate(w.id)}
-              onReprogram={() => handleReprogram(w)}
+              onReprogram={() => setReprogramTarget(w)}
             />
           ))}
         </View>
@@ -384,6 +395,17 @@ export function PlanningScreen(): React.JSX.Element {
       <Text variant="caption" color="textSubtle" style={{ marginTop: spacing[4], textAlign: 'center' }}>
         {t('sport.planning.footerNote')}
       </Text>
+
+      <DatePickerModal
+        visible={reprogramTarget !== null}
+        value={reprogramDefaultValue}
+        onSelect={(date) => {
+          if (reprogramTarget) confirmReprogram(reprogramTarget, date);
+          setReprogramTarget(null);
+        }}
+        onClose={() => setReprogramTarget(null)}
+        maxDaysFuture={90}
+      />
     </Screen>
   );
 }
@@ -478,27 +500,31 @@ function SessionCard({
           <View style={{ flex: 1 }}>
             <Button label={t('sport.planning.sessionCard.skip')} variant="secondary" onPress={onSkip} fullWidth />
           </View>
-          <Pressable
-            onPress={onReprogram}
-            hitSlop={8}
-            accessibilityLabel={t('sport.planning.sessionCard.reprogramA11y')}
-            style={({ pressed }) => ({
-              opacity: pressed ? 0.5 : 1, width: 44, alignItems: 'center', justifyContent: 'center',
-              borderRadius: radii.md, borderWidth: 1, borderColor: colors.border,
-            })}
-          >
-            <Text style={{ fontSize: 16 }}>↻</Text>
-          </Pressable>
-          <Pressable
-            onPress={onDelete}
-            hitSlop={8}
-            style={({ pressed }) => ({
-              opacity: pressed ? 0.5 : 1, width: 44, alignItems: 'center', justifyContent: 'center',
-              borderRadius: radii.md, borderWidth: 1, borderColor: colors.border,
-            })}
-          >
-            <Icon name="trash" size={16} color={colors.text} />
-          </Pressable>
+          {/* Extra gap vs. the group above so the destructive delete button
+              isn't a fat-finger away from reprogram (TestFlight feedback). */}
+          <View style={{ flexDirection: 'row', gap: spacing[3] }}>
+            <Pressable
+              onPress={onReprogram}
+              hitSlop={6}
+              accessibilityLabel={t('sport.planning.sessionCard.reprogramA11y')}
+              style={({ pressed }) => ({
+                opacity: pressed ? 0.5 : 1, width: 48, alignItems: 'center', justifyContent: 'center',
+                borderRadius: radii.md, borderWidth: 1, borderColor: colors.border,
+              })}
+            >
+              <Text style={{ fontSize: 18 }}>↻</Text>
+            </Pressable>
+            <Pressable
+              onPress={onDelete}
+              hitSlop={6}
+              style={({ pressed }) => ({
+                opacity: pressed ? 0.5 : 1, width: 48, alignItems: 'center', justifyContent: 'center',
+                borderRadius: radii.md, borderWidth: 1, borderColor: colors.error,
+              })}
+            >
+              <Icon name="trash" size={16} color={colors.error} />
+            </Pressable>
+          </View>
         </View>
       </Card>
     </Swipeable>
