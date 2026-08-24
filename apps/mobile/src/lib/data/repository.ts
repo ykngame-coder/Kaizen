@@ -23,6 +23,7 @@ import type {
   UserSessionExercise,
   Visibility,
   WellnessCheckin,
+  GeneralLeaderboardEntry,
 } from '@supotsu/core';
 import type {
   ActivityInput,
@@ -49,6 +50,7 @@ import type {
 import type { MuscleSession } from '@supotsu/engines';
 import { EXERCISE_LIBRARY } from '@supotsu/shared';
 import { EXERCISES as FULL_EXERCISE_CATALOG } from '@/features/exercises/catalog';
+import { categoryToColumn, defaultDisplayName, type DailyScoreColumn, type LeaderboardCategory } from '@/features/community/leaderboardHelpers';
 import {
   insertActivity,
   upsertActivities,
@@ -121,6 +123,10 @@ import {
   deleteGoal as deleteGoalDb,
   getAthleteProfile as getAthleteProfileDb,
   upsertAthleteProfile,
+  getProfile as getProfileDb,
+  updateLeaderboardPrefs as updateLeaderboardPrefsDb,
+  upsertDailyScore as upsertDailyScoreDb,
+  fetchGeneralLeaderboard as fetchGeneralLeaderboardDb,
   type ActivityRow,
   type WorkoutRow,
   type HealthMetricRow,
@@ -289,6 +295,14 @@ export interface DataRepository {
   listMyChallengeIds(userId: string): Promise<string[]>;
   joinChallenge(userId: string, challengeId: string): Promise<void>;
   challengeLeaderboard(challenge: Challenge): Promise<{ userId: string; progress: number }[]>;
+  /** The current user's leaderboard pseudo + opt-in flag. */
+  getLeaderboardPrefs(userId: string): Promise<{ displayName: string | null; leaderboardOptIn: boolean }>;
+  /** Update the pseudo and/or opt-in flag — either field optional. */
+  updateLeaderboardPrefs(userId: string, patch: { displayName?: string; leaderboardOptIn?: boolean }): Promise<void>;
+  /** Upsert today's value for one score column — no-op call site should gate this on opt-in first. */
+  recordDailyScore(userId: string, column: DailyScoreColumn, value: number): Promise<void>;
+  /** Ranked, averaged standings for one category over the last `days` days. */
+  getLeaderboard(userId: string, category: LeaderboardCategory, days: number): Promise<GeneralLeaderboardEntry[]>;
   listPrograms(): Promise<Program[]>;
   listEnrolledProgramIds(userId: string): Promise<string[]>;
   enrollProgram(userId: string, programId: string): Promise<void>;
@@ -862,6 +876,8 @@ const goalKey = (u: string): string => `supotsu.goals.${u}`;
 const profKey = (u: string): string => `supotsu.athleteprofile.${u}`;
 const chKey = (u: string): string => `supotsu.challenges.${u}`;
 const chJoinKey = (u: string): string => `supotsu.challengejoins.${u}`;
+const lbPrefsKey = (u: string): string => `supotsu.leaderboardprefs.${u}`;
+const dailyScoreKey = (u: string): string => `supotsu.dailyscores.${u}`;
 const enrollKey = (u: string): string => `supotsu.enrollments.${u}`;
 // Demo mode is single-user (see listChallenges) — all user-created sessions/
 // programs live under one shared local list, same as challenges.
@@ -1404,6 +1420,53 @@ function createDemoRepository(): DataRepository {
     async challengeLeaderboard(challenge) {
       const activities = await readJson<Activity>(actKey(challenge.userId));
       return [{ userId: challenge.userId, progress: progressInWindow(challenge, activities) }];
+    },
+    async getLeaderboardPrefs(userId) {
+      const raw = await secureStorage.getItem(lbPrefsKey(userId));
+      return raw
+        ? (JSON.parse(raw) as { displayName: string | null; leaderboardOptIn: boolean })
+        : { displayName: null, leaderboardOptIn: false };
+    },
+    async updateLeaderboardPrefs(userId, patch) {
+      const raw = await secureStorage.getItem(lbPrefsKey(userId));
+      const current = raw
+        ? (JSON.parse(raw) as { displayName: string | null; leaderboardOptIn: boolean })
+        : { displayName: null, leaderboardOptIn: false };
+      const next = {
+        displayName: patch.displayName !== undefined ? patch.displayName : current.displayName,
+        leaderboardOptIn: patch.leaderboardOptIn !== undefined ? patch.leaderboardOptIn : current.leaderboardOptIn,
+      };
+      await secureStorage.setItem(lbPrefsKey(userId), JSON.stringify(next));
+    },
+    async recordDailyScore(userId, column, value) {
+      const today = new Date().toISOString().slice(0, 10);
+      const rows = await readJson<{ date: string; kaizen?: number; sport?: number; nutrition?: number; sleep?: number }>(dailyScoreKey(userId));
+      const idx = rows.findIndex((r) => r.date === today);
+      if (idx >= 0) rows[idx] = { ...rows[idx], [column]: value };
+      else rows.push({ date: today, [column]: value });
+      await writeJson(dailyScoreKey(userId), rows);
+    },
+    async getLeaderboard(userId, category, days) {
+      const raw = await secureStorage.getItem(lbPrefsKey(userId));
+      const prefs = raw
+        ? (JSON.parse(raw) as { displayName: string | null; leaderboardOptIn: boolean })
+        : { displayName: null, leaderboardOptIn: false };
+      if (!prefs.leaderboardOptIn) return [];
+      const rows = await readJson<{ date: string; kaizen?: number; sport?: number; nutrition?: number; sleep?: number }>(dailyScoreKey(userId));
+      const column = categoryToColumn(category);
+      const cutoff = new Date(Date.now() - days * 86_400_000).toISOString().slice(0, 10);
+      const inWindow = rows.filter((r) => r.date >= cutoff && r[column] != null);
+      if (inWindow.length === 0) return [];
+      const avg = inWindow.reduce((sum, r) => sum + (r[column] as number), 0) / inWindow.length;
+      return [
+        {
+          userId,
+          displayName: prefs.displayName ?? defaultDisplayName(userId),
+          avatarUrl: undefined,
+          avgScore: Math.round(avg),
+          rank: 1,
+        },
+      ];
     },
     async listPrograms() {
       return PROGRAM_CATALOG;
@@ -1984,6 +2047,29 @@ function createSupabaseRepository(
     async challengeLeaderboard(challenge) {
       const rows = await fetchLeaderboard(client, challenge.id);
       return rows.map((r) => ({ userId: r.user_id, progress: r.progress }));
+    },
+    async getLeaderboardPrefs(userId) {
+      const row = await getProfileDb(client, userId);
+      return { displayName: row?.display_name ?? null, leaderboardOptIn: row?.leaderboard_opt_in ?? false };
+    },
+    async updateLeaderboardPrefs(userId, patch) {
+      await updateLeaderboardPrefsDb(client, userId, {
+        display_name: patch.displayName,
+        leaderboard_opt_in: patch.leaderboardOptIn,
+      });
+    },
+    async recordDailyScore(userId, column, value) {
+      await upsertDailyScoreDb(client, userId, column, value);
+    },
+    async getLeaderboard(_userId, category, days) {
+      const rows = await fetchGeneralLeaderboardDb(client, category, days);
+      return rows.map((r) => ({
+        userId: r.user_id,
+        displayName: r.display_name ?? 'Athlète',
+        avatarUrl: r.avatar_url ?? undefined,
+        avgScore: Math.round(r.avg_score),
+        rank: r.rank,
+      }));
     },
     async listPrograms() {
       return (await listProgramsDb(client)).map(rowToProgram);
