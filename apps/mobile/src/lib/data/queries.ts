@@ -26,6 +26,7 @@ import { useAuth } from '@/features/auth/AuthProvider';
 import { createDataRepository, type HealthMetricInput, type NewCircuitBlockInput, type NewCircuitWorkout, type NewSleepSession, type NewWorkout, type PlannedInput } from './repository';
 import { isHealthKitConnected } from '@/features/connectors/useHealthKitAutoSync';
 import { saveActivityToHealthKit, saveNutritionToHealthKit, saveWorkoutToHealthKit } from '@/features/connectors/healthKitClient';
+import { periodToDays, type DailyScoreColumn, type LeaderboardCategory, type LeaderboardPeriod } from '@/features/community/leaderboardHelpers';
 
 /**
  * Mirrors a manually-logged activity/meal/water/workout into Apple Health,
@@ -285,6 +286,47 @@ export function useChallengeLeaderboard(challenge: Challenge | undefined) {
     queryKey: ['leaderboard', challenge?.id],
     enabled: !!user && !!challenge,
     queryFn: () => repo.challengeLeaderboard(challenge!),
+  });
+}
+
+export function useLeaderboardPrefs() {
+  const { user } = useAuth();
+  const repo = useRepository();
+  return useQuery({
+    queryKey: ['leaderboardPrefs', user?.id],
+    enabled: !!user,
+    queryFn: () => repo.getLeaderboardPrefs(user!.id),
+  });
+}
+
+export function useUpdateLeaderboardPrefs() {
+  const { user } = useAuth();
+  const repo = useRepository();
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (patch: { displayName?: string; leaderboardOptIn?: boolean }) => repo.updateLeaderboardPrefs(user!.id, patch),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['leaderboardPrefs', user?.id] });
+    },
+  });
+}
+
+/** Upsert today's value for one score column — call from a screen once the value is known, gated on leaderboard opt-in. */
+export function useRecordDailyScore() {
+  const { user } = useAuth();
+  const repo = useRepository();
+  return useMutation({
+    mutationFn: (input: { column: DailyScoreColumn; value: number }) => repo.recordDailyScore(user!.id, input.column, input.value),
+  });
+}
+
+export function useLeaderboard(category: LeaderboardCategory, period: LeaderboardPeriod) {
+  const { user } = useAuth();
+  const repo = useRepository();
+  return useQuery({
+    queryKey: ['generalLeaderboard', category, period],
+    enabled: !!user,
+    queryFn: () => repo.getLeaderboard(user!.id, category, periodToDays(period)),
   });
 }
 
