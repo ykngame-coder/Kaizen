@@ -24,6 +24,8 @@ export interface Database {
           theme: 'system' | 'light' | 'dark';
           notifications_enabled: boolean;
           avatar_url: string | null;
+          display_name: string | null;
+          leaderboard_opt_in: boolean;
           created_at: string;
           last_connection_at: string | null;
         };
@@ -36,6 +38,8 @@ export interface Database {
           theme?: 'system' | 'light' | 'dark';
           notifications_enabled?: boolean;
           avatar_url?: string | null;
+          display_name?: string | null;
+          leaderboard_opt_in?: boolean;
         };
         Update: Partial<Database['public']['Tables']['profiles']['Insert']>;
         Relationships: [];
@@ -612,12 +616,37 @@ export interface Database {
         Update: Partial<Database['public']['Tables']['user_program_sessions']['Insert']>;
         Relationships: [];
       };
+      daily_scores: {
+        Row: {
+          user_id: string;
+          date: string;
+          kaizen: number | null;
+          sport: number | null;
+          nutrition: number | null;
+          sleep: number | null;
+          updated_at: string;
+        };
+        Insert: {
+          user_id: string;
+          date: string;
+          kaizen?: number | null;
+          sport?: number | null;
+          nutrition?: number | null;
+          sleep?: number | null;
+        };
+        Update: Partial<Database['public']['Tables']['daily_scores']['Insert']>;
+        Relationships: [];
+      };
     };
     Views: Record<string, never>;
     Functions: {
       challenge_leaderboard: {
         Args: { p_challenge: string };
         Returns: { user_id: string; progress: number }[];
+      };
+      leaderboard: {
+        Args: { p_category: string; p_days: number };
+        Returns: { user_id: string; display_name: string | null; avatar_url: string | null; avg_score: number; rank: number }[];
       };
       my_connectors: {
         Args: Record<string, never>;
