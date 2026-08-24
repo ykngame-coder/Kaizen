@@ -11,6 +11,7 @@ export * from './repositories/sleep';
 export * from './repositories/nutrition';
 export * from './repositories/habits';
 export * from './repositories/community';
+export * from './repositories/leaderboard';
 export * from './repositories/marketplace';
 export * from './repositories/records';
 export * from './repositories/wellness';

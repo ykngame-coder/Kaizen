@@ -50,6 +50,22 @@ export async function updateProfileAvatar(
   return data;
 }
 
+/** Set the pseudo and/or leaderboard opt-in flag — either field is optional so a caller can update just one. */
+export async function updateLeaderboardPrefs(
+  client: SupotsuClient,
+  userId: string,
+  patch: { display_name?: string; leaderboard_opt_in?: boolean },
+): Promise<ProfileRow> {
+  const { data, error } = await client
+    .from('profiles')
+    .update(patch)
+    .eq('id', userId)
+    .select('*')
+    .single();
+  if (error) throw error;
+  return data;
+}
+
 /** Fetch the sport profile; its presence marks onboarding as complete. */
 export async function getAthleteProfile(
   client: SupotsuClient,
