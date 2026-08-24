@@ -266,7 +266,7 @@ export function HabitsScreen(): React.JSX.Element {
         <Card>
           <Text variant="heading">{t('sport.gamification.habitsScreen.disciplineScore.heading')}</Text>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing[4], marginTop: spacing[2] }}>
-            <Text style={{ fontSize: 48, fontWeight: '800', letterSpacing: -1, color: colors.text, flexShrink: 0 }}>{disciplineScore}<Text variant="subtitle" color="textSubtle">/100</Text></Text>
+            <Text style={{ fontSize: 48, fontWeight: '800', letterSpacing: -0.4, color: colors.text, flexShrink: 0 }}>{disciplineScore}<Text variant="subtitle" color="textSubtle">/100</Text></Text>
             <Text variant="body" color="textMuted" style={{ flex: 1, lineHeight: 20 }}>
               {disciplineScore >= 80
                 ? t('sport.gamification.habitsScreen.disciplineScore.excellent')
