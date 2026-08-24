@@ -1,13 +1,13 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { View } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useTranslation } from 'react-i18next';
 import { Badge, Button, Card, EmptyState, Icon, Screen, Text, triggerHaptic, useTheme } from '@supotsu/ui';
 import { radii, spacing } from '@supotsu/design-system';
 import { EXERCISE_LIBRARY } from '@supotsu/shared';
 import { useSetWorkoutStatus, useWorkoutBlocks, useBlockSets, useCompleteBlock, useCustomExercises } from '@/lib/data/queries';
 import { computeAmrapState, computeEmomState, computeForTimeState, formatClock } from './blockRunnerEngine';
 
-const FORMAT_LABEL: Record<string, string> = { strength: 'Musculation', amrap: 'AMRAP', emom: 'EMOM', for_time: 'Pour le temps' };
 const FORMAT_COLOR_KEY: Record<string, 'accentStrength' | 'accentEndurance' | 'accentLime'> = {
   amrap: 'accentStrength',
   emom: 'accentEndurance',
@@ -16,8 +16,16 @@ const FORMAT_COLOR_KEY: Record<string, 'accentStrength' | 'accentEndurance' | 'a
 
 /** Live-guided execution for a session's blocks, one at a time — timer + the current block's exercises, advancing automatically when a timed block finishes. */
 export function CircuitRunnerScreen(): React.JSX.Element {
+  const { t } = useTranslation();
   const router = useRouter();
   const { colors } = useTheme();
+
+  const FORMAT_LABEL: Record<string, string> = {
+    strength: t('sport.circuitRunner.format.strength'),
+    amrap: t('sport.circuitRunner.format.amrap'),
+    emom: t('sport.circuitRunner.format.emom'),
+    for_time: t('sport.circuitRunner.format.forTime'),
+  };
   const { id } = useLocalSearchParams<{ id: string }>();
   const { data: blocks = [], isLoading } = useWorkoutBlocks(id);
   const { data: customExercises = [] } = useCustomExercises();
@@ -95,14 +103,20 @@ export function CircuitRunnerScreen(): React.JSX.Element {
   if (isLoading) {
     return (
       <Screen>
-        <Text variant="body" color="textMuted">Chargement…</Text>
+        <Text variant="body" color="textMuted">{t('common.loading')}</Text>
       </Screen>
     );
   }
   if (!active) {
     return (
       <Screen>
-        <EmptyState icon={<Icon name="dumbbell" size={44} color={colors.textSubtle} />} title="Séance introuvable" message="Cette séance n'a pas de bloc à exécuter." actionLabel="Retour" onAction={() => router.back()} />
+        <EmptyState
+          icon={<Icon name="dumbbell" size={44} color={colors.textSubtle} />}
+          title={t('sport.circuitRunner.notFound.title')}
+          message={t('sport.circuitRunner.notFound.message')}
+          actionLabel={t('common.back')}
+          onAction={() => router.back()}
+        />
       </Screen>
     );
   }
@@ -114,7 +128,7 @@ export function CircuitRunnerScreen(): React.JSX.Element {
     <Screen style={{ flex: 1 }}>
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing[2] }}>
         <Text variant="heading">{FORMAT_LABEL[active.format]}</Text>
-        {blocks.length > 1 ? <Badge label={`Bloc ${activeIndex + 1} / ${blocks.length}`} tone="info" /> : null}
+        {blocks.length > 1 ? <Badge label={t('sport.circuitRunner.blockCounter', { current: activeIndex + 1, total: blocks.length })} tone="info" /> : null}
       </View>
 
       {active.format === 'strength' ? (
@@ -124,18 +138,20 @@ export function CircuitRunnerScreen(): React.JSX.Element {
               <Card key={s.id}>
                 <Text variant="body" style={{ fontWeight: '700' }}>{exerciseName(s.exerciseId)}</Text>
                 <Text variant="caption" color="textSubtle">
-                  {s.reps != null ? `${s.reps} reps` : '—'}{s.weightKg != null ? ` · ${s.weightKg} kg` : ''}
+                  {s.reps != null ? t('sport.circuitRunner.reps', { reps: s.reps }) : '—'}{s.weightKg != null ? t('sport.circuitRunner.weightSuffix', { weight: s.weightKg }) : ''}
                 </Text>
               </Card>
             ))}
           </View>
-          <Button label="Bloc suivant" onPress={() => void finishActiveBlock()} />
+          <Button label={t('sport.circuitRunner.nextBlock')} onPress={() => void finishActiveBlock()} />
         </View>
       ) : (
         <View style={{ flex: 1, gap: spacing[4] }}>
           <View style={{ alignItems: 'center', gap: spacing[3] }}>
             <Text variant="caption" color="textSubtle">
-              {active.format === 'emom' ? `Intervalle ${state!.currentRound} / ${active.targetRounds}` : `Round ${state!.currentRound}`}
+              {active.format === 'emom'
+                ? t('sport.circuitRunner.interval', { current: state!.currentRound, total: active.targetRounds })
+                : t('sport.circuitRunner.round', { current: state!.currentRound })}
             </Text>
             <View style={{ width: 224, height: 224, borderRadius: radii.full, borderWidth: 3, borderColor: accent, backgroundColor: `${accent}22`, alignItems: 'center', justifyContent: 'center' }}>
               <Text variant="display">{formatClock(state!.displaySec)}</Text>
@@ -145,13 +161,19 @@ export function CircuitRunnerScreen(): React.JSX.Element {
             {sets.map((s) => (
               <Card key={s.id}>
                 <Text variant="body" style={{ fontWeight: '700' }}>{exerciseName(s.exerciseId)}</Text>
-                <Text variant="caption" color="textSubtle">{s.reps != null ? `${s.reps} reps` : s.durationSec != null ? `${s.durationSec} s` : '—'}</Text>
+                <Text variant="caption" color="textSubtle">
+                  {s.reps != null
+                    ? t('sport.circuitRunner.reps', { reps: s.reps })
+                    : s.durationSec != null
+                      ? t('sport.circuitRunner.durationSec', { sec: s.durationSec })
+                      : '—'}
+                </Text>
               </Card>
             ))}
           </View>
           <View style={{ flexDirection: 'row', gap: spacing[3] }}>
-            <Button label="Arrêter" variant="secondary" onPress={() => router.back()} />
-            {active.format !== 'emom' ? <Button label="Round terminé" onPress={() => setRoundsCompleted((r) => r + 1)} /> : null}
+            <Button label={t('sport.circuitRunner.stop')} variant="secondary" onPress={() => router.back()} />
+            {active.format !== 'emom' ? <Button label={t('sport.circuitRunner.roundDone')} onPress={() => setRoundsCompleted((r) => r + 1)} /> : null}
           </View>
         </View>
       )}

@@ -1,24 +1,30 @@
 import React, { useState } from 'react';
 import { Pressable, View } from 'react-native';
 import { useRouter } from 'expo-router';
+import { useTranslation } from 'react-i18next';
+import type { TFunction } from 'i18next';
 import { Badge, Button, Card, Input, Screen, SegmentedControl, Text, useTheme } from '@supotsu/ui';
 import { spacing } from '@supotsu/design-system';
 import { habitInputSchema, type HabitInput } from '@supotsu/shared';
 import { useAddHabit } from '@/lib/data/queries';
 import { linkedKindFor, LINKED_LABEL } from './linkedHabits';
 
-const PILLARS = [
-  { value: 'habits', label: 'Habitude' },
-  { value: 'nutrition', label: 'Nutrition' },
-  { value: 'recovery', label: 'Récup' },
-  { value: 'sleep', label: 'Sommeil' },
-  { value: 'performance', label: 'Sport' },
-] as const;
+function pillarOptions(t: TFunction) {
+  return [
+    { value: 'habits', label: t('sport.gamification.addHabit.pillars.habits') },
+    { value: 'nutrition', label: t('sport.gamification.addHabit.pillars.nutrition') },
+    { value: 'recovery', label: t('sport.gamification.addHabit.pillars.recovery') },
+    { value: 'sleep', label: t('sport.gamification.addHabit.pillars.sleep') },
+    { value: 'performance', label: t('sport.gamification.addHabit.pillars.performance') },
+  ] as const;
+}
 
-const CADENCE = [
-  { value: 'daily', label: 'Quotidienne' },
-  { value: 'weekly', label: 'Hebdo' },
-] as const;
+function cadenceOptions(t: TFunction) {
+  return [
+    { value: 'daily', label: t('sport.gamification.addHabit.cadence.daily') },
+    { value: 'weekly', label: t('sport.gamification.addHabit.cadence.weekly') },
+  ] as const;
+}
 
 /**
  * Ready-made habits — tapping one fills the form below instead of starting
@@ -27,23 +33,29 @@ const CADENCE = [
  * (see the live hint under the name field) instead of the user having to
  * guess the right wording for that to kick in.
  */
-type PillarOption = (typeof PILLARS)[number]['value'];
+type PillarOption = 'habits' | 'nutrition' | 'recovery' | 'sleep' | 'performance';
 
-const PRESETS: { emoji: string; name: string; pillar: PillarOption; cadence: 'daily' | 'weekly'; targetPerPeriod: number }[] = [
-  { emoji: '💧', name: "Boire de l'eau", pillar: 'nutrition', cadence: 'daily', targetPerPeriod: 1 },
-  { emoji: '🚶', name: 'Marche quotidienne', pillar: 'performance', cadence: 'daily', targetPerPeriod: 1 },
-  { emoji: '😴', name: 'Se coucher tôt', pillar: 'sleep', cadence: 'daily', targetPerPeriod: 1 },
-  { emoji: '🧘', name: 'Étirements', pillar: 'recovery', cadence: 'daily', targetPerPeriod: 1 },
-  { emoji: '📖', name: 'Lecture', pillar: 'habits', cadence: 'daily', targetPerPeriod: 1 },
-  { emoji: '💊', name: 'Médicament', pillar: 'habits', cadence: 'daily', targetPerPeriod: 2 },
-  { emoji: '🏋️', name: 'Séance de sport', pillar: 'performance', cadence: 'weekly', targetPerPeriod: 3 },
-];
+function presets(t: TFunction): { emoji: string; name: string; pillar: PillarOption; cadence: 'daily' | 'weekly'; targetPerPeriod: number }[] {
+  return [
+    { emoji: '💧', name: t('sport.gamification.addHabit.presets.water'), pillar: 'nutrition', cadence: 'daily', targetPerPeriod: 1 },
+    { emoji: '🚶', name: t('sport.gamification.addHabit.presets.walk'), pillar: 'performance', cadence: 'daily', targetPerPeriod: 1 },
+    { emoji: '😴', name: t('sport.gamification.addHabit.presets.sleep'), pillar: 'sleep', cadence: 'daily', targetPerPeriod: 1 },
+    { emoji: '🧘', name: t('sport.gamification.addHabit.presets.stretch'), pillar: 'recovery', cadence: 'daily', targetPerPeriod: 1 },
+    { emoji: '📖', name: t('sport.gamification.addHabit.presets.reading'), pillar: 'habits', cadence: 'daily', targetPerPeriod: 1 },
+    { emoji: '💊', name: t('sport.gamification.addHabit.presets.medication'), pillar: 'habits', cadence: 'daily', targetPerPeriod: 2 },
+    { emoji: '🏋️', name: t('sport.gamification.addHabit.presets.workout'), pillar: 'performance', cadence: 'weekly', targetPerPeriod: 3 },
+  ];
+}
 
 /** Create a habit (Master Prompt P12 habitudes). */
 export function AddHabitScreen(): React.JSX.Element {
+  const { t } = useTranslation();
   const router = useRouter();
   const { colors } = useTheme();
   const addHabit = useAddHabit();
+  const PILLARS = pillarOptions(t);
+  const CADENCE = cadenceOptions(t);
+  const PRESETS = presets(t);
 
   const [name, setName] = useState('');
   const [pillar, setPillar] = useState<(typeof PILLARS)[number]['value']>('habits');
@@ -65,28 +77,28 @@ export function AddHabitScreen(): React.JSX.Element {
     setError(null);
     const parsed = habitInputSchema.safeParse({ name, pillar, cadence, targetPerPeriod: target });
     if (!parsed.success) {
-      setError('Donne un nom à ton habitude.');
+      setError(t('sport.gamification.addHabit.errors.nameRequired'));
       return;
     }
     try {
       await addHabit.mutateAsync(parsed.data as HabitInput);
       router.back();
     } catch {
-      setError('Enregistrement impossible.');
+      setError(t('sport.gamification.addHabit.errors.saveFailed'));
     }
   };
 
   return (
     <Screen scroll>
-      <Text variant="title">Nouvelle habitude</Text>
+      <Text variant="title">{t('sport.gamification.addHabit.title')}</Text>
       <Text variant="caption" color="textMuted">
-        Petite, concrète, répétable : c'est la régularité qui compte.
+        {t('sport.gamification.addHabit.subtitle')}
       </Text>
 
       <Card>
-        <Text variant="heading">Modèles</Text>
+        <Text variant="heading">{t('sport.gamification.addHabit.modelsHeading')}</Text>
         <Text variant="caption" color="textSubtle" style={{ marginBottom: spacing[2] }}>
-          Pré-remplit le formulaire — tout reste modifiable ensuite.
+          {t('sport.gamification.addHabit.modelsHint')}
         </Text>
         <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: spacing[2] }}>
           {PRESETS.map((p) => {
@@ -116,23 +128,23 @@ export function AddHabitScreen(): React.JSX.Element {
         </View>
       </Card>
 
-      <Input label="Nom (ex. Boire 2L d'eau)" value={name} onChangeText={setName} />
+      <Input label={t('sport.gamification.addHabit.nameLabel')} value={name} onChangeText={setName} />
       {linked ? (
         <Text variant="caption" color="primary">
-          🔗 Suivi automatique — se validera seule à partir de {LINKED_LABEL[linked]}, pas besoin de la cocher à la main.
+          {t('sport.gamification.addHabit.linkedHint', { source: LINKED_LABEL[linked] })}
         </Text>
       ) : null}
 
       <View style={{ gap: spacing[2] }}>
         <Text variant="label" color="textMuted">
-          PILIER
+          {t('sport.gamification.addHabit.pillarLabel')}
         </Text>
         <SegmentedControl options={PILLARS} value={pillar} onChange={setPillar} />
       </View>
 
       <View style={{ gap: spacing[2] }}>
         <Text variant="label" color="textMuted">
-          FRÉQUENCE
+          {t('sport.gamification.addHabit.frequencyLabel')}
         </Text>
         <SegmentedControl options={CADENCE} value={cadence} onChange={setCadence} />
       </View>
@@ -140,23 +152,23 @@ export function AddHabitScreen(): React.JSX.Element {
       {!linked && (
         <View style={{ gap: spacing[2] }}>
           <Text variant="label" color="textMuted">
-            CIBLE {cadence === 'daily' ? 'PAR JOUR' : 'PAR SEMAINE'}
+            {cadence === 'daily' ? t('sport.gamification.addHabit.targetPerDay') : t('sport.gamification.addHabit.targetPerWeek')}
           </Text>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing[3] }}>
             <Pressable
-              onPress={() => setTarget((t) => Math.max(1, t - 1))}
+              onPress={() => setTarget((n) => Math.max(1, n - 1))}
               style={{ width: 36, height: 36, borderRadius: 18, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.surfaceElevated, borderWidth: 1, borderColor: colors.border }}
             >
               <Text variant="body" style={{ fontWeight: '700' }}>−</Text>
             </Pressable>
             <Text variant="subtitle" style={{ minWidth: 28, textAlign: 'center' }}>{target}</Text>
             <Pressable
-              onPress={() => setTarget((t) => Math.min(50, t + 1))}
+              onPress={() => setTarget((n) => Math.min(50, n + 1))}
               style={{ width: 36, height: 36, borderRadius: 18, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.surfaceElevated, borderWidth: 1, borderColor: colors.border }}
             >
               <Text variant="body" style={{ fontWeight: '700' }}>+</Text>
             </Pressable>
-            <Text variant="caption" color="textSubtle">fois</Text>
+            <Text variant="caption" color="textSubtle">{t('sport.gamification.addHabit.timesLabel')}</Text>
           </View>
         </View>
       )}
@@ -164,10 +176,10 @@ export function AddHabitScreen(): React.JSX.Element {
       {error ? <Badge label={error} tone="error" /> : null}
 
       <View style={{ flexDirection: 'row', gap: spacing[2], marginTop: spacing[2] }}>
-        <Button label="Annuler" variant="secondary" onPress={() => router.back()} />
+        <Button label={t('common.cancel')} variant="secondary" onPress={() => router.back()} />
         <View style={{ flex: 1 }} />
         <Button
-          label={addHabit.isPending ? '…' : 'Créer'}
+          label={addHabit.isPending ? '…' : t('sport.gamification.addHabit.createButton')}
           onPress={submit}
           disabled={addHabit.isPending}
         />

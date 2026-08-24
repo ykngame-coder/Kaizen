@@ -1,6 +1,7 @@
 import React, { useMemo } from 'react';
 import { View } from 'react-native';
 import { useRouter } from 'expo-router';
+import { useTranslation } from 'react-i18next';
 import { Button, Card, Text, useTheme } from '@supotsu/ui';
 import { spacing } from '@supotsu/design-system';
 import { useHabitLogs, useHabits, useLogHabit } from '@/lib/data/queries';
@@ -12,6 +13,7 @@ const sameDay = (a: string, b: string): boolean => a.slice(0, 10) === b.slice(0,
  * a habit feeds the habits pillar and, over consecutive days, the streak/badges.
  */
 export function HabitsCard(): React.JSX.Element {
+  const { t } = useTranslation();
   const { colors } = useTheme();
   const router = useRouter();
   const { data: habits = [] } = useHabits();
@@ -27,10 +29,10 @@ export function HabitsCard(): React.JSX.Element {
 
   return (
     <Card>
-      <Text variant="heading">Habitudes du jour</Text>
+      <Text variant="heading">{t('sport.gamification.habitsCard.heading')}</Text>
       {habits.length === 0 ? (
         <Text variant="body" color="textMuted">
-          Crée une habitude simple (eau, mobilité, sommeil…) pour construire ta régularité.
+          {t('sport.gamification.habitsCard.emptyMessage')}
         </Text>
       ) : (
         <View style={{ gap: spacing[2], marginTop: spacing[1] }}>
@@ -46,7 +48,7 @@ export function HabitsCard(): React.JSX.Element {
                   {h.name}
                 </Text>
                 <Button
-                  label={done ? 'Fait' : 'Valider'}
+                  label={done ? t('sport.gamification.habitsCard.done') : t('sport.gamification.habitsCard.validate')}
                   variant={done ? 'secondary' : 'primary'}
                   disabled={done || logHabit.isPending}
                   onPress={() => logHabit.mutate(h.id)}
@@ -57,10 +59,10 @@ export function HabitsCard(): React.JSX.Element {
         </View>
       )}
       <View style={{ alignItems: 'flex-start', marginTop: spacing[2] }}>
-        <Button label="Nouvelle habitude" variant="secondary" onPress={() => router.push('/profile/habit/new')} />
+        <Button label={t('sport.gamification.habitsCard.newHabit')} variant="secondary" onPress={() => router.push('/profile/habit/new')} />
       </View>
       <Text variant="caption" style={{ color: colors.textMuted, marginTop: spacing[1] }}>
-        Chaque validation nourrit ta série et tes badges.
+        {t('sport.gamification.habitsCard.footerHint')}
       </Text>
     </Card>
   );

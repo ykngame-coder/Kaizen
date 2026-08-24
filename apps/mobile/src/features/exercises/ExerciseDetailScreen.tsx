@@ -1,12 +1,14 @@
 import React, { useMemo } from 'react';
 import { Image, View } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useTranslation } from 'react-i18next';
 import { Badge, Button, Card, EmptyState, Icon, Screen, Text, useTheme } from '@supotsu/ui';
 import { radii, spacing } from '@supotsu/design-system';
 import { EXERCISES, MUSCLE_LABEL, exerciseImageUrl } from './catalog';
 
 /** Exercise detail — image, targeted muscles, equipment/level, step-by-step instructions. */
 export function ExerciseDetailScreen(): React.JSX.Element {
+  const { t } = useTranslation();
   const router = useRouter();
   const { colors } = useTheme();
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -15,7 +17,7 @@ export function ExerciseDetailScreen(): React.JSX.Element {
   if (!exercise) {
     return (
       <Screen scroll>
-        <EmptyState icon={<Icon name="dumbbell" size={44} color={colors.textSubtle} />} title="Exercice introuvable" message="Cet exercice n'existe pas dans le catalogue." actionLabel="Retour" onAction={() => router.back()} />
+        <EmptyState icon={<Icon name="dumbbell" size={44} color={colors.textSubtle} />} title={t('sport.exercises.detail.notFoundTitle')} message={t('sport.exercises.detail.notFoundMessage')} actionLabel={t('common.back')} onAction={() => router.back()} />
       </Screen>
     );
   }
@@ -38,16 +40,16 @@ export function ExerciseDetailScreen(): React.JSX.Element {
       <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: spacing[2] }}>
         <Badge label={exercise.equipment} tone="info" />
         <Badge label={exercise.level} tone="neutral" />
-        {exercise.mechanic ? <Badge label={exercise.mechanic === 'compound' ? 'Polyarticulaire' : 'Isolation'} tone="neutral" /> : null}
+        {exercise.mechanic ? <Badge label={exercise.mechanic === 'compound' ? t('sport.exercises.detail.mechanicCompound') : t('sport.exercises.detail.mechanicIsolation')} tone="neutral" /> : null}
       </View>
 
       {/* Muscles */}
       <Card>
-        <Text variant="heading">Muscles ciblés</Text>
+        <Text variant="heading">{t('sport.exercises.detail.targetMusclesHeading')}</Text>
         <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: spacing[2], marginTop: spacing[2] }}>
           {muscles.map((m, i) => (
             <View key={`${m}-${i}`} style={{ borderRadius: radii.full, paddingHorizontal: 12, paddingVertical: 6, backgroundColor: i === 0 ? 'rgba(45,127,249,0.16)' : colors.surfaceElevated, borderWidth: 1, borderColor: i === 0 ? 'rgba(45,127,249,0.35)' : colors.border }}>
-              <Text variant="caption" style={{ color: i === 0 ? colors.primary : colors.textMuted, fontWeight: '600' }}>{MUSCLE_LABEL[m]}{i === 0 ? ' (principal)' : ''}</Text>
+              <Text variant="caption" style={{ color: i === 0 ? colors.primary : colors.textMuted, fontWeight: '600' }}>{MUSCLE_LABEL[m]}{i === 0 ? t('sport.exercises.detail.primaryMuscleSuffix') : ''}</Text>
             </View>
           ))}
         </View>
@@ -56,7 +58,7 @@ export function ExerciseDetailScreen(): React.JSX.Element {
       {/* Instructions */}
       {exercise.instructions.length > 0 ? (
         <Card>
-          <Text variant="heading">Exécution</Text>
+          <Text variant="heading">{t('sport.exercises.detail.executionHeading')}</Text>
           <View style={{ gap: spacing[3], marginTop: spacing[3] }}>
             {exercise.instructions.map((step, i) => (
               <View key={i} style={{ flexDirection: 'row', gap: spacing[3] }}>
@@ -69,7 +71,7 @@ export function ExerciseDetailScreen(): React.JSX.Element {
       ) : null}
 
       <View style={{ flexDirection: 'row', gap: spacing[3] }}>
-        <Button label="Retour" variant="secondary" onPress={() => router.back()} />
+        <Button label={t('common.back')} variant="secondary" onPress={() => router.back()} />
       </View>
     </Screen>
   );

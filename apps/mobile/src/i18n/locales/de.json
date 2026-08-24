@@ -133,9 +133,19 @@
         "faible": "niedrig"
       },
       "section": {
-        "recovery": { "title": "Erholung", "noData": "Verbinde deine Gesundheitsdaten" },
-        "readiness": { "title": "Trainingsbereitschaft", "noData": "Basierend auf Erholung + Belastung" },
-        "nutrition": { "title": "Ernährung", "today": "heutige Zufuhr", "noData": "Füge eine Mahlzeit hinzu" }
+        "recovery": {
+          "title": "Erholung",
+          "noData": "Verbinde deine Gesundheitsdaten"
+        },
+        "readiness": {
+          "title": "Trainingsbereitschaft",
+          "noData": "Basierend auf Erholung + Belastung"
+        },
+        "nutrition": {
+          "title": "Ernährung",
+          "today": "heutige Zufuhr",
+          "noData": "Füge eine Mahlzeit hinzu"
+        }
       }
     },
     "load": {
@@ -399,6 +409,1020 @@
         "stable": "Alles gut: behalte die Routinen bei, die dir guttun.",
         "fragile": "Gönn dir eine Pause: ein paar Minuten Atemübungen können helfen.",
         "difficile": "Anspruchsvoller Tag — sei nachsichtig mit dir und priorisiere die Ruhe."
+      }
+    }
+  },
+  "sport": {
+    "screen": {
+      "title": "Sport",
+      "subtitle": "Bereit für dein Training?",
+      "searchExercise": "Übung suchen",
+      "muscle": {
+        "chest": "Brust",
+        "back": "Rücken",
+        "shoulders": "Schultern",
+        "biceps": "Bizeps",
+        "triceps": "Trizeps",
+        "quads": "Quadrizeps",
+        "hamstrings": "Beinbeuger",
+        "glutes": "Gesäß",
+        "calves": "Waden",
+        "core": "Bauch"
+      },
+      "duration": {
+        "hoursMinutes": "{{h}} Std {{m}} Min",
+        "minutes": "{{m}} Min"
+      },
+      "planLabel": {
+        "tbd": "Datum noch offen",
+        "today": "Heute"
+      },
+      "session": {
+        "noneToday": "Heute ist kein Training geplant",
+        "noneThatDay": "An diesem Tag ist kein Training geplant",
+        "chooseFocus": "Wähle einen Fokus je nach deiner Erholung",
+        "viewPlanning": "Planung ansehen ›",
+        "createSession": "Training erstellen ›"
+      },
+      "score": {
+        "heading": "Sport-Score",
+        "description": "Leistung, Regelmäßigkeit und Fortschritt kombiniert.",
+        "performance": "Leistung",
+        "regularity": "Regelmäßigkeit",
+        "progression": "Fortschritt"
+      },
+      "body": {
+        "heading": "Körperzustand",
+        "globalRecovery": "Gesamterholung",
+        "stillTired": "Noch erschöpft:",
+        "allRecovered": "Alle Muskelgruppen sind erholt 💪",
+        "load": "Belastung (ACWR)",
+        "vo2max": "VO₂ Max"
+      },
+      "muscleRecovery": {
+        "heading": "Muskelerholung",
+        "viewAll": "Ansehen ›"
+      },
+      "recent": {
+        "heading": "Letzte 3 Aktivitäten",
+        "empty": "Keine Aktivität erfasst. Erstelle dein erstes Training aus der Übungsbibliothek.",
+        "viewAllHistory": "Gesamten Verlauf ansehen ›",
+        "rpe": "RPE {{rpe}}"
+      },
+      "week": {
+        "heading": "Diese Woche",
+        "sessions": "Trainings",
+        "totalTime": "Gesamtzeit",
+        "calories": "Kalorien",
+        "avgRpe": "Ø RPE"
+      },
+      "nav": {
+        "activities": {
+          "title": "Aktivitäten",
+          "subtitle": "Laufen, Gehen, Rad… Verlauf und Hinzufügen"
+        },
+        "import": {
+          "title": "Screenshot importieren",
+          "subtitle": "Foto vom Training → wird automatisch und lokal erkannt"
+        },
+        "planning": {
+          "title": "Planung",
+          "subtitle": "Plane deine Trainings + Erholungsprognose"
+        },
+        "calendar": {
+          "title": "Kalender",
+          "subtitle": "Deine Trainings und Termine"
+        },
+        "programs": {
+          "title": "Programme",
+          "subtitle": "Strukturierte und empfohlene Programme"
+        },
+        "muscleRecovery": {
+          "title": "Muskelerholung",
+          "subtitle": "Erschöpfte vs. trainingsbereite Muskeln"
+        },
+        "stomachVacuum": {
+          "title": "Stomach Vacuum",
+          "subtitle": "Stärkung des Transversus, geführte Einheit"
+        },
+        "timers": {
+          "title": "Timer",
+          "subtitle": "Tabata, HIIT, EMOM oder eigene"
+        },
+        "exercises": {
+          "title": "Übungen",
+          "subtitle": "Bibliothek, Muskeln, Ausrüstung"
+        },
+        "muscleProgress": {
+          "title": "Muskelfortschritt",
+          "subtitle": "Entwicklung pro Muskel + deine Rekorde (1RM, Bestzeiten…)"
+        }
+      },
+      "newSession": "Neues Training"
+    },
+    "ocrImport": {
+      "title": "Screenshot importieren",
+      "unavailable": "Das Auslesen von Screenshots funktioniert nur in der mobilen App (iOS / Android) — es nutzt die Texterkennung des Geräts, die im Web nicht verfügbar ist.",
+      "subtitle": "Mach ein Foto von deinem Training oder wähle eins aus — die Erkennung läuft komplett auf deinem Handy, es wird nichts irgendwohin gesendet. Du überprüfst und korrigierst jede Zeile, bevor du speicherst.",
+      "capture": {
+        "heading": "Screenshot",
+        "hint": "Funktioniert am besten mit klarem Text: Übungsname + Sätze × Wiederholungen (+ Gewicht). Bsp.: „Bankdrücken 4×8 60kg“.",
+        "button": "Screenshot auswählen",
+        "buttonBusy": "Wird gelesen…",
+        "noTextFound": "Kein Trainingstext in diesem Bild erkannt. Versuche es mit einem schärferen Screenshot erneut."
+      },
+      "errorFallback": "Bild konnte nicht gelesen werden.",
+      "nameLabel": "Name des Trainings",
+      "namePlaceholder": "Bsp.: Push A",
+      "confidence": {
+        "high": "Zuverlässig erkannt",
+        "medium": "Zu überprüfen",
+        "toConfirm": "Nicht erkannt"
+      },
+      "picker": {
+        "placeholder": "Übung aus dem Katalog wählen…",
+        "search": "Übung suchen…",
+        "noResults": "Keine Ergebnisse für „{{query}}“."
+      },
+      "repsLabel": "Wiederholungen",
+      "weightLabel": "Gewicht (kg)",
+      "addSet": "+ Satz hinzufügen",
+      "save": "Training speichern",
+      "saving": "…",
+      "errors": {
+        "noExercises": "Keine Übung zum Speichern.",
+        "unmatchedExercises": "Manche Übungen wurden nicht erkannt — wähle sie aus der Liste, bevor du speicherst.",
+        "noSets": "Füge mindestens einen Satz hinzu, bevor du speicherst.",
+        "saveFailed": "Speichern nicht möglich."
+      },
+      "defaultSessionName": "Importiertes Training"
+    },
+    "circuitRunner": {
+      "format": {
+        "strength": "Krafttraining",
+        "amrap": "AMRAP",
+        "emom": "EMOM",
+        "forTime": "Auf Zeit"
+      },
+      "blockCounter": "Block {{current}} / {{total}}",
+      "notFound": {
+        "title": "Training nicht gefunden",
+        "message": "Dieses Training hat keinen auszuführenden Block."
+      },
+      "nextBlock": "Nächster Block",
+      "interval": "Intervall {{current}} / {{total}}",
+      "round": "Runde {{current}}",
+      "reps": "{{reps}} Wdh.",
+      "weightSuffix": " · {{weight}} kg",
+      "durationSec": "{{sec}} s",
+      "stop": "Stoppen",
+      "roundDone": "Runde beendet"
+    },
+    "intervalTimer": {
+      "title": "Intervall-Timer",
+      "subtitle": "Tabata, HIIT, EMOM oder eigene — Belastung / Pause / Runden.",
+      "presetLabel": "Preset",
+      "presets": {
+        "tabata": "Tabata",
+        "hiit": "HIIT",
+        "emom": "EMOM",
+        "custom": "Eigene"
+      },
+      "workLabel": "Belastung (s)",
+      "restLabel": "Pause (s)",
+      "roundsLabel": "Runden",
+      "summary": "{{rounds}} Runden · {{work}}s Belastung / {{rest}}s Pause · Gesamtdauer ≈ {{totalMin}} Min",
+      "start": "Starten",
+      "preparation": "Vorbereitung",
+      "round": "Runde {{round}} / {{rounds}}",
+      "phase": {
+        "prep": "Mach dich bereit",
+        "work": "Belastung",
+        "rest": "Pause"
+      },
+      "stop": "Stoppen",
+      "done": {
+        "heading": "Training beendet",
+        "summary": "{{rounds}} Runden · {{work}}s / {{rest}}s",
+        "restart": "Neues Training starten"
+      }
+    },
+    "stomachVacuum": {
+      "title": "Stomach Vacuum",
+      "subtitle": "Kräftigung des Transversus — ausatmen, Bauch einziehen, halten, lösen.",
+      "record": "Dein Rekord: {{sec}}s Haltezeit",
+      "noRecord": "Noch kein Training gespeichert — jetzt bist du dran.",
+      "setsLabel": "Sätze",
+      "sets": {
+        "count": "{{n}} Sätze",
+        "placeholder": "Zwischen {{min}} und {{max}}"
+      },
+      "custom": "Eigene",
+      "holdLabel": "Haltezeit",
+      "hold": {
+        "duration": "{{n}} s",
+        "placeholder": "In Sekunden, zwischen {{min}} und {{max}}"
+      },
+      "start": "Starten",
+      "setCounter": "Satz {{current}} / {{total}}",
+      "phase": {
+        "exhale": "Vollständig ausatmen",
+        "vacuum": "Bauch einziehen",
+        "hold": "Halten",
+        "release": "Lösen"
+      },
+      "resting": "Pause",
+      "stop": "Stoppen",
+      "done": {
+        "heading": "Training gespeichert",
+        "summary": "{{totalSets}} Sätze · Haltezeit {{holdSec}}s — zu deinem Aktivitätsverlauf hinzugefügt.",
+        "restart": "Neues Training starten"
+      }
+    },
+    "goals": {
+      "screen": {
+        "title": "Ziele",
+        "subtitle": "Leistung • Gesundheit • Wohlbefinden",
+        "addGoalButton": "+ Ziel",
+        "typeOptions": {
+          "bodyComposition": "Gewicht / Zusammensetzung",
+          "performance": "Leistung",
+          "strength": "Kraft",
+          "endurance": "Ausdauer",
+          "health": "Gesundheit",
+          "habit": "Gewohnheit"
+        },
+        "archetypes": {
+          "fatLoss": {
+            "name": "Fettabbau",
+            "desc": "Defizit, Gewicht, Körperfett"
+          },
+          "muscle": {
+            "name": "Muskelaufbau",
+            "desc": "Überschuss, Kraft, Volumen"
+          },
+          "hyrox": {
+            "name": "Hyrox-Vorbereitung",
+            "desc": "Belastung, VO₂, Ausdauer"
+          },
+          "marathon": {
+            "name": "Marathon",
+            "desc": "Distanz, Tempo, Erholung"
+          },
+          "sleep": {
+            "name": "Schlaf",
+            "desc": "Dauer, Regelmäßigkeit, HRV"
+          },
+          "stress": {
+            "name": "Stressreduktion",
+            "desc": "HRV, Atmung, Erholung"
+          }
+        },
+        "primaryGoal": {
+          "heading": "Hauptziel",
+          "hint": "Nur eine aktive Auswahl — sie personalisiert die gesamte App."
+        },
+        "body": {
+          "heading": "Körperziele",
+          "manageA11y": "Gewichtsziel verwalten",
+          "currentWeightLabel": "Aktuelles Gewicht",
+          "targetWeightLabel": "Zielgewicht (kg)",
+          "targetWeightSummaryLabel": "Zielgewicht",
+          "bodyFatLabel": "Aktueller Körperfettanteil",
+          "targetDateLabel": "Zieldatum",
+          "pickDate": "Datum wählen",
+          "toDefine": "Noch offen",
+          "defaultTitle": "Zielgewicht"
+        },
+        "weightTrend": {
+          "heading": "Gewichtstrend",
+          "overPeriod": "{{sign}}{{value}} im Zeitraum"
+        },
+        "form": {
+          "heading": "Neues Ziel",
+          "typeLabel": "TYP",
+          "titleLabel": "Titel",
+          "titlePlaceholder": "Bsp. Auf 96 kg kommen",
+          "currentLabel": "Aktuell",
+          "targetLabel": "Ziel",
+          "unitLabel": "Einheit",
+          "creating": "Wird erstellt…",
+          "createButton": "Ziel erstellen"
+        },
+        "myGoals": {
+          "heading": "Meine Ziele",
+          "emptyTitle": "Kein Ziel",
+          "emptyMessage": "Setz dir ein erstes Ziel — Gewicht, Leistung oder Gewohnheit — und verfolge deinen Fortschritt.",
+          "emptyAction": "Ziel erstellen",
+          "projection": "Prognose: Ziel im aktuellen Tempo etwa am {{date}} erreicht."
+        },
+        "priorities": {
+          "heading": "Prioritäten",
+          "hint": "Kaizen priorisiert die Ratschläge nach dieser Reihenfolge."
+        },
+        "goalCard": {
+          "edit": "Ziel bearbeiten",
+          "titleLabel": "Titel",
+          "targetLabel": "Ziel",
+          "unitLabel": "Einheit",
+          "achieved": "Erreicht 🎉",
+          "deadline": "Frist: {{date}}",
+          "deleteConfirm": "Dieses Ziel endgültig löschen?",
+          "deleteA11y": "Ziel löschen",
+          "delete": "Löschen",
+          "currentValueLabel": "Aktueller Wert",
+          "updateButton": "Aktualisieren"
+        }
+      },
+      "objectifsCard": {
+        "heading": "Ziele",
+        "seeAll": "Alle ansehen ›"
+      }
+    },
+    "gamification": {
+      "addHabit": {
+        "title": "Neue Gewohnheit",
+        "subtitle": "Klein, konkret, wiederholbar: Regelmäßigkeit zählt.",
+        "modelsHeading": "Vorlagen",
+        "modelsHint": "Füllt das Formular vor aus — alles bleibt danach änderbar.",
+        "nameLabel": "Name (z. B. 2 L Wasser trinken)",
+        "linkedHint": "🔗 Automatische Verfolgung — wird anhand von {{source}} selbst bestätigt, kein manuelles Abhaken nötig.",
+        "pillarLabel": "SÄULE",
+        "frequencyLabel": "HÄUFIGKEIT",
+        "targetPerDay": "ZIEL PRO TAG",
+        "targetPerWeek": "ZIEL PRO WOCHE",
+        "timesLabel": "Mal",
+        "createButton": "Erstellen",
+        "pillars": {
+          "habits": "Gewohnheit",
+          "nutrition": "Ernährung",
+          "recovery": "Erholung",
+          "sleep": "Schlaf",
+          "performance": "Sport"
+        },
+        "cadence": {
+          "daily": "Täglich",
+          "weekly": "Wöchentlich"
+        },
+        "presets": {
+          "water": "Wasser trinken",
+          "walk": "Täglicher Spaziergang",
+          "sleep": "Früh schlafen gehen",
+          "stretch": "Dehnübungen",
+          "reading": "Lesen",
+          "medication": "Medikament",
+          "workout": "Sporttraining"
+        },
+        "errors": {
+          "nameRequired": "Gib deiner Gewohnheit einen Namen.",
+          "saveFailed": "Speichern nicht möglich."
+        }
+      },
+      "badgesCard": {
+        "heading": "Serie & Abzeichen",
+        "streakDays": "🔥 {{count}} T",
+        "noStreak": "Keine Serie",
+        "unlockedCount": "{{earned}} von {{total}} Abzeichen freigeschaltet."
+      },
+      "habitsCard": {
+        "heading": "Gewohnheiten heute",
+        "emptyMessage": "Erstelle eine einfache Gewohnheit (Wasser, Beweglichkeit, Schlaf…), um deine Regelmäßigkeit aufzubauen.",
+        "done": "Erledigt",
+        "validate": "Bestätigen",
+        "newHabit": "Neue Gewohnheit",
+        "footerHint": "Jede Bestätigung stärkt deine Serie und deine Abzeichen."
+      },
+      "habitsScreen": {
+        "addButton": "+ Gewohnheit",
+        "addButtonA11y": "Neue Gewohnheit",
+        "title": "Gewohnheiten & Disziplin",
+        "subtitle": "Disziplin • Serien • Fortschritt",
+        "daysSuffix": "{{count}} T",
+        "kpi": {
+          "doneToday": "Heute erledigt",
+          "bestStreak": "Beste Serie",
+          "successRate": "Erfolg · 30 T",
+          "activeHabits": "Aktive Gewohnheiten"
+        },
+        "calendar": {
+          "heading": "Fortschritt · 30 Tage",
+          "legend": {
+            "done": "Alles erledigt",
+            "partial": "Teilweise",
+            "none": "Nichts / bevorstehend"
+          }
+        },
+        "checklist": {
+          "heading": "Checkliste",
+          "emptyMessage": "Erstelle eine einfache Gewohnheit (Wasser, Beweglichkeit, Lesen, Schlaf…), um deine Regelmäßigkeit aufzubauen.",
+          "hydrationProgress": "{{value}} / {{target}} L · autom. erfasst",
+          "stepsProgress": "{{value}} / {{target}} Schritte · autom. erfasst",
+          "done": "Erledigt",
+          "notDone": "Offen"
+        },
+        "disciplineScore": {
+          "heading": "Disziplin-Score",
+          "excellent": "Ausgezeichnet — du bist sehr regelmäßig.",
+          "good": "Gute Regelmäßigkeit, mach weiter so.",
+          "low": "Bestätige deine heutigen Gewohnheiten, um deinen Score zu steigern."
+        },
+        "streaks": {
+          "heading": "Laufende Serien"
+        }
+      }
+    },
+    "editWorkout": {
+      "title": "Training bearbeiten",
+      "notFound": {
+        "title": "Training nicht gefunden"
+      },
+      "form": {
+        "nameLabel": "Name des Trainings",
+        "namePlaceholder": "Bsp.: Push A",
+        "submit": "Änderungen speichern"
+      },
+      "addExercise": {
+        "title": "Übung hinzufügen",
+        "searchLabel": "Übung suchen",
+        "searchPlaceholder": "Bsp.: Drücken, Quadrizeps, Curl…",
+        "noResults": "Keine Übung passt zu „{{query}}“."
+      },
+      "session": {
+        "title": "Dein Training",
+        "titleWithCount": "Dein Training ({{count}})",
+        "emptyHint": "Suche oben nach einer Übung, um sie zu deinem Training hinzuzufügen."
+      },
+      "set": {
+        "repsLabel": "Wiederholungen",
+        "weightLabel": "Gewicht (kg)",
+        "restLabel": "Pause zwischen Sätzen (Sek.)",
+        "restPlaceholder": "Bsp.: 90"
+      },
+      "exercise": {
+        "customPrefix": "✨ Eigene · "
+      },
+      "errors": {
+        "missingFields": "Gib einen Namen ein und füge mindestens eine Übung hinzu.",
+        "saveFailed": "Speichern nicht möglich."
+      }
+    },
+    "workoutDetail": {
+      "notFound": {
+        "title": "Training nicht gefunden",
+        "message": "Dieses Training existiert nicht mehr oder wurde noch nicht synchronisiert."
+      },
+      "status": {
+        "planned": "Geplant",
+        "inProgress": "Läuft",
+        "completed": "Abgeschlossen",
+        "skipped": "Verpasst"
+      },
+      "duration": {
+        "hoursMinutes": "{{h}} Std {{m}} Min",
+        "minutes": "{{m}} Min"
+      },
+      "stats": {
+        "duration": "Dauer",
+        "rpe": "RPE",
+        "status": "Status"
+      },
+      "notesTitle": "Notizen",
+      "exercisesTitle": "Übungen",
+      "noExercises": "Keine Übung für dieses Training erfasst.",
+      "setLabel": "Satz {{n}}",
+      "blockLabel": "Block {{n}}",
+      "blockFormat": {
+        "strength": "Krafttraining",
+        "forTime": "Auf Zeit"
+      },
+      "actions": {
+        "start": "Starten",
+        "edit": "Bearbeiten",
+        "delete": "Löschen"
+      },
+      "deleteConfirm": {
+        "message": "Dieses Training endgültig löschen?"
+      }
+    },
+    "newWorkout": {
+      "title": "Neues Training",
+      "subtitle": "Kombiniere mehrere Formate in einem Training — jeder Block hat seine eigene Zeitmessung.",
+      "blockFormat": {
+        "strength": "Krafttraining",
+        "forTime": "Auf Zeit"
+      },
+      "import": {
+        "openButton": "Bereits absolviertes Training importieren (z. B. Garmin)",
+        "fromScreenshot": "Aus Screenshot importieren",
+        "title": "Bereits absolviertes Training übernehmen",
+        "hint": "Füllt Name und Übungen vor aus — du kannst vor dem Erstellen alles ändern.",
+        "empty": "Derzeit kein Training zum Übernehmen vorhanden. Importiere deinen Garmin-Verlauf über Profil › Daten & Integrationen › Datei importieren und komm dann hierher zurück."
+      },
+      "form": {
+        "nameLabel": "Name des Trainings",
+        "namePlaceholder": "Bsp.: Push A",
+        "submit": "Training erstellen"
+      },
+      "block": {
+        "timeCapLabel": "Zeitlimit (Min)",
+        "intervalLabel": "Intervall (s)",
+        "intervalCountLabel": "Anzahl Intervalle",
+        "roundsLabel": "Anzahl Runden",
+        "exerciseCount_one": "{{count}} Übung",
+        "exerciseCount_other": "{{count}} Übungen",
+        "addBlock": "+ Block hinzufügen"
+      },
+      "addExercise": {
+        "title": "Übung hinzufügen",
+        "searchLabel": "Übung suchen",
+        "searchPlaceholder": "Bsp.: Drücken, Quadrizeps, Curl…",
+        "noResults": "Keine Übung passt zu „{{query}}“. Du kannst",
+        "createLink": "eine eigene Übung erstellen"
+      },
+      "session": {
+        "title": "Dein Training",
+        "titleWithCount": "Dein Training ({{count}})",
+        "emptyHint": "Suche oben nach einer Übung, um sie zu deinem Training hinzuzufügen."
+      },
+      "suggestion": {
+        "label": "💡 Progressive Überlastung: {{rationale}}",
+        "useButton": "Vorschlag übernehmen"
+      },
+      "set": {
+        "repsLabel": "Wiederholungen",
+        "weightLabel": "Gewicht (kg)",
+        "restLabel": "Pause zwischen Sätzen (Sek.)",
+        "restPlaceholder": "Bsp.: 90"
+      },
+      "exercise": {
+        "customPrefix": "✨ Eigene · "
+      },
+      "errors": {
+        "missingName": "Gib deinem Training einen Namen.",
+        "missingExercise": "Füge mindestens eine Übung hinzu.",
+        "saveFailed": "Speichern nicht möglich."
+      }
+    },
+    "muscles": {
+      "body": {},
+      "screen": {
+        "title": "Erholung",
+        "subtitle": "Welche Muskeln erschöpft und welche bereit sind, basierend auf deinen letzten Trainings.",
+        "and": "und",
+        "muscleLabel": {
+          "chest": "Brust",
+          "back": "Rücken",
+          "shoulders": "Schultern",
+          "biceps": "Bizeps",
+          "triceps": "Trizeps",
+          "quads": "Quadrizeps",
+          "hamstrings": "Beinbeuger",
+          "glutes": "Gesäß",
+          "calves": "Waden",
+          "core": "Bauch / Rumpf",
+          "fullBody": "Ganzer Körper"
+        },
+        "muscleInline": {
+          "chest": "Brust",
+          "back": "Rücken",
+          "shoulders": "Schultern",
+          "biceps": "Bizeps",
+          "triceps": "Trizeps",
+          "quads": "Quadrizeps",
+          "hamstrings": "Beinbeuger",
+          "glutes": "Gesäß",
+          "calves": "Waden",
+          "core": "Bauch",
+          "fullBody": "ganzer Körper"
+        },
+        "globalState": {
+          "title": "Gesamtzustand"
+        },
+        "muscleGroups": {
+          "title": "Muskelgruppen"
+        },
+        "emptyState": {
+          "message": "Kein aktuelles Training. Erfasse ein Krafttraining, um deine trainierten Muskeln einzufärben und zu sehen, welche sich erholen.",
+          "action": "Training erstellen"
+        },
+        "coaching": {
+          "recoveringPill": "ERHOLUNG LÄUFT",
+          "recoveringText": "Deine {{names}} erholen sich noch. Bevorzuge heute eher {{suggestion}}.",
+          "readyPill": "BEREIT ZUM TRAINIEREN",
+          "readyText": "Alle deine Muskelgruppen sind erholt. Der perfekte Moment für ein intensives Training!",
+          "planButton": "Training planen"
+        }
+      },
+      "progress": {
+        "title": "Muskelfortschritt",
+        "subtitle": "Wo du Fortschritte machst, stagnierst und woran du arbeiten solltest — mit deinen Rekorden.",
+        "muscleLabel": {
+          "chest": "Brust",
+          "back": "Rücken",
+          "shoulders": "Schultern",
+          "biceps": "Bizeps",
+          "triceps": "Trizeps",
+          "quads": "Quadrizeps",
+          "hamstrings": "Beinbeuger",
+          "glutes": "Gesäß",
+          "calves": "Waden",
+          "core": "Bauch / Rumpf",
+          "fullBody": "Ganzer Körper"
+        },
+        "periods": {
+          "thirtyDays": "30 T",
+          "ninetyDays": "90 T",
+          "sixMonths": "6 Monate",
+          "oneYear": "1 Jahr"
+        },
+        "progLabel": {
+          "strong": "Starker Fortschritt",
+          "progressing": "Fortschritt",
+          "stable": "Stabil",
+          "weak": "Schwach",
+          "behind": "Im Rückstand"
+        },
+        "recordCategory": {
+          "run": "Laufen",
+          "strength": "Kraft",
+          "cycling": "Rad",
+          "steps": "Schritte",
+          "other": "Sonstiges"
+        },
+        "units": {
+          "steps": "Schritte"
+        },
+        "indexCaption": "Index",
+        "indexTitle": "Fortschrittsindex",
+        "indexSummary": {
+          "withData": "{{count}} Krafttraining(s) im Zeitraum — Fortschritt basierend auf dem Volumen (Wdh. × Gewicht).",
+          "noData": "Erfasse Trainings (mit Wdh. × Gewicht), um deinen tatsächlichen Fortschritt pro Muskel zu verfolgen."
+        },
+        "map": {
+          "title": "Muskelkarte",
+          "legend": {
+            "strong": "Stark",
+            "good": "Gut",
+            "stable": "Stabil",
+            "weak": "Schwach",
+            "behind": "Im Rückstand"
+          },
+          "hint": "Tippe auf einen Muskel für Details.",
+          "healthKitNote": "💡 Apple Health überträgt keine Übungsdetails — deine importierten Krafttrainings erscheinen hier nicht. Erfasse sie über Sport → Übungsbibliothek für eine genaue Verfolgung pro Muskel."
+        },
+        "metrics": {
+          "index": "Index",
+          "progression": "Fortschritt",
+          "volume": "Volumen",
+          "maxWeight": "Max. Gewicht",
+          "recovery": "Erholung",
+          "lastSession": "Letztes Training",
+          "today": "Heute",
+          "daysAgo": "vor {{count}} T"
+        },
+        "detail": {
+          "good": "Gute Reizsetzung — mach weiter mit progressiver Überlastung.",
+          "ok": "Angemessene Reizsetzung — etwas mehr Häufigkeit würde helfen.",
+          "low": "Unterstimuliert — füge 1 bis 2 gezielte Trainings pro Woche hinzu.",
+          "viewExercisesButton": "Übungen ansehen"
+        },
+        "evolution": {
+          "title": "Entwicklung",
+          "unit": "Volumen / Woche"
+        },
+        "radar": {
+          "title": "Verteilung der Fortschritte",
+          "push": "Push",
+          "pull": "Pull",
+          "legs": "Beine",
+          "core": "Core",
+          "cardio": "Cardio",
+          "mobility": "Beweglichkeit"
+        },
+        "priority": {
+          "title": "Zu entwickeln",
+          "indexLabel": "Index {{n}}",
+          "startWorking": "beginne, diesen Muskel zu trainieren",
+          "increaseVolume": "erhöhe das Volumen",
+          "exercisesButton": "Übungen"
+        },
+        "records": {
+          "title": "Meine Rekorde"
+        },
+        "tips": {
+          "title": "Tipps",
+          "progressingWell": "{{muscle}} macht gute Fortschritte — du kannst das Volumen leicht erhöhen.",
+          "behind": "{{muscle}} hinkt hinterher — füge ein gezieltes Training hinzu.",
+          "coreUnderTrained": "Der Core ist untertrainiert — integriere mehr Rumpftraining."
+        },
+        "projection": {
+          "title": "Prognose",
+          "withData": "Wenn du dieses Tempo beibehältst ({{rate}} Training(s)/Wo.), sollte dein Index in ein paar Wochen {{target}} übersteigen.",
+          "noData": "Füge ein paar Trainings hinzu, um eine zuverlässige Prognose zu erhalten."
+        },
+        "planNextButton": "Nächstes Training planen"
+      }
+    },
+    "exercises": {
+      "library": {
+        "title": "Übungen",
+        "subtitle": "{{count}} Übungen · Kraft, Cardio & Beweglichkeit",
+        "searchPlaceholder": "Übung, Muskel oder Ausrüstung suchen…",
+        "filterAll": "Alle",
+        "filterAllMuscles": "Alle Muskeln",
+        "resultsCount": "{{count}} Ergebnis(se)",
+        "resultsMore": " · verfeinere, um mehr als die ersten {{limit}} zu sehen",
+        "emptyState": "Keine Übung passt. Versuche einen anderen Filter oder Suchbegriff."
+      },
+      "detail": {
+        "notFoundTitle": "Übung nicht gefunden",
+        "notFoundMessage": "Diese Übung existiert nicht im Katalog.",
+        "mechanicCompound": "Mehrgelenkig",
+        "mechanicIsolation": "Isolation",
+        "targetMusclesHeading": "Zielmuskeln",
+        "primaryMuscleSuffix": " (primär)",
+        "executionHeading": "Ausführung"
+      },
+      "addCustom": {
+        "title": "Eigene Übung",
+        "subtitle": "Fehlt in der Bibliothek? Füge sie hinzu — sie erscheint dann in der Liste für deine Trainings.",
+        "nameLabel": "Name der Übung",
+        "namePlaceholder": "Bsp.: Schräge Beinpresse",
+        "muscleLabel": "HAUPTMUSKEL",
+        "equipmentLabel": "Ausrüstung (optional)",
+        "equipmentPlaceholder": "Bsp.: Maschine, Kurzhanteln, Körpergewicht…",
+        "errorMissingFields": "Gib einen Namen ein und wähle den Hauptmuskel.",
+        "errorSaveFailed": "Speichern nicht möglich.",
+        "submit": "Erstellen"
+      }
+    },
+    "planning": {
+      "title": "Planung",
+      "subtitle": "Plane deine Trainings und antizipiere deine Erholung.",
+      "addToggleOpen": "+ Hinzufügen",
+      "addToggleClose": "Schließen",
+      "defaultSessionName": "Training",
+      "exerciseFallbackName": "Übung",
+      "emptyDay": "Für diesen Tag ist kein Training geplant. Tippe auf „+ Hinzufügen“, um eines zu planen.",
+      "footerNote": "Die Prognose schätzt die Erholung jeder Muskelgruppe am geplanten Datum, basierend auf deinen vergangenen Trainings.",
+      "reprogramSuccessTitle": "Training verschoben",
+      "reprogramSuccessMessage": "„{{name}}“ wurde auf den {{date}} verschoben, mit denselben Übungen.",
+      "reprogramErrorTitle": "Fehlgeschlagen",
+      "reprogramErrorMessage": "Das Training konnte nicht verschoben werden.",
+      "weekdaysShort": [
+        "Mo",
+        "Di",
+        "Mi",
+        "Do",
+        "Fr",
+        "Sa",
+        "So"
+      ],
+      "addForm": {
+        "typeLabel": "TRAININGSART",
+        "nameLabel": "Name (optional)",
+        "namePlaceholder": "Bsp. Push — Kraft",
+        "notesLabel": "Notizen (optional)",
+        "notesPlaceholder": "Übungen, Ziel, Gewicht…",
+        "submitPending": "Wird gespeichert…",
+        "submit": "Für den {{date}} planen"
+      },
+      "upcoming": {
+        "heading": "Nächste Trainings",
+        "subtitle": "Erholungsprognose zum geplanten Datum",
+        "notReady": "⚠️ Noch in Erholung: {{muscles}}",
+        "ready": "✓ Zielmuskeln bereit"
+      },
+      "sessionCard": {
+        "done": "✓ Erledigt",
+        "skip": "Überspringen",
+        "delete": "Löschen",
+        "reprogramA11y": "Dieses Training für nächste Woche verschieben"
+      },
+      "focus": {
+        "push": "Push",
+        "pull": "Pull",
+        "legs": "Beine",
+        "upper": "Oberkörper",
+        "full": "Ganzkörper",
+        "core": "Bauch",
+        "cardio": "Cardio",
+        "mobility": "Beweglichkeit"
+      },
+      "muscles": {
+        "chest": "Brust",
+        "back": "Rücken",
+        "shoulders": "Schultern",
+        "biceps": "Bizeps",
+        "triceps": "Trizeps",
+        "quads": "Quadrizeps",
+        "hamstrings": "Beinbeuger",
+        "glutes": "Gesäß",
+        "calves": "Waden",
+        "core": "Bauch",
+        "fullBody": "Ganzer Körper"
+      }
+    },
+    "calendar": {
+      "title": "Kalender",
+      "subtitle": "Planung • Verlauf • Prognosen",
+      "today": "Heute",
+      "timelineEmpty": "An diesem Tag nichts erfasst.",
+      "deadlinesHeading": "Ziele & Fristen",
+      "challengesHeading": "Laufende Challenges",
+      "historyHeading": "Wochenverlauf",
+      "thisWeek": "Diese Woche",
+      "weeksAgo": "Vor {{count}} Wo.",
+      "analysisHeading": "Kaizen-Analyse",
+      "analysisHighLoad": "Deine aktuelle Belastung ist hoch — denk an einen Erholungstag. ",
+      "analysisBalanced": "Deine Belastung ist gut verteilt. ",
+      "analysisNextDeadline": "Nächste Frist: {{label}} ({{date}}).",
+      "analysisNoDeadline": "Füge ein Ziel mit einer Frist hinzu, um es im Kalender zu verfolgen.",
+      "timelineActivity": "{{label}} · {{minutes}} Min",
+      "timelineMeal": "{{description}} · {{kcal}} kcal",
+      "months": [
+        "Januar",
+        "Februar",
+        "März",
+        "April",
+        "Mai",
+        "Juni",
+        "Juli",
+        "August",
+        "September",
+        "Oktober",
+        "November",
+        "Dezember"
+      ],
+      "weekdaysMin": [
+        "M",
+        "D",
+        "M",
+        "D",
+        "F",
+        "S",
+        "S"
+      ],
+      "kpi": {
+        "recovery": "Recovery",
+        "load": "Belastung",
+        "sessions": "Trainings",
+        "sleep": "Schlaf",
+        "nutrition": "Ernährung",
+        "date": "Datum",
+        "weight": "Gewicht"
+      },
+      "activityLabels": {
+        "strength": "Krafttraining",
+        "running": "Laufen",
+        "cycling": "Rad",
+        "swimming": "Schwimmen",
+        "hyrox": "Hyrox",
+        "mobility": "Beweglichkeit",
+        "yoga": "Yoga",
+        "walking": "Gehen",
+        "crossTraining": "Cross-Training",
+        "other": "Aktivität"
+      }
+    },
+    "progress": {
+      "progression": {
+        "title": "Bilanz & Abzeichen",
+        "subtitle": "Deine Trends und Belohnungen, über alle Säulen hinweg.",
+        "weekHeading": "Letzte 7 Tage",
+        "snap": {
+          "sessions": "Trainings",
+          "sleep": "Ø Schlaf",
+          "recovery": "Ø Erholung",
+          "weight": "Gewicht"
+        },
+        "sections": {
+          "weeklyReport": {
+            "title": "Wochenbericht",
+            "subtitle": "Deine Wochenbilanz, erklärt"
+          },
+          "stats": {
+            "title": "Statistiken",
+            "subtitle": "Überblick über den Zeitraum"
+          },
+          "trends": {
+            "title": "Trends & Zusammenhänge",
+            "subtitle": "Was deine Form beeinflusst (KI)"
+          },
+          "badges": {
+            "title": "Abzeichen",
+            "subtitle": "Belohnungen, die du dir mit deinen Daten verdient hast"
+          },
+          "comparisons": {
+            "title": "Vergleiche",
+            "subtitle": "Zeiträume und Referenzwerte"
+          }
+        }
+      },
+      "photos": {
+        "title": "Verlaufsfotos",
+        "subtitle": "Verfolge deine Veränderung. Die Fotos bleiben auf deinem Gerät.",
+        "capture": "📷 Aufnehmen",
+        "gallery": "🖼 Galerie",
+        "permissionDenied": "Zugriff verweigert. Aktiviere den Zugriff auf Kamera / Fotos in den Einstellungen.",
+        "addPhotoFailed": "Foto konnte nicht hinzugefügt werden.",
+        "compareHeading": "Vorher / Nachher",
+        "tagBefore": "Vorher",
+        "tagAfter": "Nachher",
+        "selectSecond": "Wähle ein 2. Foto, um Vorher/Nachher zu vergleichen.",
+        "emptyTitle": "Kein Foto",
+        "emptyMessage": "Füge ein erstes Foto hinzu, um deine visuelle Verfolgung zu starten — von vorne, gleiches Licht, gleiche Pose für bessere Vergleiche.",
+        "deleteAction": "Löschen"
+      },
+      "weeklyReport": {
+        "title": "Wochenbericht",
+        "subtitle": "Vom {{from}} bis {{to}}",
+        "summaryLabel": "WOCHENBILANZ",
+        "formCaption": "Ø Form",
+        "recDelta": "{{arrow}}{{value}} Pkt. vs. letzte Woche",
+        "summarySessions": "{{count}} Training(s) ({{duration}}). ",
+        "summaryNoSessions": "Kein Training erfasst. ",
+        "summaryRecovery": "Erholung {{band}}.",
+        "keyNumbersHeading": "Die wichtigsten Zahlen",
+        "performancesHeading": "Leistungen",
+        "performancesCaption": "Belastung / Tag",
+        "recoveryHeading": "Erholung",
+        "nutritionHeading": "Ernährung",
+        "habitsHeading": "Gewohnheiten",
+        "habitsValidated": "Bestätigt",
+        "habitsSuccessRate": "Erfolgsquote",
+        "objectivesHeading": "Ziele",
+        "recordsHeading": "Rekorde der Woche",
+        "analysisHeading": "Kaizen-Analyse",
+        "analysisRecoveryImproved": "Deine Erholung hat sich diese Woche verbessert. ",
+        "analysisSleepFocus": "Schlaf bleibt dein wichtigster Verbesserungsbereich. ",
+        "analysisSleepSolid": "Dein Schlaf ist solide. ",
+        "analysisWeightGood": "Dein Gewichtsverlust entspricht deinem Ziel.",
+        "planHeading": "Plan · nächste Woche",
+        "exportPending": "Export…",
+        "exportAction": "Exportieren / teilen",
+        "durationHoursMinutes": "{{hours}} Std {{minutes}} Min",
+        "durationMinutes": "{{minutes}} Min",
+        "monthsShort": [
+          "Jan.",
+          "Feb.",
+          "März",
+          "Apr.",
+          "Mai",
+          "Jun.",
+          "Jul.",
+          "Aug.",
+          "Sep.",
+          "Okt.",
+          "Nov.",
+          "Dez."
+        ],
+        "weekdaysMin": [
+          "S",
+          "M",
+          "D",
+          "M",
+          "D",
+          "F",
+          "S"
+        ],
+        "kpi": {
+          "trainings": "Trainings",
+          "trainingsDeltaStable": "stabil",
+          "trainingTime": "Trainingszeit",
+          "avgSleep": "Ø Schlaf",
+          "avgRecovery": "Ø Recovery",
+          "avgHrv": "Ø HRV",
+          "hydration": "Hydratation",
+          "caloriesBurned": "Verbrannte Kalorien",
+          "weightChange": "Gewichtsveränderung"
+        },
+        "objectives": {
+          "noData": "keine Daten",
+          "activity": {
+            "label": "Aktivität diese Woche",
+            "sub": "{{count}} Training(s)"
+          },
+          "sleep": {
+            "label": "Schlaf ≥ 7 Std 45",
+            "sub": "Ø {{hours}} Std"
+          },
+          "recovery": {
+            "label": "Erholung ≥ 70",
+            "sub": "Ø {{value}}"
+          },
+          "habits": {
+            "label": "Verfolgte Gewohnheiten",
+            "sub": "{{count}} Bestätigung(en)"
+          }
+        },
+        "plan": {
+          "sessions": "{{count}} Trainingseinheiten",
+          "sleepTarget": "7 Std 45 Schlaf anstreben",
+          "sleepMaintain": "Deinen Schlafrhythmus beibehalten",
+          "hydration": "Über deinem Hydratationsziel bleiben",
+          "mobility": "Eine Mobilitätseinheit hinzufügen"
+        }
       }
     }
   }

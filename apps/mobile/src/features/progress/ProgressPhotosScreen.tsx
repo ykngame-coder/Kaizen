@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { Image, Platform, Pressable, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import * as ImagePicker from 'expo-image-picker';
+import { useTranslation } from 'react-i18next';
 import { Button, Card, EmptyState, Icon, Screen, Text, useTheme } from '@supotsu/ui';
 import { radii, spacing } from '@supotsu/design-system';
 import { addPhoto, loadPhotos, removePhoto, type ProgressPhoto } from '@/lib/progressPhotos';
@@ -9,6 +10,7 @@ import { formatDate } from '@/lib/format';
 
 /** Photos d'évolution — capture, gallery, and before/after comparison. Stored locally. */
 export function ProgressPhotosScreen(): React.JSX.Element {
+  const { t } = useTranslation();
   const router = useRouter();
   const { colors } = useTheme();
   const [photos, setPhotos] = useState<ProgressPhoto[]>([]);
@@ -26,7 +28,7 @@ export function ProgressPhotosScreen(): React.JSX.Element {
     try {
       const perm = from === 'camera' ? await ImagePicker.requestCameraPermissionsAsync() : await ImagePicker.requestMediaLibraryPermissionsAsync();
       if (!perm.granted) {
-        setError('Autorisation refusée. Active l’accès à l’appareil photo / aux photos dans les réglages.');
+        setError(t('sport.progress.photos.permissionDenied'));
         return;
       }
       const opts = { quality: 0.6, base64: Platform.OS === 'web' } as const;
@@ -36,7 +38,7 @@ export function ProgressPhotosScreen(): React.JSX.Element {
       const uri = Platform.OS === 'web' && asset.base64 ? `data:image/jpeg;base64,${asset.base64}` : asset.uri;
       setPhotos(await addPhoto(uri));
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Impossible d’ajouter la photo.');
+      setError(e instanceof Error ? e.message : t('sport.progress.photos.addPhotoFailed'));
     } finally {
       setBusy(false);
     }
@@ -62,21 +64,21 @@ export function ProgressPhotosScreen(): React.JSX.Element {
 
   return (
     <Screen scroll>
-      <Text variant="title">Photos d'évolution</Text>
-      <Text variant="caption" color="textSubtle">Suis ta transformation. Les photos restent sur ton appareil.</Text>
+      <Text variant="title">{t('sport.progress.photos.title')}</Text>
+      <Text variant="caption" color="textSubtle">{t('sport.progress.photos.subtitle')}</Text>
 
       <View style={{ flexDirection: 'row', gap: spacing[2] }}>
-        <Button label={busy ? '…' : '📷 Prendre'} onPress={() => pick('camera')} disabled={busy} />
-        <Button label="🖼 Galerie" variant="secondary" onPress={() => pick('library')} disabled={busy} />
+        <Button label={busy ? '…' : t('sport.progress.photos.capture')} onPress={() => pick('camera')} disabled={busy} />
+        <Button label={t('sport.progress.photos.gallery')} variant="secondary" onPress={() => pick('library')} disabled={busy} />
       </View>
       {error ? <Text variant="caption" color="error">{error}</Text> : null}
 
       {/* Compare */}
       {pair ? (
         <Card>
-          <Text variant="heading">Avant / Après</Text>
+          <Text variant="heading">{t('sport.progress.photos.compareHeading')}</Text>
           <View style={{ flexDirection: 'row', gap: spacing[3], marginTop: spacing[2] }}>
-            {[{ p: pair.before, tag: 'Avant' }, { p: pair.after, tag: 'Après' }].map(({ p, tag }) => (
+            {[{ p: pair.before, tag: t('sport.progress.photos.tagBefore') }, { p: pair.after, tag: t('sport.progress.photos.tagAfter') }].map(({ p, tag }) => (
               <View key={p.id} style={{ flex: 1 }}>
                 <Image source={{ uri: p.uri }} style={{ width: '100%', aspectRatio: 3 / 4, borderRadius: radii.lg, backgroundColor: colors.surfaceElevated }} resizeMode="cover" />
                 <Text variant="caption" style={{ fontWeight: '700', marginTop: spacing[1] }}>{tag}</Text>
@@ -86,12 +88,12 @@ export function ProgressPhotosScreen(): React.JSX.Element {
           </View>
         </Card>
       ) : selected.length === 1 ? (
-        <Text variant="caption" color="textMuted">Sélectionne une 2ᵉ photo pour comparer avant/après.</Text>
+        <Text variant="caption" color="textMuted">{t('sport.progress.photos.selectSecond')}</Text>
       ) : null}
 
       {/* Grid */}
       {photos.length === 0 ? (
-        <EmptyState icon={<Icon name="camera" size={44} color={colors.textSubtle} />} title="Aucune photo" message="Ajoute une première photo pour démarrer ton suivi visuel — de face, même lumière, même pose pour de meilleures comparaisons." />
+        <EmptyState icon={<Icon name="camera" size={44} color={colors.textSubtle} />} title={t('sport.progress.photos.emptyTitle')} message={t('sport.progress.photos.emptyMessage')} />
       ) : (
         <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: spacing[3] }}>
           {photos.map((p) => {
@@ -103,7 +105,7 @@ export function ProgressPhotosScreen(): React.JSX.Element {
                 </View>
                 <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: spacing[1] }}>
                   <Text variant="caption" color="textSubtle">{formatDate(p.dateISO)}</Text>
-                  <Pressable onPress={() => del(p.id)} hitSlop={8}><Text variant="caption" color="error">Suppr.</Text></Pressable>
+                  <Pressable onPress={() => del(p.id)} hitSlop={8}><Text variant="caption" color="error">{t('sport.progress.photos.deleteAction')}</Text></Pressable>
                 </View>
               </Pressable>
             );
@@ -112,7 +114,7 @@ export function ProgressPhotosScreen(): React.JSX.Element {
       )}
 
       <View style={{ alignItems: 'flex-start', marginTop: spacing[2] }}>
-        <Button label="Retour" variant="secondary" onPress={() => router.back()} />
+        <Button label={t('common.back')} variant="secondary" onPress={() => router.back()} />
       </View>
     </Screen>
   );

@@ -1,6 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import { Pressable, View } from 'react-native';
 import { useRouter } from 'expo-router';
+import { useTranslation } from 'react-i18next';
 import { Card, FilterChip, Input, Screen, Text, useTheme } from '@supotsu/ui';
 import { radii, spacing } from '@supotsu/design-system';
 import type { MuscleGroup } from '@supotsu/core';
@@ -12,6 +13,7 @@ const LIMIT = 60;
 
 /** Bibliothèque d'exercices — browse and search the 873-exercise catalogue with filters. */
 export function ExerciseLibraryScreen(): React.JSX.Element {
+  const { t } = useTranslation();
   const router = useRouter();
   const { colors } = useTheme();
   const [query, setQuery] = useState('');
@@ -31,26 +33,27 @@ export function ExerciseLibraryScreen(): React.JSX.Element {
 
   return (
     <Screen scroll>
-      <Text variant="title">Exercices</Text>
-      <Text variant="caption" color="textSubtle">{EXERCISES.length} exercices · force, cardio & mobilité</Text>
+      <Text variant="title">{t('sport.exercises.library.title')}</Text>
+      <Text variant="caption" color="textSubtle">{t('sport.exercises.library.subtitle', { count: EXERCISES.length })}</Text>
 
-      <Input placeholder="Rechercher un exercice, un muscle, un matériel…" value={query} onChangeText={setQuery} autoFocus={false} />
+      <Input placeholder={t('sport.exercises.library.searchPlaceholder')} value={query} onChangeText={setQuery} autoFocus={false} />
 
       <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: spacing[2] }}>
-        <FilterChip label="Tous" active={category === 'all'} onPress={() => setCategory('all')} />
+        <FilterChip label={t('sport.exercises.library.filterAll')} active={category === 'all'} onPress={() => setCategory('all')} />
         {CATEGORY_FILTERS.map((c) => (<FilterChip key={c} label={`${CATEGORY_ICON[c]} ${c.charAt(0).toUpperCase()}${c.slice(1)}`} active={category === c} onPress={() => setCategory(c)} />))}
       </View>
       <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: spacing[2] }}>
-        <FilterChip label="Tous muscles" active={muscle === 'all'} onPress={() => setMuscle('all')} />
+        <FilterChip label={t('sport.exercises.library.filterAllMuscles')} active={muscle === 'all'} onPress={() => setMuscle('all')} />
         {MUSCLE_FILTERS.map((m) => (<FilterChip key={m} label={MUSCLE_LABEL[m]} active={muscle === m} onPress={() => setMuscle(m)} />))}
       </View>
 
       <Text variant="caption" color="textSubtle">
-        {all.length} résultat{all.length > 1 ? 's' : ''}{all.length > LIMIT ? ` · affine pour voir au-delà des ${LIMIT} premiers` : ''}
+        {t('sport.exercises.library.resultsCount', { count: all.length })}
+        {all.length > LIMIT ? t('sport.exercises.library.resultsMore', { limit: LIMIT }) : ''}
       </Text>
 
       {results.length === 0 ? (
-        <Card><Text variant="body" color="textMuted">Aucun exercice ne correspond. Essaie un autre filtre ou un autre terme.</Text></Card>
+        <Card><Text variant="body" color="textMuted">{t('sport.exercises.library.emptyState')}</Text></Card>
       ) : (
         <Card>
           {results.map((e, i) => (

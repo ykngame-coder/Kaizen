@@ -1,6 +1,8 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Pressable, View } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useTranslation } from 'react-i18next';
+import type { TFunction } from 'i18next';
 import { Badge, Button, Card, Input, Screen, SegmentedControl, Text, useTheme } from '@supotsu/ui';
 import { radii, spacing } from '@supotsu/design-system';
 import { suggestProgression } from '@supotsu/engines';
@@ -14,13 +16,12 @@ const LIMIT = 60;
 /** Name Garmin imports are stored under (repository.ts upsertImportedWorkouts) — flags the badge below. */
 const GARMIN_IMPORT_NAME = 'Musculation (import Garmin)';
 
-const FORMAT_OPTIONS: { value: BlockFormat; label: string }[] = [
-  { value: 'strength', label: 'Musculation' },
-  { value: 'amrap', label: 'AMRAP' },
-  { value: 'emom', label: 'EMOM' },
-  { value: 'for_time', label: 'Pour le temps' },
-];
-const FORMAT_LABEL: Record<BlockFormat, string> = { strength: 'Musculation', amrap: 'AMRAP', emom: 'EMOM', for_time: 'Pour le temps' };
+function formatLabel(format: BlockFormat, t: TFunction): string {
+  if (format === 'strength') return t('sport.newWorkout.blockFormat.strength');
+  if (format === 'for_time') return t('sport.newWorkout.blockFormat.forTime');
+  if (format === 'amrap') return 'AMRAP';
+  return 'EMOM';
+}
 
 interface SetDraft {
   reps: string;
@@ -47,6 +48,7 @@ const emptyBlock = (): BlockDraft => ({ format: 'strength', timeCapSec: '12', ta
  */
 export function NewWorkoutScreen(): React.JSX.Element {
   const router = useRouter();
+  const { t } = useTranslation();
   const { colors } = useTheme();
   const params = useLocalSearchParams<{ openPicker?: string }>();
   const addWorkout = useAddWorkout();
@@ -54,6 +56,16 @@ export function NewWorkoutScreen(): React.JSX.Element {
   const { data: history = {} } = useExerciseHistory();
   const { data: customExercises = [] } = useCustomExercises();
   const { data: allWorkouts = [] } = useWorkouts();
+
+  const FORMAT_OPTIONS: { value: BlockFormat; label: string }[] = useMemo(
+    () => [
+      { value: 'strength', label: formatLabel('strength', t) },
+      { value: 'amrap', label: formatLabel('amrap', t) },
+      { value: 'emom', label: formatLabel('emom', t) },
+      { value: 'for_time', label: formatLabel('for_time', t) },
+    ],
+    [t],
+  );
 
   const [name, setName] = useState('');
   const [query, setQuery] = useState('');
@@ -156,11 +168,11 @@ export function NewWorkoutScreen(): React.JSX.Element {
   const submit = async (): Promise<void> => {
     setError(null);
     if (!name.trim()) {
-      setError('Donne un nom à ta séance.');
+      setError(t('sport.newWorkout.errors.missingName'));
       return;
     }
     if (blocks.every((b) => b.order.length === 0)) {
-      setError('Ajoute au moins un exercice.');
+      setError(t('sport.newWorkout.errors.missingExercise'));
       return;
     }
     const isSingleStrength = blocks.length === 1 && blocks[0]!.format === 'strength';
@@ -202,40 +214,39 @@ export function NewWorkoutScreen(): React.JSX.Element {
       }
       router.back();
     } catch {
-      setError('Enregistrement impossible.');
+      setError(t('sport.newWorkout.errors.saveFailed'));
     }
   };
 
   const isPending = addWorkout.isPending || addCircuitWorkout.isPending;
 
   const exerciseSubtitle = (ex: Exercise): string =>
-    `${isCustom(ex.id) ? '✨ Perso · ' : ''}${[ex.primary, ...ex.secondary].map((m) => MUSCLE_LABEL[m]).join(', ')} · ${ex.equipment}`;
+    `${isCustom(ex.id) ? t('sport.newWorkout.exercise.customPrefix') : ''}${[ex.primary, ...ex.secondary].map((m) => MUSCLE_LABEL[m]).join(', ')} · ${ex.equipment}`;
 
   return (
     <Screen scroll>
-      <Text variant="title">Nouvelle séance</Text>
+      <Text variant="title">{t('sport.newWorkout.title')}</Text>
       <Text variant="caption" color="textMuted">
-        Enchaîne plusieurs formats dans la même séance — chaque bloc a son propre chrono.
+        {t('sport.newWorkout.subtitle')}
       </Text>
 
       <View style={{ marginTop: spacing[2], flexDirection: 'row', flexWrap: 'wrap', gap: spacing[2] }}>
         <Button
-          label={pickerOpen ? 'Fermer' : 'Importer une séance déjà faite (ex : Garmin)'}
+          label={pickerOpen ? t('common.close') : t('sport.newWorkout.import.openButton')}
           variant="secondary"
           onPress={() => setPickerOpen((v) => !v)}
         />
-        <Button label="Importer depuis une capture d'écran" variant="secondary" onPress={() => router.push('/sport/workout/import')} />
+        <Button label={t('sport.newWorkout.import.fromScreenshot')} variant="secondary" onPress={() => router.push('/sport/workout/import')} />
       </View>
       {pickerOpen && (
         <Card style={{ marginTop: spacing[2] }}>
-          <Text variant="heading">Reprendre une séance déjà faite</Text>
+          <Text variant="heading">{t('sport.newWorkout.import.title')}</Text>
           <Text variant="caption" color="textMuted" style={{ marginBottom: spacing[2] }}>
-            Préremplit le nom et les exercices — tu peux tout modifier avant de créer.
+            {t('sport.newWorkout.import.hint')}
           </Text>
           {pastWorkouts.length === 0 ? (
             <Text variant="body" color="textMuted">
-              Aucune séance à reprendre pour l'instant. Importe ton historique Garmin depuis
-              Profil › Données & intégrations › Importer un fichier, puis reviens ici.
+              {t('sport.newWorkout.import.empty')}
             </Text>
           ) : (
           <View style={{ gap: spacing[2] }}>
@@ -271,8 +282,8 @@ export function NewWorkoutScreen(): React.JSX.Element {
       )}
 
       <Input
-        label="Nom de la séance"
-        placeholder="Ex : Push A"
+        label={t('sport.newWorkout.form.nameLabel')}
+        placeholder={t('sport.newWorkout.form.namePlaceholder')}
         value={name}
         onChangeText={setName}
       />
@@ -286,7 +297,7 @@ export function NewWorkoutScreen(): React.JSX.Element {
                   <View style={{ width: 22, height: 22, borderRadius: 11, backgroundColor: colors.primary, alignItems: 'center', justifyContent: 'center' }}>
                     <Text variant="caption" style={{ color: '#04140b', fontWeight: '700' }}>{i + 1}</Text>
                   </View>
-                  <Text variant="body" style={{ fontWeight: '700' }}>{FORMAT_LABEL[b.format]}</Text>
+                  <Text variant="body" style={{ fontWeight: '700' }}>{formatLabel(b.format, t)}</Text>
                 </View>
                 {blocks.length > 1 ? (
                   <Pressable onPress={() => removeBlock(i)} hitSlop={8}>
@@ -298,48 +309,48 @@ export function NewWorkoutScreen(): React.JSX.Element {
                 <>
                   <SegmentedControl options={FORMAT_OPTIONS} value={b.format} onChange={(v) => updateActiveBlock({ format: v })} />
                   {b.format === 'amrap' ? (
-                    <Input label="Temps limite (min)" keyboardType="numeric" value={b.timeCapSec} onChangeText={(v) => updateActiveBlock({ timeCapSec: v })} />
+                    <Input label={t('sport.newWorkout.block.timeCapLabel')} keyboardType="numeric" value={b.timeCapSec} onChangeText={(v) => updateActiveBlock({ timeCapSec: v })} />
                   ) : null}
                   {b.format === 'emom' ? (
                     <View style={{ flexDirection: 'row', gap: spacing[3] }}>
                       <View style={{ flex: 1 }}>
-                        <Input label="Intervalle (s)" keyboardType="numeric" value={b.timeCapSec} onChangeText={(v) => updateActiveBlock({ timeCapSec: v })} />
+                        <Input label={t('sport.newWorkout.block.intervalLabel')} keyboardType="numeric" value={b.timeCapSec} onChangeText={(v) => updateActiveBlock({ timeCapSec: v })} />
                       </View>
                       <View style={{ flex: 1 }}>
-                        <Input label="Nombre d'intervalles" keyboardType="numeric" value={b.targetRounds} onChangeText={(v) => updateActiveBlock({ targetRounds: v })} />
+                        <Input label={t('sport.newWorkout.block.intervalCountLabel')} keyboardType="numeric" value={b.targetRounds} onChangeText={(v) => updateActiveBlock({ targetRounds: v })} />
                       </View>
                     </View>
                   ) : null}
                   {b.format === 'for_time' ? (
-                    <Input label="Nombre de rounds" keyboardType="numeric" value={b.targetRounds} onChangeText={(v) => updateActiveBlock({ targetRounds: v })} />
+                    <Input label={t('sport.newWorkout.block.roundsLabel')} keyboardType="numeric" value={b.targetRounds} onChangeText={(v) => updateActiveBlock({ targetRounds: v })} />
                   ) : null}
                 </>
               ) : (
-                <Text variant="caption" color="textSubtle">{b.order.length} exercice{b.order.length > 1 ? 's' : ''}</Text>
+                <Text variant="caption" color="textSubtle">{t('sport.newWorkout.block.exerciseCount', { count: b.order.length })}</Text>
               )}
             </Card>
           </Pressable>
         ))}
         <Pressable onPress={addBlock}>
           <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: spacing[2], borderWidth: 1, borderStyle: 'dashed', borderColor: colors.border, borderRadius: radii.lg, padding: spacing[4] }}>
-            <Text variant="body" color="textMuted">+ Ajouter un bloc</Text>
+            <Text variant="body" color="textMuted">{t('sport.newWorkout.block.addBlock')}</Text>
           </View>
         </Pressable>
       </View>
 
-      <Text variant="heading">Ajouter un exercice</Text>
+      <Text variant="heading">{t('sport.newWorkout.addExercise.title')}</Text>
       <Input
-        label="Rechercher un exercice"
-        placeholder="Ex : développé, quads, curl…"
+        label={t('sport.newWorkout.addExercise.searchLabel')}
+        placeholder={t('sport.newWorkout.addExercise.searchPlaceholder')}
         value={query}
         onChangeText={setQuery}
       />
       {q ? (
         searchResults.length === 0 ? (
           <Text variant="caption" color="textSubtle">
-            Aucun exercice ne correspond à "{query}". Tu peux{' '}
+            {t('sport.newWorkout.addExercise.noResults', { query })}{' '}
             <Text variant="caption" color="primary" onPress={() => router.push('/sport/exercise/new')}>
-              créer un exercice personnalisé
+              {t('sport.newWorkout.addExercise.createLink')}
             </Text>
             .
           </Text>
@@ -363,10 +374,10 @@ export function NewWorkoutScreen(): React.JSX.Element {
       ) : null}
 
       <Text variant="heading" style={{ marginTop: spacing[3] }}>
-        Ta séance {order.length > 0 ? `(${order.length})` : ''}
+        {order.length > 0 ? t('sport.newWorkout.session.titleWithCount', { count: order.length }) : t('sport.newWorkout.session.title')}
       </Text>
       {order.length === 0 ? (
-        <Text variant="caption" color="textSubtle">Recherche un exercice ci-dessus pour l'ajouter à ta séance.</Text>
+        <Text variant="caption" color="textSubtle">{t('sport.newWorkout.session.emptyHint')}</Text>
       ) : (
         <View style={{ gap: spacing[2] }}>
           {order.map((id) => {
@@ -400,11 +411,11 @@ export function NewWorkoutScreen(): React.JSX.Element {
                         }}
                       >
                         <Text variant="caption" color="textMuted">
-                          💡 Surcharge progressive : {suggestion.rationale}
+                          {t('sport.newWorkout.suggestion.label', { rationale: suggestion.rationale })}
                         </Text>
                         <View style={{ alignItems: 'flex-start' }}>
                           <Button
-                            label="Utiliser la suggestion"
+                            label={t('sport.newWorkout.suggestion.useButton')}
                             variant="secondary"
                             onPress={() =>
                               update(id, {
@@ -420,7 +431,7 @@ export function NewWorkoutScreen(): React.JSX.Element {
                 <View style={{ flexDirection: 'row', gap: spacing[4], marginTop: spacing[2] }}>
                   <View style={{ flex: 1 }}>
                     <Input
-                      label="Répétitions"
+                      label={t('sport.newWorkout.set.repsLabel')}
                       keyboardType="numeric"
                       value={selected[id]!.reps}
                       onChangeText={(v) => update(id, { reps: v })}
@@ -429,7 +440,7 @@ export function NewWorkoutScreen(): React.JSX.Element {
                   {activeFormat === 'strength' ? (
                     <View style={{ flex: 1 }}>
                       <Input
-                        label="Charge (kg)"
+                        label={t('sport.newWorkout.set.weightLabel')}
                         keyboardType="numeric"
                         value={selected[id]!.weight}
                         onChangeText={(v) => update(id, { weight: v })}
@@ -440,8 +451,8 @@ export function NewWorkoutScreen(): React.JSX.Element {
                 {activeFormat === 'strength' ? (
                   <View style={{ marginTop: spacing[2] }}>
                     <Input
-                      label="Repos entre séries (sec)"
-                      placeholder="Ex : 90"
+                      label={t('sport.newWorkout.set.restLabel')}
+                      placeholder={t('sport.newWorkout.set.restPlaceholder')}
                       keyboardType="numeric"
                       value={selected[id]!.rest}
                       onChangeText={(v) => update(id, { rest: v })}
@@ -457,10 +468,10 @@ export function NewWorkoutScreen(): React.JSX.Element {
       {error ? <Badge label={error} tone="error" /> : null}
 
       <View style={{ flexDirection: 'row', gap: spacing[2], marginTop: spacing[2] }}>
-        <Button label="Annuler" variant="secondary" onPress={() => router.back()} />
+        <Button label={t('common.cancel')} variant="secondary" onPress={() => router.back()} />
         <View style={{ flex: 1 }} />
         <Button
-          label={isPending ? '…' : 'Créer la séance'}
+          label={isPending ? '…' : t('sport.newWorkout.form.submit')}
           onPress={submit}
           disabled={isPending}
         />

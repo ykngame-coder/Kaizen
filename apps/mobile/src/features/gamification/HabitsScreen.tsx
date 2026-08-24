@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo } from 'react';
 import { Pressable, View } from 'react-native';
 import { useRouter } from 'expo-router';
+import { useTranslation } from 'react-i18next';
 import { Button, Card, Icon, Screen, Text, useTheme } from '@supotsu/ui';
 import { radii, spacing } from '@supotsu/design-system';
 import type { Habit, HealthMetricType } from '@supotsu/core';
@@ -66,6 +67,7 @@ function MiniBar({ pct, color }: { pct: number; color: string }): React.JSX.Elem
 
 /** Habitudes & Discipline (mockup #9) — daily checklist, streaks, 30-day calendar. */
 export function HabitsScreen(): React.JSX.Element {
+  const { t } = useTranslation();
   const router = useRouter();
   const { colors } = useTheme();
   const { preferences } = usePreferences();
@@ -179,40 +181,40 @@ export function HabitsScreen(): React.JSX.Element {
       <Screen scroll>
         <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
           <BackButton />
-          <Button label="+ Habitude" onPress={() => router.push('/profile/habit/new')} accessibilityLabel="Nouvelle habitude" />
+          <Button label={t('sport.gamification.habitsScreen.addButton')} onPress={() => router.push('/profile/habit/new')} accessibilityLabel={t('sport.gamification.habitsScreen.addButtonA11y')} />
         </View>
-        <Text variant="title">Habitudes & discipline</Text>
-        <Text variant="caption" color="textSubtle">Discipline • Séries • Progression</Text>
+        <Text variant="title">{t('sport.gamification.habitsScreen.title')}</Text>
+        <Text variant="caption" color="textSubtle">{t('sport.gamification.habitsScreen.subtitle')}</Text>
 
         {/* KPI */}
         <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: spacing[3] }}>
-          <Kpi icon={<Icon name="checkCircle" size={18} color={colors.accentData} />} value={`${doneToday.size}`} sub={`/${active.length}`} label="Validées aujourd'hui" color={colors.accentData} />
-          <Kpi icon={<Icon name="bolt" size={18} color={colors.warning} />} value={`${bestStreak} j`} label="Meilleure série" />
-          <Kpi icon={<Icon name="target" size={18} color={colors.accentData} />} value={`${success} %`} label="Réussite · 30 j" />
-          <Kpi icon={<Icon name="medal" size={18} color={colors.warning} />} value={`${active.length}`} label="Habitudes actives" />
+          <Kpi icon={<Icon name="checkCircle" size={18} color={colors.accentData} />} value={`${doneToday.size}`} sub={`/${active.length}`} label={t('sport.gamification.habitsScreen.kpi.doneToday')} color={colors.accentData} />
+          <Kpi icon={<Icon name="bolt" size={18} color={colors.warning} />} value={t('sport.gamification.habitsScreen.daysSuffix', { count: bestStreak })} label={t('sport.gamification.habitsScreen.kpi.bestStreak')} />
+          <Kpi icon={<Icon name="target" size={18} color={colors.accentData} />} value={`${success} %`} label={t('sport.gamification.habitsScreen.kpi.successRate')} />
+          <Kpi icon={<Icon name="medal" size={18} color={colors.warning} />} value={`${active.length}`} label={t('sport.gamification.habitsScreen.kpi.activeHabits')} />
         </View>
 
         {/* 30-day calendar */}
         <Card>
-          <Text variant="heading">Progression · 30 jours</Text>
+          <Text variant="heading">{t('sport.gamification.habitsScreen.calendar.heading')}</Text>
           <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginTop: spacing[3] }}>
             {cal.map((c, i) => (
               <View key={i} style={{ width: `${(100 - 6 * 5) / 6}%`, aspectRatio: 1, borderRadius: 6, backgroundColor: cellColor(c.frac), borderWidth: c.isToday ? 1.5 : 0, borderColor: colors.primary }} />
             ))}
           </View>
           <View style={{ flexDirection: 'row', gap: spacing[3], marginTop: spacing[3] }}>
-            <Legend color={colors.accentData} label="Tout fait" />
-            <Legend color={colors.warning} label="Partiel" />
-            <Legend color={colors.surfaceElevated} label="Rien / à venir" />
+            <Legend color={colors.accentData} label={t('sport.gamification.habitsScreen.calendar.legend.done')} />
+            <Legend color={colors.warning} label={t('sport.gamification.habitsScreen.calendar.legend.partial')} />
+            <Legend color={colors.surfaceElevated} label={t('sport.gamification.habitsScreen.calendar.legend.none')} />
           </View>
         </Card>
 
         {/* Daily checklist */}
         <Card>
-          <Text variant="heading">Check-list</Text>
+          <Text variant="heading">{t('sport.gamification.habitsScreen.checklist.heading')}</Text>
           <DayNav value={selectedDate} onChange={setSelectedDate} maxDaysFuture={0} />
           {active.length === 0 ? (
-            <Text variant="body" color="textMuted" style={{ marginTop: spacing[2] }}>Crée une habitude simple (eau, mobilité, lecture, sommeil…) pour construire ta régularité.</Text>
+            <Text variant="body" color="textMuted" style={{ marginTop: spacing[2] }}>{t('sport.gamification.habitsScreen.checklist.emptyMessage')}</Text>
           ) : (
             <View style={{ marginTop: spacing[3] }}>
               {active.map((h, i) => {
@@ -227,8 +229,9 @@ export function HabitsScreen(): React.JSX.Element {
                       {p.live ? (
                         <>
                           <Text variant="caption" color="textSubtle">
-                            {kind === 'hydration' ? `${(p.live.value / 1000).toFixed(1)} / ${(p.live.target / 1000).toFixed(1)} L` : `${p.live.value.toLocaleString('fr-FR')} / ${p.live.target.toLocaleString('fr-FR')} pas`}
-                            {' · suivi auto'}
+                            {kind === 'hydration'
+                              ? t('sport.gamification.habitsScreen.checklist.hydrationProgress', { value: (p.live.value / 1000).toFixed(1), target: (p.live.target / 1000).toFixed(1) })
+                              : t('sport.gamification.habitsScreen.checklist.stepsProgress', { value: p.live.value.toLocaleString('fr-FR'), target: p.live.target.toLocaleString('fr-FR') })}
                           </Text>
                           <MiniBar pct={(p.live.value / Math.max(1, p.live.target)) * 100} color={p.done ? colors.accentData : colors.warning} />
                         </>
@@ -238,7 +241,7 @@ export function HabitsScreen(): React.JSX.Element {
                           <MiniBar pct={(p.count / p.target) * 100} color={p.done ? colors.accentData : colors.warning} />
                         </>
                       ) : (
-                        <Text variant="caption" style={{ color: p.done ? colors.accentData : colors.textSubtle, fontWeight: '600' }}>{p.done ? 'Fait' : 'À faire'}</Text>
+                        <Text variant="caption" style={{ color: p.done ? colors.accentData : colors.textSubtle, fontWeight: '600' }}>{p.done ? t('sport.gamification.habitsScreen.checklist.done') : t('sport.gamification.habitsScreen.checklist.notDone')}</Text>
                       )}
                     </View>
                     {p.live ? null : (
@@ -261,11 +264,15 @@ export function HabitsScreen(): React.JSX.Element {
 
         {/* Score discipline */}
         <Card>
-          <Text variant="heading">Score discipline</Text>
+          <Text variant="heading">{t('sport.gamification.habitsScreen.disciplineScore.heading')}</Text>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing[4], marginTop: spacing[2] }}>
             <Text style={{ fontSize: 48, fontWeight: '800', letterSpacing: -1, color: colors.text, flexShrink: 0 }}>{disciplineScore}<Text variant="subtitle" color="textSubtle">/100</Text></Text>
             <Text variant="body" color="textMuted" style={{ flex: 1, lineHeight: 20 }}>
-              {disciplineScore >= 80 ? 'Excellent — tu es très régulier.' : disciplineScore >= 50 ? 'Bonne régularité, continue sur ta lancée.' : 'Valide tes habitudes du jour pour faire grimper ton score.'}
+              {disciplineScore >= 80
+                ? t('sport.gamification.habitsScreen.disciplineScore.excellent')
+                : disciplineScore >= 50
+                  ? t('sport.gamification.habitsScreen.disciplineScore.good')
+                  : t('sport.gamification.habitsScreen.disciplineScore.low')}
             </Text>
           </View>
         </Card>
@@ -273,13 +280,13 @@ export function HabitsScreen(): React.JSX.Element {
         {/* Streaks */}
         {streaks.length > 0 ? (
           <Card>
-            <Text variant="heading">Séries en cours</Text>
+            <Text variant="heading">{t('sport.gamification.habitsScreen.streaks.heading')}</Text>
             <View style={{ gap: spacing[3], marginTop: spacing[3] }}>
               {streaks.map(({ habit, streak }) => (
                 <View key={habit.id}>
                   <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
                     <Text variant="body">{iconFor(habit.pillar, habit.name)}  {habit.name}</Text>
-                    <Text variant="body" style={{ fontWeight: '700' }}>{streak} j</Text>
+                    <Text variant="body" style={{ fontWeight: '700' }}>{t('sport.gamification.habitsScreen.daysSuffix', { count: streak })}</Text>
                   </View>
                   <View style={{ height: 8, borderRadius: 6, backgroundColor: colors.surfaceElevated, overflow: 'hidden', marginTop: 6 }}>
                     <View style={{ width: `${Math.min(100, (streak / 30) * 100)}%`, height: 8, borderRadius: 6, backgroundColor: colors.accentData }} />

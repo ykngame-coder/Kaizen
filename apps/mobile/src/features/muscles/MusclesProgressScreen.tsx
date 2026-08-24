@@ -2,6 +2,8 @@ import React, { useMemo, useState } from 'react';
 import { View } from 'react-native';
 import { useRouter } from 'expo-router';
 import Svg, { Circle, Line, Polygon } from 'react-native-svg';
+import { useTranslation } from 'react-i18next';
+import type { TFunction } from 'i18next';
 import { Badge, Button, Card, Icon, ProgressRing, Screen, SegmentedControl, Sparkline, Text, useTheme } from '@supotsu/ui';
 import { radii, spacing } from '@supotsu/design-system';
 import type { ActivityType, MuscleGroup, PersonalRecord, RecordCategory } from '@supotsu/core';
@@ -13,16 +15,43 @@ import { MuscleBody } from './MuscleBody';
 
 const DAY_MS = 86_400_000;
 const MUSCLES: MuscleGroup[] = ['chest', 'back', 'shoulders', 'biceps', 'triceps', 'quads', 'hamstrings', 'glutes', 'calves', 'core'];
-const MUSCLE_LABEL: Record<MuscleGroup, string> = {
-  chest: 'Pectoraux', back: 'Dos', shoulders: 'Épaules', biceps: 'Biceps', triceps: 'Triceps', quads: 'Quadriceps', hamstrings: 'Ischios', glutes: 'Fessiers', calves: 'Mollets', core: 'Abdos / gainage', full_body: 'Corps entier',
-};
+
+function muscleLabel(t: TFunction): Record<MuscleGroup, string> {
+  return {
+    chest: t('sport.muscles.progress.muscleLabel.chest'),
+    back: t('sport.muscles.progress.muscleLabel.back'),
+    shoulders: t('sport.muscles.progress.muscleLabel.shoulders'),
+    biceps: t('sport.muscles.progress.muscleLabel.biceps'),
+    triceps: t('sport.muscles.progress.muscleLabel.triceps'),
+    quads: t('sport.muscles.progress.muscleLabel.quads'),
+    hamstrings: t('sport.muscles.progress.muscleLabel.hamstrings'),
+    glutes: t('sport.muscles.progress.muscleLabel.glutes'),
+    calves: t('sport.muscles.progress.muscleLabel.calves'),
+    core: t('sport.muscles.progress.muscleLabel.core'),
+    full_body: t('sport.muscles.progress.muscleLabel.fullBody'),
+  };
+}
+
 const PERIODS = [
-  { key: '30', label: '30 j', days: 30 },
-  { key: '90', label: '90 j', days: 90 },
-  { key: '180', label: '6 mois', days: 180 },
-  { key: '365', label: '1 an', days: 365 },
+  { key: '30', days: 30 },
+  { key: '90', days: 90 },
+  { key: '180', days: 180 },
+  { key: '365', days: 365 },
 ] as const;
 type PeriodKey = (typeof PERIODS)[number]['key'];
+
+function periodLabel(key: PeriodKey, t: TFunction): string {
+  switch (key) {
+    case '30':
+      return t('sport.muscles.progress.periods.thirtyDays');
+    case '90':
+      return t('sport.muscles.progress.periods.ninetyDays');
+    case '180':
+      return t('sport.muscles.progress.periods.sixMonths');
+    case '365':
+      return t('sport.muscles.progress.periods.oneYear');
+  }
+}
 
 const clamp = (x: number): number => Math.max(0, Math.min(100, x));
 function progColor(idx: number): string {
@@ -32,24 +61,26 @@ function progColor(idx: number): string {
   if (idx >= 40) return '#FF8B5E';
   return '#FF4D67';
 }
-function progLabel(idx: number): string {
-  if (idx >= 85) return 'Forte progression';
-  if (idx >= 70) return 'Progression';
-  if (idx >= 55) return 'Stable';
-  if (idx >= 40) return 'Faible';
-  return 'En retard';
+function progLabel(idx: number, t: TFunction): string {
+  if (idx >= 85) return t('sport.muscles.progress.progLabel.strong');
+  if (idx >= 70) return t('sport.muscles.progress.progLabel.progressing');
+  if (idx >= 55) return t('sport.muscles.progress.progLabel.stable');
+  if (idx >= 40) return t('sport.muscles.progress.progLabel.weak');
+  return t('sport.muscles.progress.progLabel.behind');
 }
 
-const RECORD_CATEGORY_LABEL: Record<RecordCategory, string> = {
-  run: 'Course',
-  strength: 'Force',
-  cycling: 'Vélo',
-  steps: 'Pas',
-  other: 'Autre',
-};
+function recordCategoryLabel(t: TFunction): Record<RecordCategory, string> {
+  return {
+    run: t('sport.muscles.progress.recordCategory.run'),
+    strength: t('sport.muscles.progress.recordCategory.strength'),
+    cycling: t('sport.muscles.progress.recordCategory.cycling'),
+    steps: t('sport.muscles.progress.recordCategory.steps'),
+    other: t('sport.muscles.progress.recordCategory.other'),
+  };
+}
 
 /** Human value: run times as mm:ss, distances as km, weights as kg, steps grouped. */
-function formatRecordValue(r: PersonalRecord): string {
+function formatRecordValue(r: PersonalRecord, t: TFunction): string {
   if (r.unit === 's') {
     const total = Math.round(r.value);
     const h = Math.floor(total / 3600);
@@ -61,7 +92,7 @@ function formatRecordValue(r: PersonalRecord): string {
   }
   if (r.unit === 'm') return r.value >= 1000 ? `${(r.value / 1000).toFixed(2)} km` : `${Math.round(r.value)} m`;
   if (r.unit === 'kg') return `${r.value} kg`;
-  if (r.unit === 'steps') return `${Math.round(r.value).toLocaleString('fr-FR')} pas`;
+  if (r.unit === 'steps') return `${Math.round(r.value).toLocaleString('fr-FR')} ${t('sport.muscles.progress.units.steps')}`;
   return `${r.value} ${r.unit}`;
 }
 
@@ -109,6 +140,7 @@ function Radar({ data, size = 220 }: { data: { label: string; value: number }[];
 /** Progression musculaire (mockup #6) — per-muscle evolution from training frequency + recovery. */
 export function MusclesProgressScreen(): React.JSX.Element {
   const router = useRouter();
+  const { t } = useTranslation();
   const { colors } = useTheme();
   const { data: sessions = [] } = useMuscleSessions();
   const { data: activities = [] } = useActivities();
@@ -118,6 +150,9 @@ export function MusclesProgressScreen(): React.JSX.Element {
   const [period, setPeriod] = useState<PeriodKey>('90');
   const days = PERIODS.find((p) => p.key === period)!.days;
   const [selected, setSelected] = useState<MuscleGroup | null>(null);
+
+  const MUSCLE_LABEL = useMemo(() => muscleLabel(t), [t]);
+  const RECORD_CATEGORY_LABEL = useMemo(() => recordCategoryLabel(t), [t]);
 
   const { data: work = [] } = useMuscleWork();
   const states = useMemo(() => computeMuscleStates(sessions, asOf), [sessions, asOf]);
@@ -133,13 +168,13 @@ export function MusclesProgressScreen(): React.JSX.Element {
     for (const m of MUSCLES) per.set(m, { recent: 0, older: 0, total: 0, maxW: 0 });
     const dates = new Set<string>();
     for (const w of work) {
-      const t = new Date(w.trainedAt).getTime();
-      if (t < since) continue;
+      const ts = new Date(w.trainedAt).getTime();
+      if (ts < since) continue;
       dates.add(w.trainedAt.slice(0, 10));
       const e = per.get(w.muscle);
       if (!e) continue;
       e.total += w.volume;
-      if (t >= mid) e.recent += w.volume; else e.older += w.volume;
+      if (ts >= mid) e.recent += w.volume; else e.older += w.volume;
       if (w.weightKg != null) e.maxW = Math.max(e.maxW, w.weightKg);
     }
     const idx = new Map<MuscleGroup, number>();
@@ -165,9 +200,9 @@ export function MusclesProgressScreen(): React.JSX.Element {
     const span = days / buckets;
     const since = now.getTime() - days * DAY_MS;
     for (const w of work) {
-      const t = new Date(w.trainedAt).getTime();
-      if (t < since) continue;
-      const b = buckets - 1 - Math.floor(((now.getTime() - t) / DAY_MS) / span);
+      const ts = new Date(w.trainedAt).getTime();
+      if (ts < since) continue;
+      const b = buckets - 1 - Math.floor(((now.getTime() - ts) / DAY_MS) / span);
       if (b >= 0 && b < buckets) arr[b] += w.volume;
     }
     return arr;
@@ -181,12 +216,12 @@ export function MusclesProgressScreen(): React.JSX.Element {
     return clamp(30 + (c / weeks) * 22);
   };
   const radar = [
-    { label: 'Poussée', value: meanIdx(['chest', 'shoulders', 'triceps']) },
-    { label: 'Tirage', value: meanIdx(['back', 'biceps']) },
-    { label: 'Jambes', value: meanIdx(['quads', 'hamstrings', 'glutes', 'calves']) },
-    { label: 'Core', value: index.get('core') ?? 30 },
-    { label: 'Cardio', value: actIdx(CARDIO) },
-    { label: 'Mobilité', value: actIdx(MOBILITY) },
+    { label: t('sport.muscles.progress.radar.push'), value: meanIdx(['chest', 'shoulders', 'triceps']) },
+    { label: t('sport.muscles.progress.radar.pull'), value: meanIdx(['back', 'biceps']) },
+    { label: t('sport.muscles.progress.radar.legs'), value: meanIdx(['quads', 'hamstrings', 'glutes', 'calves']) },
+    { label: t('sport.muscles.progress.radar.core'), value: index.get('core') ?? 30 },
+    { label: t('sport.muscles.progress.radar.cardio'), value: actIdx(CARDIO) },
+    { label: t('sport.muscles.progress.radar.mobility'), value: actIdx(MOBILITY) },
   ];
 
   // Priority muscles (lowest index).
@@ -209,10 +244,10 @@ export function MusclesProgressScreen(): React.JSX.Element {
   // Smart tips.
   const tips: string[] = [];
   const best = [...MUSCLES].sort((a, b) => (index.get(b) ?? 0) - (index.get(a) ?? 0))[0]!;
-  if ((index.get(best) ?? 0) >= 70) tips.push(`${MUSCLE_LABEL[best]} progresse bien — tu peux augmenter légèrement le volume.`);
+  if ((index.get(best) ?? 0) >= 70) tips.push(t('sport.muscles.progress.tips.progressingWell', { muscle: MUSCLE_LABEL[best] }));
   const worst = priority[0]!;
-  if ((index.get(worst) ?? 0) < 55) tips.push(`${MUSCLE_LABEL[worst]} est en retard — ajoute une séance ciblée.`);
-  if ((index.get('core') ?? 0) < 55) tips.push('Le core est sous-entraîné — intègre davantage de gainage.');
+  if ((index.get(worst) ?? 0) < 55) tips.push(t('sport.muscles.progress.tips.behind', { muscle: MUSCLE_LABEL[worst] }));
+  if ((index.get('core') ?? 0) < 55) tips.push(t('sport.muscles.progress.tips.coreUnderTrained'));
 
   const detail = selected ? { m: selected, idx: index.get(selected) ?? 30, st: stateOf(selected), s: stats.get(selected) } : null;
 
@@ -226,20 +261,20 @@ export function MusclesProgressScreen(): React.JSX.Element {
   return (
     <Screen scroll>
       <BackButton />
-      <Text variant="title">Progression musculaire</Text>
-      <Text variant="caption" color="textSubtle">Où tu progresses, stagnes, et quoi travailler — avec tes records.</Text>
+      <Text variant="title">{t('sport.muscles.progress.title')}</Text>
+      <Text variant="caption" color="textSubtle">{t('sport.muscles.progress.subtitle')}</Text>
 
-      <SegmentedControl options={PERIODS.map((p) => ({ value: p.key, label: p.label }))} value={period} onChange={setPeriod} />
+      <SegmentedControl options={PERIODS.map((p) => ({ value: p.key, label: periodLabel(p.key, t) }))} value={period} onChange={setPeriod} />
 
       {/* Global index */}
       <Card>
         <View style={{ flexDirection: 'row', gap: spacing[5], alignItems: 'center' }}>
-          <ProgressRing value={globalIndex} size={112} thickness={11} gradient centerLabel={`${globalIndex}`} caption="Indice" />
+          <ProgressRing value={globalIndex} size={112} thickness={11} gradient centerLabel={`${globalIndex}`} caption={t('sport.muscles.progress.indexCaption')} />
           <View style={{ flex: 1 }}>
-            <Text variant="heading">Indice de progression</Text>
-            <Text variant="body" style={{ color: progColor(globalIndex), fontWeight: '700', marginTop: 2 }}>{progLabel(globalIndex)}</Text>
+            <Text variant="heading">{t('sport.muscles.progress.indexTitle')}</Text>
+            <Text variant="body" style={{ color: progColor(globalIndex), fontWeight: '700', marginTop: 2 }}>{progLabel(globalIndex, t)}</Text>
             <Text variant="caption" color="textMuted" style={{ marginTop: spacing[2], lineHeight: 18 }}>
-              {sessionCount > 0 ? `${sessionCount} séance(s) musculaires sur la période — progression basée sur le volume (reps × charge).` : 'Enregistre des séances (avec reps × charge) pour suivre ta progression réelle par muscle.'}
+              {sessionCount > 0 ? t('sport.muscles.progress.indexSummary.withData', { count: sessionCount }) : t('sport.muscles.progress.indexSummary.noData')}
             </Text>
           </View>
         </View>
@@ -247,21 +282,25 @@ export function MusclesProgressScreen(): React.JSX.Element {
 
       {/* Silhouette */}
       <Card>
-        <SectionTitle>Carte musculaire</SectionTitle>
+        <SectionTitle>{t('sport.muscles.progress.map.title')}</SectionTitle>
         <View style={{ alignItems: 'center' }}>
           <MuscleBody colorFor={colorFor} width={320} onSelect={(m) => setSelected(m)} />
         </View>
         <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: spacing[3], justifyContent: 'center', marginTop: spacing[2] }}>
-          {[['#2BE38B', 'Forte'], ['#49D17A', 'Bonne'], ['#F5B742', 'Stable'], ['#FF8B5E', 'Faible'], ['#FF4D67', 'En retard']].map(([c, l]) => (
+          {[
+            ['#2BE38B', t('sport.muscles.progress.map.legend.strong')],
+            ['#49D17A', t('sport.muscles.progress.map.legend.good')],
+            ['#F5B742', t('sport.muscles.progress.map.legend.stable')],
+            ['#FF8B5E', t('sport.muscles.progress.map.legend.weak')],
+            ['#FF4D67', t('sport.muscles.progress.map.legend.behind')],
+          ].map(([c, l]) => (
             <View key={l} style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}><View style={{ width: 9, height: 9, borderRadius: 3, backgroundColor: c }} /><Text variant="caption" color="textSubtle">{l}</Text></View>
           ))}
         </View>
-        <Text variant="caption" color="textSubtle" style={{ textAlign: 'center', marginTop: spacing[2] }}>Touche un muscle pour le détail.</Text>
+        <Text variant="caption" color="textSubtle" style={{ textAlign: 'center', marginTop: spacing[2] }}>{t('sport.muscles.progress.map.hint')}</Text>
         {hasUntrackedHealthKitStrength ? (
           <Text variant="caption" color="textSubtle" style={{ textAlign: 'center', marginTop: spacing[3], lineHeight: 17 }}>
-            💡 Apple Santé ne transmet pas le détail des exercices — tes séances de musculation importées
-            n'apparaissent pas ici. Enregistre-les via Sport → Bibliothèque d'exercices pour un suivi précis
-            par muscle.
+            {t('sport.muscles.progress.map.healthKitNote')}
           </Text>
         ) : null}
       </Card>
@@ -269,20 +308,20 @@ export function MusclesProgressScreen(): React.JSX.Element {
       {/* Muscle detail */}
       {detail ? (
         <Card>
-          <SectionTitle right={<Text variant="caption" color="textSubtle" onPress={() => setSelected(null)}>Fermer</Text>}>{MUSCLE_LABEL[detail.m]}</SectionTitle>
+          <SectionTitle right={<Text variant="caption" color="textSubtle" onPress={() => setSelected(null)}>{t('common.close')}</Text>}>{MUSCLE_LABEL[detail.m]}</SectionTitle>
           <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: spacing[4] }}>
-            <Metric label="Indice" value={`${Math.round(detail.idx)}`} color={progColor(detail.idx)} />
-            <Metric label="Progression" value={detail.s?.progPct != null ? `${detail.s.progPct > 0 ? '+' : ''}${Math.round(detail.s.progPct)} %` : '—'} color={detail.s?.progPct != null ? progColor(detail.idx) : undefined} />
-            <Metric label="Volume" value={detail.s && detail.s.total > 0 ? `${Math.round(detail.s.total).toLocaleString('fr-FR')}` : '—'} />
-            <Metric label="Charge max" value={detail.s && detail.s.maxW > 0 ? `${detail.s.maxW} kg` : '—'} />
-            <Metric label="Récupération" value={detail.st ? `${detail.st.freshness} %` : '—'} />
-            <Metric label="Dernière séance" value={detail.st?.lastTrainedDaysAgo != null ? (detail.st.lastTrainedDaysAgo === 0 ? "Aujourd'hui" : `il y a ${detail.st.lastTrainedDaysAgo} j`) : '—'} />
+            <Metric label={t('sport.muscles.progress.metrics.index')} value={`${Math.round(detail.idx)}`} color={progColor(detail.idx)} />
+            <Metric label={t('sport.muscles.progress.metrics.progression')} value={detail.s?.progPct != null ? `${detail.s.progPct > 0 ? '+' : ''}${Math.round(detail.s.progPct)} %` : '—'} color={detail.s?.progPct != null ? progColor(detail.idx) : undefined} />
+            <Metric label={t('sport.muscles.progress.metrics.volume')} value={detail.s && detail.s.total > 0 ? `${Math.round(detail.s.total).toLocaleString('fr-FR')}` : '—'} />
+            <Metric label={t('sport.muscles.progress.metrics.maxWeight')} value={detail.s && detail.s.maxW > 0 ? `${detail.s.maxW} kg` : '—'} />
+            <Metric label={t('sport.muscles.progress.metrics.recovery')} value={detail.st ? `${detail.st.freshness} %` : '—'} />
+            <Metric label={t('sport.muscles.progress.metrics.lastSession')} value={detail.st?.lastTrainedDaysAgo != null ? (detail.st.lastTrainedDaysAgo === 0 ? t('sport.muscles.progress.metrics.today') : t('sport.muscles.progress.metrics.daysAgo', { count: detail.st.lastTrainedDaysAgo })) : '—'} />
           </View>
           <Text variant="body" color="textMuted" style={{ marginTop: spacing[3], lineHeight: 20 }}>
-            {detail.idx >= 70 ? 'Bonne stimulation — poursuis la surcharge progressive.' : detail.idx >= 55 ? 'Stimulation correcte — un peu plus de fréquence aiderait.' : 'Sous-stimulé — ajoute 1 à 2 séances ciblées par semaine.'}
+            {detail.idx >= 70 ? t('sport.muscles.progress.detail.good') : detail.idx >= 55 ? t('sport.muscles.progress.detail.ok') : t('sport.muscles.progress.detail.low')}
           </Text>
           <View style={{ alignItems: 'flex-start', marginTop: spacing[2] }}>
-            <Button label="Voir des exercices" variant="secondary" onPress={() => router.push('/sport/exercises')} />
+            <Button label={t('sport.muscles.progress.detail.viewExercisesButton')} variant="secondary" onPress={() => router.push('/sport/exercises')} />
           </View>
         </Card>
       ) : null}
@@ -290,28 +329,31 @@ export function MusclesProgressScreen(): React.JSX.Element {
       {/* Evolution chart */}
       {evolution.some((v) => v > 0) ? (
         <Card>
-          <SectionTitle right={<Text variant="caption" color="textSubtle">volume / semaine</Text>}>Évolution</SectionTitle>
+          <SectionTitle right={<Text variant="caption" color="textSubtle">{t('sport.muscles.progress.evolution.unit')}</Text>}>{t('sport.muscles.progress.evolution.title')}</SectionTitle>
           <Sparkline values={evolution} width={300} height={80} color={colors.primary} />
         </Card>
       ) : null}
 
       {/* Balance radar */}
       <Card>
-        <SectionTitle>Répartition des progrès</SectionTitle>
+        <SectionTitle>{t('sport.muscles.progress.radar.title')}</SectionTitle>
         <Radar data={radar} />
       </Card>
 
       {/* Priority muscles */}
       <Card>
-        <SectionTitle>À développer</SectionTitle>
+        <SectionTitle>{t('sport.muscles.progress.priority.title')}</SectionTitle>
         <View style={{ gap: spacing[3] }}>
           {priority.map((m) => (
             <View key={m} style={{ flexDirection: 'row', alignItems: 'center', gap: spacing[3] }}>
               <View style={{ flex: 1 }}>
                 <Text variant="body">{MUSCLE_LABEL[m]}</Text>
-                <Text variant="caption" color="textSubtle">Indice {Math.round(index.get(m) ?? 0)} · {(stats.get(m)?.total ?? 0) === 0 ? 'commence à travailler ce muscle' : 'augmente le volume'}</Text>
+                <Text variant="caption" color="textSubtle">
+                  {t('sport.muscles.progress.priority.indexLabel', { n: Math.round(index.get(m) ?? 0) })} ·{' '}
+                  {(stats.get(m)?.total ?? 0) === 0 ? t('sport.muscles.progress.priority.startWorking') : t('sport.muscles.progress.priority.increaseVolume')}
+                </Text>
               </View>
-              <Button label="Exercices" variant="secondary" onPress={() => router.push('/sport/exercises')} />
+              <Button label={t('sport.muscles.progress.priority.exercisesButton')} variant="secondary" onPress={() => router.push('/sport/exercises')} />
             </View>
           ))}
         </View>
@@ -320,7 +362,7 @@ export function MusclesProgressScreen(): React.JSX.Element {
       {/* Records — merged from the old standalone Records screen: 1RM, meilleurs temps, distances, tout ce qui mesure "où j'en suis" par rapport à moi-même, comme la progression musculaire au-dessus. */}
       {recordGroups.length > 0 ? (
         <>
-          <SectionTitle>Mes records</SectionTitle>
+          <SectionTitle>{t('sport.muscles.progress.records.title')}</SectionTitle>
           {recordGroups.map(([category, list]) => (
             <Card key={category}>
               <Text variant="heading">{RECORD_CATEGORY_LABEL[category]}</Text>
@@ -331,7 +373,7 @@ export function MusclesProgressScreen(): React.JSX.Element {
                       <Text variant="body">{r.label}</Text>
                       <Text variant="caption" color="textMuted">{formatDate(r.achievedAt)}</Text>
                     </View>
-                    <Badge label={formatRecordValue(r)} tone="info" />
+                    <Badge label={formatRecordValue(r, t)} tone="info" />
                   </View>
                 ))}
               </View>
@@ -343,22 +385,24 @@ export function MusclesProgressScreen(): React.JSX.Element {
       {/* Smart tips */}
       {tips.length > 0 ? (
         <View style={{ borderRadius: radii.xl, borderWidth: 1, borderColor: 'rgba(43,227,139,0.25)', backgroundColor: 'rgba(43,227,139,0.08)', padding: spacing[5] }}>
-          <View style={{ flexDirection: 'row', gap: spacing[2], alignItems: 'center' }}><Icon name="lightbulb" size={20} color={colors.warning} /><Text variant="heading">Conseils</Text></View>
+          <View style={{ flexDirection: 'row', gap: spacing[2], alignItems: 'center' }}><Icon name="lightbulb" size={20} color={colors.warning} /><Text variant="heading">{t('sport.muscles.progress.tips.title')}</Text></View>
           <View style={{ marginTop: spacing[2], gap: spacing[1] }}>
-            {tips.map((t, i) => (<Text key={i} variant="body" color="textMuted" style={{ lineHeight: 20 }}>• {t}</Text>))}
+            {tips.map((tip, i) => (<Text key={i} variant="body" color="textMuted" style={{ lineHeight: 20 }}>• {tip}</Text>))}
           </View>
         </View>
       ) : null}
 
       {/* Projection */}
       <Card>
-        <SectionTitle>Projection</SectionTitle>
+        <SectionTitle>{t('sport.muscles.progress.projection.title')}</SectionTitle>
         <Text variant="body" color="textMuted" style={{ lineHeight: 21 }}>
-          {sessionCount >= 3 ? `En conservant ce rythme (${(sessionCount / weeks).toFixed(1)} séance(s)/sem.), ton indice devrait dépasser ${Math.min(100, globalIndex + 5)} d'ici quelques semaines.` : 'Ajoute quelques séances pour obtenir une projection fiable.'}
+          {sessionCount >= 3
+            ? t('sport.muscles.progress.projection.withData', { rate: (sessionCount / weeks).toFixed(1), target: Math.min(100, globalIndex + 5) })
+            : t('sport.muscles.progress.projection.noData')}
         </Text>
       </Card>
 
-      <Button label="Planifier la prochaine séance" onPress={() => router.push('/sport/workout/new')} />
+      <Button label={t('sport.muscles.progress.planNextButton')} onPress={() => router.push('/sport/workout/new')} />
     </Screen>
   );
 }

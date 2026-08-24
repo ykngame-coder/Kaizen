@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Pressable, View } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useTranslation } from 'react-i18next';
 import { Badge, Button, Card, EmptyState, Icon, Input, Screen, Text, useTheme } from '@supotsu/ui';
 import { spacing } from '@supotsu/design-system';
 import { EXERCISES, MUSCLE_LABEL, toCatalogExercise, type Exercise } from '@/features/exercises/catalog';
@@ -18,6 +19,7 @@ interface SetDraft {
 /** Edit an existing session's name and exercise list — same search-to-add UI as Nouvelle séance, pre-filled from the current sets. */
 export function EditWorkoutScreen(): React.JSX.Element {
   const router = useRouter();
+  const { t } = useTranslation();
   const { colors } = useTheme();
   const { id } = useLocalSearchParams<{ id: string }>();
   const { data: workouts = [], isLoading: loadingWorkout } = useWorkouts();
@@ -91,7 +93,7 @@ export function EditWorkoutScreen(): React.JSX.Element {
     setError(null);
     if (!workout) return;
     if (!name.trim() || order.length === 0) {
-      setError('Donne un nom et ajoute au moins un exercice.');
+      setError(t('sport.editWorkout.errors.missingFields'));
       return;
     }
     const sets = order.map((exerciseId, index) => ({
@@ -105,17 +107,17 @@ export function EditWorkoutScreen(): React.JSX.Element {
       await editWorkout.mutateAsync({ workoutId: workout.id, name: name.trim(), notes: workout.notes, sets });
       router.back();
     } catch {
-      setError('Enregistrement impossible.');
+      setError(t('sport.editWorkout.errors.saveFailed'));
     }
   };
 
   const exerciseSubtitle = (ex: Exercise): string =>
-    `${isCustom(ex.id) ? '✨ Perso · ' : ''}${[ex.primary, ...ex.secondary].map((m) => MUSCLE_LABEL[m]).join(', ')} · ${ex.equipment}`;
+    `${isCustom(ex.id) ? t('sport.editWorkout.exercise.customPrefix') : ''}${[ex.primary, ...ex.secondary].map((m) => MUSCLE_LABEL[m]).join(', ')} · ${ex.equipment}`;
 
   if (loadingWorkout || loadingSets) {
     return (
       <Screen scroll>
-        <Text variant="body" color="textMuted">Chargement…</Text>
+        <Text variant="body" color="textMuted">{t('common.loading')}</Text>
       </Screen>
     );
   }
@@ -123,7 +125,7 @@ export function EditWorkoutScreen(): React.JSX.Element {
   if (!workout) {
     return (
       <Screen scroll>
-        <EmptyState icon={<Icon name="dumbbell" size={44} color={colors.textSubtle} />} title="Séance introuvable" actionLabel="Retour" onAction={() => router.back()} />
+        <EmptyState icon={<Icon name="dumbbell" size={44} color={colors.textSubtle} />} title={t('sport.editWorkout.notFound.title')} actionLabel={t('common.back')} onAction={() => router.back()} />
       </Screen>
     );
   }
@@ -131,24 +133,24 @@ export function EditWorkoutScreen(): React.JSX.Element {
   return (
     <Screen scroll>
       <BackButton />
-      <Text variant="title">Modifier la séance</Text>
+      <Text variant="title">{t('sport.editWorkout.title')}</Text>
       <Input
-        label="Nom de la séance"
-        placeholder="Ex : Push A"
+        label={t('sport.editWorkout.form.nameLabel')}
+        placeholder={t('sport.editWorkout.form.namePlaceholder')}
         value={name}
         onChangeText={setName}
       />
 
-      <Text variant="heading">Ajouter un exercice</Text>
+      <Text variant="heading">{t('sport.editWorkout.addExercise.title')}</Text>
       <Input
-        label="Rechercher un exercice"
-        placeholder="Ex : développé, quads, curl…"
+        label={t('sport.editWorkout.addExercise.searchLabel')}
+        placeholder={t('sport.editWorkout.addExercise.searchPlaceholder')}
         value={query}
         onChangeText={setQuery}
       />
       {q ? (
         searchResults.length === 0 ? (
-          <Text variant="caption" color="textSubtle">Aucun exercice ne correspond à "{query}".</Text>
+          <Text variant="caption" color="textSubtle">{t('sport.editWorkout.addExercise.noResults', { query })}</Text>
         ) : (
           <View style={{ gap: spacing[2] }}>
             {searchResults.map((ex) => (
@@ -169,10 +171,10 @@ export function EditWorkoutScreen(): React.JSX.Element {
       ) : null}
 
       <Text variant="heading" style={{ marginTop: spacing[3] }}>
-        Ta séance {order.length > 0 ? `(${order.length})` : ''}
+        {order.length > 0 ? t('sport.editWorkout.session.titleWithCount', { count: order.length }) : t('sport.editWorkout.session.title')}
       </Text>
       {order.length === 0 ? (
-        <Text variant="caption" color="textSubtle">Recherche un exercice ci-dessus pour l'ajouter à ta séance.</Text>
+        <Text variant="caption" color="textSubtle">{t('sport.editWorkout.session.emptyHint')}</Text>
       ) : (
         <View style={{ gap: spacing[2] }}>
           {order.map((exId) => {
@@ -192,7 +194,7 @@ export function EditWorkoutScreen(): React.JSX.Element {
                 <View style={{ flexDirection: 'row', gap: spacing[4], marginTop: spacing[2] }}>
                   <View style={{ flex: 1 }}>
                     <Input
-                      label="Répétitions"
+                      label={t('sport.editWorkout.set.repsLabel')}
                       keyboardType="numeric"
                       value={selected[exId]!.reps}
                       onChangeText={(v) => update(exId, { reps: v })}
@@ -200,7 +202,7 @@ export function EditWorkoutScreen(): React.JSX.Element {
                   </View>
                   <View style={{ flex: 1 }}>
                     <Input
-                      label="Charge (kg)"
+                      label={t('sport.editWorkout.set.weightLabel')}
                       keyboardType="numeric"
                       value={selected[exId]!.weight}
                       onChangeText={(v) => update(exId, { weight: v })}
@@ -209,8 +211,8 @@ export function EditWorkoutScreen(): React.JSX.Element {
                 </View>
                 <View style={{ marginTop: spacing[2] }}>
                   <Input
-                    label="Repos entre séries (sec)"
-                    placeholder="Ex : 90"
+                    label={t('sport.editWorkout.set.restLabel')}
+                    placeholder={t('sport.editWorkout.set.restPlaceholder')}
                     keyboardType="numeric"
                     value={selected[exId]!.rest}
                     onChangeText={(v) => update(exId, { rest: v })}
@@ -225,10 +227,10 @@ export function EditWorkoutScreen(): React.JSX.Element {
       {error ? <Badge label={error} tone="error" /> : null}
 
       <View style={{ flexDirection: 'row', gap: spacing[2], marginTop: spacing[2] }}>
-        <Button label="Annuler" variant="secondary" onPress={() => router.back()} />
+        <Button label={t('common.cancel')} variant="secondary" onPress={() => router.back()} />
         <View style={{ flex: 1 }} />
         <Button
-          label={editWorkout.isPending ? '…' : 'Enregistrer les modifications'}
+          label={editWorkout.isPending ? '…' : t('sport.editWorkout.form.submit')}
           onPress={submit}
           disabled={editWorkout.isPending}
         />

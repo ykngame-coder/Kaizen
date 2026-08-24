@@ -2,6 +2,8 @@ import React, { useMemo, useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { Pressable, View } from 'react-native';
 import { useRouter, type Href } from 'expo-router';
+import { useTranslation } from 'react-i18next';
+import type { TFunction } from 'i18next';
 import { Card, Carousel, Fab, Icon, ProgressRing, Screen, Text, useTheme, type IconName } from '@supotsu/ui';
 import { radii, spacing } from '@supotsu/design-system';
 import type { MuscleGroup } from '@supotsu/core';
@@ -24,36 +26,33 @@ import { ObjectifsCard } from '@/features/goals/ObjectifsCard';
 
 const DAY_MS = 86_400_000;
 
-const MUSCLE_INLINE: Partial<Record<MuscleGroup, string>> = {
-  chest: 'Pectoraux', back: 'Dos', shoulders: 'Épaules', biceps: 'Biceps', triceps: 'Triceps',
-  quads: 'Quadriceps', hamstrings: 'Ischios', glutes: 'Fessiers', calves: 'Mollets', core: 'Abdos',
-};
-
-const NAV: { title: string; subtitle: string; icon: IconName; path?: Href; soon?: boolean }[] = [
-  { title: 'Activités', subtitle: 'Course, marche, vélo… historique et ajout', icon: 'run', path: '/sport/activities' },
-  { title: 'Importer une capture', subtitle: 'Photo de séance → lue automatiquement, en local', icon: 'camera', path: '/sport/workout/import' },
-  { title: 'Planification', subtitle: 'Programme tes séances + prévision récup', icon: 'calendarClock', path: '/sport/planning' },
-  { title: 'Calendrier', subtitle: 'Tes séances et événements', icon: 'calendar', path: '/sport/calendar' },
-  { title: 'Programmes', subtitle: 'Programmes structurés et recommandés', icon: 'clipboardText', path: '/marketplace' },
-  { title: 'Récupération musculaire', subtitle: 'Muscles fatigués vs prêts à travailler', icon: 'armFlex', path: '/sport/muscles' },
-  { title: 'Stomach Vacuum', subtitle: 'Gainage du transverse, séance guidée', icon: 'lungs', path: '/sport/stomach-vacuum' },
-  { title: 'Minuteurs', subtitle: 'Tabata, HIIT, EMOM ou perso', icon: 'timer', path: '/sport/timer' },
-  { title: 'Exercices', subtitle: 'Bibliothèque, muscles, matériel', icon: 'bookOpen', path: '/sport/exercises' },
-  { title: 'Progression musculaire', subtitle: 'Évolution par muscle + tes records (1RM, meilleurs temps…)', icon: 'trendingUp', path: '/sport/muscle-progress' },
+const NAV_KEYS: { key: string; icon: IconName; path?: Href; soon?: boolean }[] = [
+  { key: 'activities', icon: 'run', path: '/sport/activities' },
+  { key: 'import', icon: 'camera', path: '/sport/workout/import' },
+  { key: 'planning', icon: 'calendarClock', path: '/sport/planning' },
+  { key: 'calendar', icon: 'calendar', path: '/sport/calendar' },
+  { key: 'programs', icon: 'clipboardText', path: '/marketplace' },
+  { key: 'muscleRecovery', icon: 'armFlex', path: '/sport/muscles' },
+  { key: 'stomachVacuum', icon: 'lungs', path: '/sport/stomach-vacuum' },
+  { key: 'timers', icon: 'timer', path: '/sport/timer' },
+  { key: 'exercises', icon: 'bookOpen', path: '/sport/exercises' },
+  { key: 'muscleProgress', icon: 'trendingUp', path: '/sport/muscle-progress' },
 ];
 
 /** hh h mm from seconds. */
-function fmtDur(sec: number): string {
+function fmtDur(sec: number, t: TFunction): string {
   const h = Math.floor(sec / 3600);
   const m = Math.round((sec % 3600) / 60);
-  return h > 0 ? `${h} h ${String(m).padStart(2, '0')}` : `${m} min`;
+  return h > 0
+    ? t('sport.screen.duration.hoursMinutes', { h, m: String(m).padStart(2, '0') })
+    : t('sport.screen.duration.minutes', { m });
 }
 
 /** "Aujourd'hui" / "Lun. 12 août" — the planned session always falls on the selected day. */
-function planLabel(plannedFor: string | undefined, todayKey: string): string {
-  if (!plannedFor) return 'Date à définir';
+function planLabel(plannedFor: string | undefined, todayKey: string, t: TFunction): string {
+  if (!plannedFor) return t('sport.screen.planLabel.tbd');
   const key = plannedFor.slice(0, 10);
-  if (key === todayKey) return "Aujourd'hui";
+  if (key === todayKey) return t('sport.screen.planLabel.today');
   return new Date(plannedFor).toLocaleDateString('fr-FR', { weekday: 'short', day: 'numeric', month: 'short' });
 }
 
@@ -97,6 +96,7 @@ function PillarRing({ label, value, color }: { label: string; value: number | un
 
 /** Sport hub (was Entraînements): body state, weekly stats, sections, history. */
 export function SportScreen(): React.JSX.Element {
+  const { t } = useTranslation();
   const router = useRouter();
   const { colors } = useTheme();
   const { data: workouts = [], isLoading } = useWorkouts();
@@ -134,13 +134,40 @@ export function SportScreen(): React.JSX.Element {
 
   const muscleStates = useMemo(() => muscleStatesFor(muscleSessions, asOf), [muscleSessions, asOf]);
   const colorFor = useMemo(() => muscleColorFor(muscleStates, colors), [muscleStates, colors]);
+
+  const muscleLabel: Partial<Record<MuscleGroup, string>> = useMemo(
+    () => ({
+      chest: t('sport.screen.muscle.chest'),
+      back: t('sport.screen.muscle.back'),
+      shoulders: t('sport.screen.muscle.shoulders'),
+      biceps: t('sport.screen.muscle.biceps'),
+      triceps: t('sport.screen.muscle.triceps'),
+      quads: t('sport.screen.muscle.quads'),
+      hamstrings: t('sport.screen.muscle.hamstrings'),
+      glutes: t('sport.screen.muscle.glutes'),
+      calves: t('sport.screen.muscle.calves'),
+      core: t('sport.screen.muscle.core'),
+    }),
+    [t],
+  );
+
   const tired = useMemo(
     () => muscleStates
       .filter((s) => s.lastTrainedDaysAgo !== null && (s.state === 'fatigued' || s.state === 'worked'))
       .sort((a, b) => a.freshness - b.freshness)
       .slice(0, 3)
-      .map((s) => MUSCLE_INLINE[s.muscle] ?? s.muscle),
-    [muscleStates],
+      .map((s) => muscleLabel[s.muscle] ?? s.muscle),
+    [muscleStates, muscleLabel],
+  );
+
+  const NAV = useMemo(
+    () =>
+      NAV_KEYS.map((n) => ({
+        ...n,
+        title: t(`sport.screen.nav.${n.key}.title`),
+        subtitle: t(`sport.screen.nav.${n.key}.subtitle`),
+      })),
+    [t],
   );
 
   const acwr = useMemo(() => computeAcwr(activities, asOf), [activities, asOf]);
@@ -170,14 +197,14 @@ export function SportScreen(): React.JSX.Element {
       <Screen scroll onRefresh={onRefresh} refreshing={refreshing}>
         <View style={{ position: 'relative' }}>
           <View style={{ alignItems: 'center' }}>
-            <Text variant="title">Sport</Text>
+            <Text variant="title">{t('sport.screen.title')}</Text>
             <Text variant="caption" color="textMuted">
-              Prêt pour votre séance ?
+              {t('sport.screen.subtitle')}
             </Text>
           </View>
           <Pressable
             onPress={() => router.push('/sport/exercises')}
-            accessibilityLabel="Rechercher un exercice"
+            accessibilityLabel={t('sport.screen.searchExercise')}
             style={({ pressed }) => ({ opacity: pressed ? 0.6 : 1, position: 'absolute', right: 0, top: 0 })}
           >
             <View style={{ width: 38, height: 38, borderRadius: 19, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border, alignItems: 'center', justifyContent: 'center' }}>
@@ -210,17 +237,17 @@ export function SportScreen(): React.JSX.Element {
                         <>
                           <Text variant="body" style={{ fontWeight: '700' }}>{plannedToday.name}</Text>
                           <Text variant="caption" color="textSubtle" style={{ marginTop: 2 }}>
-                            {planLabel(plannedToday.plannedFor, todayKey)}
+                            {planLabel(plannedToday.plannedFor, todayKey, t)}
                             {plannedToday.notes ? ` · ${plannedToday.notes}` : ''}
                           </Text>
                         </>
                       ) : (
                         <>
                           <Text variant="body" style={{ fontWeight: '700' }}>
-                            {selectedDayKey === todayKey ? 'Aucune séance prévue aujourd’hui' : 'Aucune séance prévue ce jour-là'}
+                            {selectedDayKey === todayKey ? t('sport.screen.session.noneToday') : t('sport.screen.session.noneThatDay')}
                           </Text>
                           <Text variant="caption" color="textSubtle" style={{ marginTop: 2 }}>
-                            Choisis un focus selon ta récupération
+                            {t('sport.screen.session.chooseFocus')}
                           </Text>
                         </>
                       )}
@@ -230,7 +257,7 @@ export function SportScreen(): React.JSX.Element {
                     onPress={() => router.push(plannedToday ? '/sport/planning' : '/sport/workout/new')}
                     style={({ pressed }) => ({ marginTop: spacing[3], height: 46, borderRadius: radii.xl, backgroundColor: colors.surfaceElevated, borderWidth: 1, borderColor: colors.border, alignItems: 'center', justifyContent: 'center', transform: [{ scale: pressed ? 0.98 : 1 }] })}
                   >
-                    <Text variant="body" style={{ fontWeight: '600' }}>{plannedToday ? 'Voir le planning ›' : 'Créer une séance ›'}</Text>
+                    <Text variant="body" style={{ fontWeight: '600' }}>{plannedToday ? t('sport.screen.session.viewPlanning') : t('sport.screen.session.createSession')}</Text>
                   </Pressable>
                 </Card>
               );
@@ -238,17 +265,17 @@ export function SportScreen(): React.JSX.Element {
             if (page === 'score') {
               return (
                 <Card>
-                  <Text variant="heading">Score Sport</Text>
+                  <Text variant="heading">{t('sport.screen.score.heading')}</Text>
                   <View style={{ flexDirection: 'row', gap: spacing[4], alignItems: 'center', marginTop: spacing[3] }}>
                     <ProgressRing value={sport?.value ?? 0} size={72} thickness={8} gradient centerLabel={sport ? `${sport.value}` : '—'} />
                     <Text variant="caption" color="textMuted" style={{ flex: 1 }}>
-                      Performance, régularité et progression combinées.
+                      {t('sport.screen.score.description')}
                     </Text>
                   </View>
                   <View style={{ flexDirection: 'row', justifyContent: 'space-around', marginTop: spacing[4] }}>
-                    <PillarRing label="Performance" value={sport?.breakdown.performance} color={colors.accentData} />
-                    <PillarRing label="Régularité" value={sport?.breakdown.regularity} color={colors.warning} />
-                    <PillarRing label="Progression" value={sport?.breakdown.progression} color={colors.accentMobility} />
+                    <PillarRing label={t('sport.screen.score.performance')} value={sport?.breakdown.performance} color={colors.accentData} />
+                    <PillarRing label={t('sport.screen.score.regularity')} value={sport?.breakdown.regularity} color={colors.warning} />
+                    <PillarRing label={t('sport.screen.score.progression')} value={sport?.breakdown.progression} color={colors.accentMobility} />
                   </View>
                 </Card>
               );
@@ -256,17 +283,17 @@ export function SportScreen(): React.JSX.Element {
             if (page === 'corps') {
               return (
                 <Card>
-                  <Text variant="heading">État du corps</Text>
+                  <Text variant="heading">{t('sport.screen.body.heading')}</Text>
                   <View style={{ flexDirection: 'row', gap: spacing[4], alignItems: 'center', marginTop: spacing[3] }}>
                     <ProgressRing value={recovery ?? 0} size={72} thickness={8} gradient centerLabel={recovery != null ? `${recovery}` : '—'} />
                     <View style={{ flex: 1 }}>
                       <Text variant="caption" color="textMuted">
-                        Récupération globale
+                        {t('sport.screen.body.globalRecovery')}
                       </Text>
                       {tired.length > 0 ? (
                         <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: spacing[2], marginTop: spacing[2] }}>
                           <Text variant="caption" color="textSubtle" style={{ alignSelf: 'center' }}>
-                            Encore fatigués :
+                            {t('sport.screen.body.stillTired')}
                           </Text>
                           {tired.map((m) => (
                             <View key={m} style={{ borderRadius: radii.full, paddingHorizontal: 10, paddingVertical: 4, backgroundColor: 'rgba(255,139,94,0.14)', borderWidth: 1, borderColor: 'rgba(255,139,94,0.3)' }}>
@@ -278,13 +305,13 @@ export function SportScreen(): React.JSX.Element {
                         </View>
                       ) : (
                         <Text variant="body" color="accentData" style={{ marginTop: spacing[2], fontWeight: '600' }}>
-                          Tous les groupes sont rétablis 💪
+                          {t('sport.screen.body.allRecovered')}
                         </Text>
                       )}
                       <View style={{ flexDirection: 'row', gap: spacing[5], marginTop: spacing[3] }}>
-                        <MiniStat label="Charge (ACWR)" value={acwr.ratio != null ? acwr.ratio.toFixed(2) : '—'} />
+                        <MiniStat label={t('sport.screen.body.load')} value={acwr.ratio != null ? acwr.ratio.toFixed(2) : '—'} />
                         <Pressable onPress={() => router.push({ pathname: '/health/[metric]', params: { metric: 'vo2max' } })}>
-                          <MiniStat label="VO₂ Max" value="—" />
+                          <MiniStat label={t('sport.screen.body.vo2max')} value="—" />
                         </Pressable>
                       </View>
                     </View>
@@ -295,9 +322,9 @@ export function SportScreen(): React.JSX.Element {
             return (
               <Card>
                 <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'baseline' }}>
-                  <Text variant="heading">Récupération musculaire</Text>
+                  <Text variant="heading">{t('sport.screen.muscleRecovery.heading')}</Text>
                   <Pressable onPress={() => router.push('/sport/muscles')}>
-                    <Text variant="caption" color="primary">Voir ›</Text>
+                    <Text variant="caption" color="primary">{t('sport.screen.muscleRecovery.viewAll')}</Text>
                   </Pressable>
                 </View>
                 <View style={{ alignItems: 'center', marginTop: spacing[3] }}>
@@ -310,16 +337,16 @@ export function SportScreen(): React.JSX.Element {
 
         {/* 3 dernières activités */}
         <Text variant="heading" style={{ marginTop: spacing[2] }}>
-          3 dernières activités
+          {t('sport.screen.recent.heading')}
         </Text>
         {isLoading ? (
           <Text variant="body" color="textMuted">
-            Chargement…
+            {t('common.loading')}
           </Text>
         ) : recent.length === 0 ? (
           <Card>
             <Text variant="body" color="textMuted">
-              Aucune activité enregistrée. Crée ta première séance depuis la bibliothèque d'exercices.
+              {t('sport.screen.recent.empty')}
             </Text>
           </Card>
         ) : (
@@ -334,8 +361,8 @@ export function SportScreen(): React.JSX.Element {
                     <Text variant="body">{r.name}</Text>
                     <Text variant="caption" color="textSubtle" style={{ marginTop: 1 }}>
                       {formatDate(r.date)}
-                      {r.durationSec ? ` · ${fmtDur(r.durationSec)}` : ''}
-                      {r.rpe ? ` · RPE ${r.rpe}` : ''}
+                      {r.durationSec ? ` · ${fmtDur(r.durationSec, t)}` : ''}
+                      {r.rpe ? ` · ${t('sport.screen.recent.rpe', { rpe: r.rpe })}` : ''}
                     </Text>
                   </View>
                   {r.kind === 'workout' ? (
@@ -355,22 +382,22 @@ export function SportScreen(): React.JSX.Element {
         )}
         <View style={{ alignItems: 'flex-start' }}>
           <Pressable onPress={() => router.push('/sport/activities')}>
-            <Text variant="caption" color="primary">Voir tout l'historique ›</Text>
+            <Text variant="caption" color="primary">{t('sport.screen.recent.viewAllHistory')}</Text>
           </Pressable>
         </View>
 
         {/* Cette semaine */}
         <Text variant="heading" style={{ marginTop: spacing[2] }}>
-          Cette semaine
+          {t('sport.screen.week.heading')}
         </Text>
         <View style={{ gap: spacing[3] }}>
           <View style={{ flexDirection: 'row', gap: spacing[3] }}>
-            <StatTile icon={<Icon name="armFlex" size={18} color={colors.accentStrength} />} value={`${week.sessions}`} label="Séances" />
-            <StatTile icon={<Icon name="timer" size={18} color={colors.info} />} value={week.totalSec > 0 ? fmtDur(week.totalSec) : '—'} label="Temps total" />
+            <StatTile icon={<Icon name="armFlex" size={18} color={colors.accentStrength} />} value={`${week.sessions}`} label={t('sport.screen.week.sessions')} />
+            <StatTile icon={<Icon name="timer" size={18} color={colors.info} />} value={week.totalSec > 0 ? fmtDur(week.totalSec, t) : '—'} label={t('sport.screen.week.totalTime')} />
           </View>
           <View style={{ flexDirection: 'row', gap: spacing[3] }}>
-            <StatTile icon={<Icon name="fire" size={18} color={colors.warning} />} value={week.cals > 0 ? `${Math.round(week.cals)}` : '—'} label="Calories" />
-            <StatTile icon={<Icon name="target" size={18} color={colors.accentData} />} value={week.rpe != null ? week.rpe.toFixed(1) : '—'} label="RPE moyen" />
+            <StatTile icon={<Icon name="fire" size={18} color={colors.warning} />} value={week.cals > 0 ? `${Math.round(week.cals)}` : '—'} label={t('sport.screen.week.calories')} />
+            <StatTile icon={<Icon name="target" size={18} color={colors.accentData} />} value={week.rpe != null ? week.rpe.toFixed(1) : '—'} label={t('sport.screen.week.avgRpe')} />
           </View>
         </View>
 
@@ -384,7 +411,7 @@ export function SportScreen(): React.JSX.Element {
         <ComprendreCard pillars={['performance']} />
         <ObjectifsCard types={['performance', 'strength', 'endurance']} />
       </Screen>
-      <Fab icon="+" accessibilityLabel="Nouvelle séance" onPress={() => router.push('/sport/workout/new')} />
+      <Fab icon="+" accessibilityLabel={t('sport.screen.newSession')} onPress={() => router.push('/sport/workout/new')} />
     </View>
   );
 }

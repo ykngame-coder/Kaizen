@@ -1,5 +1,6 @@
 import React, { useMemo } from 'react';
 import { View } from 'react-native';
+import { useTranslation } from 'react-i18next';
 import { Badge, Card, Text, useTheme } from '@supotsu/ui';
 import { spacing } from '@supotsu/design-system';
 import {
@@ -17,6 +18,7 @@ import { useActivities, useHealthMetrics, useNutritionEntries } from '@/lib/data
  * user always sees what unlocks next — the reward logic is never a black box.
  */
 export function BadgesCard(): React.JSX.Element {
+  const { t } = useTranslation();
   const { colors } = useTheme();
   const { data: activities = [] } = useActivities();
   const { data: entries = [] } = useNutritionEntries();
@@ -50,14 +52,14 @@ export function BadgesCard(): React.JSX.Element {
   return (
     <Card>
       <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-        <Text variant="heading">Série &amp; badges</Text>
+        <Text variant="heading">{t('sport.gamification.badgesCard.heading')}</Text>
         <Badge
-          label={streak > 0 ? `🔥 ${streak} j` : 'Pas de série'}
+          label={streak > 0 ? t('sport.gamification.badgesCard.streakDays', { count: streak }) : t('sport.gamification.badgesCard.noStreak')}
           tone={streak > 0 ? 'success' : 'neutral'}
         />
       </View>
       <Text variant="caption" color="textMuted">
-        {earned.length} badge(s) débloqué(s) sur {BADGE_CATALOG.length}.
+        {t('sport.gamification.badgesCard.unlockedCount', { earned: earned.length, total: BADGE_CATALOG.length })}
       </Text>
 
       <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: spacing[2], marginTop: spacing[2] }}>

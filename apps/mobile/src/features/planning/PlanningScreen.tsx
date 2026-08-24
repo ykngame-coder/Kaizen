@@ -1,6 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import { Alert, Pressable, View } from 'react-native';
 import { Swipeable } from 'react-native-gesture-handler';
+import { useTranslation } from 'react-i18next';
 import { Button, Card, Icon, Input, Screen, Text, useTheme } from '@supotsu/ui';
 import { radii, spacing } from '@supotsu/design-system';
 import type { MuscleGroup, Workout } from '@supotsu/core';
@@ -22,30 +23,35 @@ const BUILT_IN_EXERCISE_NAME: Record<string, string> = Object.fromEntries(EXERCI
 
 const DAY_MS = 86_400_000;
 
-const MUSCLE_LABEL: Partial<Record<MuscleGroup, string>> = {
-  chest: 'Pectoraux', back: 'Dos', shoulders: 'Épaules', biceps: 'Biceps', triceps: 'Triceps',
-  quads: 'Quadriceps', hamstrings: 'Ischios', glutes: 'Fessiers', calves: 'Mollets', core: 'Abdos',
-  full_body: 'Corps entier',
+/** Translation-key lookup for muscle display names used on this screen (local to Planning). */
+const MUSCLE_LABEL_KEY: Partial<Record<MuscleGroup, string>> = {
+  chest: 'sport.planning.muscles.chest', back: 'sport.planning.muscles.back', shoulders: 'sport.planning.muscles.shoulders',
+  biceps: 'sport.planning.muscles.biceps', triceps: 'sport.planning.muscles.triceps',
+  quads: 'sport.planning.muscles.quads', hamstrings: 'sport.planning.muscles.hamstrings', glutes: 'sport.planning.muscles.glutes',
+  calves: 'sport.planning.muscles.calves', core: 'sport.planning.muscles.core',
+  full_body: 'sport.planning.muscles.fullBody',
 };
 
 /** Session focus templates → target muscles. Focus is derived from the name so
- * no schema column is needed (planned sessions live on the workouts table). */
+ * no schema column is needed (planned sessions live on the workouts table).
+ * `match` keywords are a language-agnostic matching heuristic against stored
+ * workout names/notes — not display text, so they are not translated. */
 interface Focus {
   key: string;
-  label: string;
+  labelKey: string;
   icon: string;
   muscles: MuscleGroup[];
   match: string[];
 }
 const FOCUS: Focus[] = [
-  { key: 'push', label: 'Push', icon: '🔺', muscles: ['chest', 'shoulders', 'triceps'], match: ['push', 'poussée', 'pousse'] },
-  { key: 'pull', label: 'Pull', icon: '🔻', muscles: ['back', 'biceps'], match: ['pull', 'tirage'] },
-  { key: 'legs', label: 'Jambes', icon: '🦵', muscles: ['quads', 'hamstrings', 'glutes', 'calves'], match: ['jambe', 'legs', 'leg', 'bas du corps'] },
-  { key: 'upper', label: 'Haut du corps', icon: '💪', muscles: ['chest', 'back', 'shoulders', 'biceps', 'triceps'], match: ['haut'] },
-  { key: 'full', label: 'Full body', icon: '🔥', muscles: ['chest', 'back', 'shoulders', 'biceps', 'triceps', 'quads', 'hamstrings', 'glutes', 'core'], match: ['full', 'complet', 'corps entier'] },
-  { key: 'core', label: 'Abdos', icon: '🧱', muscles: ['core'], match: ['abdo', 'gainage', 'core'] },
-  { key: 'cardio', label: 'Cardio', icon: '🏃', muscles: [], match: ['cardio', 'course', 'vélo', 'velo', 'run'] },
-  { key: 'mobility', label: 'Mobilité', icon: '🧘', muscles: [], match: ['mobilit', 'étirement', 'etirement', 'yoga', 'souplesse'] },
+  { key: 'push', labelKey: 'sport.planning.focus.push', icon: '🔺', muscles: ['chest', 'shoulders', 'triceps'], match: ['push', 'poussée', 'pousse'] },
+  { key: 'pull', labelKey: 'sport.planning.focus.pull', icon: '🔻', muscles: ['back', 'biceps'], match: ['pull', 'tirage'] },
+  { key: 'legs', labelKey: 'sport.planning.focus.legs', icon: '🦵', muscles: ['quads', 'hamstrings', 'glutes', 'calves'], match: ['jambe', 'legs', 'leg', 'bas du corps'] },
+  { key: 'upper', labelKey: 'sport.planning.focus.upper', icon: '💪', muscles: ['chest', 'back', 'shoulders', 'biceps', 'triceps'], match: ['haut'] },
+  { key: 'full', labelKey: 'sport.planning.focus.full', icon: '🔥', muscles: ['chest', 'back', 'shoulders', 'biceps', 'triceps', 'quads', 'hamstrings', 'glutes', 'core'], match: ['full', 'complet', 'corps entier'] },
+  { key: 'core', labelKey: 'sport.planning.focus.core', icon: '🧱', muscles: ['core'], match: ['abdo', 'gainage', 'core'] },
+  { key: 'cardio', labelKey: 'sport.planning.focus.cardio', icon: '🏃', muscles: [], match: ['cardio', 'course', 'vélo', 'velo', 'run'] },
+  { key: 'mobility', labelKey: 'sport.planning.focus.mobility', icon: '🧘', muscles: [], match: ['mobilit', 'étirement', 'etirement', 'yoga', 'souplesse'] },
 ];
 function focusFor(name: string): Focus | null {
   const n = name.toLowerCase();
@@ -63,7 +69,6 @@ function mondayOf(d: Date): Date {
   x.setDate(x.getDate() - dow);
   return x;
 }
-const WEEKDAYS = ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim'];
 function longDate(key: string): string {
   const [y, m, d] = key.split('-').map(Number);
   const date = new Date(y, m - 1, d);
@@ -88,6 +93,7 @@ function notReadyOn(
 }
 
 export function PlanningScreen(): React.JSX.Element {
+  const { t } = useTranslation();
   const { colors } = useTheme();
   const { data: planned = [], isLoading } = usePlannedWorkouts();
   const { data: allWorkouts = [] } = useWorkouts();
@@ -97,6 +103,8 @@ export function PlanningScreen(): React.JSX.Element {
   const removePlanned = useDeletePlannedWorkout();
   const reprogram = useReprogramWorkout();
 
+  const WEEKDAYS = t('sport.planning.weekdaysShort', { returnObjects: true }) as string[];
+
   function handleReprogram(w: Workout): void {
     const base = w.plannedFor ? new Date(`${w.plannedFor.slice(0, 10)}T12:00:00`) : new Date();
     const nextDate = new Date(base.getTime() + 7 * DAY_MS);
@@ -104,8 +112,8 @@ export function PlanningScreen(): React.JSX.Element {
     reprogram.mutate(
       { workoutId: w.id, name: w.name, notes: w.notes, plannedFor: nextKey },
       {
-        onSuccess: () => Alert.alert('Séance reprogrammée', `« ${w.name} » a été reprogrammée pour le ${longDate(nextKey)}, avec les mêmes exercices.`),
-        onError: () => Alert.alert('Échec', "La séance n'a pas pu être reprogrammée."),
+        onSuccess: () => Alert.alert(t('sport.planning.reprogramSuccessTitle'), t('sport.planning.reprogramSuccessMessage', { name: w.name, date: longDate(nextKey) })),
+        onError: () => Alert.alert(t('sport.planning.reprogramErrorTitle'), t('sport.planning.reprogramErrorMessage')),
       },
     );
   }
@@ -173,7 +181,7 @@ export function PlanningScreen(): React.JSX.Element {
   );
 
   function submit(): void {
-    const label = name.trim() || 'Séance';
+    const label = name.trim() || t('sport.planning.defaultSessionName');
     addPlanned.mutate(
       { name: label, plannedFor: selected, notes: notes.trim() || undefined },
       { onSuccess: () => { setName(''); setNotes(''); setAdding(false); } },
@@ -182,9 +190,9 @@ export function PlanningScreen(): React.JSX.Element {
 
   return (
     <Screen scroll>
-      <Text variant="title">Planification</Text>
+      <Text variant="title">{t('sport.planning.title')}</Text>
       <Text variant="caption" color="textMuted">
-        Programme tes séances et anticipe ta récupération.
+        {t('sport.planning.subtitle')}
       </Text>
 
       {/* Week navigator */}
@@ -255,7 +263,7 @@ export function PlanningScreen(): React.JSX.Element {
         <Text variant="heading">{longDate(selected)}</Text>
         <Pressable onPress={() => setAdding((v) => !v)} hitSlop={8}>
           <Text variant="body" style={{ color: colors.primary, fontWeight: '700' }}>
-            {adding ? 'Fermer' : '+ Ajouter'}
+            {adding ? t('sport.planning.addToggleClose') : t('sport.planning.addToggleOpen')}
           </Text>
         </Pressable>
       </View>
@@ -263,15 +271,16 @@ export function PlanningScreen(): React.JSX.Element {
       {adding && (
         <Card style={{ marginTop: spacing[2] }}>
           <Text variant="label" color="textMuted">
-            TYPE DE SÉANCE
+            {t('sport.planning.addForm.typeLabel')}
           </Text>
           <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: spacing[2], marginTop: spacing[2] }}>
             {FOCUS.map((f) => {
-              const active = name.trim() === f.label;
+              const label = t(f.labelKey);
+              const active = name.trim() === label;
               return (
                 <Pressable
                   key={f.key}
-                  onPress={() => setName(f.label)}
+                  onPress={() => setName(label)}
                   style={{
                     flexDirection: 'row', alignItems: 'center', gap: 6,
                     paddingHorizontal: 12, paddingVertical: 8, borderRadius: radii.full,
@@ -281,21 +290,21 @@ export function PlanningScreen(): React.JSX.Element {
                 >
                   <Text style={{ fontSize: 13 }}>{f.icon}</Text>
                   <Text variant="caption" style={{ color: active ? colors.onPrimary : colors.text, fontWeight: '600' }}>
-                    {f.label}
+                    {label}
                   </Text>
                 </Pressable>
               );
             })}
           </View>
           <View style={{ marginTop: spacing[3] }}>
-            <Input label="Nom (optionnel)" value={name} onChangeText={setName} placeholder="Ex. Push — Force" />
+            <Input label={t('sport.planning.addForm.nameLabel')} value={name} onChangeText={setName} placeholder={t('sport.planning.addForm.namePlaceholder')} />
           </View>
           <View style={{ marginTop: spacing[2] }}>
-            <Input label="Notes (optionnel)" value={notes} onChangeText={setNotes} placeholder="Exercices, objectif, charge…" />
+            <Input label={t('sport.planning.addForm.notesLabel')} value={notes} onChangeText={setNotes} placeholder={t('sport.planning.addForm.notesPlaceholder')} />
           </View>
           <View style={{ marginTop: spacing[3] }}>
             <Button
-              label={addPlanned.isPending ? 'Enregistrement…' : `Planifier le ${longDate(selected).split(' ').slice(1).join(' ')}`}
+              label={addPlanned.isPending ? t('sport.planning.addForm.submitPending') : t('sport.planning.addForm.submit', { date: longDate(selected).split(' ').slice(1).join(' ') })}
               onPress={submit}
               disabled={addPlanned.isPending}
               fullWidth
@@ -306,12 +315,12 @@ export function PlanningScreen(): React.JSX.Element {
 
       {isLoading ? (
         <Text variant="body" color="textMuted" style={{ marginTop: spacing[3] }}>
-          Chargement…
+          {t('common.loading')}
         </Text>
       ) : daySessions.length === 0 ? (
         <Card style={{ marginTop: spacing[2] }}>
           <Text variant="body" color="textMuted">
-            Aucune séance prévue ce jour. Touche « + Ajouter » pour en planifier une.
+            {t('sport.planning.emptyDay')}
           </Text>
         </Card>
       ) : (
@@ -334,10 +343,10 @@ export function PlanningScreen(): React.JSX.Element {
       {upcoming.length > 0 && (
         <>
           <Text variant="heading" style={{ marginTop: spacing[4] }}>
-            Prochaines séances
+            {t('sport.planning.upcoming.heading')}
           </Text>
           <Text variant="caption" color="textSubtle" style={{ marginBottom: spacing[2] }}>
-            Prévision de récupération à la date prévue
+            {t('sport.planning.upcoming.subtitle')}
           </Text>
           <View style={{ gap: spacing[2] }}>
             {upcoming.map((w) => {
@@ -360,8 +369,8 @@ export function PlanningScreen(): React.JSX.Element {
                         style={{ marginTop: spacing[2], color: notReady.length ? colors.warning : colors.accentData, fontWeight: '600' }}
                       >
                         {notReady.length
-                          ? `⚠️ Encore en récup : ${notReady.map((m) => MUSCLE_LABEL[m] ?? m).join(', ')}`
-                          : '✓ Muscles ciblés prêts'}
+                          ? t('sport.planning.upcoming.notReady', { muscles: notReady.map((m) => (MUSCLE_LABEL_KEY[m] ? t(MUSCLE_LABEL_KEY[m]!) : m)).join(', ') })
+                          : t('sport.planning.upcoming.ready')}
                       </Text>
                     )}
                   </Card>
@@ -373,8 +382,7 @@ export function PlanningScreen(): React.JSX.Element {
       )}
 
       <Text variant="caption" color="textSubtle" style={{ marginTop: spacing[4], textAlign: 'center' }}>
-        La prévision estime la récupération de chaque groupe musculaire à la date prévue,
-        d'après tes séances passées.
+        {t('sport.planning.footerNote')}
       </Text>
     </Screen>
   );
@@ -395,6 +403,7 @@ function SessionCard({
   onDelete: () => void;
   onReprogram: () => void;
 }): React.JSX.Element {
+  const { t } = useTranslation();
   const { colors } = useTheme();
   const focus = focusFor(workout.name);
   const k = (workout.plannedFor ?? '').slice(0, 10);
@@ -404,8 +413,8 @@ function SessionCard({
   const exerciseNames = useMemo(() => {
     const custom = Object.fromEntries(customExercises.map((e) => [e.id, toCatalogExercise(e).name]));
     const order = [...sets].sort((a, b) => a.order - b.order);
-    return order.map((s) => custom[s.exerciseId] ?? BUILT_IN_EXERCISE_NAME[s.exerciseId] ?? 'Exercice').join(' · ');
-  }, [sets, customExercises]);
+    return order.map((s) => custom[s.exerciseId] ?? BUILT_IN_EXERCISE_NAME[s.exerciseId] ?? t('sport.planning.exerciseFallbackName')).join(' · ');
+  }, [sets, customExercises, t]);
   return (
     <Swipeable
       renderRightActions={() => (
@@ -421,7 +430,7 @@ function SessionCard({
           }}
         >
           <Icon name="trash" size={18} color={colors.onPrimary} />
-          <Text variant="caption" color="onPrimary" style={{ marginTop: 2, fontWeight: '600' }}>Supprimer</Text>
+          <Text variant="caption" color="onPrimary" style={{ marginTop: 2, fontWeight: '600' }}>{t('sport.planning.sessionCard.delete')}</Text>
         </Pressable>
       )}
       overshootRight={false}
@@ -454,7 +463,7 @@ function SessionCard({
                   }}
                 >
                   <Text variant="caption" style={{ color: cold ? colors.accentStrength : colors.accentData, fontWeight: '600' }}>
-                    {MUSCLE_LABEL[m] ?? m}
+                    {MUSCLE_LABEL_KEY[m] ? t(MUSCLE_LABEL_KEY[m]!) : m}
                   </Text>
                 </View>
               );
@@ -464,15 +473,15 @@ function SessionCard({
 
         <View style={{ flexDirection: 'row', gap: spacing[2], marginTop: spacing[3] }}>
           <View style={{ flex: 1 }}>
-            <Button label="✓ Fait" variant="primary" onPress={onDone} fullWidth />
+            <Button label={t('sport.planning.sessionCard.done')} variant="primary" onPress={onDone} fullWidth />
           </View>
           <View style={{ flex: 1 }}>
-            <Button label="Passer" variant="secondary" onPress={onSkip} fullWidth />
+            <Button label={t('sport.planning.sessionCard.skip')} variant="secondary" onPress={onSkip} fullWidth />
           </View>
           <Pressable
             onPress={onReprogram}
             hitSlop={8}
-            accessibilityLabel="Reprogrammer cette séance la semaine prochaine"
+            accessibilityLabel={t('sport.planning.sessionCard.reprogramA11y')}
             style={({ pressed }) => ({
               opacity: pressed ? 0.5 : 1, width: 44, alignItems: 'center', justifyContent: 'center',
               borderRadius: radii.md, borderWidth: 1, borderColor: colors.border,

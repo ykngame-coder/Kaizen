@@ -1,6 +1,8 @@
 import React, { useMemo, useState } from 'react';
 import { Pressable, View } from 'react-native';
 import { useRouter } from 'expo-router';
+import { useTranslation } from 'react-i18next';
+import type { TFunction } from 'i18next';
 import { Badge, type BadgeTone, Button, Card, Input, Screen, Text, useTheme } from '@supotsu/ui';
 import { radii, spacing } from '@supotsu/design-system';
 import { parseWorkoutText, resolveExerciseByName, type ParsedExercise } from '@supotsu/connectors';
@@ -13,11 +15,6 @@ const CONFIDENCE_TONE: Record<ParsedExercise['confidence'], BadgeTone> = {
   high: 'success',
   medium: 'warning',
   to_confirm: 'error',
-};
-const CONFIDENCE_LABEL: Record<ParsedExercise['confidence'], string> = {
-  high: 'Lecture fiable',
-  medium: 'À vérifier',
-  to_confirm: 'Non reconnu',
 };
 
 interface SetDraft {
@@ -54,10 +51,10 @@ function toDraft(ex: ParsedExercise): ExerciseDraft {
 }
 
 /** Extract a human-readable message from anything a failed pick/OCR call can throw. */
-function errorMessage(e: unknown): string {
+function errorMessage(e: unknown, t: TFunction): string {
   if (e instanceof Error) return e.message;
   if (typeof e === 'string') return e;
-  return "Lecture de l'image impossible.";
+  return t('sport.ocrImport.errorFallback');
 }
 
 /**
@@ -67,10 +64,17 @@ function errorMessage(e: unknown): string {
  * l'utilisateur n'a pas vu et pu corriger chaque ligne lue (aucune boîte noire).
  */
 export function OcrImportScreen(): React.JSX.Element {
+  const { t } = useTranslation();
   const router = useRouter();
   const { colors } = useTheme();
   const addWorkout = useAddWorkout();
   const { data: customExercises = [] } = useCustomExercises();
+
+  const CONFIDENCE_LABEL: Record<ParsedExercise['confidence'], string> = {
+    high: t('sport.ocrImport.confidence.high'),
+    medium: t('sport.ocrImport.confidence.medium'),
+    to_confirm: t('sport.ocrImport.confidence.toConfirm'),
+  };
 
   const [name, setName] = useState('');
   const [drafts, setDrafts] = useState<ExerciseDraft[] | null>(null);
@@ -97,13 +101,13 @@ export function OcrImportScreen(): React.JSX.Element {
       const text = await ocrImageToText(uri);
       const parsed = parseWorkoutText(text);
       if (parsed.exercises.length === 0) {
-        setError('Aucun texte de séance reconnu dans cette image. Réessaie avec une capture plus nette.');
+        setError(t('sport.ocrImport.capture.noTextFound'));
         return;
       }
       setName(parsed.name ?? '');
       setDrafts(parsed.exercises.map(toDraft));
     } catch (e) {
-      setError(errorMessage(e));
+      setError(errorMessage(e, t));
     } finally {
       setBusy(false);
     }
@@ -137,11 +141,11 @@ export function OcrImportScreen(): React.JSX.Element {
   const submit = async (): Promise<void> => {
     setSaveError(null);
     if (!drafts || drafts.length === 0) {
-      setSaveError('Aucun exercice à enregistrer.');
+      setSaveError(t('sport.ocrImport.errors.noExercises'));
       return;
     }
     if (drafts.some((d) => !d.exerciseId)) {
-      setSaveError('Certains exercices ne sont pas reconnus — choisis-les dans la liste avant d’enregistrer.');
+      setSaveError(t('sport.ocrImport.errors.unmatchedExercises'));
       return;
     }
     let order = 0;
@@ -156,29 +160,28 @@ export function OcrImportScreen(): React.JSX.Element {
         })),
     );
     if (sets.length === 0) {
-      setSaveError('Ajoute au moins une série avant d’enregistrer.');
+      setSaveError(t('sport.ocrImport.errors.noSets'));
       return;
     }
     try {
-      await addWorkout.mutateAsync({ name: name.trim() || 'Séance importée', sets });
+      await addWorkout.mutateAsync({ name: name.trim() || t('sport.ocrImport.defaultSessionName'), sets });
       router.back();
     } catch {
-      setSaveError('Enregistrement impossible.');
+      setSaveError(t('sport.ocrImport.errors.saveFailed'));
     }
   };
 
   if (!ocrAvailable()) {
     return (
       <Screen>
-        <Text variant="title">Importer une capture</Text>
+        <Text variant="title">{t('sport.ocrImport.title')}</Text>
         <Card>
           <Text variant="body" color="textMuted">
-            La lecture de capture d'écran fonctionne uniquement sur l'app mobile (iOS / Android) —
-            elle utilise la reconnaissance de texte de l'appareil, indisponible sur le web.
+            {t('sport.ocrImport.unavailable')}
           </Text>
         </Card>
         <View style={{ alignItems: 'flex-start' }}>
-          <Button label="Retour" variant="secondary" onPress={() => router.back()} />
+          <Button label={t('common.back')} variant="secondary" onPress={() => router.back()} />
         </View>
       </Screen>
     );
@@ -186,22 +189,19 @@ export function OcrImportScreen(): React.JSX.Element {
 
   return (
     <Screen scroll>
-      <Text variant="title">Importer une capture</Text>
+      <Text variant="title">{t('sport.ocrImport.title')}</Text>
       <Text variant="caption" color="textMuted">
-        Prends ou choisis une photo de ta séance — la lecture se fait entièrement sur ton
-        téléphone, rien n'est envoyé nulle part. Tu vérifies et corriges chaque ligne avant
-        d'enregistrer.
+        {t('sport.ocrImport.subtitle')}
       </Text>
 
       {!drafts ? (
         <Card>
-          <Text variant="heading">Capture d'écran</Text>
+          <Text variant="heading">{t('sport.ocrImport.capture.heading')}</Text>
           <Text variant="body" color="textMuted">
-            Fonctionne mieux avec un texte net : nom des exercices + séries × répétitions (+
-            poids). Ex : "Développé couché 4×8 60kg".
+            {t('sport.ocrImport.capture.hint')}
           </Text>
           <View style={{ alignItems: 'flex-start', marginTop: spacing[2] }}>
-            <Button label={busy ? 'Lecture…' : 'Choisir une capture'} onPress={pickAndScan} disabled={busy} />
+            <Button label={busy ? t('sport.ocrImport.capture.buttonBusy') : t('sport.ocrImport.capture.button')} onPress={pickAndScan} disabled={busy} />
           </View>
           {error ? (
             <Text variant="caption" style={{ color: colors.error, marginTop: spacing[2] }}>
@@ -211,7 +211,7 @@ export function OcrImportScreen(): React.JSX.Element {
         </Card>
       ) : (
         <>
-          <Input label="Nom de la séance" placeholder="Ex : Push A" value={name} onChangeText={setName} />
+          <Input label={t('sport.ocrImport.nameLabel')} placeholder={t('sport.ocrImport.namePlaceholder')} value={name} onChangeText={setName} />
 
           <View style={{ gap: spacing[3] }}>
             {drafts.map((d, exIndex) => {
@@ -245,7 +245,7 @@ export function OcrImportScreen(): React.JSX.Element {
                         }}
                       >
                         <Text variant="body" color={d.exerciseId ? 'text' : undefined} style={!d.exerciseId ? { color: colors.error } : undefined}>
-                          {d.matchName ?? 'Choisir un exercice du catalogue…'}
+                          {d.matchName ?? t('sport.ocrImport.picker.placeholder')}
                         </Text>
                         <Text variant="body" color="textMuted">{d.pickerOpen ? '▴' : '▾'}</Text>
                       </View>
@@ -253,7 +253,7 @@ export function OcrImportScreen(): React.JSX.Element {
                     {d.pickerOpen ? (
                       <View style={{ marginTop: spacing[2], gap: spacing[2] }}>
                         <Input
-                          placeholder="Rechercher un exercice…"
+                          placeholder={t('sport.ocrImport.picker.search')}
                           value={d.pickerQuery}
                           onChangeText={(v) => updateDraft(exIndex, { pickerQuery: v })}
                           autoFocus
@@ -265,7 +265,7 @@ export function OcrImportScreen(): React.JSX.Element {
                         ))}
                         {d.pickerQuery.trim() && filtered.length === 0 ? (
                           <Text variant="caption" color="textSubtle">
-                            Aucun résultat pour "{d.pickerQuery}".
+                            {t('sport.ocrImport.picker.noResults', { query: d.pickerQuery })}
                           </Text>
                         ) : null}
                       </View>
@@ -276,10 +276,10 @@ export function OcrImportScreen(): React.JSX.Element {
                     {d.sets.map((s, setIndex) => (
                       <View key={setIndex} style={{ flexDirection: 'row', alignItems: 'flex-end', gap: spacing[3] }}>
                         <View style={{ flex: 1 }}>
-                          <Input label="Répétitions" keyboardType="numeric" value={s.reps} onChangeText={(v) => updateSet(exIndex, setIndex, { reps: v })} />
+                          <Input label={t('sport.ocrImport.repsLabel')} keyboardType="numeric" value={s.reps} onChangeText={(v) => updateSet(exIndex, setIndex, { reps: v })} />
                         </View>
                         <View style={{ flex: 1 }}>
-                          <Input label="Charge (kg)" keyboardType="numeric" value={s.weight} onChangeText={(v) => updateSet(exIndex, setIndex, { weight: v })} />
+                          <Input label={t('sport.ocrImport.weightLabel')} keyboardType="numeric" value={s.weight} onChangeText={(v) => updateSet(exIndex, setIndex, { weight: v })} />
                         </View>
                         {d.sets.length > 1 ? (
                           <Pressable onPress={() => removeSet(exIndex, setIndex)} hitSlop={8} style={{ paddingBottom: spacing[3] }}>
@@ -289,7 +289,7 @@ export function OcrImportScreen(): React.JSX.Element {
                       </View>
                     ))}
                     <Pressable onPress={() => addSet(exIndex)}>
-                      <Text variant="caption" color="primary">+ Ajouter une série</Text>
+                      <Text variant="caption" color="primary">{t('sport.ocrImport.addSet')}</Text>
                     </Pressable>
                   </View>
                 </Card>
@@ -300,9 +300,9 @@ export function OcrImportScreen(): React.JSX.Element {
           {saveError ? <Badge label={saveError} tone="error" /> : null}
 
           <View style={{ flexDirection: 'row', gap: spacing[2], marginTop: spacing[2] }}>
-            <Button label="Annuler" variant="secondary" onPress={() => router.back()} />
+            <Button label={t('common.cancel')} variant="secondary" onPress={() => router.back()} />
             <View style={{ flex: 1 }} />
-            <Button label={addWorkout.isPending ? '…' : 'Enregistrer la séance'} onPress={submit} disabled={addWorkout.isPending} />
+            <Button label={addWorkout.isPending ? t('sport.ocrImport.saving') : t('sport.ocrImport.save')} onPress={submit} disabled={addWorkout.isPending} />
           </View>
         </>
       )}

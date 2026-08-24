@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Animated, View } from 'react-native';
 import { useRouter } from 'expo-router';
+import { useTranslation } from 'react-i18next';
 import { Button, Card, Icon, Input, Screen, SegmentedControl, Text, triggerHaptic, useTheme } from '@supotsu/ui';
 import { spacing } from '@supotsu/design-system';
 import { useActivities, useAddActivity } from '@/lib/data/queries';
@@ -13,18 +14,6 @@ import { useActivities, useAddActivity } from '@/lib/data/queries';
  * sessions. Progression (record personnel) is derived from those past
  * activities rather than a dedicated records write path.
  */
-const SETS_OPTIONS = [
-  { value: '3', label: '3 séries' },
-  { value: '5', label: '5 séries' },
-  { value: '8', label: '8 séries' },
-  { value: 'custom', label: 'Perso' },
-];
-const HOLD_OPTIONS = [
-  { value: '15', label: '15 s' },
-  { value: '20', label: '20 s' },
-  { value: '30', label: '30 s' },
-  { value: 'custom', label: 'Perso' },
-];
 const MIN_SETS = 1;
 const MAX_SETS = 20;
 const MIN_HOLD_SEC = 5;
@@ -58,10 +47,24 @@ function parseHoldSec(notes: string | undefined): number | null {
 }
 
 export function StomachVacuumScreen(): React.JSX.Element {
+  const { t } = useTranslation();
   const router = useRouter();
   const { colors } = useTheme();
   const { data: activities = [] } = useActivities();
   const addActivity = useAddActivity();
+
+  const SETS_OPTIONS = [
+    { value: '3', label: t('sport.stomachVacuum.sets.count', { n: 3 }) },
+    { value: '5', label: t('sport.stomachVacuum.sets.count', { n: 5 }) },
+    { value: '8', label: t('sport.stomachVacuum.sets.count', { n: 8 }) },
+    { value: 'custom', label: t('sport.stomachVacuum.custom') },
+  ];
+  const HOLD_OPTIONS = [
+    { value: '15', label: t('sport.stomachVacuum.hold.duration', { n: 15 }) },
+    { value: '20', label: t('sport.stomachVacuum.hold.duration', { n: 20 }) },
+    { value: '30', label: t('sport.stomachVacuum.hold.duration', { n: 30 }) },
+    { value: 'custom', label: t('sport.stomachVacuum.custom') },
+  ];
 
   const [setsChoice, setSetsChoice] = useState('3');
   const [holdChoice, setHoldChoice] = useState('20');
@@ -85,12 +88,12 @@ export function StomachVacuumScreen(): React.JSX.Element {
 
   const phases: Phase[] = useMemo(
     () => [
-      { key: 'exhale', label: 'Expire à fond', sec: EXHALE_SEC, scale: 1 },
-      { key: 'vacuum', label: 'Rentre le ventre', sec: VACUUM_SEC, scale: 0.55 },
-      { key: 'hold', label: 'Tiens', sec: holdSec, scale: 0.55 },
-      { key: 'release', label: 'Relâche', sec: RELEASE_SEC, scale: 1 },
+      { key: 'exhale', label: t('sport.stomachVacuum.phase.exhale'), sec: EXHALE_SEC, scale: 1 },
+      { key: 'vacuum', label: t('sport.stomachVacuum.phase.vacuum'), sec: VACUUM_SEC, scale: 0.55 },
+      { key: 'hold', label: t('sport.stomachVacuum.phase.hold'), sec: holdSec, scale: 0.55 },
+      { key: 'release', label: t('sport.stomachVacuum.phase.release'), sec: RELEASE_SEC, scale: 1 },
     ],
-    [holdSec],
+    [holdSec, t],
   );
 
   const personalBestSec = useMemo(
@@ -173,40 +176,42 @@ export function StomachVacuumScreen(): React.JSX.Element {
 
   return (
     <Screen>
-      <Text variant="title">Stomach Vacuum</Text>
+      <Text variant="title">{t('sport.stomachVacuum.title')}</Text>
       <Text variant="caption" color="textMuted">
-        Gainage du transverse — expire, rentre le ventre, tiens, relâche.
+        {t('sport.stomachVacuum.subtitle')}
       </Text>
 
       {screen === 'setup' ? (
         <>
           <Card>
             <Text variant="caption" color="textMuted">
-              {personalBestSec !== null ? `Ton record : ${personalBestSec}s de tenue` : 'Pas encore de séance enregistrée — à toi de jouer.'}
+              {personalBestSec !== null
+                ? t('sport.stomachVacuum.record', { sec: personalBestSec })
+                : t('sport.stomachVacuum.noRecord')}
             </Text>
           </Card>
 
           <View style={{ marginTop: spacing[2] }}>
-            <Text variant="body" style={{ fontWeight: '600', marginBottom: spacing[2] }}>Séries</Text>
+            <Text variant="body" style={{ fontWeight: '600', marginBottom: spacing[2] }}>{t('sport.stomachVacuum.setsLabel')}</Text>
             <SegmentedControl options={SETS_OPTIONS} value={setsChoice} onChange={setSetsChoice} />
             {setsChoice === 'custom' ? (
               <View style={{ marginTop: spacing[2] }}>
                 <Input
                   keyboardType="numeric"
-                  placeholder={`Entre ${MIN_SETS} et ${MAX_SETS}`}
+                  placeholder={t('sport.stomachVacuum.sets.placeholder', { min: MIN_SETS, max: MAX_SETS })}
                   value={customSets}
                   onChangeText={setCustomSets}
                 />
               </View>
             ) : null}
 
-            <Text variant="body" style={{ fontWeight: '600', marginTop: spacing[4], marginBottom: spacing[2] }}>Durée de tenue</Text>
+            <Text variant="body" style={{ fontWeight: '600', marginTop: spacing[4], marginBottom: spacing[2] }}>{t('sport.stomachVacuum.holdLabel')}</Text>
             <SegmentedControl options={HOLD_OPTIONS} value={holdChoice} onChange={setHoldChoice} />
             {holdChoice === 'custom' ? (
               <View style={{ marginTop: spacing[2] }}>
                 <Input
                   keyboardType="numeric"
-                  placeholder={`En secondes, entre ${MIN_HOLD_SEC} et ${MAX_HOLD_SEC}`}
+                  placeholder={t('sport.stomachVacuum.hold.placeholder', { min: MIN_HOLD_SEC, max: MAX_HOLD_SEC })}
                   value={customHold}
                   onChangeText={setCustomHold}
                 />
@@ -215,14 +220,14 @@ export function StomachVacuumScreen(): React.JSX.Element {
           </View>
 
           <View style={{ alignItems: 'center', marginTop: spacing[6] }}>
-            <Button label="Commencer" onPress={start} disabled={!canStart} />
+            <Button label={t('sport.stomachVacuum.start')} onPress={start} disabled={!canStart} />
           </View>
         </>
       ) : null}
 
       {screen === 'running' ? (
         <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', gap: spacing[6] }}>
-          <Text variant="caption" color="textSubtle">Série {setIdx + 1} / {totalSets}</Text>
+          <Text variant="caption" color="textSubtle">{t('sport.stomachVacuum.setCounter', { current: setIdx + 1, total: totalSets })}</Text>
 
           <View style={{ width: 220, height: 220, alignItems: 'center', justifyContent: 'center' }}>
             <Animated.View
@@ -248,28 +253,28 @@ export function StomachVacuumScreen(): React.JSX.Element {
               }}
             />
             <View style={{ alignItems: 'center' }}>
-              <Text variant="heading">{resting ? 'Repos' : currentPhase!.label}</Text>
+              <Text variant="heading">{resting ? t('sport.stomachVacuum.resting') : currentPhase!.label}</Text>
               <Text variant="display" style={{ marginTop: spacing[1] }}>{secondsLeft}</Text>
             </View>
           </View>
 
-          <Button label="Arrêter" variant="secondary" onPress={stop} />
+          <Button label={t('sport.stomachVacuum.stop')} variant="secondary" onPress={stop} />
         </View>
       ) : null}
 
       {screen === 'done' ? (
         <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', gap: spacing[4] }}>
           <Icon name="armFlex" size={40} color={colors.accentStrength} />
-          <Text variant="heading">Séance enregistrée</Text>
+          <Text variant="heading">{t('sport.stomachVacuum.done.heading')}</Text>
           <Text variant="caption" color="textMuted" style={{ textAlign: 'center' }}>
-            {totalSets} séries · tenue {holdSec}s — ajoutée à ton historique d'activités.
+            {t('sport.stomachVacuum.done.summary', { totalSets, holdSec })}
           </Text>
-          <Button label="Refaire une séance" onPress={() => setScreen('setup')} />
+          <Button label={t('sport.stomachVacuum.done.restart')} onPress={() => setScreen('setup')} />
         </View>
       ) : null}
 
       <View style={{ alignItems: 'flex-start', marginTop: spacing[4] }}>
-        <Button label="Retour" variant="secondary" onPress={() => router.back()} />
+        <Button label={t('common.back')} variant="secondary" onPress={() => router.back()} />
       </View>
     </Screen>
   );

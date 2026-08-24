@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { View } from 'react-native';
 import { useRouter } from 'expo-router';
+import { useTranslation } from 'react-i18next';
 import { Button, Card, Icon, Input, Screen, SegmentedControl, Text, triggerHaptic, useTheme } from '@supotsu/ui';
 import { radii, spacing } from '@supotsu/design-system';
 
@@ -12,12 +13,11 @@ import { radii, spacing } from '@supotsu/design-system';
  * the user asked to track).
  */
 const PRESETS = [
-  { value: 'tabata', label: 'Tabata', work: 20, rest: 10, rounds: 8 },
-  { value: 'hiit', label: 'HIIT', work: 30, rest: 15, rounds: 10 },
-  { value: 'emom', label: 'EMOM', work: 40, rest: 20, rounds: 10 },
-  { value: 'custom', label: 'Perso', work: 30, rest: 30, rounds: 8 },
+  { value: 'tabata', labelKey: 'sport.intervalTimer.presets.tabata', work: 20, rest: 10, rounds: 8 },
+  { value: 'hiit', labelKey: 'sport.intervalTimer.presets.hiit', work: 30, rest: 15, rounds: 10 },
+  { value: 'emom', labelKey: 'sport.intervalTimer.presets.emom', work: 40, rest: 20, rounds: 10 },
+  { value: 'custom', labelKey: 'sport.intervalTimer.presets.custom', work: 30, rest: 30, rounds: 8 },
 ] as const;
-const PRESET_OPTIONS = PRESETS.map((p) => ({ value: p.value, label: p.label }));
 
 const MIN_SEC = 1;
 const MAX_SEC = 600;
@@ -34,8 +34,11 @@ function parseClamped(text: string, min: number, max: number): number | null {
 }
 
 export function IntervalTimerScreen(): React.JSX.Element {
+  const { t } = useTranslation();
   const router = useRouter();
   const { colors } = useTheme();
+
+  const PRESET_OPTIONS = PRESETS.map((p) => ({ value: p.value, label: t(p.labelKey) }));
 
   const [preset, setPreset] = useState<string>('tabata');
   const [workText, setWorkText] = useState('20');
@@ -111,46 +114,54 @@ export function IntervalTimerScreen(): React.JSX.Element {
 
   useEffect(() => () => clearTimers(), []);
 
-  const phaseLabel: Record<PhaseKey, string> = { prep: 'Prépare-toi', work: 'Travail', rest: 'Repos' };
+  const phaseLabel: Record<PhaseKey, string> = {
+    prep: t('sport.intervalTimer.phase.prep'),
+    work: t('sport.intervalTimer.phase.work'),
+    rest: t('sport.intervalTimer.phase.rest'),
+  };
   const phaseColor: Record<PhaseKey, string> = { prep: colors.textSubtle, work: colors.accentStrength, rest: colors.info };
 
   return (
     <Screen>
-      <Text variant="title">Minuteur d'intervalles</Text>
+      <Text variant="title">{t('sport.intervalTimer.title')}</Text>
       <Text variant="caption" color="textMuted">
-        Tabata, HIIT, EMOM ou perso — travail / repos / rounds.
+        {t('sport.intervalTimer.subtitle')}
       </Text>
 
       {screen === 'setup' ? (
         <>
           <View style={{ marginTop: spacing[2] }}>
-            <Text variant="body" style={{ fontWeight: '600', marginBottom: spacing[2] }}>Preset</Text>
+            <Text variant="body" style={{ fontWeight: '600', marginBottom: spacing[2] }}>{t('sport.intervalTimer.presetLabel')}</Text>
             <SegmentedControl options={PRESET_OPTIONS} value={preset} onChange={applyPreset} />
           </View>
 
           <View style={{ flexDirection: 'row', gap: spacing[3], marginTop: spacing[4] }}>
             <View style={{ flex: 1 }}>
-              <Input label="Travail (s)" keyboardType="numeric" value={workText} onChangeText={setWorkText} />
+              <Input label={t('sport.intervalTimer.workLabel')} keyboardType="numeric" value={workText} onChangeText={setWorkText} />
             </View>
             <View style={{ flex: 1 }}>
-              <Input label="Repos (s)" keyboardType="numeric" value={restText} onChangeText={setRestText} />
+              <Input label={t('sport.intervalTimer.restLabel')} keyboardType="numeric" value={restText} onChangeText={setRestText} />
             </View>
             <View style={{ flex: 1 }}>
-              <Input label="Rounds" keyboardType="numeric" value={roundsText} onChangeText={setRoundsText} />
+              <Input label={t('sport.intervalTimer.roundsLabel')} keyboardType="numeric" value={roundsText} onChangeText={setRoundsText} />
             </View>
           </View>
 
           {work !== null && rest !== null && rounds !== null ? (
             <Card style={{ marginTop: spacing[3] }}>
               <Text variant="caption" color="textMuted">
-                {rounds} rounds · {work}s travail / {rest}s repos · durée totale ≈{' '}
-                {Math.round((rounds * work + (rounds - 1) * rest) / 60)} min
+                {t('sport.intervalTimer.summary', {
+                  rounds,
+                  work,
+                  rest,
+                  totalMin: Math.round((rounds * work + (rounds - 1) * rest) / 60),
+                })}
               </Text>
             </Card>
           ) : null}
 
           <View style={{ alignItems: 'center', marginTop: spacing[6] }}>
-            <Button label="Commencer" onPress={start} disabled={!canStart} />
+            <Button label={t('sport.intervalTimer.start')} onPress={start} disabled={!canStart} />
           </View>
         </>
       ) : null}
@@ -158,7 +169,7 @@ export function IntervalTimerScreen(): React.JSX.Element {
       {screen === 'running' ? (
         <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', gap: spacing[6] }}>
           <Text variant="caption" color="textSubtle">
-            {phase === 'prep' ? 'Préparation' : `Round ${round} / ${rounds}`}
+            {phase === 'prep' ? t('sport.intervalTimer.preparation') : t('sport.intervalTimer.round', { round, rounds })}
           </Text>
 
           <View
@@ -177,23 +188,23 @@ export function IntervalTimerScreen(): React.JSX.Element {
             <Text variant="display" style={{ marginTop: spacing[1] }}>{secondsLeft}</Text>
           </View>
 
-          <Button label="Arrêter" variant="secondary" onPress={stop} />
+          <Button label={t('sport.intervalTimer.stop')} variant="secondary" onPress={stop} />
         </View>
       ) : null}
 
       {screen === 'done' ? (
         <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', gap: spacing[4] }}>
           <Icon name="fire" size={40} color={colors.warning} />
-          <Text variant="heading">Séance terminée</Text>
+          <Text variant="heading">{t('sport.intervalTimer.done.heading')}</Text>
           <Text variant="caption" color="textMuted" style={{ textAlign: 'center' }}>
-            {rounds} rounds · {work}s / {rest}s
+            {t('sport.intervalTimer.done.summary', { rounds, work, rest })}
           </Text>
-          <Button label="Refaire une séance" onPress={() => setScreen('setup')} />
+          <Button label={t('sport.intervalTimer.done.restart')} onPress={() => setScreen('setup')} />
         </View>
       ) : null}
 
       <View style={{ alignItems: 'flex-start', marginTop: spacing[4] }}>
-        <Button label="Retour" variant="secondary" onPress={() => router.back()} />
+        <Button label={t('common.back')} variant="secondary" onPress={() => router.back()} />
       </View>
     </Screen>
   );

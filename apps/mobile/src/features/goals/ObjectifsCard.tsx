@@ -1,6 +1,7 @@
 import React, { useMemo } from 'react';
 import { Pressable, View } from 'react-native';
 import { useRouter } from 'expo-router';
+import { useTranslation } from 'react-i18next';
 import { Card, Meter, Text, useTheme } from '@supotsu/ui';
 import { spacing } from '@supotsu/design-system';
 import type { GoalType } from '@supotsu/core';
@@ -13,6 +14,7 @@ import { useGoals } from '@/lib/data/queries';
  * "Comprendre & Objectifs éclatés par pilier").
  */
 export function ObjectifsCard({ types, max = 2 }: { types: GoalType[]; max?: number }): React.JSX.Element | null {
+  const { t } = useTranslation();
   const router = useRouter();
   const { colors } = useTheme();
   const { data: goals = [] } = useGoals();
@@ -25,9 +27,9 @@ export function ObjectifsCard({ types, max = 2 }: { types: GoalType[]; max?: num
   return (
     <Card>
       <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: spacing[2] }}>
-        <Text variant="heading">Objectifs</Text>
+        <Text variant="heading">{t('sport.goals.objectifsCard.heading')}</Text>
         <Pressable onPress={() => router.push('/profile/goals')}>
-          <Text variant="caption" color="primary">Tout voir ›</Text>
+          <Text variant="caption" color="primary">{t('sport.goals.objectifsCard.seeAll')}</Text>
         </Pressable>
       </View>
       <View style={{ gap: spacing[3] }}>

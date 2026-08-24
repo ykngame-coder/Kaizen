@@ -1,6 +1,7 @@
 import React, { useMemo } from 'react';
 import { View } from 'react-native';
 import { useRouter, type Href } from 'expo-router';
+import { useTranslation } from 'react-i18next';
 import { Card, Icon, Screen, Text, useTheme } from '@supotsu/ui';
 import { radii, spacing } from '@supotsu/design-system';
 import { averageSleepHours, computeRecoveryScore } from '@supotsu/engines';
@@ -36,6 +37,7 @@ function Snap({ icon, value, label }: { icon: React.ReactNode; value: string; la
 
 /** Progression hub (architecture: Application → Progression) — snapshot + sections. */
 export function ProgressionScreen(): React.JSX.Element {
+  const { t } = useTranslation();
   const router = useRouter();
   const { data: activities = [] } = useActivities();
   const { data: health = [] } = useHealthMetrics();
@@ -61,29 +63,29 @@ export function ProgressionScreen(): React.JSX.Element {
   // Cross-pillar only — per-pillar trends (objectifs, records, photos) live in
   // their own hub now (Sport/Sommeil/Nutrition mini-accueils).
   const sections: Section[] = [
-    { title: 'Rapport hebdomadaire', subtitle: 'Ton bilan de la semaine, expliqué', icon: '📄', path: '/profile/report' },
-    { title: 'Statistiques', subtitle: 'Vue d’ensemble sur la période', icon: '📊', path: '/profile/analytics' },
-    { title: 'Tendances & corrélations', subtitle: 'Ce qui influence ta forme (IA)', icon: '📈', path: '/profile/analytics' },
-    { title: 'Badges', subtitle: 'Récompenses gagnées sur tes données', icon: '🏅', soon: true },
-    { title: 'Comparaisons', subtitle: 'Périodes et références', icon: '⚖', soon: true },
+    { title: t('sport.progress.progression.sections.weeklyReport.title'), subtitle: t('sport.progress.progression.sections.weeklyReport.subtitle'), icon: '📄', path: '/profile/report' },
+    { title: t('sport.progress.progression.sections.stats.title'), subtitle: t('sport.progress.progression.sections.stats.subtitle'), icon: '📊', path: '/profile/analytics' },
+    { title: t('sport.progress.progression.sections.trends.title'), subtitle: t('sport.progress.progression.sections.trends.subtitle'), icon: '📈', path: '/profile/analytics' },
+    { title: t('sport.progress.progression.sections.badges.title'), subtitle: t('sport.progress.progression.sections.badges.subtitle'), icon: '🏅', soon: true },
+    { title: t('sport.progress.progression.sections.comparisons.title'), subtitle: t('sport.progress.progression.sections.comparisons.subtitle'), icon: '⚖', soon: true },
   ];
 
   return (
     <Screen scroll>
       <BackButton />
-      <Text variant="title">Bilan & badges</Text>
+      <Text variant="title">{t('sport.progress.progression.title')}</Text>
       <Text variant="caption" color="textMuted">
-        Tes tendances et tes récompenses, tous piliers confondus.
+        {t('sport.progress.progression.subtitle')}
       </Text>
 
       {/* Bilan de la semaine */}
       <Card style={{ marginTop: spacing[3] }}>
-        <Text variant="heading">7 derniers jours</Text>
+        <Text variant="heading">{t('sport.progress.progression.weekHeading')}</Text>
         <View style={{ flexDirection: 'row', gap: spacing[2], marginTop: spacing[3] }}>
-          <Snap icon={<Icon name="armFlex" size={16} />} value={`${snap.sessions}`} label="Séances" />
-          <Snap icon={<Icon name="bedtime" size={16} />} value={snap.sleep} label="Sommeil moy." />
-          <Snap icon={<Icon name="checkCircle" size={16} />} value={snap.recovery} label="Récup moy." />
-          <Snap icon={<Icon name="scale" size={16} />} value={snap.weight} label="Poids" />
+          <Snap icon={<Icon name="armFlex" size={16} />} value={`${snap.sessions}`} label={t('sport.progress.progression.snap.sessions')} />
+          <Snap icon={<Icon name="bedtime" size={16} />} value={snap.sleep} label={t('sport.progress.progression.snap.sleep')} />
+          <Snap icon={<Icon name="checkCircle" size={16} />} value={snap.recovery} label={t('sport.progress.progression.snap.recovery')} />
+          <Snap icon={<Icon name="scale" size={16} />} value={snap.weight} label={t('sport.progress.progression.snap.weight')} />
         </View>
       </Card>
 

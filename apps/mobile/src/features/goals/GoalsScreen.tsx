@@ -1,6 +1,8 @@
 import React, { useMemo, useState } from 'react';
 import { Pressable, View } from 'react-native';
 import { useRouter } from 'expo-router';
+import { useTranslation } from 'react-i18next';
+import type { TFunction } from 'i18next';
 import {
   Badge,
   Button,
@@ -29,24 +31,30 @@ import { formatDate } from '@/lib/format';
 import { formatWeight, usePreferences } from '@/lib/preferences';
 import { DatePickerModal } from '@/features/navigation/DatePickerModal';
 
-const TYPE_OPTIONS: { value: GoalType; label: string }[] = [
-  { value: 'body_composition', label: 'Poids / compo' },
-  { value: 'performance', label: 'Performance' },
-  { value: 'strength', label: 'Force' },
-  { value: 'endurance', label: 'Endurance' },
-  { value: 'health', label: 'Santé' },
-  { value: 'habit', label: 'Habitude' },
-];
+type TypeOption = { value: GoalType; label: string };
+function typeOptions(t: TFunction): TypeOption[] {
+  return [
+    { value: 'body_composition', label: t('sport.goals.screen.typeOptions.bodyComposition') },
+    { value: 'performance', label: t('sport.goals.screen.typeOptions.performance') },
+    { value: 'strength', label: t('sport.goals.screen.typeOptions.strength') },
+    { value: 'endurance', label: t('sport.goals.screen.typeOptions.endurance') },
+    { value: 'health', label: t('sport.goals.screen.typeOptions.health') },
+    { value: 'habit', label: t('sport.goals.screen.typeOptions.habit') },
+  ];
+}
 
 /** The primary-goal archetypes from the mockup — one active selection. */
-const ARCHETYPES: { key: string; emoji: string; name: string; desc: string }[] = [
-  { key: 'fat_loss', emoji: '🔥', name: 'Perte de graisse', desc: 'Déficit, poids, masse grasse' },
-  { key: 'muscle', emoji: '💪', name: 'Prise de masse', desc: 'Surplus, force, volume' },
-  { key: 'hyrox', emoji: '🏃', name: 'Préparation Hyrox', desc: 'Charge, VO₂, endurance' },
-  { key: 'marathon', emoji: '🏅', name: 'Marathon', desc: 'Distance, allure, récup' },
-  { key: 'sleep', emoji: '😴', name: 'Sommeil', desc: 'Durée, régularité, HRV' },
-  { key: 'stress', emoji: '🧘', name: 'Réduction du stress', desc: 'HRV, respiration, repos' },
-];
+type Archetype = { key: string; emoji: string; name: string; desc: string };
+function archetypes(t: TFunction): Archetype[] {
+  return [
+    { key: 'fat_loss', emoji: '🔥', name: t('sport.goals.screen.archetypes.fatLoss.name'), desc: t('sport.goals.screen.archetypes.fatLoss.desc') },
+    { key: 'muscle', emoji: '💪', name: t('sport.goals.screen.archetypes.muscle.name'), desc: t('sport.goals.screen.archetypes.muscle.desc') },
+    { key: 'hyrox', emoji: '🏃', name: t('sport.goals.screen.archetypes.hyrox.name'), desc: t('sport.goals.screen.archetypes.hyrox.desc') },
+    { key: 'marathon', emoji: '🏅', name: t('sport.goals.screen.archetypes.marathon.name'), desc: t('sport.goals.screen.archetypes.marathon.desc') },
+    { key: 'sleep', emoji: '😴', name: t('sport.goals.screen.archetypes.sleep.name'), desc: t('sport.goals.screen.archetypes.sleep.desc') },
+    { key: 'stress', emoji: '🧘', name: t('sport.goals.screen.archetypes.stress.name'), desc: t('sport.goals.screen.archetypes.stress.desc') },
+  ];
+}
 
 function latestMetric(m: { type: HealthMetricType; value: number; measuredAt: string }[], type: HealthMetricType): number | undefined {
   return m.filter((x) => x.type === type).sort((a, b) => a.measuredAt.localeCompare(b.measuredAt)).at(-1)?.value;
@@ -62,7 +70,7 @@ function ProgressBar({ pct, color }: { pct: number; color: string }): React.JSX.
 }
 
 /** Selectable primary-goal tile. Gradient border when active. */
-function ArchetypeTile({ item, active, onPress }: { item: (typeof ARCHETYPES)[number]; active: boolean; onPress: () => void }): React.JSX.Element {
+function ArchetypeTile({ item, active, onPress }: { item: Archetype; active: boolean; onPress: () => void }): React.JSX.Element {
   const { colors } = useTheme();
   const inner = (
     <View style={{ backgroundColor: colors.surface, borderRadius: radii.lg - 1.5, padding: spacing[4], minHeight: 108 }}>
@@ -95,7 +103,9 @@ function ArchetypeTile({ item, active, onPress }: { item: (typeof ARCHETYPES)[nu
 }
 
 function GoalCard({ goal }: { goal: Goal }): React.JSX.Element {
+  const { t } = useTranslation();
   const { colors } = useTheme();
+  const typeOpts = useMemo(() => typeOptions(t), [t]);
   const update = useUpdateGoalCurrent();
   const editGoal = useUpdateGoal();
   const removeGoal = useDeleteGoal();
@@ -141,22 +151,22 @@ function GoalCard({ goal }: { goal: Goal }): React.JSX.Element {
   if (editing) {
     return (
       <Card>
-        <Text variant="heading">Modifier l’objectif</Text>
+        <Text variant="heading">{t('sport.goals.screen.goalCard.edit')}</Text>
         <View style={{ gap: spacing[3], marginTop: spacing[2] }}>
-          <SegmentedControl options={TYPE_OPTIONS} value={editType} onChange={setEditType} />
-          <Input label="Titre" value={editTitle} onChangeText={setEditTitle} />
+          <SegmentedControl options={typeOpts} value={editType} onChange={setEditType} />
+          <Input label={t('sport.goals.screen.goalCard.titleLabel')} value={editTitle} onChangeText={setEditTitle} />
           <View style={{ flexDirection: 'row', gap: spacing[2] }}>
             <View style={{ flex: 1 }}>
-              <Input label="Cible" value={editTarget} onChangeText={setEditTarget} keyboardType="numeric" />
+              <Input label={t('sport.goals.screen.goalCard.targetLabel')} value={editTarget} onChangeText={setEditTarget} keyboardType="numeric" />
             </View>
             <View style={{ width: 72 }}>
-              <Input label="Unité" value={editUnit} onChangeText={setEditUnit} />
+              <Input label={t('sport.goals.screen.goalCard.unitLabel')} value={editUnit} onChangeText={setEditUnit} />
             </View>
           </View>
           <View style={{ flexDirection: 'row', gap: spacing[2] }}>
-            <Button label="Annuler" variant="secondary" onPress={() => setEditing(false)} />
+            <Button label={t('common.cancel')} variant="secondary" onPress={() => setEditing(false)} />
             <Button
-              label={editGoal.isPending ? '…' : 'Enregistrer'}
+              label={editGoal.isPending ? '…' : t('common.save')}
               onPress={saveEdit}
               disabled={!editTitle.trim() || editGoal.isPending}
             />
@@ -171,11 +181,11 @@ function GoalCard({ goal }: { goal: Goal }): React.JSX.Element {
       <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
         <Text variant="subtitle" style={{ flex: 1 }}>{goal.title}</Text>
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing[2] }}>
-          {done ? <Badge label="Atteint 🎉" tone="success" /> : <Badge label={`${pct}%`} tone="info" />}
-          <Pressable onPress={openEdit} hitSlop={8} accessibilityLabel="Modifier l’objectif">
+          {done ? <Badge label={t('sport.goals.screen.goalCard.achieved')} tone="success" /> : <Badge label={`${pct}%`} tone="info" />}
+          <Pressable onPress={openEdit} hitSlop={8} accessibilityLabel={t('sport.goals.screen.goalCard.edit')}>
             <Icon name="pencil" size={18} color={colors.textMuted} />
           </Pressable>
-          <Pressable onPress={() => setConfirmingDelete(true)} hitSlop={8} accessibilityLabel="Supprimer l’objectif">
+          <Pressable onPress={() => setConfirmingDelete(true)} hitSlop={8} accessibilityLabel={t('sport.goals.screen.goalCard.deleteA11y')}>
             <Icon name="trash" size={18} color={colors.textMuted} />
           </Pressable>
         </View>
@@ -190,16 +200,16 @@ function GoalCard({ goal }: { goal: Goal }): React.JSX.Element {
       </View>
       {goal.deadline && (
         <Text variant="caption" color="textSubtle" style={{ marginTop: spacing[1] }}>
-          Échéance : {formatDate(goal.deadline)}
+          {t('sport.goals.screen.goalCard.deadline', { date: formatDate(goal.deadline) })}
         </Text>
       )}
       {confirmingDelete ? (
         <View style={{ marginTop: spacing[3], gap: spacing[2] }}>
-          <Text variant="body">Supprimer définitivement cet objectif ?</Text>
+          <Text variant="body">{t('sport.goals.screen.goalCard.deleteConfirm')}</Text>
           <View style={{ flexDirection: 'row', gap: spacing[2] }}>
-            <Button label="Annuler" variant="secondary" onPress={() => setConfirmingDelete(false)} />
+            <Button label={t('common.cancel')} variant="secondary" onPress={() => setConfirmingDelete(false)} />
             <Button
-              label={removeGoal.isPending ? '…' : 'Supprimer'}
+              label={removeGoal.isPending ? '…' : t('sport.goals.screen.goalCard.delete')}
               variant="danger"
               onPress={() => removeGoal.mutate(goal.id)}
               disabled={removeGoal.isPending}
@@ -212,14 +222,14 @@ function GoalCard({ goal }: { goal: Goal }): React.JSX.Element {
           <View style={{ flexDirection: 'row', gap: spacing[2], alignItems: 'flex-end', marginTop: spacing[2] }}>
             <View style={{ flex: 1 }}>
               <Input
-                label="Valeur actuelle"
+                label={t('sport.goals.screen.goalCard.currentValueLabel')}
                 placeholder={String(goal.currentValue ?? '')}
                 value={value}
                 onChangeText={setValue}
                 keyboardType="numeric"
               />
             </View>
-            <Button label={update.isPending ? '…' : 'Mettre à jour'} onPress={submit} />
+            <Button label={update.isPending ? '…' : t('sport.goals.screen.goalCard.updateButton')} onPress={submit} />
           </View>
         )
       )}
@@ -229,8 +239,11 @@ function GoalCard({ goal }: { goal: Goal }): React.JSX.Element {
 
 /** Objectifs (mockup #17): primary goal, body targets, tracked goals, priorities. */
 export function GoalsScreen(): React.JSX.Element {
+  const { t } = useTranslation();
   const router = useRouter();
   const { colors } = useTheme();
+  const typeOpts = useMemo(() => typeOptions(t), [t]);
+  const archetypeList = useMemo(() => archetypes(t), [t]);
   const { data: goals = [], isLoading } = useGoals();
   const { data: metrics = [] } = useHealthMetrics();
   const { preferences, setPreference } = usePreferences();
@@ -270,7 +283,7 @@ export function GoalsScreen(): React.JSX.Element {
       );
     } else {
       addGoal.mutate(
-        { type: 'body_composition', title: 'Poids cible', priority: 'primary', targetValue, targetUnit: 'kg', currentValue: currentWeight, deadline: bodyDeadline },
+        { type: 'body_composition', title: t('sport.goals.screen.body.defaultTitle'), priority: 'primary', targetValue, targetUnit: 'kg', currentValue: currentWeight, deadline: bodyDeadline },
         { onSuccess: () => setEditingBody(false) },
       );
     }
@@ -303,23 +316,23 @@ export function GoalsScreen(): React.JSX.Element {
     <Screen scroll>
       <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
         <View>
-          <Text variant="title">Objectifs</Text>
+          <Text variant="title">{t('sport.goals.screen.title')}</Text>
           <Text variant="caption" color="textSubtle">
-            Performance • Santé • Bien-être
+            {t('sport.goals.screen.subtitle')}
           </Text>
         </View>
-        <Button label={showForm ? 'Fermer' : '+ Objectif'} onPress={() => setShowForm((s) => !s)} />
+        <Button label={showForm ? t('common.close') : t('sport.goals.screen.addGoalButton')} onPress={() => setShowForm((s) => !s)} />
       </View>
 
       {/* Objectif principal */}
       <Text variant="heading" style={{ marginTop: spacing[2] }}>
-        Objectif principal
+        {t('sport.goals.screen.primaryGoal.heading')}
       </Text>
       <Text variant="caption" color="textSubtle">
-        Une seule sélection active — elle personnalise toute l'app.
+        {t('sport.goals.screen.primaryGoal.hint')}
       </Text>
       <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: spacing[3] }}>
-        {ARCHETYPES.map((a) => (
+        {archetypeList.map((a) => (
           <View key={a.key} style={{ width: '47%' }}>
             <ArchetypeTile item={a} active={primaryKey === a.key} onPress={() => setPreference('primaryGoal', a.key)} />
           </View>
@@ -329,27 +342,27 @@ export function GoalsScreen(): React.JSX.Element {
       {/* Objectifs corporels */}
       <Card>
         <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-          <Text variant="heading">Objectifs corporels</Text>
+          <Text variant="heading">{t('sport.goals.screen.body.heading')}</Text>
           {!editingBody && (
-            <Pressable onPress={openEditBody} hitSlop={8} accessibilityLabel="Gérer l’objectif de poids">
+            <Pressable onPress={openEditBody} hitSlop={8} accessibilityLabel={t('sport.goals.screen.body.manageA11y')}>
               <Icon name="pencil" size={18} color={colors.textMuted} />
             </Pressable>
           )}
         </View>
-        <Field label="Poids actuel" value={currentWeight != null ? formatWeight(currentWeight, preferences.units) : '—'} />
+        <Field label={t('sport.goals.screen.body.currentWeightLabel')} value={currentWeight != null ? formatWeight(currentWeight, preferences.units) : '—'} />
         {editingBody ? (
           <>
             <View style={{ paddingVertical: spacing[2] }}>
-              <Input label="Poids cible (kg)" value={bodyTarget} onChangeText={setBodyTarget} keyboardType="numeric" placeholder="96" />
+              <Input label={t('sport.goals.screen.body.targetWeightLabel')} value={bodyTarget} onChangeText={setBodyTarget} keyboardType="numeric" placeholder="96" />
             </View>
-            <Field label="Masse grasse actuelle" value={bodyFat != null ? `${bodyFat.toFixed(1)} %` : '—'} />
+            <Field label={t('sport.goals.screen.body.bodyFatLabel')} value={bodyFat != null ? `${bodyFat.toFixed(1)} %` : '—'} />
             <Pressable onPress={() => setBodyDatePickerOpen(true)}>
-              <Field label="Date cible" value={bodyDeadline ? formatDate(bodyDeadline) : 'Choisir une date'} last />
+              <Field label={t('sport.goals.screen.body.targetDateLabel')} value={bodyDeadline ? formatDate(bodyDeadline) : t('sport.goals.screen.body.pickDate')} last />
             </Pressable>
             <View style={{ flexDirection: 'row', gap: spacing[2], marginTop: spacing[3] }}>
-              <Button label="Annuler" variant="secondary" onPress={() => setEditingBody(false)} />
+              <Button label={t('common.cancel')} variant="secondary" onPress={() => setEditingBody(false)} />
               <Button
-                label={updateGoal.isPending || addGoal.isPending ? '…' : 'Enregistrer'}
+                label={updateGoal.isPending || addGoal.isPending ? '…' : t('common.save')}
                 onPress={saveBodyGoal}
                 disabled={updateGoal.isPending || addGoal.isPending}
               />
@@ -364,9 +377,9 @@ export function GoalsScreen(): React.JSX.Element {
           </>
         ) : (
           <>
-            <Field label="Poids cible" value={bodyGoal?.targetValue != null ? formatWeight(bodyGoal.targetValue, preferences.units) : 'À définir'} />
-            <Field label="Masse grasse actuelle" value={bodyFat != null ? `${bodyFat.toFixed(1)} %` : '—'} />
-            <Field label="Date cible" value={bodyGoal?.deadline ? formatDate(bodyGoal.deadline) : '—'} last />
+            <Field label={t('sport.goals.screen.body.targetWeightSummaryLabel')} value={bodyGoal?.targetValue != null ? formatWeight(bodyGoal.targetValue, preferences.units) : t('sport.goals.screen.body.toDefine')} />
+            <Field label={t('sport.goals.screen.body.bodyFatLabel')} value={bodyFat != null ? `${bodyFat.toFixed(1)} %` : '—'} />
+            <Field label={t('sport.goals.screen.body.targetDateLabel')} value={bodyGoal?.deadline ? formatDate(bodyGoal.deadline) : '—'} last />
           </>
         )}
       </Card>
@@ -374,12 +387,14 @@ export function GoalsScreen(): React.JSX.Element {
       {weightSummary && weight.length >= 2 && (
         <Card>
           <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-            <Text variant="heading">Tendance du poids</Text>
+            <Text variant="heading">{t('sport.goals.screen.weightTrend.heading')}</Text>
             <Text variant="subtitle">{formatWeight(weightSummary.last, preferences.units)}</Text>
           </View>
           <Text variant="caption" color="textMuted">
-            {weightSummary.changeAbs >= 0 ? '+' : '−'}
-            {formatWeight(Math.abs(weightSummary.changeAbs), preferences.units)} sur la période
+            {t('sport.goals.screen.weightTrend.overPeriod', {
+              sign: weightSummary.changeAbs >= 0 ? '+' : '−',
+              value: formatWeight(Math.abs(weightSummary.changeAbs), preferences.units),
+            })}
           </Text>
           <View style={{ marginTop: spacing[2] }}>
             <Sparkline values={weight.map((p) => p.value)} width={280} height={60} color={colors.primary} />
@@ -389,28 +404,28 @@ export function GoalsScreen(): React.JSX.Element {
 
       {showForm && (
         <Card>
-          <Text variant="heading">Nouvel objectif</Text>
+          <Text variant="heading">{t('sport.goals.screen.form.heading')}</Text>
           <View style={{ gap: spacing[3], marginTop: spacing[2] }}>
             <View style={{ gap: spacing[1] }}>
               <Text variant="label" color="textMuted">
-                TYPE
+                {t('sport.goals.screen.form.typeLabel')}
               </Text>
-              <SegmentedControl options={TYPE_OPTIONS} value={type} onChange={setType} />
+              <SegmentedControl options={typeOpts} value={type} onChange={setType} />
             </View>
-            <Input label="Titre" placeholder="Ex. Descendre à 96 kg" value={title} onChangeText={setTitle} />
+            <Input label={t('sport.goals.screen.form.titleLabel')} placeholder={t('sport.goals.screen.form.titlePlaceholder')} value={title} onChangeText={setTitle} />
             <View style={{ flexDirection: 'row', gap: spacing[2] }}>
               <View style={{ flex: 1 }}>
-                <Input label="Actuel" placeholder="102" value={current} onChangeText={setCurrent} keyboardType="numeric" />
+                <Input label={t('sport.goals.screen.form.currentLabel')} placeholder="102" value={current} onChangeText={setCurrent} keyboardType="numeric" />
               </View>
               <View style={{ flex: 1 }}>
-                <Input label="Cible" placeholder="96" value={target} onChangeText={setTarget} keyboardType="numeric" />
+                <Input label={t('sport.goals.screen.form.targetLabel')} placeholder="96" value={target} onChangeText={setTarget} keyboardType="numeric" />
               </View>
               <View style={{ width: 72 }}>
-                <Input label="Unité" placeholder="kg" value={unit} onChangeText={setUnit} />
+                <Input label={t('sport.goals.screen.form.unitLabel')} placeholder="kg" value={unit} onChangeText={setUnit} />
               </View>
             </View>
             <View style={{ alignItems: 'flex-start' }}>
-              <Button label={addGoal.isPending ? 'Création…' : 'Créer l’objectif'} onPress={save} disabled={!canSave} />
+              <Button label={addGoal.isPending ? t('sport.goals.screen.form.creating') : t('sport.goals.screen.form.createButton')} onPress={save} disabled={!canSave} />
             </View>
           </View>
         </Card>
@@ -418,18 +433,18 @@ export function GoalsScreen(): React.JSX.Element {
 
       {/* Mes objectifs suivis */}
       <Text variant="heading" style={{ marginTop: spacing[2] }}>
-        Mes objectifs
+        {t('sport.goals.screen.myGoals.heading')}
       </Text>
       {isLoading ? (
         <Text variant="body" color="textMuted">
-          Chargement…
+          {t('common.loading')}
         </Text>
       ) : active.length === 0 ? (
         <EmptyState
           icon={<Icon name="target" size={44} color={colors.textSubtle} />}
-          title="Aucun objectif"
-          message="Fixe un premier objectif — poids, performance ou habitude — et suis ta progression."
-          actionLabel="Créer un objectif"
+          title={t('sport.goals.screen.myGoals.emptyTitle')}
+          message={t('sport.goals.screen.myGoals.emptyMessage')}
+          actionLabel={t('sport.goals.screen.myGoals.emptyAction')}
           onAction={() => setShowForm(true)}
         />
       ) : (
@@ -440,7 +455,7 @@ export function GoalsScreen(): React.JSX.Element {
               <GoalCard goal={g} />
               {eta && (
                 <Text variant="caption" color="textSubtle" style={{ marginTop: spacing[1], marginLeft: spacing[1] }}>
-                  Projection : cible atteinte vers {formatDate(eta)} au rythme actuel.
+                  {t('sport.goals.screen.myGoals.projection', { date: formatDate(eta) })}
                 </Text>
               )}
             </View>
@@ -451,9 +466,9 @@ export function GoalsScreen(): React.JSX.Element {
       {/* Priorités */}
       {active.length > 1 ? (
         <Card>
-          <Text variant="heading">Priorités</Text>
+          <Text variant="heading">{t('sport.goals.screen.priorities.heading')}</Text>
           <Text variant="caption" color="textSubtle">
-            Kaizen hiérarchise les conseils selon cet ordre.
+            {t('sport.goals.screen.priorities.hint')}
           </Text>
           <View style={{ gap: spacing[2], marginTop: spacing[3] }}>
             {active.map((g, i) => (
@@ -472,7 +487,7 @@ export function GoalsScreen(): React.JSX.Element {
       ) : null}
 
       <View style={{ alignItems: 'flex-start' }}>
-        <Button label="Retour" variant="secondary" onPress={() => router.back()} />
+        <Button label={t('common.back')} variant="secondary" onPress={() => router.back()} />
       </View>
     </Screen>
   );

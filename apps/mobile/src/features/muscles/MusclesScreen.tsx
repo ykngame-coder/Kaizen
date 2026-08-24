@@ -1,6 +1,8 @@
 import React, { useMemo } from 'react';
 import { View } from 'react-native';
 import { useRouter } from 'expo-router';
+import { useTranslation } from 'react-i18next';
+import type { TFunction } from 'i18next';
 import { Badge, Button, Card, Meter, Screen, Text, useTheme } from '@supotsu/ui';
 import { spacing } from '@supotsu/design-system';
 import type { MuscleGroup } from '@supotsu/core';
@@ -14,48 +16,55 @@ import { useMuscleSessions } from '@/lib/data/queries';
 import { MuscleBody } from './MuscleBody';
 import { MUSCLE_STATE_LABEL, MUSCLE_STATE_TONE, muscleColorFor } from './muscleColor';
 
-/** French display names for each muscle group. */
-const MUSCLE_LABEL: Record<MuscleGroup, string> = {
-  chest: 'Pectoraux',
-  back: 'Dos',
-  shoulders: 'Épaules',
-  biceps: 'Biceps',
-  triceps: 'Triceps',
-  quads: 'Quadriceps',
-  hamstrings: 'Ischios',
-  glutes: 'Fessiers',
-  calves: 'Mollets',
-  core: 'Abdos / gainage',
-  full_body: 'Corps entier',
-};
+function muscleLabel(t: TFunction): Record<MuscleGroup, string> {
+  return {
+    chest: t('sport.muscles.screen.muscleLabel.chest'),
+    back: t('sport.muscles.screen.muscleLabel.back'),
+    shoulders: t('sport.muscles.screen.muscleLabel.shoulders'),
+    biceps: t('sport.muscles.screen.muscleLabel.biceps'),
+    triceps: t('sport.muscles.screen.muscleLabel.triceps'),
+    quads: t('sport.muscles.screen.muscleLabel.quads'),
+    hamstrings: t('sport.muscles.screen.muscleLabel.hamstrings'),
+    glutes: t('sport.muscles.screen.muscleLabel.glutes'),
+    calves: t('sport.muscles.screen.muscleLabel.calves'),
+    core: t('sport.muscles.screen.muscleLabel.core'),
+    full_body: t('sport.muscles.screen.muscleLabel.fullBody'),
+  };
+}
 
 /** Lower-case names for inline sentences ("tes pectoraux et tes épaules"). */
-const MUSCLE_INLINE: Record<MuscleGroup, string> = {
-  chest: 'pectoraux',
-  back: 'dos',
-  shoulders: 'épaules',
-  biceps: 'biceps',
-  triceps: 'triceps',
-  quads: 'quadriceps',
-  hamstrings: 'ischios',
-  glutes: 'fessiers',
-  calves: 'mollets',
-  core: 'abdos',
-  full_body: 'corps entier',
-};
+function muscleInline(t: TFunction): Record<MuscleGroup, string> {
+  return {
+    chest: t('sport.muscles.screen.muscleInline.chest'),
+    back: t('sport.muscles.screen.muscleInline.back'),
+    shoulders: t('sport.muscles.screen.muscleInline.shoulders'),
+    biceps: t('sport.muscles.screen.muscleInline.biceps'),
+    triceps: t('sport.muscles.screen.muscleInline.triceps'),
+    quads: t('sport.muscles.screen.muscleInline.quads'),
+    hamstrings: t('sport.muscles.screen.muscleInline.hamstrings'),
+    glutes: t('sport.muscles.screen.muscleInline.glutes'),
+    calves: t('sport.muscles.screen.muscleInline.calves'),
+    core: t('sport.muscles.screen.muscleInline.core'),
+    full_body: t('sport.muscles.screen.muscleInline.fullBody'),
+  };
+}
 
-/** Join French labels: "a, b et c". */
-function joinFr(labels: string[]): string {
+/** Join labels: "a, b et c". */
+function joinFr(labels: string[], and: string): string {
   if (labels.length === 0) return '';
-  if (labels.length === 1) return labels[0];
-  return `${labels.slice(0, -1).join(', ')} et ${labels[labels.length - 1]}`;
+  if (labels.length === 1) return labels[0]!;
+  return `${labels.slice(0, -1).join(', ')} ${and} ${labels[labels.length - 1]}`;
 }
 
 /** Muscle recovery (#5): overall state on a body map, then a per-group readout. */
 export function MusclesScreen(): React.JSX.Element {
   const router = useRouter();
+  const { t } = useTranslation();
   const { colors } = useTheme();
   const { data: sessions = [], isLoading } = useMuscleSessions();
+
+  const MUSCLE_LABEL = useMemo(() => muscleLabel(t), [t]);
+  const MUSCLE_INLINE = useMemo(() => muscleInline(t), [t]);
 
   const statuses = useMemo(
     () => computeMuscleStates(sessions, new Date().toISOString()),
@@ -76,41 +85,42 @@ export function MusclesScreen(): React.JSX.Element {
 
   const stillTired = ranked.filter((s) => s.state === 'fatigued' || s.state === 'worked');
   const coaching = useMemo(() => {
+    const and = t('sport.muscles.screen.and');
     if (stillTired.length > 0) {
-      const names = joinFr(stillTired.slice(0, 3).map((s) => MUSCLE_INLINE[s.muscle]));
-      const suggestion = joinFr(fresh.map((m) => MUSCLE_INLINE[m]));
+      const names = joinFr(stillTired.slice(0, 3).map((s) => MUSCLE_INLINE[s.muscle]), and);
+      const suggestion = joinFr(fresh.map((m) => MUSCLE_INLINE[m]), and);
       return {
-        pill: 'RÉCUPÉRATION EN COURS',
+        pill: t('sport.muscles.screen.coaching.recoveringPill'),
         tone: 'warning' as const,
-        text: `Tes ${names} récupèrent encore. Pour aujourd'hui, privilégie plutôt ${suggestion}.`,
+        text: t('sport.muscles.screen.coaching.recoveringText', { names, suggestion }),
       };
     }
     return {
-      pill: "PRÊT À S'ENTRAÎNER",
+      pill: t('sport.muscles.screen.coaching.readyPill'),
       tone: 'success' as const,
-      text: 'Tous tes groupes musculaires sont rétablis. C’est le moment idéal pour une grosse séance !',
+      text: t('sport.muscles.screen.coaching.readyText'),
     };
-  }, [stillTired, fresh]);
+  }, [stillTired, fresh, MUSCLE_INLINE, t]);
 
   const legend: MuscleState[] = ['fatigued', 'worked', 'fresh', 'rested'];
 
   return (
     <Screen scroll>
-      <Text variant="title">Récupération</Text>
+      <Text variant="title">{t('sport.muscles.screen.title')}</Text>
       <Text variant="caption" color="textMuted">
-        Quels muscles sont fatigués et lesquels sont prêts, d'après tes séances récentes.
+        {t('sport.muscles.screen.subtitle')}
       </Text>
 
       {isLoading ? (
         <Text variant="body" color="textMuted">
-          Chargement…
+          {t('common.loading')}
         </Text>
       ) : (
         <>
           {/* État global — body map + legend (shown even without recent sessions) */}
           <Card>
             <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'baseline' }}>
-              <Text variant="heading">État global</Text>
+              <Text variant="heading">{t('sport.muscles.screen.globalState.title')}</Text>
               <Text variant="subtitle" color="accentData">
                 {readiness}%
               </Text>
@@ -146,17 +156,17 @@ export function MusclesScreen(): React.JSX.Element {
           {ranked.length === 0 ? (
             <Card>
               <Text variant="body" color="textMuted">
-                Aucune séance récente. Enregistre une séance de musculation pour colorer tes muscles travaillés et voir ceux au repos.
+                {t('sport.muscles.screen.emptyState.message')}
               </Text>
               <View style={{ alignItems: 'flex-start', marginTop: spacing[2] }}>
-                <Button label="Créer une séance" onPress={() => router.push('/sport/workout/new')} />
+                <Button label={t('sport.muscles.screen.emptyState.action')} onPress={() => router.push('/sport/workout/new')} />
               </View>
             </Card>
           ) : (
           <>
           {/* Groupes musculaires — name + coloured status */}
           <Card>
-            <Text variant="heading">Groupes musculaires</Text>
+            <Text variant="heading">{t('sport.muscles.screen.muscleGroups.title')}</Text>
             <View style={{ gap: spacing[3], marginTop: spacing[3] }}>
               {ranked.map((s) => (
                 <View key={s.muscle} style={{ gap: spacing[1] }}>
@@ -183,7 +193,7 @@ export function MusclesScreen(): React.JSX.Element {
               {coaching.text}
             </Text>
             <View style={{ alignItems: 'flex-start', marginTop: spacing[3] }}>
-              <Button label="Planifier une séance" onPress={() => router.push('/sport/workout/new')} />
+              <Button label={t('sport.muscles.screen.coaching.planButton')} onPress={() => router.push('/sport/workout/new')} />
             </View>
           </Card>
           </>
@@ -192,7 +202,7 @@ export function MusclesScreen(): React.JSX.Element {
       )}
 
       <View style={{ alignItems: 'flex-start' }}>
-        <Button label="Retour" variant="secondary" onPress={() => router.back()} />
+        <Button label={t('common.back')} variant="secondary" onPress={() => router.back()} />
       </View>
     </Screen>
   );
