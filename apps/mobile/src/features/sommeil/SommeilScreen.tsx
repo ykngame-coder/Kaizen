@@ -19,6 +19,7 @@ import {
   wellnessBand,
   type FatigueRisk,
   type SleepBand,
+  type SleepNight,
 } from '@supotsu/engines';
 import { useActivities, useHealthMetrics, useSleepSessions, useWellnessCheckins } from '@/lib/data/queries';
 import { useManualHealthKitSync } from '@/features/connectors/useHealthKitAutoSync';
@@ -75,6 +76,11 @@ function ScoreBar({
 
 const weekdayLetter = (iso: string): string =>
   new Date(iso).toLocaleDateString('fr-FR', { weekday: 'narrow' }).toUpperCase();
+
+const fullWeekdayDate = (iso: string): string => {
+  const label = new Date(iso).toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' });
+  return label.charAt(0).toUpperCase() + label.slice(1);
+};
 
 /** "22:30" → a ±15 min window "22:15 – 22:45". */
 function bedtimeWindow(hhmm: string, timeFormat: TimeFormat): string {
@@ -222,6 +228,7 @@ export function SommeilScreen(): React.JSX.Element {
   const syncHealth = useManualHealthKitSync();
   const [refreshing, setRefreshing] = useState(false);
   const onRefresh = async (): Promise<void> => { setRefreshing(true); await syncHealth(); await qc.invalidateQueries(); setRefreshing(false); };
+  const [tappedNight, setTappedNight] = useState<SleepNight | null>(null);
 
   const lastSession = sessions[0];
   const score = useMemo(
@@ -362,24 +369,39 @@ export function SommeilScreen(): React.JSX.Element {
                   </Text>
                 )}
               </View>
+              <Text variant="caption" color="textSubtle" style={{ marginTop: spacing[1] }}>
+                {tappedNight
+                  ? t('sommeil.screen.last7Nights.tappedDetail', { day: fullWeekdayDate(tappedNight.date), hours: fmtHM(tappedNight.hours * 60) })
+                  : t('sommeil.screen.last7Nights.tapHint')}
+              </Text>
               <View
                 style={{ flexDirection: 'row', alignItems: 'flex-end', gap: spacing[2], height: 92, marginTop: spacing[3] }}
               >
-                {chrono.map((n) => (
-                  <View key={n.date} style={{ flex: 1, alignItems: 'center', gap: spacing[1] }}>
-                    <View
-                      style={{
-                        width: '70%',
-                        height: Math.max(6, (n.hours / chronoMax) * 72),
-                        borderRadius: 4,
-                        backgroundColor: colors[BAND_TONE[sleepBand(n.score)]],
-                      }}
-                    />
-                    <Text variant="caption" color="textSubtle">
-                      {weekdayLetter(n.date)}
-                    </Text>
-                  </View>
-                ))}
+                {chrono.map((n) => {
+                  const selected = tappedNight?.date === n.date;
+                  return (
+                    <Pressable
+                      key={n.date}
+                      onPress={() => setTappedNight(selected ? null : n)}
+                      hitSlop={4}
+                      style={{ flex: 1, alignItems: 'center', gap: spacing[1] }}
+                    >
+                      <View
+                        style={{
+                          width: '70%',
+                          height: Math.max(6, (n.hours / chronoMax) * 72),
+                          borderRadius: 4,
+                          backgroundColor: colors[BAND_TONE[sleepBand(n.score)]],
+                          borderWidth: selected ? 2 : 0,
+                          borderColor: colors.text,
+                        }}
+                      />
+                      <Text variant="caption" color={selected ? 'text' : 'textSubtle'} style={selected ? { fontWeight: '700' } : undefined}>
+                        {weekdayLetter(n.date)}
+                      </Text>
+                    </Pressable>
+                  );
+                })}
               </View>
             </Card>
           )}

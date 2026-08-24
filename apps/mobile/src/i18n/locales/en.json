@@ -1473,7 +1473,9 @@
       },
       "last7Nights": {
         "title": "Last 7 nights",
-        "average": "avg. {{avg}} h"
+        "average": "avg. {{avg}} h",
+        "tapHint": "Tap a night to see the exact duration.",
+        "tappedDetail": "{{day}} — {{hours}}"
       },
       "phases": {
         "title": "Sleep phases",

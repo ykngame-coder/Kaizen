@@ -1473,7 +1473,9 @@
       },
       "last7Nights": {
         "title": "Letzte 7 Nächte",
-        "average": "Ø {{avg}} Std."
+        "average": "Ø {{avg}} Std.",
+        "tapHint": "Tippe auf eine Nacht, um die genaue Dauer zu sehen.",
+        "tappedDetail": "{{day}} — {{hours}}"
       },
       "phases": {
         "title": "Schlafphasen",
