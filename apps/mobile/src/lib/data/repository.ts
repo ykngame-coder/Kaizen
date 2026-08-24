@@ -68,6 +68,7 @@ import {
   listSetsForWorkout,
   updateWorkout as updateWorkoutDb,
   replaceWorkoutSets as replaceWorkoutSetsDb,
+  replaceWorkoutBlocks as replaceWorkoutBlocksDb,
   listWorkouts as listWorkoutsDb,
   listWorkoutSetsForUser,
   listLoggedSets as listLoggedSetsDb,
@@ -239,6 +240,8 @@ export interface DataRepository {
   completeBlock(userId: string, blockId: string, result: { completedRounds?: number; resultTimeSec?: number }): Promise<WorkoutBlock>;
   /** Edit a session's name/notes and replace its exercise list wholesale. */
   editWorkout(userId: string, workoutId: string, patch: { name: string; notes?: string; sets: Omit<SetEntry, 'id' | 'workoutId'>[] }): Promise<void>;
+  /** Edit a multi-block session's name/notes and replace its blocks (+ each block's exercises) wholesale. */
+  editCircuitWorkout(userId: string, workoutId: string, patch: { name: string; notes?: string; blocks: NewCircuitBlockInput[] }): Promise<void>;
   listHealthMetrics(userId: string): Promise<HealthMetric[]>;
   /** Log a single metric by hand (e.g. weight typed in without a connected scale). Always recorded with source "manual". */
   addHealthMetric(userId: string, input: HealthMetricInput): Promise<HealthMetric>;
@@ -1108,6 +1111,30 @@ function createDemoRepository(): DataRepository {
       const kept = rows.filter((r) => r.workoutId !== workoutId);
       const added = patch.sets.map((s) => ({ workoutId, exerciseId: s.exerciseId, order: s.order, reps: s.reps ?? null, weightKg: s.weightKg ?? null, restSec: s.restSec ?? null, date: now }));
       await writeJson(setKey(userId), [...added, ...kept]);
+    },
+    async editCircuitWorkout(userId, workoutId, patch) {
+      const now = new Date().toISOString();
+      const workouts = await readJson<Workout>(wkKey(userId));
+      const nextWorkouts = workouts.map((w) => (w.id === workoutId ? { ...w, name: patch.name, notes: patch.notes, updatedAt: now } : w));
+      if (!nextWorkouts.some((w) => w.id === workoutId)) throw new Error('Séance introuvable.');
+      await writeJson(wkKey(userId), nextWorkouts);
+
+      const existingBlocks = await readJson<WorkoutBlock>(blockKey(userId));
+      const keptBlocks = existingBlocks.filter((b) => b.workoutId !== workoutId);
+      const existingSets = await readJson<LoggedSetRow & { date: string }>(setKey(userId));
+      const keptSets = existingSets.filter((r) => r.workoutId !== workoutId);
+
+      const newBlocks: WorkoutBlock[] = [];
+      const newSets: (LoggedSetRow & { date: string })[] = [];
+      patch.blocks.forEach((b, i) => {
+        const block: WorkoutBlock = { id: randomId(), workoutId, order: i, format: b.format, timeCapSec: b.timeCapSec, targetRounds: b.targetRounds };
+        newBlocks.push(block);
+        b.sets.forEach((s) => {
+          newSets.push({ workoutId, blockId: block.id, exerciseId: s.exerciseId, order: s.order, reps: s.reps ?? null, weightKg: s.weightKg ?? null, restSec: s.restSec ?? null, date: now });
+        });
+      });
+      await writeJson(blockKey(userId), [...newBlocks, ...keptBlocks]);
+      await writeJson(setKey(userId), [...newSets, ...keptSets]);
     },
     async listHealthMetrics(userId) {
       const items = await readJson<HealthMetric>(hmKey(userId));
@@ -2338,6 +2365,26 @@ function createSupabaseRepository(
         client,
         workoutId,
         patch.sets.map((s) => ({ exercise_id: s.exerciseId, order: s.order, reps: s.reps ?? null, weight_kg: s.weightKg ?? null, rest_sec: s.restSec ?? null })),
+      );
+    },
+    async editCircuitWorkout(_userId, workoutId, patch) {
+      await updateWorkoutDb(client, workoutId, { name: patch.name, notes: patch.notes ?? null });
+      await replaceWorkoutBlocksDb(
+        client,
+        workoutId,
+        patch.blocks.map((b) => ({
+          format: b.format,
+          timeCapSec: b.timeCapSec,
+          targetRounds: b.targetRounds,
+          sets: b.sets.map((s) => ({
+            exercise_id: s.exerciseId,
+            order: s.order,
+            reps: s.reps ?? null,
+            weight_kg: s.weightKg ?? null,
+            duration_sec: s.durationSec ?? null,
+            rest_sec: s.restSec ?? null,
+          })),
+        })),
       );
     },
   };

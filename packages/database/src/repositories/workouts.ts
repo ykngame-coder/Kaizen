@@ -282,3 +282,49 @@ export async function replaceWorkoutSets(
   const { error: insError } = await client.from('workout_sets').insert(sets.map((s) => ({ ...s, workout_id: workoutId })));
   if (insError) throw insError;
 }
+
+/**
+ * Replace a workout's blocks (and each block's sets) wholesale — same
+ * delete-then-insert approach as replaceWorkoutSets, block-aware version.
+ * Deleting workout_blocks cascades to their workout_sets rows; any
+ * leftover blockless sets (e.g. the workout used to be flat) are cleared
+ * too so the workout ends up purely block-structured.
+ */
+export async function replaceWorkoutBlocks(
+  client: SupotsuClient,
+  workoutId: string,
+  blocks: {
+    format: WorkoutBlockRow['format'];
+    timeCapSec?: number;
+    targetRounds?: number;
+    sets: Omit<WorkoutSetInsertRow, 'workout_id' | 'block_id'>[];
+  }[],
+): Promise<void> {
+  const { error: delBlocksError } = await client.from('workout_blocks').delete().eq('workout_id', workoutId);
+  if (delBlocksError) throw delBlocksError;
+  const { error: delSetsError } = await client.from('workout_sets').delete().eq('workout_id', workoutId);
+  if (delSetsError) throw delSetsError;
+
+  for (let i = 0; i < blocks.length; i++) {
+    const b = blocks[i]!;
+    const { data: blockRow, error: blockError } = await client
+      .from('workout_blocks')
+      .insert({
+        workout_id: workoutId,
+        order: i,
+        format: b.format,
+        time_cap_sec: b.timeCapSec ?? null,
+        target_rounds: b.targetRounds ?? null,
+      })
+      .select('*')
+      .single();
+    if (blockError) throw blockError;
+
+    if (b.sets.length > 0) {
+      const { error: setError } = await client
+        .from('workout_sets')
+        .insert(b.sets.map((s) => ({ ...s, workout_id: workoutId, block_id: blockRow.id })));
+      if (setError) throw setError;
+    }
+  }
+}

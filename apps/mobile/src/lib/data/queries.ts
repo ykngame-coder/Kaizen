@@ -23,7 +23,7 @@ import type {
   ImportedWorkout,
 } from '@supotsu/connectors';
 import { useAuth } from '@/features/auth/AuthProvider';
-import { createDataRepository, type HealthMetricInput, type NewCircuitWorkout, type NewSleepSession, type NewWorkout, type PlannedInput } from './repository';
+import { createDataRepository, type HealthMetricInput, type NewCircuitBlockInput, type NewCircuitWorkout, type NewSleepSession, type NewWorkout, type PlannedInput } from './repository';
 import { isHealthKitConnected } from '@/features/connectors/useHealthKitAutoSync';
 import { saveActivityToHealthKit, saveNutritionToHealthKit, saveWorkoutToHealthKit } from '@/features/connectors/healthKitClient';
 
@@ -891,6 +891,24 @@ export function useEditWorkout() {
       qc.invalidateQueries({ queryKey: ['workouts', user?.id] });
       qc.invalidateQueries({ queryKey: ['plannedWorkouts', user?.id] });
       qc.invalidateQueries({ queryKey: ['workoutSets', input.workoutId] });
+      qc.invalidateQueries({ queryKey: ['muscleSessions', user?.id] });
+      qc.invalidateQueries({ queryKey: ['exerciseHistory', user?.id] });
+    },
+  });
+}
+
+/** Edit a multi-block session — same as useEditWorkout but replaces blocks (+ each block's exercises) instead of a flat set list. */
+export function useEditCircuitWorkout() {
+  const { user } = useAuth();
+  const repo = useRepository();
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (input: { workoutId: string; name: string; notes?: string; blocks: NewCircuitBlockInput[] }) =>
+      repo.editCircuitWorkout(user!.id, input.workoutId, input),
+    onSuccess: (_data, input) => {
+      qc.invalidateQueries({ queryKey: ['workouts', user?.id] });
+      qc.invalidateQueries({ queryKey: ['plannedWorkouts', user?.id] });
+      qc.invalidateQueries({ queryKey: ['workoutBlocks', input.workoutId] });
       qc.invalidateQueries({ queryKey: ['muscleSessions', user?.id] });
       qc.invalidateQueries({ queryKey: ['exerciseHistory', user?.id] });
     },
