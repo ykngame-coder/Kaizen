@@ -2284,7 +2284,7 @@
         "backendInfo": "Requires a configured Supabase backend and the apple-health function deployed (see docs/apple-health-shortcut.md)."
       },
       "renpho": {
-        "title": "Renpho (scale)",
+        "title": "Connected scale",
         "caption": "Weight, body fat, muscle mass — via Apple Health",
         "synced": "Synced",
         "viaAppleHealth": "Via Apple Health",
@@ -3065,6 +3065,13 @@
         "privacy": "📄 Privacy",
         "terms": "⚖ Terms"
       }
+    }
+  },
+  "marketplace": {
+    "placeholder": {
+      "title": "Programs",
+      "subtitle": "Structured training programs to follow step by step.",
+      "comingIn": "This section is coming soon to the app."
     }
   }
 }

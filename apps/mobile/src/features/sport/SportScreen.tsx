@@ -31,7 +31,7 @@ const NAV_KEYS: { key: string; icon: IconName; path?: Href; soon?: boolean }[] =
   { key: 'import', icon: 'camera', path: '/sport/workout/import' },
   { key: 'planning', icon: 'calendarClock', path: '/sport/planning' },
   { key: 'calendar', icon: 'calendar', path: '/sport/calendar' },
-  { key: 'programs', icon: 'clipboardText', path: '/marketplace' },
+  { key: 'programs', icon: 'clipboardText', soon: true },
   { key: 'muscleRecovery', icon: 'armFlex', path: '/sport/muscles' },
   { key: 'stomachVacuum', icon: 'lungs', path: '/sport/stomach-vacuum' },
   { key: 'timers', icon: 'timer', path: '/sport/timer' },

@@ -2284,7 +2284,7 @@
         "backendInfo": "Requiere un backend de Supabase configurado y la función apple-health desplegada (ver docs/apple-health-shortcut.md)."
       },
       "renpho": {
-        "title": "Renpho (báscula)",
+        "title": "Báscula conectada",
         "caption": "Peso, grasa corporal, masa muscular — vía Apple Salud",
         "synced": "Sincronizado",
         "viaAppleHealth": "Vía Apple Salud",
@@ -3065,6 +3065,13 @@
         "privacy": "📄 Privacidad",
         "terms": "⚖ Términos"
       }
+    }
+  },
+  "marketplace": {
+    "placeholder": {
+      "title": "Programas",
+      "subtitle": "Programas de entrenamiento estructurados, paso a paso.",
+      "comingIn": "Esta sección llegará pronto a la app."
     }
   }
 }

@@ -2284,7 +2284,7 @@
         "backendInfo": "Requer um backend Supabase configurado e a função apple-health implantada (ver docs/apple-health-shortcut.md)."
       },
       "renpho": {
-        "title": "Renpho (balança)",
+        "title": "Balança conectada",
         "caption": "Peso, gordura corporal, massa muscular — via Apple Saúde",
         "synced": "Sincronizado",
         "viaAppleHealth": "Via Apple Saúde",
@@ -3065,6 +3065,13 @@
         "privacy": "📄 Privacidade",
         "terms": "⚖ Termos"
       }
+    }
+  },
+  "marketplace": {
+    "placeholder": {
+      "title": "Programas",
+      "subtitle": "Programas de treino estruturados, passo a passo.",
+      "comingIn": "Esta secção chega em breve à app."
     }
   }
 }

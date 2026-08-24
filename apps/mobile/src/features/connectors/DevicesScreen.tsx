@@ -52,8 +52,8 @@ function metricLabel(t: TFunction): Partial<Record<HealthMetricType, string>> {
   };
 }
 
-/** Supported devices shown in the compatibility grid. */
-const COMPATIBLE = ['Garmin', 'Apple Watch', 'Polar', 'Coros', 'Whoop', 'Oura', 'Withings', 'Renpho', 'Fitbit', 'Wahoo', 'Dexcom', 'Strava'];
+/** Supported devices shown in the compatibility grid — only what's actually wired up today. */
+const COMPATIBLE = ['Apple Santé (HealthKit)', 'Garmin (import)'];
 
 function garminStatusUi(t: TFunction): Record<string, { label: string; tone: BadgeTone }> {
   return {
@@ -87,7 +87,7 @@ function KpiCell({ value, label, small, color }: { value: string; label: string;
   );
 }
 
-/** Real Garmin connection card (OAuth via the Garmin Edge Function). */
+/** Real Garmin connection card (OAuth via the Garmin Edge Function). Paused pre-launch — kept for when Garmin comes off "à venir". */
 function GarminCard(): React.JSX.Element {
   const { t } = useTranslation();
   const available = garminAvailable();
@@ -165,7 +165,7 @@ function GarminCard(): React.JSX.Element {
   );
 }
 
-/** Real Strava connection card (OAuth2 + pull sync via the Strava Edge Function). */
+/** Real Strava connection card (OAuth2 + pull sync via the Strava Edge Function). Paused pre-launch — kept for when Strava comes off "à venir". */
 function StravaCard(): React.JSX.Element {
   const { t } = useTranslation();
   const available = stravaAvailable();
@@ -254,7 +254,7 @@ function StravaCard(): React.JSX.Element {
   );
 }
 
-/** Apple Santé via iOS Shortcuts webhook (free, no dev build). */
+/** Apple Santé via iOS Shortcuts webhook (free, no dev build). Removed from the screen now that native HealthKit is the supported path — kept in case Shortcuts-based import is needed again later. */
 function AppleHealthCard(): React.JSX.Element {
   const { t } = useTranslation();
   const { colors } = useTheme();
@@ -480,13 +480,10 @@ export function DevicesScreen(): React.JSX.Element {
         {t('connectors.devices.appsAndDevices')}
       </Text>
       <HealthKitCard />
-      <AppleHealthCard />
       <RenphoCard />
-      <GarminCard />
-      <StravaCard />
 
       <View style={{ gap: spacing[2] }}>
-        {CONNECTORS.filter((c) => c.provider !== 'garmin' && c.provider !== 'strava').map((c) => (
+        {CONNECTORS.filter((c) => c.provider !== 'apple_health').map((c) => (
           <Card key={c.provider}>
             <View
               style={{

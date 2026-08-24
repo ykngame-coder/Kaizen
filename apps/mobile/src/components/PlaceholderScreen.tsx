@@ -1,5 +1,6 @@
 import React from 'react';
 import { Card, Screen, Text } from '@supotsu/ui';
+import { BackButton } from '@/features/navigation/BackButton';
 
 /** Shared stub for sections whose logic ships in later steps. */
 export function PlaceholderScreen({
@@ -13,6 +14,7 @@ export function PlaceholderScreen({
 }): React.JSX.Element {
   return (
     <Screen>
+      <BackButton />
       <Text variant="title">{title}</Text>
       <Text variant="body" color="textMuted">
         {subtitle}

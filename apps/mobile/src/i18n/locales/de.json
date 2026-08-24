@@ -2284,7 +2284,7 @@
         "backendInfo": "Erfordert ein konfiguriertes Supabase-Backend und die bereitgestellte apple-health-Funktion (siehe docs/apple-health-shortcut.md)."
       },
       "renpho": {
-        "title": "Renpho (Waage)",
+        "title": "Verbundene Waage",
         "caption": "Gewicht, Körperfett, Muskelmasse — über Apple Health",
         "synced": "Synchronisiert",
         "viaAppleHealth": "Über Apple Health",
@@ -3065,6 +3065,13 @@
         "privacy": "📄 Datenschutz",
         "terms": "⚖ Bedingungen"
       }
+    }
+  },
+  "marketplace": {
+    "placeholder": {
+      "title": "Programme",
+      "subtitle": "Strukturierte Trainingsprogramme, Schritt für Schritt.",
+      "comingIn": "Dieser Bereich kommt bald in die App."
     }
   }
 }
