@@ -1,6 +1,7 @@
 import React, { useRef } from 'react';
 import { Platform, StyleSheet, View } from 'react-native';
 import { useRouter } from 'expo-router';
+import { useTranslation } from 'react-i18next';
 import { CameraView, useCameraPermissions, type BarcodeScanningResult } from 'expo-camera';
 import { Button, Screen, Text } from '@supotsu/ui';
 import { spacing } from '@supotsu/design-system';
@@ -11,6 +12,7 @@ import { spacing } from '@supotsu/design-system';
  * to manual entry. A scanned code routes to the food search, which looks it up.
  */
 export function BarcodeScanScreen(): React.JSX.Element {
+  const { t } = useTranslation();
   const router = useRouter();
   const [permission, requestPermission] = useCameraPermissions();
   const scannedRef = useRef(false);
@@ -26,12 +28,11 @@ export function BarcodeScanScreen(): React.JSX.Element {
   if (Platform.OS === 'web') {
     return (
       <Screen scroll>
-        <Text variant="title">Scanner un code-barres</Text>
+        <Text variant="title">{t('nutrition.barcodeScan.webTitle')}</Text>
         <Text variant="body" color="textMuted">
-          Le scan caméra est disponible sur mobile (Expo Go). Sur le web, saisis le numéro dans la
-          recherche d'aliments.
+          {t('nutrition.barcodeScan.webBody')}
         </Text>
-        <Button label="Aller à la recherche" onPress={() => router.replace('/nutrition/food/search')} />
+        <Button label={t('nutrition.barcodeScan.goToSearch')} onPress={() => router.replace('/nutrition/food/search')} />
       </Screen>
     );
   }
@@ -40,7 +41,7 @@ export function BarcodeScanScreen(): React.JSX.Element {
     return (
       <Screen>
         <Text variant="body" color="textMuted">
-          Préparation de la caméra…
+          {t('nutrition.barcodeScan.preparingCamera')}
         </Text>
       </Screen>
     );
@@ -49,14 +50,13 @@ export function BarcodeScanScreen(): React.JSX.Element {
   if (!permission.granted) {
     return (
       <Screen scroll>
-        <Text variant="title">Autoriser la caméra</Text>
+        <Text variant="title">{t('nutrition.barcodeScan.allowCameraTitle')}</Text>
         <Text variant="body" color="textMuted">
-          Kaizen Supotsu a besoin de la caméra pour scanner les codes-barres des aliments. Aucune image
-          n'est enregistrée.
+          {t('nutrition.barcodeScan.allowCameraBody')}
         </Text>
-        <Button label="Autoriser la caméra" onPress={requestPermission} />
+        <Button label={t('nutrition.barcodeScan.allowCameraButton')} onPress={requestPermission} />
         <View style={{ alignItems: 'flex-start' }}>
-          <Button label="Saisir le numéro à la place" variant="secondary" onPress={() => router.replace('/nutrition/food/search')} />
+          <Button label={t('nutrition.barcodeScan.enterManually')} variant="secondary" onPress={() => router.replace('/nutrition/food/search')} />
         </View>
       </Screen>
     );
@@ -79,9 +79,9 @@ export function BarcodeScanScreen(): React.JSX.Element {
         }}
       >
         <Text variant="body" style={{ color: '#fff', textAlign: 'center' }}>
-          Vise le code-barres du produit
+          {t('nutrition.barcodeScan.aimHint')}
         </Text>
-        <Button label="Annuler" variant="secondary" onPress={() => router.back()} />
+        <Button label={t('nutrition.barcodeScan.cancelButton')} variant="secondary" onPress={() => router.back()} />
       </View>
     </View>
   );

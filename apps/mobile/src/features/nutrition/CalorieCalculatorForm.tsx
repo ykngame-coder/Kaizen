@@ -1,23 +1,11 @@
 import React, { useMemo, useState } from 'react';
 import { Pressable, View } from 'react-native';
+import { useTranslation } from 'react-i18next';
 import { Button, Input, SegmentedControl, Text, useTheme } from '@supotsu/ui';
 import { spacing } from '@supotsu/design-system';
 import { estimateDeficitTarget, estimateTargets, type ActivityLevel } from '@supotsu/engines';
 import { useHealthMetrics } from '@/lib/data/queries';
 import { usePreferences } from '@/lib/preferences';
-
-const SEX_OPTIONS = [
-  { value: 'male', label: 'Homme' },
-  { value: 'female', label: 'Femme' },
-] as const;
-
-const ACTIVITY_OPTIONS: { value: ActivityLevel; label: string }[] = [
-  { value: 'sedentary', label: 'Sédentaire — peu ou pas d’activité' },
-  { value: 'light', label: 'Peu actif — 1 à 3 j / semaine' },
-  { value: 'moderate', label: 'Modérément actif — 3 à 5 j / semaine' },
-  { value: 'active', label: 'Très actif — 6 à 7 j / semaine' },
-  { value: 'very_active', label: 'Extrêmement actif — travail physique' },
-];
 
 /**
  * Deficit calculator (age/sexe/taille/poids/objectif/durée/activité → BMR,
@@ -26,9 +14,23 @@ const ACTIVITY_OPTIONS: { value: ActivityLevel; label: string }[] = [
  * result can be applied straight to the Nutrition goals.
  */
 export function CalorieCalculatorForm(): React.JSX.Element {
+  const { t } = useTranslation();
   const { colors } = useTheme();
   const { data: health = [] } = useHealthMetrics();
   const { preferences, setPreference } = usePreferences();
+
+  const SEX_OPTIONS = [
+    { value: 'male', label: t('nutrition.calorieCalculator.sex.male') },
+    { value: 'female', label: t('nutrition.calorieCalculator.sex.female') },
+  ] as const;
+
+  const ACTIVITY_OPTIONS: { value: ActivityLevel; label: string }[] = [
+    { value: 'sedentary', label: t('nutrition.calorieCalculator.activity.sedentary') },
+    { value: 'light', label: t('nutrition.calorieCalculator.activity.light') },
+    { value: 'moderate', label: t('nutrition.calorieCalculator.activity.moderate') },
+    { value: 'active', label: t('nutrition.calorieCalculator.activity.active') },
+    { value: 'very_active', label: t('nutrition.calorieCalculator.activity.veryActive') },
+  ];
 
   const [open, setOpen] = useState(false);
 
@@ -74,28 +76,28 @@ export function CalorieCalculatorForm(): React.JSX.Element {
     <View style={{ marginTop: spacing[3], paddingTop: spacing[3], borderTopWidth: 1, borderTopColor: colors.border }}>
       <Pressable onPress={() => setOpen((v) => !v)} style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
         <View>
-          <Text variant="body" style={{ fontWeight: '600' }}>Calculateur de calories détaillé</Text>
-          <Text variant="caption" color="textSubtle">Âge, taille, activité… une estimation plus poussée que le calcul auto</Text>
+          <Text variant="body" style={{ fontWeight: '600' }}>{t('nutrition.calorieCalculator.toggleTitle')}</Text>
+          <Text variant="caption" color="textSubtle">{t('nutrition.calorieCalculator.toggleSubtitle')}</Text>
         </View>
         <Text variant="subtitle" color="textSubtle">{open ? '−' : '+'}</Text>
       </Pressable>
 
       {open ? (
         <View style={{ marginTop: spacing[4], gap: spacing[3] }}>
-          <Input label="Âge" placeholder="Ex : 35" keyboardType="numeric" value={age} onChangeText={setAge} />
+          <Input label={t('nutrition.calorieCalculator.ageLabel')} placeholder={t('nutrition.calorieCalculator.agePlaceholder')} keyboardType="numeric" value={age} onChangeText={setAge} />
 
           <View style={{ gap: spacing[1] }}>
-            <Text variant="label" color="textMuted">SEXE</Text>
+            <Text variant="label" color="textMuted">{t('nutrition.calorieCalculator.sexLabel')}</Text>
             <SegmentedControl options={SEX_OPTIONS} value={sex} onChange={setSex} />
           </View>
 
-          <Input label="Taille (cm)" placeholder="Ex : 175" keyboardType="numeric" value={heightCm} onChangeText={setHeightCm} />
-          <Input label="Poids actuel (kg)" placeholder="Ex : 80" keyboardType="numeric" value={weightKg} onChangeText={setWeightKg} />
-          <Input label="Objectif de poids (kg)" placeholder="Ex : 70" keyboardType="numeric" value={goalWeightKg} onChangeText={setGoalWeightKg} />
-          <Input label="Durée (mois)" placeholder="Ex : 3" keyboardType="numeric" value={durationMonths} onChangeText={setDurationMonths} />
+          <Input label={t('nutrition.calorieCalculator.heightLabel')} placeholder={t('nutrition.calorieCalculator.heightPlaceholder')} keyboardType="numeric" value={heightCm} onChangeText={setHeightCm} />
+          <Input label={t('nutrition.calorieCalculator.weightLabel')} placeholder={t('nutrition.calorieCalculator.weightPlaceholder')} keyboardType="numeric" value={weightKg} onChangeText={setWeightKg} />
+          <Input label={t('nutrition.calorieCalculator.goalWeightLabel')} placeholder={t('nutrition.calorieCalculator.goalWeightPlaceholder')} keyboardType="numeric" value={goalWeightKg} onChangeText={setGoalWeightKg} />
+          <Input label={t('nutrition.calorieCalculator.durationLabel')} placeholder={t('nutrition.calorieCalculator.durationPlaceholder')} keyboardType="numeric" value={durationMonths} onChangeText={setDurationMonths} />
 
           <View style={{ gap: spacing[1] }}>
-            <Text variant="label" color="textMuted">NIVEAU D'ACTIVITÉ PHYSIQUE</Text>
+            <Text variant="label" color="textMuted">{t('nutrition.calorieCalculator.activityLabel')}</Text>
             <SegmentedControl options={ACTIVITY_OPTIONS} value={activity} onChange={setActivity} vertical />
           </View>
 
@@ -104,26 +106,26 @@ export function CalorieCalculatorForm(): React.JSX.Element {
               <View style={{ flexDirection: 'row', justifyContent: 'space-around' }}>
                 <View style={{ alignItems: 'center' }}>
                   <Text variant="subtitle">{result.bmr}</Text>
-                  <Text variant="caption" color="textSubtle">BMR (kcal)</Text>
+                  <Text variant="caption" color="textSubtle">{t('nutrition.calorieCalculator.bmrLabel')}</Text>
                 </View>
                 <View style={{ alignItems: 'center' }}>
                   <Text variant="subtitle">{result.tdee}</Text>
-                  <Text variant="caption" color="textSubtle">Dépense totale</Text>
+                  <Text variant="caption" color="textSubtle">{t('nutrition.calorieCalculator.tdeeLabel')}</Text>
                 </View>
                 <View style={{ alignItems: 'center' }}>
                   <Text variant="subtitle" style={{ color: colors.accentData }}>{result.targetKcal}</Text>
-                  <Text variant="caption" color="textSubtle">Cible / jour</Text>
+                  <Text variant="caption" color="textSubtle">{t('nutrition.calorieCalculator.targetLabel')}</Text>
                 </View>
               </View>
               <Text variant="caption" color="textMuted" style={{ marginTop: spacing[3], lineHeight: 18 }}>
                 {result.dailyDeficit > 0
-                  ? `Déficit d'environ ${result.dailyDeficit} kcal/jour pour atteindre ${inputs.goalWeightKg} kg en ${inputs.durationMonths} mois.`
+                  ? t('nutrition.calorieCalculator.deficitMessage', { deficit: result.dailyDeficit, goalWeight: inputs.goalWeightKg, duration: inputs.durationMonths })
                   : result.dailyDeficit < 0
-                    ? `Surplus d'environ ${Math.abs(result.dailyDeficit)} kcal/jour pour atteindre ${inputs.goalWeightKg} kg en ${inputs.durationMonths} mois.`
-                    : 'Ton poids actuel correspond déjà à ton objectif.'}
+                    ? t('nutrition.calorieCalculator.surplusMessage', { deficit: Math.abs(result.dailyDeficit), goalWeight: inputs.goalWeightKg, duration: inputs.durationMonths })
+                    : t('nutrition.calorieCalculator.atGoalMessage')}
               </Text>
               <View style={{ marginTop: spacing[4] }}>
-                <Button label={applied ? 'Appliqué à mes objectifs ✓' : 'Appliquer à mes objectifs Nutrition'} onPress={applyResult} disabled={applied} fullWidth />
+                <Button label={applied ? t('nutrition.calorieCalculator.appliedButton') : t('nutrition.calorieCalculator.applyButton')} onPress={applyResult} disabled={applied} fullWidth />
               </View>
             </View>
           ) : null}

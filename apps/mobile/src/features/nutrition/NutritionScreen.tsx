@@ -30,7 +30,6 @@ function latestMetric(m: { type: HealthMetricType; value: number; measuredAt: st
 
 const MEAL_ORDER = ['breakfast', 'lunch', 'dinner', 'snack'] as const;
 const WATER_PRESETS = [250, 500, 750];
-const MEAL_LABEL: Record<string, string> = { breakfast: 'Petit-déjeuner', lunch: 'Déjeuner', dinner: 'Dîner', snack: 'Collation' };
 const MEAL_ICON: Record<string, IconName> = { breakfast: 'bowl', lunch: 'drumstick', dinner: 'noodles', snack: 'apple' };
 
 function SectionTitle({ children, right }: { children: React.ReactNode; right?: React.ReactNode }): React.JSX.Element {
@@ -143,7 +142,7 @@ export function NutritionScreen(): React.JSX.Element {
   const onRefresh = async (): Promise<void> => { setRefreshing(true); await syncHealth(); await qc.invalidateQueries(); setRefreshing(false); };
 
   const addWater = (ml: number): void => {
-    addEntry.mutate({ mealType: 'snack', description: 'Eau', kcal: 0, hydrationMl: ml, source: 'manual', loggedAt: new Date().toISOString() });
+    addEntry.mutate({ mealType: 'snack', description: t('nutrition.screen.water.entryLabel'), kcal: 0, hydrationMl: ml, source: 'manual', loggedAt: new Date().toISOString() });
   };
   const [waterAmount, setWaterAmount] = useState(250);
   const [customWater, setCustomWater] = useState('');
@@ -213,8 +212,8 @@ export function NutritionScreen(): React.JSX.Element {
       <Screen scroll onRefresh={onRefresh} refreshing={refreshing}>
         <View style={{ position: 'relative' }}>
           <View style={{ alignItems: 'center' }}>
-            <Text variant="title">Nutrition</Text>
-            <Text variant="caption" color="textSubtle">Ton carburant du jour</Text>
+            <Text variant="title">{t('common.tab.nutrition')}</Text>
+            <Text variant="caption" color="textSubtle">{t('nutrition.screen.subtitle')}</Text>
           </View>
           <Pressable onPress={() => router.push('/search')} style={({ pressed }) => ({ opacity: pressed ? 0.6 : 1, position: 'absolute', right: 0, top: 0 })}>
             <View style={{ width: 38, height: 38, borderRadius: 19, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border, alignItems: 'center', justifyContent: 'center' }}><Icon name="search" size={16} color={colors.text} /></View>
@@ -224,27 +223,27 @@ export function NutritionScreen(): React.JSX.Element {
 
         {/* Main kcal ring + balance */}
         <Card style={{ alignItems: 'center' }}>
-          <ProgressRing value={kcalPct} size={168} thickness={12} gradient centerLabel={hasData ? `${Math.round(totals.kcal)}` : '—'} caption={`/ ${Math.round(kcalTarget)} kcal`} />
+          <ProgressRing value={kcalPct} size={168} thickness={12} gradient centerLabel={hasData ? `${Math.round(totals.kcal)}` : '—'} caption={t('nutrition.screen.kcalRing.target', { kcal: Math.round(kcalTarget) })} />
           <View style={{ flexDirection: 'row', justifyContent: 'space-around', width: '100%', marginTop: spacing[4], paddingTop: spacing[4], borderTopWidth: 1, borderTopColor: colors.border }}>
-            <Balance label="Restantes" value={`${remaining} kcal`} color={colors.accentData} />
-            <Balance label="Cible" value={`${Math.round(kcalTarget)}`} />
-            <Balance label="Consommé" value={`${Math.round(totals.kcal)}`} />
+            <Balance label={t('nutrition.screen.balance.remaining')} value={t('nutrition.screen.balance.remainingValue', { value: remaining })} color={colors.accentData} />
+            <Balance label={t('nutrition.screen.balance.target')} value={`${Math.round(kcalTarget)}`} />
+            <Balance label={t('nutrition.screen.balance.consumed')} value={`${Math.round(totals.kcal)}`} />
           </View>
         </Card>
 
         {/* Macros */}
         <Card>
-          <SectionTitle>Macronutriments</SectionTitle>
+          <SectionTitle>{t('nutrition.screen.macros.title')}</SectionTitle>
           <View style={{ flexDirection: 'row', justifyContent: 'space-around' }}>
-            <MacroRing label="Protéines" current={totals.proteinG} target={goals.proteinG} color={colors.accentData} />
-            <MacroRing label="Glucides" current={totals.carbG} target={carbTarget} color={colors.warning} />
-            <MacroRing label="Lipides" current={totals.fatG} target={fatTarget} color={colors.accentMobility} />
+            <MacroRing label={t('nutrition.screen.macros.protein')} current={totals.proteinG} target={goals.proteinG} color={colors.accentData} />
+            <MacroRing label={t('nutrition.screen.macros.carbs')} current={totals.carbG} target={carbTarget} color={colors.warning} />
+            <MacroRing label={t('nutrition.screen.macros.fat')} current={totals.fatG} target={fatTarget} color={colors.accentMobility} />
           </View>
         </Card>
 
         {/* Hydration */}
         <Card>
-          <SectionTitle right={<Text variant="subtitle" style={{ color: colors.accentEndurance }}>{(Math.max(0, totals.hydrationMl) / 1000).toFixed(2)} / {(goals.hydrationMl / 1000).toFixed(2)} L</Text>}>Hydratation</SectionTitle>
+          <SectionTitle right={<Text variant="subtitle" style={{ color: colors.accentEndurance }}>{(Math.max(0, totals.hydrationMl) / 1000).toFixed(2)} / {(goals.hydrationMl / 1000).toFixed(2)} L</Text>}>{t('nutrition.screen.hydration.title')}</SectionTitle>
           <View style={{ height: 10, borderRadius: 6, backgroundColor: colors.surfaceElevated, overflow: 'hidden' }}>
             <View style={{ width: `${Math.max(0, Math.min(100, (totals.hydrationMl / goals.hydrationMl) * 100))}%`, height: 10, backgroundColor: colors.accentEndurance }} />
           </View>
@@ -264,15 +263,15 @@ export function NutritionScreen(): React.JSX.Element {
           <View style={{ flexDirection: 'row', gap: spacing[2], marginTop: spacing[2], alignItems: 'flex-end' }}>
             <View style={{ flex: 1 }}>
               <Input
-                label="Quantité (ml)"
-                placeholder="Ex : 330"
+                label={t('nutrition.screen.hydration.quantityLabel')}
+                placeholder={t('nutrition.screen.hydration.quantityPlaceholder')}
                 keyboardType="numeric"
                 value={customWater}
                 onChangeText={setCustomWater}
               />
             </View>
             <Button
-              label="Ajouter"
+              label={t('nutrition.screen.hydration.addButton')}
               variant="secondary"
               disabled={!customWater.trim() || Number(customWater) <= 0}
               onPress={() => {
@@ -285,48 +284,48 @@ export function NutritionScreen(): React.JSX.Element {
 
         {/* Repas */}
         <Card>
-          <SectionTitle>Repas</SectionTitle>
+          <SectionTitle>{t('nutrition.screen.meals.title')}</SectionTitle>
           {meals.map((m, i) => (
             <View key={m.type} style={{ flexDirection: 'row', alignItems: 'center', gap: spacing[3], paddingVertical: spacing[3], borderBottomWidth: i < meals.length - 1 ? 1 : 0, borderBottomColor: colors.border }}>
               <View style={{ width: 40, height: 40, borderRadius: 12, backgroundColor: colors.surfaceElevated, alignItems: 'center', justifyContent: 'center' }}><Icon name={MEAL_ICON[m.type] ?? 'bowl'} size={19} color={colors.text} /></View>
               <View style={{ flex: 1 }}>
-                <Text variant="body" style={{ fontWeight: '600' }}>{MEAL_LABEL[m.type]}</Text>
-                <Text variant="caption" color="textSubtle" style={{ marginTop: 2 }}>{m.count > 0 ? `P ${Math.round(m.p)} · G ${Math.round(m.c)} · L ${Math.round(m.f)}` : 'à planifier'}</Text>
+                <Text variant="body" style={{ fontWeight: '600' }}>{t(`nutrition.screen.meal.${m.type}`)}</Text>
+                <Text variant="caption" color="textSubtle" style={{ marginTop: 2 }}>{m.count > 0 ? `P ${Math.round(m.p)} · G ${Math.round(m.c)} · L ${Math.round(m.f)}` : t('nutrition.screen.meals.toPlan')}</Text>
               </View>
-              {m.count > 0 ? <Text variant="body" style={{ fontWeight: '700' }}>{Math.round(m.kcal)}</Text> : <Text variant="caption" color="textSubtle">En attente</Text>}
+              {m.count > 0 ? <Text variant="body" style={{ fontWeight: '700' }}>{Math.round(m.kcal)}</Text> : <Text variant="caption" color="textSubtle">{t('nutrition.screen.meals.pending')}</Text>}
             </View>
           ))}
           <View style={{ flexDirection: 'row', gap: spacing[2], marginTop: spacing[3] }}>
             <View style={{ flex: 1 }}>
-              <Button label="Chercher un aliment" onPress={() => router.push('/nutrition/food/search')} fullWidth />
+              <Button label={t('nutrition.screen.meals.searchFood')} onPress={() => router.push('/nutrition/food/search')} fullWidth />
             </View>
             <View style={{ flex: 1 }}>
-              <Button label="Saisie manuelle" variant="secondary" onPress={() => router.push('/nutrition/meal/new')} fullWidth />
+              <Button label={t('nutrition.screen.meals.manualEntry')} variant="secondary" onPress={() => router.push('/nutrition/meal/new')} fullWidth />
             </View>
           </View>
         </Card>
 
         {/* Nutrition Score */}
         <Card>
-          <SectionTitle>Nutrition Score</SectionTitle>
+          <SectionTitle>{t('nutrition.screen.score.title')}</SectionTitle>
           <View style={{ flexDirection: 'row', gap: spacing[5], alignItems: 'center' }}>
             <ProgressRing value={hasData ? score.value : 0} size={96} thickness={9} color={colors.accentData} centerLabel={hasData ? `${score.value}` : '—'} caption="/ 100" />
             <View style={{ flex: 1 }}>
-              <Text variant="body">{hasData ? (score.value >= 80 ? 'Très bonne qualité nutritionnelle.' : score.value >= 60 ? 'Qualité correcte, à affiner.' : 'Qualité à améliorer.') : 'Ajoute un repas pour calculer ton score.'}</Text>
-              <Text variant="caption" color="textSubtle" style={{ marginTop: spacing[2], lineHeight: 18 }}>Basé sur : calories, protéines, équilibre des macros et hydratation.</Text>
+              <Text variant="body">{hasData ? (score.value >= 80 ? t('nutrition.screen.score.quality.excellent') : score.value >= 60 ? t('nutrition.screen.score.quality.good') : t('nutrition.screen.score.quality.needsImprovement')) : t('nutrition.screen.score.quality.noData')}</Text>
+              <Text variant="caption" color="textSubtle" style={{ marginTop: spacing[2], lineHeight: 18 }}>{t('nutrition.screen.score.basedOn')}</Text>
             </View>
           </View>
         </Card>
 
         {/* Poids & composition */}
         <Card>
-          <SectionTitle right={<Pressable onPress={() => router.push('/nutrition/weight')}><Text variant="caption" color="primary">Voir ›</Text></Pressable>}>Poids & composition</SectionTitle>
+          <SectionTitle right={<Pressable onPress={() => router.push('/nutrition/weight')}><Text variant="caption" color="primary">{t('nutrition.screen.weight.viewLink')}</Text></Pressable>}>{t('nutrition.screen.weight.title')}</SectionTitle>
           <View style={{ flexDirection: 'row', justifyContent: 'space-around' }}>
-            <Balance label="Poids" value={latestWeight != null ? `${latestWeight.toFixed(1)} kg` : '—'} />
-            <Balance label="Masse grasse" value={bodyFat != null ? `${bodyFat.toFixed(1)} %` : '—'} />
-            <Balance label="Masse musc." value={muscleMass != null ? `${muscleMass.toFixed(1)} kg` : '—'} />
+            <Balance label={t('nutrition.screen.weight.weight')} value={latestWeight != null ? `${latestWeight.toFixed(1)} kg` : '—'} />
+            <Balance label={t('nutrition.screen.weight.bodyFat')} value={bodyFat != null ? `${bodyFat.toFixed(1)} %` : '—'} />
+            <Balance label={t('nutrition.screen.weight.muscleMass')} value={muscleMass != null ? `${muscleMass.toFixed(1)} kg` : '—'} />
             <Balance
-              label="Variation 7 j"
+              label={t('nutrition.screen.weight.weeklyChange')}
               value={weightDelta != null ? `${weightDelta > 0 ? '+' : ''}${weightDelta.toFixed(1)} kg` : '—'}
               color={weightDelta != null && weightDelta <= 0 ? colors.accentData : undefined}
             />
@@ -336,7 +335,7 @@ export function NutritionScreen(): React.JSX.Element {
         {/* Impact */}
         {explanation ? (
           <Card>
-            <SectionTitle>Impact aujourd'hui</SectionTitle>
+            <SectionTitle>{t('nutrition.screen.impact.title')}</SectionTitle>
             <Text variant="body" color="textMuted">{t(explanation.observation.key, explanation.observation.params)}</Text>
             <Text variant="body" color="textMuted" style={{ marginTop: spacing[1] }}>{t(explanation.analysis.key, explanation.analysis.params)}</Text>
             <Text variant="body" style={{ marginTop: spacing[2] }}>{t(explanation.action.key, explanation.action.params)}</Text>
@@ -346,7 +345,7 @@ export function NutritionScreen(): React.JSX.Element {
         {/* Tendances */}
         {kcalSeries.length >= 2 ? (
           <Card>
-            <SectionTitle right={<Text variant="caption" color="textSubtle">30 jours</Text>}>Tendance calorique</SectionTitle>
+            <SectionTitle right={<Text variant="caption" color="textSubtle">{t('nutrition.screen.trend.days30')}</Text>}>{t('nutrition.screen.trend.title')}</SectionTitle>
             <Sparkline values={kcalSeries} width={300} height={80} color={colors.primary} />
           </Card>
         ) : null}
@@ -355,16 +354,16 @@ export function NutritionScreen(): React.JSX.Element {
         <Card>
           <SectionTitle right={
             <Pressable onPress={() => setPreference('nutritionGoals', undefined)} disabled={!customized}>
-              <Text variant="caption" color={customized ? 'primary' : 'textSubtle'}>{customized ? 'Repasser en auto' : 'Auto'}</Text>
+              <Text variant="caption" color={customized ? 'primary' : 'textSubtle'}>{customized ? t('nutrition.screen.goals.resetAuto') : t('nutrition.screen.goals.auto')}</Text>
             </Pressable>
-          }>Objectifs</SectionTitle>
-          <GoalBar label="Calories" current={totals.kcal} target={kcalTarget} unit="kcal" color={colors.info} />
-          <GoalBar label="Protéines" current={totals.proteinG} target={goals.proteinG} unit="g" color={colors.accentData} />
-          <GoalBar label="Hydratation" current={totals.hydrationMl / 1000} target={goals.hydrationMl / 1000} unit="L" color={colors.accentEndurance} />
+          }>{t('nutrition.screen.goals.title')}</SectionTitle>
+          <GoalBar label={t('nutrition.screen.goals.caloriesLabel')} current={totals.kcal} target={kcalTarget} unit="kcal" color={colors.info} />
+          <GoalBar label={t('nutrition.screen.goals.proteinLabel')} current={totals.proteinG} target={goals.proteinG} unit="g" color={colors.accentData} />
+          <GoalBar label={t('nutrition.screen.goals.hydrationLabel')} current={totals.hydrationMl / 1000} target={goals.hydrationMl / 1000} unit="L" color={colors.accentEndurance} />
 
-          <Text variant="caption" color="textSubtle" style={{ marginTop: spacing[4] }}>Ajuster mes objectifs {customized ? '(perso)' : '(auto — modifie pour personnaliser)'}</Text>
+          <Text variant="caption" color="textSubtle" style={{ marginTop: spacing[4] }}>{customized ? t('nutrition.screen.goals.adjustHintPerso') : t('nutrition.screen.goals.adjustHintAuto')}</Text>
           <StepperRow
-            label="Calories"
+            label={t('nutrition.screen.goals.caloriesLabel')}
             rawValue={Math.round(goals.kcal)}
             format={(v) => `${Math.round(v)} kcal`}
             onMinus={() => adjust({ kcal: -50 })}
@@ -372,7 +371,7 @@ export function NutritionScreen(): React.JSX.Element {
             onSet={(v) => setExact({ kcal: v })}
           />
           <StepperRow
-            label="Protéines"
+            label={t('nutrition.screen.goals.proteinLabel')}
             rawValue={Math.round(goals.proteinG)}
             format={(v) => `${Math.round(v)} g`}
             onMinus={() => adjust({ proteinG: -5 })}
@@ -380,7 +379,7 @@ export function NutritionScreen(): React.JSX.Element {
             onSet={(v) => setExact({ proteinG: v })}
           />
           <StepperRow
-            label="Hydratation"
+            label={t('nutrition.screen.goals.hydrationLabel')}
             rawValue={Number((goals.hydrationMl / 1000).toFixed(2))}
             format={(v) => `${v.toFixed(2)} L`}
             onMinus={() => adjust({ hydrationMl: -250 })}
@@ -393,13 +392,13 @@ export function NutritionScreen(): React.JSX.Element {
 
         {/* Micronutriments — honest */}
         <Card>
-          <SectionTitle>Micronutriments</SectionTitle>
-          <Text variant="body" color="textMuted" style={{ lineHeight: 21 }}>Le suivi détaillé (vitamines, fer, magnésium, oméga-3…) arrive bientôt. Il nécessite une base alimentaire enrichie (Open Food Facts) que nous intégrons.</Text>
+          <SectionTitle>{t('nutrition.screen.micronutrients.title')}</SectionTitle>
+          <Text variant="body" color="textMuted" style={{ lineHeight: 21 }}>{t('nutrition.screen.micronutrients.description')}</Text>
         </Card>
 
         <ComprendreCard pillars={['nutrition']} />
       </Screen>
-      <Fab icon="+" accessibilityLabel="Ajouter un aliment" onPress={() => router.push('/nutrition/food/search')} />
+      <Fab icon="+" accessibilityLabel={t('nutrition.screen.fab.addFood')} onPress={() => router.push('/nutrition/food/search')} />
     </View>
   );
 }

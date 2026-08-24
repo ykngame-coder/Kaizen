@@ -1,24 +1,26 @@
 import React, { useState } from 'react';
 import { View } from 'react-native';
 import { useRouter } from 'expo-router';
+import { useTranslation } from 'react-i18next';
 import { Badge, Button, Input, Screen, SegmentedControl, Text } from '@supotsu/ui';
 import { spacing } from '@supotsu/design-system';
 import { nutritionEntryInputSchema, type NutritionEntryInput } from '@supotsu/shared';
 import { useAddNutritionEntry } from '@/lib/data/queries';
 
-const MEALS = [
-  { value: 'breakfast', label: 'Petit-déj' },
-  { value: 'lunch', label: 'Déjeuner' },
-  { value: 'dinner', label: 'Dîner' },
-  { value: 'snack', label: 'Collation' },
-] as const;
-
 const numOrUndef = (s: string): number | undefined => (s ? Number(s) : undefined);
 
 /** Manual meal logging form (Master Prompt P11 nutrition). */
 export function AddMealScreen(): React.JSX.Element {
+  const { t } = useTranslation();
   const router = useRouter();
   const addMeal = useAddNutritionEntry();
+
+  const MEALS = [
+    { value: 'breakfast', label: t('nutrition.addMeal.meals.breakfast') },
+    { value: 'lunch', label: t('nutrition.addMeal.meals.lunch') },
+    { value: 'dinner', label: t('nutrition.addMeal.meals.dinner') },
+    { value: 'snack', label: t('nutrition.addMeal.meals.snack') },
+  ] as const;
 
   const [mealType, setMealType] = useState<(typeof MEALS)[number]['value']>('lunch');
   const [description, setDescription] = useState('');
@@ -40,43 +42,43 @@ export function AddMealScreen(): React.JSX.Element {
     };
     const parsed = nutritionEntryInputSchema.safeParse(candidate);
     if (!parsed.success) {
-      setError('Renseigne au moins une description et des calories valides.');
+      setError(t('nutrition.addMeal.errors.invalid'));
       return;
     }
     try {
       await addMeal.mutateAsync(parsed.data as NutritionEntryInput);
       router.back();
     } catch {
-      setError('Enregistrement impossible.');
+      setError(t('nutrition.addMeal.errors.saveFailed'));
     }
   };
 
   return (
     <Screen scroll>
-      <Text variant="title">Nouveau repas</Text>
+      <Text variant="title">{t('nutrition.addMeal.title')}</Text>
 
       <Button
-        label="Chercher dans Open Food Facts"
+        label={t('nutrition.addMeal.searchButton')}
         variant="secondary"
         onPress={() => router.replace('/nutrition/food/search')}
       />
 
       <View style={{ gap: spacing[2] }}>
         <Text variant="label" color="textMuted">
-          MOMENT
+          {t('nutrition.addMeal.momentLabel')}
         </Text>
         <SegmentedControl options={MEALS} value={mealType} onChange={setMealType} />
       </View>
 
-      <Input label="Description" value={description} onChangeText={setDescription} />
+      <Input label={t('nutrition.addMeal.descriptionLabel')} value={description} onChangeText={setDescription} />
 
       <View style={{ flexDirection: 'row', gap: spacing[4] }}>
         <View style={{ flex: 1 }}>
-          <Input label="Calories (kcal)" keyboardType="numeric" value={kcal} onChangeText={setKcal} />
+          <Input label={t('nutrition.addMeal.kcalLabel')} keyboardType="numeric" value={kcal} onChangeText={setKcal} />
         </View>
         <View style={{ flex: 1 }}>
           <Input
-            label="Protéines (g)"
+            label={t('nutrition.addMeal.proteinLabel')}
             keyboardType="numeric"
             value={proteinG}
             onChangeText={setProteinG}
@@ -85,7 +87,7 @@ export function AddMealScreen(): React.JSX.Element {
       </View>
 
       <Input
-        label="Eau (ml, optionnel)"
+        label={t('nutrition.addMeal.hydrationLabel')}
         keyboardType="numeric"
         value={hydrationMl}
         onChangeText={setHydrationMl}
@@ -94,10 +96,10 @@ export function AddMealScreen(): React.JSX.Element {
       {error ? <Badge label={error} tone="error" /> : null}
 
       <View style={{ flexDirection: 'row', gap: spacing[2], marginTop: spacing[2] }}>
-        <Button label="Annuler" variant="secondary" onPress={() => router.back()} />
+        <Button label={t('nutrition.addMeal.cancelButton')} variant="secondary" onPress={() => router.back()} />
         <View style={{ flex: 1 }} />
         <Button
-          label={addMeal.isPending ? '…' : 'Enregistrer'}
+          label={addMeal.isPending ? '…' : t('nutrition.addMeal.saveButton')}
           onPress={submit}
           disabled={addMeal.isPending}
         />

@@ -1812,5 +1812,257 @@
       "sideRight": "droite"
     },
     "energyWave": {}
+  },
+  "nutrition": {
+    "screen": {
+      "subtitle": "Ton carburant du jour",
+      "water": {
+        "entryLabel": "Eau"
+      },
+      "kcalRing": {
+        "target": "/ {{kcal}} kcal"
+      },
+      "balance": {
+        "remaining": "Restantes",
+        "remainingValue": "{{value}} kcal",
+        "target": "Cible",
+        "consumed": "Consommé"
+      },
+      "macros": {
+        "title": "Macronutriments",
+        "protein": "Protéines",
+        "carbs": "Glucides",
+        "fat": "Lipides"
+      },
+      "hydration": {
+        "title": "Hydratation",
+        "quantityLabel": "Quantité (ml)",
+        "quantityPlaceholder": "Ex : 330",
+        "addButton": "Ajouter"
+      },
+      "meal": {
+        "breakfast": "Petit-déjeuner",
+        "lunch": "Déjeuner",
+        "dinner": "Dîner",
+        "snack": "Collation"
+      },
+      "meals": {
+        "title": "Repas",
+        "toPlan": "à planifier",
+        "pending": "En attente",
+        "searchFood": "Chercher un aliment",
+        "manualEntry": "Saisie manuelle"
+      },
+      "score": {
+        "title": "Nutrition Score",
+        "basedOn": "Basé sur : calories, protéines, équilibre des macros et hydratation.",
+        "quality": {
+          "excellent": "Très bonne qualité nutritionnelle.",
+          "good": "Qualité correcte, à affiner.",
+          "needsImprovement": "Qualité à améliorer.",
+          "noData": "Ajoute un repas pour calculer ton score."
+        }
+      },
+      "weight": {
+        "title": "Poids & composition",
+        "viewLink": "Voir ›",
+        "weight": "Poids",
+        "bodyFat": "Masse grasse",
+        "muscleMass": "Masse musc.",
+        "weeklyChange": "Variation 7 j"
+      },
+      "impact": {
+        "title": "Impact aujourd'hui"
+      },
+      "trend": {
+        "days30": "30 jours",
+        "title": "Tendance calorique"
+      },
+      "goals": {
+        "title": "Objectifs",
+        "resetAuto": "Repasser en auto",
+        "auto": "Auto",
+        "caloriesLabel": "Calories",
+        "proteinLabel": "Protéines",
+        "hydrationLabel": "Hydratation",
+        "adjustHintPerso": "Ajuster mes objectifs (perso)",
+        "adjustHintAuto": "Ajuster mes objectifs (auto — modifie pour personnaliser)"
+      },
+      "micronutrients": {
+        "title": "Micronutriments",
+        "description": "Le suivi détaillé (vitamines, fer, magnésium, oméga-3…) arrive bientôt. Il nécessite une base alimentaire enrichie (Open Food Facts) que nous intégrons."
+      },
+      "fab": {
+        "addFood": "Ajouter un aliment"
+      }
+    },
+    "journal": {
+      "title": "Journal & déficit",
+      "subtitle": "Calories • Macros • Déficit",
+      "water": {
+        "entryLabel": "Eau"
+      },
+      "badge": {
+        "deficit": "Déficit {{value}} kcal",
+        "surplus": "Surplus {{value}} kcal"
+      },
+      "kpi": {
+        "consumed": "Consommées",
+        "target": "Objectif",
+        "deficit": "Déficit",
+        "protein": "Protéines"
+      },
+      "caloriesToday": {
+        "title": "Calories du jour"
+      },
+      "macros": {
+        "protein": "Protéines",
+        "carbs": "Glucides",
+        "fat": "Lipides"
+      },
+      "histogram": {
+        "days14": "14 jours",
+        "title": "Calories",
+        "targetLine": "Ligne = objectif {{kcal}} kcal"
+      },
+      "deficitCurve": {
+        "title": "Déficit calorique",
+        "avg": "Moyen",
+        "max": "Maximal",
+        "min": "Minimal"
+      },
+      "breakdown": {
+        "title": "Répartition calorique",
+        "protein": "Protéines",
+        "carbs": "Glucides",
+        "fat": "Lipides"
+      },
+      "meal": {
+        "breakfast": "Petit-déjeuner",
+        "lunch": "Déjeuner",
+        "dinner": "Dîner",
+        "snack": "Collation"
+      },
+      "recentMeals": {
+        "title": "Derniers repas",
+        "empty": "Aucun repas enregistré aujourd'hui. Ajoute un aliment pour suivre ton déficit."
+      },
+      "analysis": {
+        "title": "Analyse & conseils",
+        "deficitHigh": "Déficit de {{deficit}} kcal — cohérent avec un objectif de perte de graisse. ",
+        "deficitLight": "Léger déficit — proche de l’équilibre. ",
+        "surplus": "Surplus de {{deficit}} kcal aujourd’hui. ",
+        "proteinGood": "Tes protéines sont au bon niveau.",
+        "proteinMissing": "Il te manque {{grams}} g de protéines."
+      },
+      "hydration": {
+        "title": "Hydratation"
+      },
+      "fab": {
+        "addFood": "Ajouter un aliment"
+      }
+    },
+    "foodSearch": {
+      "title": "Chercher un aliment",
+      "subtitle": "Base ouverte Open Food Facts — macros par 100 g, recalculées pour ta portion.",
+      "nameLabel": "Nom (ex. yaourt grec)",
+      "searchButton": "Chercher",
+      "barcodeLabel": "Code-barres",
+      "scanButton": "📷 Scanner un code-barres",
+      "quantityLabel": "Quantité (g)",
+      "momentLabel": "MOMENT",
+      "addButton": "Ajouter au journal",
+      "resultsLabel": "RÉSULTATS",
+      "backButton": "Retour",
+      "meals": {
+        "breakfast": "Petit-déj",
+        "lunch": "Déjeuner",
+        "dinner": "Dîner",
+        "snack": "Collation"
+      },
+      "badges": {
+        "kcal": "{{kcal}} kcal",
+        "protein": "P {{value}} g",
+        "carb": "G {{value}} g",
+        "fat": "L {{value}} g"
+      },
+      "perServing": "{{kcal}} kcal / 100 g",
+      "description": "{{name}} · {{grams}} g",
+      "descriptionWithBrand": "{{name}} ({{brand}}) · {{grams}} g",
+      "errors": {
+        "noResults": "Aucun aliment trouvé pour cette recherche.",
+        "searchFailed": "Recherche impossible.",
+        "barcodeNotFound": "Code-barres inconnu dans Open Food Facts.",
+        "saveFailed": "Enregistrement impossible."
+      }
+    },
+    "calorieCalculator": {
+      "toggleTitle": "Calculateur de calories détaillé",
+      "toggleSubtitle": "Âge, taille, activité… une estimation plus poussée que le calcul auto",
+      "ageLabel": "Âge",
+      "agePlaceholder": "Ex : 35",
+      "sexLabel": "SEXE",
+      "sex": {
+        "male": "Homme",
+        "female": "Femme"
+      },
+      "heightLabel": "Taille (cm)",
+      "heightPlaceholder": "Ex : 175",
+      "weightLabel": "Poids actuel (kg)",
+      "weightPlaceholder": "Ex : 80",
+      "goalWeightLabel": "Objectif de poids (kg)",
+      "goalWeightPlaceholder": "Ex : 70",
+      "durationLabel": "Durée (mois)",
+      "durationPlaceholder": "Ex : 3",
+      "activityLabel": "NIVEAU D'ACTIVITÉ PHYSIQUE",
+      "activity": {
+        "sedentary": "Sédentaire — peu ou pas d’activité",
+        "light": "Peu actif — 1 à 3 j / semaine",
+        "moderate": "Modérément actif — 3 à 5 j / semaine",
+        "active": "Très actif — 6 à 7 j / semaine",
+        "veryActive": "Extrêmement actif — travail physique"
+      },
+      "bmrLabel": "BMR (kcal)",
+      "tdeeLabel": "Dépense totale",
+      "targetLabel": "Cible / jour",
+      "deficitMessage": "Déficit d'environ {{deficit}} kcal/jour pour atteindre {{goalWeight}} kg en {{duration}} mois.",
+      "surplusMessage": "Surplus d'environ {{deficit}} kcal/jour pour atteindre {{goalWeight}} kg en {{duration}} mois.",
+      "atGoalMessage": "Ton poids actuel correspond déjà à ton objectif.",
+      "applyButton": "Appliquer à mes objectifs Nutrition",
+      "appliedButton": "Appliqué à mes objectifs ✓"
+    },
+    "addMeal": {
+      "title": "Nouveau repas",
+      "searchButton": "Chercher dans Open Food Facts",
+      "momentLabel": "MOMENT",
+      "descriptionLabel": "Description",
+      "kcalLabel": "Calories (kcal)",
+      "proteinLabel": "Protéines (g)",
+      "hydrationLabel": "Eau (ml, optionnel)",
+      "cancelButton": "Annuler",
+      "saveButton": "Enregistrer",
+      "meals": {
+        "breakfast": "Petit-déj",
+        "lunch": "Déjeuner",
+        "dinner": "Dîner",
+        "snack": "Collation"
+      },
+      "errors": {
+        "invalid": "Renseigne au moins une description et des calories valides.",
+        "saveFailed": "Enregistrement impossible."
+      }
+    },
+    "barcodeScan": {
+      "webTitle": "Scanner un code-barres",
+      "webBody": "Le scan caméra est disponible sur mobile (Expo Go). Sur le web, saisis le numéro dans la recherche d'aliments.",
+      "goToSearch": "Aller à la recherche",
+      "preparingCamera": "Préparation de la caméra…",
+      "allowCameraTitle": "Autoriser la caméra",
+      "allowCameraBody": "Kaizen Supotsu a besoin de la caméra pour scanner les codes-barres des aliments. Aucune image n'est enregistrée.",
+      "allowCameraButton": "Autoriser la caméra",
+      "enterManually": "Saisir le numéro à la place",
+      "aimHint": "Vise le code-barres du produit",
+      "cancelButton": "Annuler"
+    }
   }
 }

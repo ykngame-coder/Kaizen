@@ -1812,5 +1812,257 @@
       "sideRight": "right"
     },
     "energyWave": {}
+  },
+  "nutrition": {
+    "screen": {
+      "subtitle": "Your daily fuel",
+      "water": {
+        "entryLabel": "Water"
+      },
+      "kcalRing": {
+        "target": "/ {{kcal}} kcal"
+      },
+      "balance": {
+        "remaining": "Remaining",
+        "remainingValue": "{{value}} kcal",
+        "target": "Target",
+        "consumed": "Consumed"
+      },
+      "macros": {
+        "title": "Macronutrients",
+        "protein": "Protein",
+        "carbs": "Carbs",
+        "fat": "Fat"
+      },
+      "hydration": {
+        "title": "Hydration",
+        "quantityLabel": "Quantity (ml)",
+        "quantityPlaceholder": "E.g. 330",
+        "addButton": "Add"
+      },
+      "meal": {
+        "breakfast": "Breakfast",
+        "lunch": "Lunch",
+        "dinner": "Dinner",
+        "snack": "Snack"
+      },
+      "meals": {
+        "title": "Meals",
+        "toPlan": "to plan",
+        "pending": "Pending",
+        "searchFood": "Search for food",
+        "manualEntry": "Manual entry"
+      },
+      "score": {
+        "title": "Nutrition Score",
+        "basedOn": "Based on: calories, protein, macro balance, and hydration.",
+        "quality": {
+          "excellent": "Very good nutritional quality.",
+          "good": "Decent quality, room to fine-tune.",
+          "needsImprovement": "Quality needs improvement.",
+          "noData": "Add a meal to calculate your score."
+        }
+      },
+      "weight": {
+        "title": "Weight & composition",
+        "viewLink": "View ›",
+        "weight": "Weight",
+        "bodyFat": "Body fat",
+        "muscleMass": "Muscle mass",
+        "weeklyChange": "7-day change"
+      },
+      "impact": {
+        "title": "Impact today"
+      },
+      "trend": {
+        "days30": "30 days",
+        "title": "Calorie trend"
+      },
+      "goals": {
+        "title": "Goals",
+        "resetAuto": "Switch back to auto",
+        "auto": "Auto",
+        "caloriesLabel": "Calories",
+        "proteinLabel": "Protein",
+        "hydrationLabel": "Hydration",
+        "adjustHintPerso": "Adjust my goals (custom)",
+        "adjustHintAuto": "Adjust my goals (auto — edit to customize)"
+      },
+      "micronutrients": {
+        "title": "Micronutrients",
+        "description": "Detailed tracking (vitamins, iron, magnesium, omega-3…) is coming soon. It requires an enriched food database (Open Food Facts) that we're integrating."
+      },
+      "fab": {
+        "addFood": "Add food"
+      }
+    },
+    "journal": {
+      "title": "Journal & deficit",
+      "subtitle": "Calories • Macros • Deficit",
+      "water": {
+        "entryLabel": "Water"
+      },
+      "badge": {
+        "deficit": "Deficit {{value}} kcal",
+        "surplus": "Surplus {{value}} kcal"
+      },
+      "kpi": {
+        "consumed": "Consumed",
+        "target": "Target",
+        "deficit": "Deficit",
+        "protein": "Protein"
+      },
+      "caloriesToday": {
+        "title": "Today's calories"
+      },
+      "macros": {
+        "protein": "Protein",
+        "carbs": "Carbs",
+        "fat": "Fat"
+      },
+      "histogram": {
+        "days14": "14 days",
+        "title": "Calories",
+        "targetLine": "Line = target {{kcal}} kcal"
+      },
+      "deficitCurve": {
+        "title": "Calorie deficit",
+        "avg": "Average",
+        "max": "Max",
+        "min": "Min"
+      },
+      "breakdown": {
+        "title": "Calorie breakdown",
+        "protein": "Protein",
+        "carbs": "Carbs",
+        "fat": "Fat"
+      },
+      "meal": {
+        "breakfast": "Breakfast",
+        "lunch": "Lunch",
+        "dinner": "Dinner",
+        "snack": "Snack"
+      },
+      "recentMeals": {
+        "title": "Recent meals",
+        "empty": "No meals logged today. Add a food to track your deficit."
+      },
+      "analysis": {
+        "title": "Analysis & tips",
+        "deficitHigh": "Deficit of {{deficit}} kcal — consistent with a fat-loss goal. ",
+        "deficitLight": "Slight deficit — close to balance. ",
+        "surplus": "Surplus of {{deficit}} kcal today. ",
+        "proteinGood": "Your protein is right on target.",
+        "proteinMissing": "You're missing {{grams}} g of protein."
+      },
+      "hydration": {
+        "title": "Hydration"
+      },
+      "fab": {
+        "addFood": "Add food"
+      }
+    },
+    "foodSearch": {
+      "title": "Search for food",
+      "subtitle": "Open Food Facts open database — macros per 100 g, recalculated for your portion.",
+      "nameLabel": "Name (e.g. Greek yogurt)",
+      "searchButton": "Search",
+      "barcodeLabel": "Barcode",
+      "scanButton": "📷 Scan a barcode",
+      "quantityLabel": "Quantity (g)",
+      "momentLabel": "MEAL",
+      "addButton": "Add to journal",
+      "resultsLabel": "RESULTS",
+      "backButton": "Back",
+      "meals": {
+        "breakfast": "Breakfast",
+        "lunch": "Lunch",
+        "dinner": "Dinner",
+        "snack": "Snack"
+      },
+      "badges": {
+        "kcal": "{{kcal}} kcal",
+        "protein": "P {{value}} g",
+        "carb": "C {{value}} g",
+        "fat": "F {{value}} g"
+      },
+      "perServing": "{{kcal}} kcal / 100 g",
+      "description": "{{name}} · {{grams}} g",
+      "descriptionWithBrand": "{{name}} ({{brand}}) · {{grams}} g",
+      "errors": {
+        "noResults": "No food found for this search.",
+        "searchFailed": "Search failed.",
+        "barcodeNotFound": "Barcode not found in Open Food Facts.",
+        "saveFailed": "Save failed."
+      }
+    },
+    "calorieCalculator": {
+      "toggleTitle": "Detailed calorie calculator",
+      "toggleSubtitle": "Age, height, activity… a more precise estimate than the automatic calculation",
+      "ageLabel": "Age",
+      "agePlaceholder": "E.g. 35",
+      "sexLabel": "SEX",
+      "sex": {
+        "male": "Male",
+        "female": "Female"
+      },
+      "heightLabel": "Height (cm)",
+      "heightPlaceholder": "E.g. 175",
+      "weightLabel": "Current weight (kg)",
+      "weightPlaceholder": "E.g. 80",
+      "goalWeightLabel": "Goal weight (kg)",
+      "goalWeightPlaceholder": "E.g. 70",
+      "durationLabel": "Duration (months)",
+      "durationPlaceholder": "E.g. 3",
+      "activityLabel": "PHYSICAL ACTIVITY LEVEL",
+      "activity": {
+        "sedentary": "Sedentary — little or no activity",
+        "light": "Lightly active — 1 to 3 days / week",
+        "moderate": "Moderately active — 3 to 5 days / week",
+        "active": "Very active — 6 to 7 days / week",
+        "veryActive": "Extremely active — physical job"
+      },
+      "bmrLabel": "BMR (kcal)",
+      "tdeeLabel": "TDEE",
+      "targetLabel": "Target / day",
+      "deficitMessage": "Deficit of about {{deficit}} kcal/day to reach {{goalWeight}} kg in {{duration}} months.",
+      "surplusMessage": "Surplus of about {{deficit}} kcal/day to reach {{goalWeight}} kg in {{duration}} months.",
+      "atGoalMessage": "Your current weight already matches your goal.",
+      "applyButton": "Apply to my Nutrition goals",
+      "appliedButton": "Applied to my goals ✓"
+    },
+    "addMeal": {
+      "title": "New meal",
+      "searchButton": "Search Open Food Facts",
+      "momentLabel": "MEAL",
+      "descriptionLabel": "Description",
+      "kcalLabel": "Calories (kcal)",
+      "proteinLabel": "Protein (g)",
+      "hydrationLabel": "Water (ml, optional)",
+      "cancelButton": "Cancel",
+      "saveButton": "Save",
+      "meals": {
+        "breakfast": "Breakfast",
+        "lunch": "Lunch",
+        "dinner": "Dinner",
+        "snack": "Snack"
+      },
+      "errors": {
+        "invalid": "Enter at least a description and valid calories.",
+        "saveFailed": "Save failed."
+      }
+    },
+    "barcodeScan": {
+      "webTitle": "Scan a barcode",
+      "webBody": "Camera scanning is available on mobile (Expo Go). On web, enter the number in the food search.",
+      "goToSearch": "Go to search",
+      "preparingCamera": "Preparing camera…",
+      "allowCameraTitle": "Allow camera access",
+      "allowCameraBody": "Kaizen Supotsu needs camera access to scan food barcodes. No images are saved.",
+      "allowCameraButton": "Allow camera access",
+      "enterManually": "Enter the number instead",
+      "aimHint": "Aim at the product's barcode",
+      "cancelButton": "Cancel"
+    }
   }
 }
