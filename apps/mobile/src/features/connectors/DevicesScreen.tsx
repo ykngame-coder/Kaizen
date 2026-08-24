@@ -2,6 +2,8 @@ import React, { useState } from 'react';
 import { Platform, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useTranslation } from 'react-i18next';
+import type { TFunction } from 'i18next';
 import { Badge, Button, Card, Screen, Text, useTheme, type BadgeTone } from '@supotsu/ui';
 import { radii, spacing } from '@supotsu/design-system';
 import { CONNECTORS } from '@supotsu/connectors';
@@ -25,36 +27,50 @@ import {
 } from './stravaClient';
 import { appleHealthAvailable, createIngestToken, ingestUrl } from './appleHealthClient';
 
-const SOURCE_LABEL: Partial<Record<DataSource, { name: string; icon: string }>> = {
-  garmin: { name: 'Garmin', icon: '⌚' },
-  apple_health: { name: 'Apple Santé', icon: '🍎' },
-  renpho: { name: 'Renpho', icon: '⚖' },
-  withings: { name: 'Withings', icon: '⚖' },
-  polar: { name: 'Polar', icon: '❤️' },
-  coros: { name: 'Coros', icon: '⌚' },
-  oura: { name: 'Oura', icon: '💍' },
-  fitbit: { name: 'Fitbit', icon: '⌚' },
-  manual: { name: 'Saisie manuelle', icon: '✍️' },
-};
+function sourceLabel(t: TFunction): Partial<Record<DataSource, { name: string; icon: string }>> {
+  return {
+    garmin: { name: 'Garmin', icon: '⌚' },
+    apple_health: { name: 'Apple Santé', icon: '🍎' },
+    renpho: { name: 'Renpho', icon: '⚖' },
+    withings: { name: 'Withings', icon: '⚖' },
+    polar: { name: 'Polar', icon: '❤️' },
+    coros: { name: 'Coros', icon: '⌚' },
+    oura: { name: 'Oura', icon: '💍' },
+    fitbit: { name: 'Fitbit', icon: '⌚' },
+    manual: { name: t('connectors.devices.sourceLabel.manual'), icon: '✍️' },
+  };
+}
 
-const METRIC_LABEL: Partial<Record<HealthMetricType, string>> = {
-  sleep_duration: 'Sommeil',
-  hrv: 'HRV',
-  resting_heart_rate: 'FC repos',
-  weight: 'Poids',
-  body_fat: 'Masse grasse',
-  muscle_mass: 'Masse musc.',
-};
+function metricLabel(t: TFunction): Partial<Record<HealthMetricType, string>> {
+  return {
+    sleep_duration: t('connectors.devices.metricLabel.sleepDuration'),
+    hrv: t('connectors.devices.metricLabel.hrv'),
+    resting_heart_rate: t('connectors.devices.metricLabel.restingHeartRate'),
+    weight: t('connectors.devices.metricLabel.weight'),
+    body_fat: t('connectors.devices.metricLabel.bodyFat'),
+    muscle_mass: t('connectors.devices.metricLabel.muscleMass'),
+  };
+}
 
 /** Supported devices shown in the compatibility grid. */
 const COMPATIBLE = ['Garmin', 'Apple Watch', 'Polar', 'Coros', 'Whoop', 'Oura', 'Withings', 'Renpho', 'Fitbit', 'Wahoo', 'Dexcom', 'Strava'];
 
-const GARMIN_STATUS_UI: Record<string, { label: string; tone: BadgeTone }> = {
-  connected: { label: 'Connecté', tone: 'success' },
-  pending: { label: 'Autorisation en cours', tone: 'warning' },
-  revoked: { label: 'Accès révoqué', tone: 'error' },
-  disconnected: { label: 'Non connecté', tone: 'neutral' },
-};
+function garminStatusUi(t: TFunction): Record<string, { label: string; tone: BadgeTone }> {
+  return {
+    connected: { label: t('connectors.devices.garmin.status.connected'), tone: 'success' },
+    pending: { label: t('connectors.devices.garmin.status.pending'), tone: 'warning' },
+    revoked: { label: t('connectors.devices.garmin.status.revoked'), tone: 'error' },
+    disconnected: { label: t('connectors.devices.garmin.status.disconnected'), tone: 'neutral' },
+  };
+}
+
+function fmtAgo(iso: string, t: TFunction): string {
+  const mins = Math.round((Date.now() - new Date(iso).getTime()) / 60000);
+  if (mins < 60) return t('connectors.devices.ago.minutes', { count: Math.max(1, mins) });
+  const h = Math.round(mins / 60);
+  if (h < 24) return t('connectors.devices.ago.hours', { count: h });
+  return t('connectors.devices.ago.days', { count: Math.round(h / 24) });
+}
 
 /** Summary KPI cell (2-up). */
 function KpiCell({ value, label, small, color }: { value: string; label: string; small?: boolean; color?: string }): React.JSX.Element {
@@ -73,6 +89,7 @@ function KpiCell({ value, label, small, color }: { value: string; label: string;
 
 /** Real Garmin connection card (OAuth via the Garmin Edge Function). */
 function GarminCard(): React.JSX.Element {
+  const { t } = useTranslation();
   const available = garminAvailable();
   const status = useQuery({
     queryKey: ['garminStatus'],
@@ -81,7 +98,7 @@ function GarminCard(): React.JSX.Element {
   });
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const ui = GARMIN_STATUS_UI[status.data ?? 'disconnected'];
+  const ui = garminStatusUi(t)[status.data ?? 'disconnected'];
 
   const connect = async (): Promise<void> => {
     setError(null);
@@ -89,7 +106,7 @@ function GarminCard(): React.JSX.Element {
     try {
       await startGarminConnect();
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Connexion impossible.');
+      setError(e instanceof Error ? e.message : t('connectors.devices.garmin.connectError'));
     } finally {
       setBusy(false);
     }
@@ -102,7 +119,7 @@ function GarminCard(): React.JSX.Element {
       await disconnectGarmin();
       await status.refetch();
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Déconnexion impossible.');
+      setError(e instanceof Error ? e.message : t('connectors.devices.garmin.disconnectError'));
     } finally {
       setBusy(false);
     }
@@ -116,28 +133,27 @@ function GarminCard(): React.JSX.Element {
         <View style={{ flex: 1 }}>
           <Text variant="subtitle">Garmin Connect</Text>
           <Text variant="caption" color="textMuted">
-            Activités · Santé (sommeil, HRV, FC, stress)
+            {t('connectors.devices.garmin.caption')}
           </Text>
         </View>
-        <Badge label={available ? ui.label : 'Backend requis'} tone={available ? ui.tone : 'neutral'} />
+        <Badge label={available ? ui.label : t('connectors.devices.backendRequired')} tone={available ? ui.tone : 'neutral'} />
       </View>
       {available ? (
         <View style={{ flexDirection: 'row', gap: spacing[2], marginTop: spacing[1] }}>
           {connected ? (
             <Button
-              label={busy ? '…' : 'Déconnecter'}
+              label={busy ? '…' : t('connectors.devices.disconnect')}
               variant="danger"
               onPress={disconnect}
               disabled={busy}
             />
           ) : (
-            <Button label={busy ? '…' : 'Connecter Garmin'} onPress={connect} disabled={busy} />
+            <Button label={busy ? '…' : t('connectors.devices.garmin.connect')} onPress={connect} disabled={busy} />
           )}
         </View>
       ) : (
         <Text variant="caption" color="textMuted">
-          Nécessite un backend Supabase configuré et la fonction Garmin déployée (voir
-          docs/connectors-garmin.md).
+          {t('connectors.devices.garmin.backendInfo')}
         </Text>
       )}
       {error ? (
@@ -151,6 +167,7 @@ function GarminCard(): React.JSX.Element {
 
 /** Real Strava connection card (OAuth2 + pull sync via the Strava Edge Function). */
 function StravaCard(): React.JSX.Element {
+  const { t } = useTranslation();
   const available = stravaAvailable();
   const status = useQuery({
     queryKey: ['stravaStatus'],
@@ -169,7 +186,7 @@ function StravaCard(): React.JSX.Element {
       await fn();
     } catch (e) {
       const detail = errorMessage(e, '');
-      setNote(detail ? `Une erreur est survenue. Détail technique (utile si tu le signales) : ${detail}` : 'Une erreur est survenue.');
+      setNote(detail ? t('connectors.devices.strava.errorWithDetail', { detail }) : t('connectors.devices.strava.error'));
     } finally {
       setBusy(false);
     }
@@ -181,11 +198,19 @@ function StravaCard(): React.JSX.Element {
         <View style={{ flex: 1 }}>
           <Text variant="subtitle">Strava</Text>
           <Text variant="caption" color="textMuted">
-            Activités en direct (ta Garmin y synchronise déjà tes séances)
+            {t('connectors.devices.strava.caption')}
           </Text>
         </View>
         <Badge
-          label={available ? (connected ? 'Connecté' : status.data === 'pending' ? 'En cours' : 'Non connecté') : 'Backend requis'}
+          label={
+            available
+              ? connected
+                ? t('connectors.devices.strava.status.connected')
+                : status.data === 'pending'
+                  ? t('connectors.devices.strava.status.pending')
+                  : t('connectors.devices.strava.status.notConnected')
+              : t('connectors.devices.backendRequired')
+          }
           tone={available ? (connected ? 'success' : 'neutral') : 'neutral'}
         />
       </View>
@@ -194,31 +219,30 @@ function StravaCard(): React.JSX.Element {
           {connected ? (
             <>
               <Button
-                label={busy ? '…' : 'Synchroniser'}
+                label={busy ? '…' : t('connectors.devices.strava.sync')}
                 onPress={() =>
                   run(async () => {
                     const n = await syncStrava();
-                    setNote(n === 0 ? 'Déjà à jour.' : `${n} activité(s) importée(s).`);
+                    setNote(n === 0 ? t('connectors.devices.strava.upToDate') : t('connectors.devices.strava.imported', { count: n }));
                     qc.invalidateQueries({ queryKey: ['activities'] });
                   })
                 }
                 disabled={busy}
               />
               <Button
-                label="Déconnecter"
+                label={t('connectors.devices.disconnect')}
                 variant="danger"
                 onPress={() => run(async () => { await disconnectStrava(); await status.refetch(); })}
                 disabled={busy}
               />
             </>
           ) : (
-            <Button label={busy ? '…' : 'Connecter Strava'} onPress={() => run(startStravaConnect)} disabled={busy} />
+            <Button label={busy ? '…' : t('connectors.devices.strava.connect')} onPress={() => run(startStravaConnect)} disabled={busy} />
           )}
         </View>
       ) : (
         <Text variant="caption" color="textMuted">
-          Nécessite un backend Supabase configuré et la fonction Strava déployée (voir
-          docs/connectors-strava.md).
+          {t('connectors.devices.strava.backendInfo')}
         </Text>
       )}
       {note ? (
@@ -232,6 +256,7 @@ function StravaCard(): React.JSX.Element {
 
 /** Apple Santé via iOS Shortcuts webhook (free, no dev build). */
 function AppleHealthCard(): React.JSX.Element {
+  const { t } = useTranslation();
   const { colors } = useTheme();
   const available = appleHealthAvailable();
   const [token, setToken] = useState<string | null>(null);
@@ -245,7 +270,7 @@ function AppleHealthCard(): React.JSX.Element {
     try {
       setToken(await createIngestToken());
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Génération impossible.');
+      setError(e instanceof Error ? e.message : t('connectors.devices.appleHealthShortcuts.generateError'));
     } finally {
       setBusy(false);
     }
@@ -255,40 +280,43 @@ function AppleHealthCard(): React.JSX.Element {
     <Card>
       <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
         <View style={{ flex: 1 }}>
-          <Text variant="subtitle">Apple Santé (Raccourcis)</Text>
+          <Text variant="subtitle">{t('connectors.devices.appleHealthShortcuts.title')}</Text>
           <Text variant="caption" color="textMuted">
-            HRV, FC, sommeil — automatique, gratuit, sans build (iOS)
+            {t('connectors.devices.appleHealthShortcuts.caption')}
           </Text>
         </View>
-        <Badge label={available ? 'Gratuit' : 'Backend requis'} tone={available ? 'success' : 'neutral'} />
+        <Badge label={available ? t('connectors.devices.appleHealthShortcuts.free') : t('connectors.devices.backendRequired')} tone={available ? 'success' : 'neutral'} />
       </View>
       {available ? (
         <>
-          <Button label={busy ? '…' : token ? 'Régénérer le jeton' : 'Générer mon jeton'} onPress={generate} disabled={busy} />
+          <Button
+            label={busy ? '…' : token ? t('connectors.devices.appleHealthShortcuts.regenerateToken') : t('connectors.devices.appleHealthShortcuts.generateToken')}
+            onPress={generate}
+            disabled={busy}
+          />
           {token && url ? (
             <View style={{ gap: spacing[1], marginTop: spacing[1] }}>
               <Text variant="label" color="textMuted">
-                URL (à mettre dans le Raccourci)
+                {t('connectors.devices.appleHealthShortcuts.urlLabel')}
               </Text>
               <Text variant="caption" selectable style={{ color: colors.text }}>
                 {url}
               </Text>
               <Text variant="label" color="textMuted">
-                JETON (en-tête X-Supotsu-Token)
+                {t('connectors.devices.appleHealthShortcuts.tokenLabel')}
               </Text>
               <Text variant="caption" selectable style={{ color: colors.text }}>
                 {token}
               </Text>
               <Text variant="caption" color="textMuted">
-                Garde ce jeton secret. Suit docs/apple-health-shortcut.md pour créer le Raccourci.
+                {t('connectors.devices.appleHealthShortcuts.tokenHint')}
               </Text>
             </View>
           ) : null}
         </>
       ) : (
         <Text variant="caption" color="textMuted">
-          Nécessite un backend Supabase configuré et la fonction apple-health déployée
-          (voir docs/apple-health-shortcut.md).
+          {t('connectors.devices.appleHealthShortcuts.backendInfo')}
         </Text>
       )}
       {error ? (
@@ -307,6 +335,7 @@ function AppleHealthCard(): React.JSX.Element {
  * that bridge and how many Renpho measurements were detected.
  */
 function RenphoCard(): React.JSX.Element {
+  const { t } = useTranslation();
   const { data: health = [] } = useHealthMetrics();
   const renpho = health.filter((m) => m.source === 'renpho');
   const connected = renpho.length > 0;
@@ -315,24 +344,23 @@ function RenphoCard(): React.JSX.Element {
     <Card>
       <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
         <View style={{ flex: 1 }}>
-          <Text variant="subtitle">Renpho (balance)</Text>
+          <Text variant="subtitle">{t('connectors.devices.renpho.title')}</Text>
           <Text variant="caption" color="textMuted">
-            Poids, masse grasse, masse musculaire — via Apple Santé
+            {t('connectors.devices.renpho.caption')}
           </Text>
         </View>
         <Badge
-          label={connected ? 'Synchronisé' : 'Via Apple Santé'}
+          label={connected ? t('connectors.devices.renpho.synced') : t('connectors.devices.renpho.viaAppleHealth')}
           tone={connected ? 'success' : 'neutral'}
         />
       </View>
       {connected ? (
         <Text variant="caption" color="textSubtle" style={{ marginTop: spacing[1] }}>
-          {renpho.length} mesure(s) sur {days} jour(s) détectée(s) depuis ta balance Renpho.
+          {t('connectors.devices.renpho.detected', { count: renpho.length, days })}
         </Text>
       ) : (
         <Text variant="caption" color="textSubtle" style={{ marginTop: spacing[1] }}>
-          Pèse-toi avec l'app Renpho (sync Apple Santé activée), puis importe ton export Apple
-          Santé — le poids et la composition corporelle apparaîtront ici.
+          {t('connectors.devices.renpho.notConnected')}
         </Text>
       )}
     </Card>
@@ -342,6 +370,7 @@ function RenphoCard(): React.JSX.Element {
 /** "Mes appareils connectés" (Master Prompt P9.13, P22.14). */
 /** Native Apple HealthKit (iOS build only) — reads Health directly on-device. */
 function HealthKitCard(): React.JSX.Element {
+  const { t } = useTranslation();
   const importHealth = useImportHealth();
   const isIos = Platform.OS === 'ios';
   const available = isIos && healthKitAvailable();
@@ -355,17 +384,17 @@ function HealthKitCard(): React.JSX.Element {
       const { activities, healthMetrics, sleepSessions } = await syncHealthKit();
       await markHealthKitConnected();
       if (activities.length + healthMetrics.length + sleepSessions.length === 0) {
-        setNote('Aucune nouvelle donnée (autorise l’accès aux catégories dans Réglages → Santé).');
+        setNote(t('connectors.devices.healthKit.noNewData'));
       } else {
         await importHealth.mutateAsync({ activities, healthMetrics, records: [], sleepSessions, workouts: [] });
-        setNote(`Importé : ${activities.length} activité(s), ${healthMetrics.length} donnée(s) santé.`);
+        setNote(t('connectors.devices.healthKit.imported', { activitiesCount: activities.length, healthCount: healthMetrics.length }));
       }
     } catch (e) {
       const detail = errorMessage(e, '');
       setNote(
         detail
-          ? `Synchronisation impossible pour l’instant. Détail technique (utile si tu le signales) : ${detail}`
-          : 'Synchronisation impossible pour l’instant. Réessaie plus tard.',
+          ? t('connectors.devices.healthKit.syncErrorWithDetail', { detail })
+          : t('connectors.devices.healthKit.syncError'),
       );
     } finally {
       setBusy(false);
@@ -376,23 +405,20 @@ function HealthKitCard(): React.JSX.Element {
     <Card>
       <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
         <View style={{ flex: 1 }}>
-          <Text variant="subtitle">Apple Santé (HealthKit)</Text>
+          <Text variant="subtitle">{t('connectors.devices.healthKit.title')}</Text>
           <Text variant="caption" color="textMuted">
-            Lecture directe sur l’iPhone — sommeil, FC, HRV, poids, composition (jusqu’à 3 ans d’historique).
-            Une fois autorisé, se resynchronise seul à chaque ouverture de l’app et en tâche de fond quand
-            Apple Santé reçoit de nouvelles données. Tes activités, repas et eau loggés dans Kaizen sont
-            aussi renvoyés vers Apple Santé.
+            {t('connectors.devices.healthKit.caption')}
           </Text>
         </View>
-        <Badge label={available ? 'Natif iOS' : 'App iOS requise'} tone={available ? 'success' : 'neutral'} />
+        <Badge label={available ? t('connectors.devices.healthKit.native') : t('connectors.devices.healthKit.iosRequired')} tone={available ? 'success' : 'neutral'} />
       </View>
       {available ? (
         <View style={{ flexDirection: 'row', gap: spacing[2], marginTop: spacing[1] }}>
-          <Button label={busy ? '…' : 'Autoriser & synchroniser'} onPress={sync} disabled={busy} />
+          <Button label={busy ? '…' : t('connectors.devices.healthKit.authorizeAndSync')} onPress={sync} disabled={busy} />
         </View>
       ) : (
         <Text variant="caption" color="textMuted">
-          Disponible dans l’app iOS (build natif). Sur le web, utilise Apple Santé via Health Auto Export ci-dessous.
+          {t('connectors.devices.healthKit.notAvailable')}
         </Text>
       )}
       {note ? (
@@ -405,6 +431,7 @@ function HealthKitCard(): React.JSX.Element {
 }
 
 export function DevicesScreen(): React.JSX.Element {
+  const { t } = useTranslation();
   const router = useRouter();
   const { colors } = useTheme();
   const { data: health = [] } = useHealthMetrics();
@@ -426,31 +453,31 @@ export function DevicesScreen(): React.JSX.Element {
     return health.reduce((max, m) => (m.measuredAt > max ? m.measuredAt : max), health[0]!.measuredAt);
   }, [health]);
 
-  const fmtAgo = (iso: string): string => {
-    const mins = Math.round((Date.now() - new Date(iso).getTime()) / 60000);
-    if (mins < 60) return `il y a ${Math.max(1, mins)} min`;
-    const h = Math.round(mins / 60);
-    if (h < 24) return `il y a ${h} h`;
-    return `il y a ${Math.round(h / 24)} j`;
-  };
+  const SOURCE_LABEL = sourceLabel(t);
+  const METRIC_LABEL = metricLabel(t);
 
   return (
     <Screen scroll>
-      <Text variant="title">Appareils & capteurs</Text>
+      <Text variant="title">{t('connectors.devices.title')}</Text>
       <Text variant="caption" color="textSubtle">
-        Synchronisation • Connexions • Sources
+        {t('connectors.devices.subtitle')}
       </Text>
 
       {/* Résumé */}
       <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: spacing[3] }}>
-        <KpiCell value={`${bySource.length}`} label="Sources actives" />
-        <KpiCell value={`${health.length}`} label="Données santé" />
-        <KpiCell value={lastSync ? fmtAgo(lastSync) : '—'} label="Dernière donnée" small />
-        <KpiCell value={health.length > 0 ? 'Actif' : 'En attente'} label="État général" small color={health.length > 0 ? colors.accentData : colors.textMuted} />
+        <KpiCell value={`${bySource.length}`} label={t('connectors.devices.kpi.activeSources')} />
+        <KpiCell value={`${health.length}`} label={t('connectors.devices.kpi.healthData')} />
+        <KpiCell value={lastSync ? fmtAgo(lastSync, t) : '—'} label={t('connectors.devices.kpi.lastData')} small />
+        <KpiCell
+          value={health.length > 0 ? t('connectors.devices.kpi.active') : t('connectors.devices.kpi.pending')}
+          label={t('connectors.devices.kpi.status')}
+          small
+          color={health.length > 0 ? colors.accentData : colors.textMuted}
+        />
       </View>
 
       <Text variant="heading" style={{ marginTop: spacing[2] }}>
-        Applications & appareils
+        {t('connectors.devices.appsAndDevices')}
       </Text>
       <HealthKitCard />
       <AppleHealthCard />
@@ -471,12 +498,12 @@ export function DevicesScreen(): React.JSX.Element {
               <View style={{ flex: 1 }}>
                 <Text variant="subtitle">{c.name}</Text>
                 <Text variant="caption" color="textMuted">
-                  {c.capabilities.includes('activities') ? 'Activités' : ''}
+                  {c.capabilities.includes('activities') ? t('connectors.devices.capability.activities') : ''}
                   {c.capabilities.length === 2 ? ' · ' : ''}
-                  {c.capabilities.includes('health') ? 'Santé' : ''}
+                  {c.capabilities.includes('health') ? t('connectors.devices.capability.health') : ''}
                 </Text>
               </View>
-              <Badge label="À venir" tone="neutral" />
+              <Badge label={t('connectors.devices.comingSoon')} tone="neutral" />
             </View>
           </Card>
         ))}
@@ -485,7 +512,7 @@ export function DevicesScreen(): React.JSX.Element {
       {/* Données par source (réel) */}
       {bySource.length > 0 ? (
         <Card>
-          <Text variant="heading">Données par source</Text>
+          <Text variant="heading">{t('connectors.devices.dataBySource')}</Text>
           <View style={{ gap: spacing[3], marginTop: spacing[2] }}>
             {bySource.map(([source, info]) => {
               const meta = SOURCE_LABEL[source] ?? { name: source, icon: '📡' };
@@ -500,14 +527,14 @@ export function DevicesScreen(): React.JSX.Element {
                         {meta.name}
                       </Text>
                       <Text variant="caption" color="textSubtle">
-                        {info.count} donnée{info.count > 1 ? 's' : ''}
+                        {t('connectors.devices.dataCount', { count: info.count })}
                       </Text>
                     </View>
                     <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginTop: 6 }}>
-                      {[...info.types].map((t) => (
-                        <View key={t} style={{ backgroundColor: colors.surfaceElevated, borderRadius: radii.sm, paddingHorizontal: 8, paddingVertical: 4 }}>
+                      {[...info.types].map((tp) => (
+                        <View key={tp} style={{ backgroundColor: colors.surfaceElevated, borderRadius: radii.sm, paddingHorizontal: 8, paddingVertical: 4 }}>
                           <Text variant="caption" color="textMuted">
-                            {METRIC_LABEL[t] ?? t}
+                            {METRIC_LABEL[tp] ?? tp}
                           </Text>
                         </View>
                       ))}
@@ -522,9 +549,9 @@ export function DevicesScreen(): React.JSX.Element {
 
       {/* Compatibilité */}
       <Card>
-        <Text variant="heading">Compatibilité</Text>
+        <Text variant="heading">{t('connectors.devices.compatibility.title')}</Text>
         <Text variant="caption" color="textSubtle">
-          Appareils et services pris en charge par Kaizen.
+          {t('connectors.devices.compatibility.subtitle')}
         </Text>
         <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: spacing[2], marginTop: spacing[3] }}>
           {COMPATIBLE.map((d) => (
@@ -538,26 +565,26 @@ export function DevicesScreen(): React.JSX.Element {
       </Card>
 
       <Card>
-        <Text variant="heading">Importer un fichier</Text>
+        <Text variant="heading">{t('connectors.devices.importFile.title')}</Text>
         <Text variant="body" color="textMuted">
-          Centralise un export Garmin / Apple Santé (JSON). Gratuit, sans compte tiers.
+          {t('connectors.devices.importFile.description')}
         </Text>
         <View style={{ alignItems: 'flex-start' }}>
-          <Button label="Importer un fichier" onPress={() => router.push('/profile/import')} />
+          <Button label={t('connectors.devices.importFile.button')} onPress={() => router.push('/profile/import')} />
         </View>
       </Card>
 
       <Card>
-        <Text variant="heading">Données santé importées</Text>
+        <Text variant="heading">{t('connectors.devices.importedHealthData.title')}</Text>
         <Text variant="body" color="textMuted">
           {health.length === 0
-            ? 'Aucune donnée santé pour le moment.'
-            : `${health.length} mesures (sommeil, HRV, fréquence cardiaque…).`}
+            ? t('connectors.devices.importedHealthData.empty')
+            : t('connectors.devices.importedHealthData.summary', { count: health.length })}
         </Text>
       </Card>
 
       <View style={{ alignItems: 'flex-start' }}>
-        <Button label="Retour" variant="secondary" onPress={() => router.back()} />
+        <Button label={t('common.back')} variant="secondary" onPress={() => router.back()} />
       </View>
     </Screen>
   );

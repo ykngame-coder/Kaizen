@@ -1,6 +1,7 @@
 import React, { useMemo } from 'react';
 import { Pressable, View } from 'react-native';
 import { useRouter } from 'expo-router';
+import { useTranslation } from 'react-i18next';
 import { Card, Text, useTheme } from '@supotsu/ui';
 import { spacing } from '@supotsu/design-system';
 import { useHealthMetrics } from '@/lib/data/queries';
@@ -9,6 +10,7 @@ const DAY_MS = 86_400_000;
 
 /** Weight widget: latest value, weekly delta, and a mini weekly bar chart. */
 export function WeightWidget(): React.JSX.Element {
+  const { t } = useTranslation();
   const router = useRouter();
   const { colors } = useTheme();
   const { data: health = [] } = useHealthMetrics();
@@ -39,9 +41,9 @@ export function WeightWidget(): React.JSX.Element {
       <Card>
         {latest === undefined ? (
           <View style={{ gap: spacing[1] }}>
-            <Text variant="heading">Poids</Text>
+            <Text variant="heading">{t('dashboard.weightWidget.title')}</Text>
             <Text variant="caption" color="textMuted">
-              Pas encore de pesée. Connecte une balance ou importe tes données.
+              {t('dashboard.weightWidget.noData')}
             </Text>
           </View>
         ) : (
@@ -49,8 +51,7 @@ export function WeightWidget(): React.JSX.Element {
             <Text variant="data">{latest.toFixed(1)} kg</Text>
             {delta !== undefined && (
               <Text variant="caption" color={delta <= 0 ? 'success' : 'textMuted'}>
-                {delta > 0 ? '+' : ''}
-                {delta.toFixed(1)} kg cette semaine
+                {t('dashboard.weightWidget.weeklyDelta', { value: `${delta > 0 ? '+' : ''}${delta.toFixed(1)}` })}
               </Text>
             )}
             <View

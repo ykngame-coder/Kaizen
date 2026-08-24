@@ -1,6 +1,7 @@
 import React, { useMemo } from 'react';
 import { Pressable, View } from 'react-native';
 import { useRouter } from 'expo-router';
+import { useTranslation } from 'react-i18next';
 import { Card, Meter, ProgressRing, Text, useTheme } from '@supotsu/ui';
 import { spacing } from '@supotsu/design-system';
 import { estimateTargets, sumDay } from '@supotsu/engines';
@@ -20,6 +21,7 @@ interface MacroRowProps {
   color: string;
 }
 function MacroRow({ label, value, target, color }: MacroRowProps): React.JSX.Element {
+  const { t } = useTranslation();
   const pct = target > 0 ? (value / target) * 100 : 0;
   return (
     <View style={{ gap: spacing[1] }}>
@@ -28,7 +30,7 @@ function MacroRow({ label, value, target, color }: MacroRowProps): React.JSX.Ele
           {label.toUpperCase()}
         </Text>
         <Text variant="caption">
-          {Math.round(value)}G / {target}G
+          {t('dashboard.nutritionWidget.macroValue', { value: Math.round(value), target })}
         </Text>
       </View>
       <Meter value={pct} color={color} height={6} />
@@ -38,6 +40,7 @@ function MacroRow({ label, value, target, color }: MacroRowProps): React.JSX.Ele
 
 /** Nutrition widget: calorie ring + macro bars vs estimated targets. */
 export function NutritionWidget(): React.JSX.Element {
+  const { t } = useTranslation();
   const router = useRouter();
   const { colors } = useTheme();
   const { data: entries = [] } = useNutritionEntries();
@@ -62,11 +65,11 @@ export function NutritionWidget(): React.JSX.Element {
     <Pressable onPress={() => router.push('/nutrition')}>
       <Card>
         <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'baseline' }}>
-          <Text variant="heading">NUTRITION</Text>
+          <Text variant="heading">{t('dashboard.nutritionWidget.title')}</Text>
           <Text variant="caption" color={remainingKcalToday >= 0 ? 'textMuted' : 'warning'}>
             {remainingKcalToday >= 0
-              ? `Reste ${remainingKcalToday} kcal`
-              : `Dépassé de ${-remainingKcalToday} kcal`}
+              ? t('dashboard.nutritionWidget.remaining', { kcal: remainingKcalToday })
+              : t('dashboard.nutritionWidget.exceeded', { kcal: -remainingKcalToday })}
           </Text>
         </View>
 
@@ -74,20 +77,20 @@ export function NutritionWidget(): React.JSX.Element {
           <ProgressRing
             value={kcalTarget > 0 ? (totals.kcal / kcalTarget) * 100 : 0}
             centerLabel={String(totals.kcal)}
-            caption="KCAL"
+            caption={t('dashboard.nutritionWidget.kcalCaption')}
             color={colors.accentLime}
             size={104}
           />
           <View style={{ flex: 1, gap: spacing[3] }}>
-            <MacroRow label="Protéines" value={totals.proteinG} target={proteinTarget} color={colors.primary} />
-            <MacroRow label="Glucides" value={totals.carbG} target={carbTarget} color={colors.primary} />
-            <MacroRow label="Lipides" value={totals.fatG} target={fatTarget} color={colors.primary} />
+            <MacroRow label={t('dashboard.nutritionWidget.protein')} value={totals.proteinG} target={proteinTarget} color={colors.primary} />
+            <MacroRow label={t('dashboard.nutritionWidget.carbs')} value={totals.carbG} target={carbTarget} color={colors.primary} />
+            <MacroRow label={t('dashboard.nutritionWidget.fat')} value={totals.fatG} target={fatTarget} color={colors.primary} />
           </View>
         </View>
 
         {targets.confidence === 'to_confirm' && (
           <Text variant="caption" color="textSubtle" style={{ marginTop: spacing[2] }}>
-            Cibles estimées — renseigne ton poids pour les personnaliser.
+            {t('dashboard.nutritionWidget.targetsEstimated')}
           </Text>
         )}
       </Card>

@@ -1,6 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import { View } from 'react-native';
 import { useRouter } from 'expo-router';
+import { useTranslation } from 'react-i18next';
 import { Badge, Button, Card, EmptyState, Icon, Input, Screen, SegmentedControl, Sparkline, Text, useTheme } from '@supotsu/ui';
 import { radii, spacing } from '@supotsu/design-system';
 import type { HealthMetricType } from '@supotsu/core';
@@ -41,6 +42,7 @@ function CompTile({ label, value, unit, delta, deltaGood }: { label: string; val
 
 /** Poids & composition corporelle (mockup #10) — real weight/body-fat/muscle trends. */
 export function WeightScreen(): React.JSX.Element {
+  const { t } = useTranslation();
   const router = useRouter();
   const { colors } = useTheme();
   const { data: health = [] } = useHealthMetrics();
@@ -75,16 +77,16 @@ export function WeightScreen(): React.JSX.Element {
 
   return (
     <Screen scroll>
-      <Text variant="title">Poids</Text>
+      <Text variant="title">{t('analytics.weight.title')}</Text>
       <Text variant="caption" color="textMuted">
-        Ton poids et ta composition corporelle dans le temps.
+        {t('analytics.weight.subtitle')}
       </Text>
 
       <SegmentedControl options={PERIODS.map((p) => ({ value: p.key, label: p.label }))} value={period} onChange={setPeriod} />
 
       <View style={{ alignItems: 'flex-start' }}>
         <Button
-          label={adding ? 'Annuler' : '+ Ajouter une pesée'}
+          label={adding ? t('common.cancel') : t('analytics.weight.add')}
           variant="secondary"
           onPress={() => setAdding((v) => !v)}
         />
@@ -92,15 +94,15 @@ export function WeightScreen(): React.JSX.Element {
       {adding ? (
         <Card>
           <Input
-            label="Poids (kg)"
-            placeholder="Ex. 72.5"
+            label={t('analytics.weight.inputLabel')}
+            placeholder={t('analytics.weight.inputPlaceholder')}
             keyboardType="decimal-pad"
             value={weightInput}
             onChangeText={setWeightInput}
           />
           <View style={{ marginTop: spacing[3], alignItems: 'flex-start' }}>
             <Button
-              label={addMetric.isPending ? 'Enregistrement…' : 'Enregistrer'}
+              label={addMetric.isPending ? t('analytics.weight.saving') : t('common.save')}
               onPress={submitWeight}
               disabled={addMetric.isPending || weightInput.trim() === ''}
             />
@@ -109,7 +111,7 @@ export function WeightScreen(): React.JSX.Element {
       ) : null}
 
       {currentWeight == null ? (
-        <EmptyState icon={<Icon name="scale" size={44} color={colors.textSubtle} />} title="Aucune pesée" message="Connecte une balance (Renpho via Apple Santé), importe tes données, ou ajoute une pesée manuellement ci-dessus." />
+        <EmptyState icon={<Icon name="scale" size={44} color={colors.textSubtle} />} title={t('analytics.weight.emptyState.title')} message={t('analytics.weight.emptyState.message')} />
       ) : (
         <>
           {/* Poids courant + tendance */}
@@ -118,7 +120,7 @@ export function WeightScreen(): React.JSX.Element {
               <View>
                 <Text variant="display">{currentWeight.toFixed(1)}</Text>
                 <Text variant="caption" color="textSubtle">
-                  kg · aujourd'hui
+                  {t('analytics.weight.current.unit')}
                 </Text>
               </View>
               {summary && Math.abs(summary.changeAbs) >= 0.05 ? (
@@ -131,32 +133,32 @@ export function WeightScreen(): React.JSX.Element {
               </View>
             ) : (
               <Text variant="caption" color="textMuted" style={{ marginTop: spacing[2] }}>
-                Une seule mesure sur la période — enregistre d'autres pesées pour voir la courbe.
+                {t('analytics.weight.singlePoint')}
               </Text>
             )}
             {summary ? (
               <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: spacing[3], paddingTop: spacing[3], borderTopWidth: 1, borderTopColor: colors.border }}>
-                <MiniStat label="Min" value={`${summary.min.toFixed(1)}`} />
-                <MiniStat label="Max" value={`${summary.max.toFixed(1)}`} />
-                <MiniStat label="Départ" value={`${summary.first.toFixed(1)}`} />
+                <MiniStat label={t('analytics.weight.stats.min')} value={`${summary.min.toFixed(1)}`} />
+                <MiniStat label={t('analytics.weight.stats.max')} value={`${summary.max.toFixed(1)}`} />
+                <MiniStat label={t('analytics.weight.stats.start')} value={`${summary.first.toFixed(1)}`} />
               </View>
             ) : null}
           </Card>
 
           {/* Composition corporelle */}
-          <Text variant="heading">Composition corporelle</Text>
+          <Text variant="heading">{t('analytics.weight.composition.title')}</Text>
           <View style={{ flexDirection: 'row', gap: spacing[3] }}>
-            <CompTile label="Masse grasse" value={bodyFat.last} unit="%" delta={bodyFat.delta} deltaGood={(bodyFat.delta ?? 0) <= 0} />
-            <CompTile label="Masse musculaire" value={muscle.last} unit="kg" delta={muscle.delta} deltaGood={(muscle.delta ?? 0) >= 0} />
+            <CompTile label={t('analytics.weight.composition.bodyFat')} value={bodyFat.last} unit="%" delta={bodyFat.delta} deltaGood={(bodyFat.delta ?? 0) <= 0} />
+            <CompTile label={t('analytics.weight.composition.muscleMass')} value={muscle.last} unit="kg" delta={muscle.delta} deltaGood={(muscle.delta ?? 0) >= 0} />
           </View>
           <Text variant="caption" color="textSubtle">
-            Masse grasse et musculaire proviennent de ta balance connectée (Renpho via Apple Santé).
+            {t('analytics.weight.composition.source')}
           </Text>
         </>
       )}
 
       <View style={{ alignItems: 'flex-start' }}>
-        <Button label="Retour" variant="secondary" onPress={() => router.back()} />
+        <Button label={t('common.back')} variant="secondary" onPress={() => router.back()} />
       </View>
     </Screen>
   );

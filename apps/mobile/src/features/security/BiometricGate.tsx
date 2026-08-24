@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { ActivityIndicator, AppState, Platform, View } from 'react-native';
 import * as LocalAuthentication from 'expo-local-authentication';
+import { useTranslation } from 'react-i18next';
 import { Button, Icon, Text, useTheme } from '@supotsu/ui';
 import { spacing } from '@supotsu/design-system';
 import { usePreferences } from '@/lib/preferences';
@@ -11,6 +12,7 @@ import { usePreferences } from '@/lib/preferences';
  * the preference is off.
  */
 export function BiometricGate({ children }: { children: React.ReactNode }): React.JSX.Element | null {
+  const { t } = useTranslation();
   const { preferences, ready } = usePreferences();
   const { colors } = useTheme();
   const enabled = preferences.biometricLock && Platform.OS !== 'web';
@@ -21,8 +23,8 @@ export function BiometricGate({ children }: { children: React.ReactNode }): Reac
     setAuthenticating(true);
     try {
       const result = await LocalAuthentication.authenticateAsync({
-        promptMessage: 'Déverrouille Kaizen Supotsu',
-        cancelLabel: 'Annuler',
+        promptMessage: t('security.biometricGate.promptMessage'),
+        cancelLabel: t('common.cancel'),
       });
       if (result.success) setUnlocked(true);
     } finally {
@@ -55,9 +57,9 @@ export function BiometricGate({ children }: { children: React.ReactNode }): Reac
     <View style={{ flex: 1, backgroundColor: colors.background, alignItems: 'center', justifyContent: 'center', gap: spacing[4], padding: spacing[6] }}>
       <Icon name="shieldLock" size={44} color={colors.primary} />
       <Text variant="body" color="textMuted" style={{ textAlign: 'center' }}>
-        Kaizen Supotsu est verrouillé. Déverrouille avec Face ID / Touch ID pour continuer.
+        {t('security.biometricGate.locked.message')}
       </Text>
-      {authenticating ? <ActivityIndicator color={colors.primary} /> : <Button label="Déverrouiller" onPress={() => void authenticate()} />}
+      {authenticating ? <ActivityIndicator color={colors.primary} /> : <Button label={t('security.biometricGate.unlockButton')} onPress={() => void authenticate()} />}
     </View>
   );
 }

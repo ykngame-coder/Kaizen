@@ -1,6 +1,8 @@
 import React, { useMemo, useState } from 'react';
 import { Pressable, View } from 'react-native';
 import { useRouter, type Href } from 'expo-router';
+import { useTranslation } from 'react-i18next';
+import type { TFunction } from 'i18next';
 import { Button, Card, EmptyState, Gradient, Icon, ListRow, Screen, Text, Toggle, useTheme } from '@supotsu/ui';
 import { radii, spacing } from '@supotsu/design-system';
 import type { HealthMetricType } from '@supotsu/core';
@@ -29,11 +31,11 @@ interface Notif {
 
 const DAY_MS = 86_400_000;
 const dayKey = (d: Date): string => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
-function relative(iso: string): string {
+function relative(iso: string, t: TFunction): string {
   const days = Math.floor((Date.now() - new Date(iso).getTime()) / DAY_MS);
-  if (days <= 0) return "Aujourd'hui";
-  if (days === 1) return 'Hier';
-  return `Il y a ${days} j`;
+  if (days <= 0) return t('notifications.screen.relative.today');
+  if (days === 1) return t('notifications.screen.relative.yesterday');
+  return t('notifications.screen.relative.daysAgo', { count: days });
 }
 function hhmmWindow(hhmm: string, timeFormat: TimeFormat): string {
   const [h, m] = hhmm.split(':').map(Number);
@@ -55,13 +57,14 @@ function meanExcludingLast(m: { type: HealthMetricType; value: number; measuredA
   return prior.reduce((acc, x) => acc + x.value, 0) / prior.length;
 }
 
+// `header` holds a translation KEY (not literal text) — resolve it with t() at render time.
 const GROUPS: { key: Category; header: string; color: (c: ReturnType<typeof useTheme>['colors']) => string; tint: string }[] = [
-  { key: 'important', header: '⚡ Importantes · action requise', color: (c) => c.error, tint: 'rgba(255,77,103,0.14)' },
-  { key: 'sante', header: '❤️ Santé', color: (c) => c.accentData, tint: 'rgba(43,227,139,0.14)' },
-  { key: 'nutrition', header: '🍽 Nutrition', color: (c) => c.warning, tint: 'rgba(245,183,66,0.14)' },
-  { key: 'entrainement', header: '💪 Entraînements', color: (c) => c.accentStrength, tint: 'rgba(255,139,56,0.14)' },
-  { key: 'succes', header: '🏆 Succès', color: (c) => c.accentMobility, tint: 'rgba(139,92,246,0.16)' },
-  { key: 'appareils', header: '⌚ Appareils', color: (c) => c.textMuted, tint: 'rgba(116,128,146,0.16)' },
+  { key: 'important', header: 'notifications.screen.groups.important', color: (c) => c.error, tint: 'rgba(255,77,103,0.14)' },
+  { key: 'sante', header: 'notifications.screen.groups.sante', color: (c) => c.accentData, tint: 'rgba(43,227,139,0.14)' },
+  { key: 'nutrition', header: 'notifications.screen.groups.nutrition', color: (c) => c.warning, tint: 'rgba(245,183,66,0.14)' },
+  { key: 'entrainement', header: 'notifications.screen.groups.entrainement', color: (c) => c.accentStrength, tint: 'rgba(255,139,56,0.14)' },
+  { key: 'succes', header: 'notifications.screen.groups.succes', color: (c) => c.accentMobility, tint: 'rgba(139,92,246,0.16)' },
+  { key: 'appareils', header: 'notifications.screen.groups.appareils', color: (c) => c.textMuted, tint: 'rgba(116,128,146,0.16)' },
 ];
 
 /**
@@ -70,6 +73,7 @@ const GROUPS: { key: Category; header: string; color: (c: ReturnType<typeof useT
  * device sync — grouped by category with per-category filters.
  */
 export function NotificationsScreen(): React.JSX.Element {
+  const { t } = useTranslation();
   const router = useRouter();
   const { colors } = useTheme();
   const { preferences } = usePreferences();
@@ -96,7 +100,10 @@ export function NotificationsScreen(): React.JSX.Element {
     const doneToday = new Set(habitLogs.filter((l) => dayKey(new Date(l.completedAt)) === todayKey).map((l) => l.habitId));
     const pending = habits.filter((h) => !h.archivedAt && !doneToday.has(h.id));
     if (pending.length > 0) {
-      out.push({ id: 'habits', category: 'important', icon: '✓', title: pending.length === 1 ? `Habitude à valider : ${pending[0]!.name}` : `${pending.length} habitudes à valider`, when: "Aujourd'hui", action: { label: 'Valider', path: '/profile/habits', primary: true } });
+      const title = pending.length === 1
+        ? t('notifications.screen.notifs.habitSingular', { name: pending[0]!.name })
+        : t('notifications.screen.notifs.habitPlural', { count: pending.length });
+      out.push({ id: 'habits', category: 'important', icon: '✓', title, when: t('notifications.screen.relative.today'), action: { label: t('notifications.screen.notifs.actions.validate'), path: '/profile/habits', primary: true } });
     }
 
     // Nutrition — remaining protein / hydration from real targets
@@ -105,49 +112,51 @@ export function NotificationsScreen(): React.JSX.Element {
     const totals = sumDay(nutrition, asOf);
     if (totals.kcal > 0 || nutrition.length > 0) {
       const proteinLeft = Math.round(targets.proteinG - totals.proteinG);
-      if (proteinLeft > 5) out.push({ id: 'protein', category: 'important', icon: '🍗', title: `Il te manque ${proteinLeft} g de protéines aujourd'hui.`, when: "Aujourd'hui", action: { label: 'Ajouter un repas', path: '/nutrition' } });
+      if (proteinLeft > 5) out.push({ id: 'protein', category: 'important', icon: '🍗', title: t('notifications.screen.notifs.proteinLeft', { amount: proteinLeft }), when: t('notifications.screen.relative.today'), action: { label: t('notifications.screen.notifs.actions.addMeal'), path: '/nutrition' } });
       const waterLeft = Math.round(targets.hydrationMl - totals.hydrationMl);
-      if (waterLeft > 200) out.push({ id: 'water', category: 'nutrition', icon: '💧', title: `Il te reste ${(waterLeft / 1000).toFixed(1)} L d'eau à boire.`, when: "Aujourd'hui", action: { label: 'Hydratation', path: '/nutrition', primary: true } });
+      if (waterLeft > 200) out.push({ id: 'water', category: 'nutrition', icon: '💧', title: t('notifications.screen.notifs.waterLeft', { amount: (waterLeft / 1000).toFixed(1) }), when: t('notifications.screen.relative.today'), action: { label: t('notifications.screen.notifs.actions.hydration'), path: '/nutrition', primary: true } });
       const deficit = Math.round(targets.kcal - totals.kcal);
-      if (deficit > 0) out.push({ id: 'deficit', category: 'nutrition', icon: '📉', title: `Il te reste ${deficit} kcal avant ta cible.`, when: "Aujourd'hui", path: '/nutrition' });
+      if (deficit > 0) out.push({ id: 'deficit', category: 'nutrition', icon: '📉', title: t('notifications.screen.notifs.kcalLeft', { amount: deficit }), when: t('notifications.screen.relative.today'), path: '/nutrition' });
     }
 
     // Santé — recovery, HRV vs baseline, RHR vs baseline, bedtime, sleep
     if (recovery) {
-      out.push({ id: 'recovery', category: 'sante', icon: '✅', title: `Recovery Score : ${recovery.value} — ${recovery.band === 'excellent' ? 'excellent' : recovery.band === 'correct' ? 'bon' : recovery.band}.`, when: "Aujourd'hui", path: '/profile/analytics' });
+      const band = recovery.band === 'excellent' ? t('notifications.screen.notifs.bandExcellent') : recovery.band === 'correct' ? t('notifications.screen.notifs.bandGood') : recovery.band;
+      out.push({ id: 'recovery', category: 'sante', icon: '✅', title: t('notifications.screen.notifs.recoveryScore', { value: recovery.value, band }), when: t('notifications.screen.relative.today'), path: '/profile/analytics' });
     }
     const hrv = latest(health, 'hrv');
     const hrvBase = meanExcludingLast(health, 'hrv');
     if (hrv != null && hrvBase != null && hrvBase > 0) {
       const pct = Math.round(((hrv - hrvBase) / hrvBase) * 100);
-      if (Math.abs(pct) >= 3) out.push({ id: 'hrv', category: 'sante', icon: '📈', title: `Ta HRV est ${pct >= 0 ? 'en hausse' : 'en baisse'} de ${Math.abs(pct)} % vs ta moyenne.`, when: "Aujourd'hui", path: '/profile/analytics' });
+      const direction = pct >= 0 ? t('notifications.screen.notifs.trendUp') : t('notifications.screen.notifs.trendDown');
+      if (Math.abs(pct) >= 3) out.push({ id: 'hrv', category: 'sante', icon: '📈', title: t('notifications.screen.notifs.hrvTrend', { direction, pct: Math.abs(pct) }), when: t('notifications.screen.relative.today'), path: '/profile/analytics' });
     }
     const rhr = latest(health, 'resting_heart_rate');
     const rhrBase = meanExcludingLast(health, 'resting_heart_rate');
     if (rhr != null && rhrBase != null) {
       const diff = Math.round(rhr - rhrBase);
-      if (diff >= 3) out.push({ id: 'rhr', category: 'sante', icon: '❤️', title: `FC de repos supérieure à ta moyenne (+${diff} bpm).`, when: "Aujourd'hui", path: '/profile/analytics' });
+      if (diff >= 3) out.push({ id: 'rhr', category: 'sante', icon: '❤️', title: t('notifications.screen.notifs.rhrAboveAvg', { diff }), when: t('notifications.screen.relative.today'), path: '/profile/analytics' });
     }
     const circadian = computeCircadianProfile(health, asOf, { tzOffsetMinutes: -new Date().getTimezoneOffset() });
-    if (circadian.value) out.push({ id: 'bedtime', category: 'sante', icon: '🌙', title: `Heure de coucher optimale : ${hhmmWindow(circadian.value.idealBedtime, preferences.timeFormat)}.`, when: "Aujourd'hui", path: '/sommeil/circadian' });
+    if (circadian.value) out.push({ id: 'bedtime', category: 'sante', icon: '🌙', title: t('notifications.screen.notifs.bedtimeOptimal', { window: hhmmWindow(circadian.value.idealBedtime, preferences.timeFormat) }), when: t('notifications.screen.relative.today'), path: '/sommeil/circadian' });
     const lastNight = [...sessions].sort((a, b) => b.endedAt.localeCompare(a.endedAt))[0];
     if (lastNight) {
       const h = Math.floor(lastNight.asleepMin / 60);
       const m = String(Math.round(lastNight.asleepMin % 60)).padStart(2, '0');
-      out.push({ id: 'sleep', category: 'sante', icon: '😴', title: `Nuit enregistrée : ${h}h${m} de sommeil.`, when: relative(lastNight.endedAt), path: '/sommeil' });
+      out.push({ id: 'sleep', category: 'sante', icon: '😴', title: t('notifications.screen.notifs.sleepRecorded', { duration: `${h}h${m}` }), when: relative(lastNight.endedAt, t), path: '/sommeil' });
     }
 
     // Succès — last record + habits all done
     const lastRecord = [...records].sort((a, b) => b.achievedAt.localeCompare(a.achievedAt))[0];
-    if (lastRecord) out.push({ id: 'record', category: 'succes', icon: '🏆', title: `Record : ${lastRecord.label} — ${lastRecord.value} ${lastRecord.unit}.`, when: relative(lastRecord.achievedAt), path: '/sport/muscle-progress' });
-    if (habits.length > 0 && pending.length === 0) out.push({ id: 'habits-done', category: 'succes', icon: '🔥', title: 'Toutes tes habitudes du jour sont validées !', when: "Aujourd'hui", path: '/profile/habits' });
+    if (lastRecord) out.push({ id: 'record', category: 'succes', icon: '🏆', title: t('notifications.screen.notifs.record', { label: lastRecord.label, value: lastRecord.value, unit: lastRecord.unit }), when: relative(lastRecord.achievedAt, t), path: '/sport/muscle-progress' });
+    if (habits.length > 0 && pending.length === 0) out.push({ id: 'habits-done', category: 'succes', icon: '🔥', title: t('notifications.screen.notifs.habitsAllDone'), when: t('notifications.screen.relative.today'), path: '/profile/habits' });
 
     // Appareils — Renpho pesée, latest sync
     const renpho = health.filter((m) => m.source === 'renpho' && m.type === 'weight').sort((a, b) => a.measuredAt.localeCompare(b.measuredAt)).at(-1);
-    if (renpho) out.push({ id: 'renpho', category: 'appareils', icon: '⚖', title: `Nouvelle pesée Renpho détectée · ${renpho.value.toFixed(1)} kg.`, when: relative(renpho.measuredAt), path: '/profile/integrations' });
+    if (renpho) out.push({ id: 'renpho', category: 'appareils', icon: '⚖', title: t('notifications.screen.notifs.renphoWeight', { value: renpho.value.toFixed(1) }), when: relative(renpho.measuredAt, t), path: '/profile/integrations' });
 
     return out;
-  }, [health, records, sessions, habits, habitLogs, nutrition, recovery, asOf, preferences.timeFormat]);
+  }, [health, records, sessions, habits, habitLogs, nutrition, recovery, asOf, preferences.timeFormat, t]);
 
   const visible = notifs.filter((n) => enabled[n.category]);
   const hasAny = visible.length > 0;
@@ -156,15 +165,15 @@ export function NotificationsScreen(): React.JSX.Element {
     <Screen scroll>
       <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' }}>
         <View>
-          <Text variant="title">Notifications</Text>
+          <Text variant="title">{t('notifications.screen.title')}</Text>
           <Text variant="caption" color="textSubtle">
-            Aujourd'hui • Priorités • Historique
+            {t('notifications.screen.subtitle')}
           </Text>
         </View>
         {!cleared && notifs.length > 0 ? (
           <Pressable onPress={() => setCleared(true)} hitSlop={8}>
             <Text variant="caption" color="primary">
-              Tout marquer comme lu
+              {t('notifications.screen.markAllRead')}
             </Text>
           </Pressable>
         ) : null}
@@ -180,26 +189,26 @@ export function NotificationsScreen(): React.JSX.Element {
               </View>
               <View style={{ flex: 1 }}>
                 <Text variant="caption" color="primary" style={{ letterSpacing: 1.2, fontWeight: '700', textTransform: 'uppercase' }}>
-                  Priorité du jour
+                  {t('notifications.screen.priority.label')}
                 </Text>
                 <Text variant="body" style={{ fontWeight: '700', marginTop: 2 }}>
-                  {recovery.band === 'excellent' ? 'Récupération excellente' : recovery.band === 'correct' ? 'Bonne récupération' : 'Récupération à surveiller'}
+                  {recovery.band === 'excellent' ? t('notifications.screen.priority.recoveryExcellentTitle') : recovery.band === 'correct' ? t('notifications.screen.priority.recoveryGoodTitle') : t('notifications.screen.priority.recoveryWatchTitle')}
                 </Text>
               </View>
             </View>
             <Text variant="body" color="textMuted" style={{ marginTop: spacing[3], lineHeight: 21 }}>
-              Ton Recovery Score est de {recovery.value} %.{' '}
-              {recovery.value >= 70 ? 'Une séance intensive est recommandée aujourd’hui.' : 'Privilégie une séance légère et un bon sommeil.'}
+              {t('notifications.screen.priority.scoreLine', { value: recovery.value })}{' '}
+              {recovery.value >= 70 ? t('notifications.screen.priority.adviceHigh') : t('notifications.screen.priority.adviceLow')}
             </Text>
             <View style={{ alignItems: 'flex-start', marginTop: spacing[3] }}>
-              <Button label="Voir les recommandations" onPress={() => router.push('/profile/analytics')} />
+              <Button label={t('notifications.screen.priority.seeRecommendations')} onPress={() => router.push('/profile/analytics')} />
             </View>
           </View>
         </Gradient>
       ) : null}
 
       {cleared || notifs.length === 0 ? (
-        <EmptyState icon={<Icon name="notifications" size={44} color={colors.textSubtle} />} title={cleared ? 'Tout est à jour' : 'Rien de neuf'} message="Tes alertes sont générées à partir de tes données (récupération, nutrition, records, sommeil, habitudes, appareils)." />
+        <EmptyState icon={<Icon name="notifications" size={44} color={colors.textSubtle} />} title={cleared ? t('notifications.screen.emptyState.cleared.title') : t('notifications.screen.emptyState.empty.title')} message={t('notifications.screen.emptyState.message')} />
       ) : (
         <>
           {GROUPS.map((g) => {
@@ -208,7 +217,7 @@ export function NotificationsScreen(): React.JSX.Element {
             return (
               <View key={g.key} style={{ gap: spacing[2] }}>
                 <Text variant="label" color="textSubtle" style={{ marginTop: spacing[1] }}>
-                  {g.header}
+                  {t(g.header)}
                 </Text>
                 {items.map((n) => (
                   <Card key={n.id}>

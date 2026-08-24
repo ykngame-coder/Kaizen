@@ -1,6 +1,7 @@
 import React, { useMemo } from 'react';
 import { View } from 'react-native';
 import { useRouter } from 'expo-router';
+import { useTranslation } from 'react-i18next';
 import { Badge, Button, Card, EmptyState, Icon, ProgressRing, Screen, Text, useTheme } from '@supotsu/ui';
 import { spacing } from '@supotsu/design-system';
 import type { DataSource, HealthMetricType, Reliability } from '@supotsu/core';
@@ -13,35 +14,6 @@ import {
 import { useActivities, useHealthMetrics } from '@/lib/data/queries';
 import { formatDate } from '@/lib/format';
 
-const METRIC_LABEL: Record<HealthMetricType, string> = {
-  sleep_duration: 'Durée de sommeil',
-  sleep_efficiency: 'Efficacité du sommeil',
-  resting_heart_rate: 'FC au repos',
-  hrv: 'VFC (HRV)',
-  stress: 'Stress',
-  weight: 'Poids',
-  body_fat: 'Masse grasse',
-  muscle_mass: 'Masse musculaire',
-  hydration: 'Hydratation',
-  steps: 'Pas',
-};
-
-const SOURCE_LABEL: Record<DataSource, string> = {
-  manual: 'Saisie manuelle',
-  apple_health: 'Apple Santé',
-  garmin: 'Garmin',
-  strava: 'Strava',
-  renpho: 'Renpho',
-  polar: 'Polar',
-  coros: 'Coros',
-  fitbit: 'Fitbit',
-  oura: 'Oura',
-  withings: 'Withings',
-  phone: 'Téléphone (estimé)',
-  supotsu: 'Calculé par SUPOTSU',
-};
-
-const REL_LABEL: Record<Reliability, string> = { high: 'Fiable', medium: 'Moyenne', low: 'À confirmer' };
 const REL_TONE: Record<Reliability, 'success' | 'info' | 'warning'> = { high: 'success', medium: 'info', low: 'warning' };
 const FRESH_TONE: Record<FreshnessLevel, 'success' | 'info' | 'warning' | 'error'> = {
   'à jour': 'success',
@@ -52,11 +24,53 @@ const FRESH_TONE: Record<FreshnessLevel, 'success' | 'info' | 'warning' | 'error
 
 /** Data quality & provenance (Master Prompt P9/P38): source, freshness, trust. */
 export function DataQualityScreen(): React.JSX.Element {
+  const { t } = useTranslation();
   const router = useRouter();
   const { colors } = useTheme();
   const { data: metrics = [] } = useHealthMetrics();
   const { data: activities = [] } = useActivities();
   const asOf = new Date().toISOString();
+
+  const METRIC_LABEL: Record<HealthMetricType, string> = {
+    sleep_duration: t('dataquality.screen.metricLabel.sleep_duration'),
+    sleep_efficiency: t('dataquality.screen.metricLabel.sleep_efficiency'),
+    resting_heart_rate: t('dataquality.screen.metricLabel.resting_heart_rate'),
+    hrv: t('dataquality.screen.metricLabel.hrv'),
+    stress: t('dataquality.screen.metricLabel.stress'),
+    weight: t('dataquality.screen.metricLabel.weight'),
+    body_fat: t('dataquality.screen.metricLabel.body_fat'),
+    muscle_mass: t('dataquality.screen.metricLabel.muscle_mass'),
+    hydration: t('dataquality.screen.metricLabel.hydration'),
+    steps: t('dataquality.screen.metricLabel.steps'),
+  };
+
+  const SOURCE_LABEL: Record<DataSource, string> = {
+    manual: t('dataquality.screen.sourceLabel.manual'),
+    apple_health: t('dataquality.screen.sourceLabel.apple_health'),
+    garmin: t('dataquality.screen.sourceLabel.garmin'),
+    strava: t('dataquality.screen.sourceLabel.strava'),
+    renpho: t('dataquality.screen.sourceLabel.renpho'),
+    polar: t('dataquality.screen.sourceLabel.polar'),
+    coros: t('dataquality.screen.sourceLabel.coros'),
+    fitbit: t('dataquality.screen.sourceLabel.fitbit'),
+    oura: t('dataquality.screen.sourceLabel.oura'),
+    withings: t('dataquality.screen.sourceLabel.withings'),
+    phone: t('dataquality.screen.sourceLabel.phone'),
+    supotsu: t('dataquality.screen.sourceLabel.supotsu'),
+  };
+
+  const REL_LABEL: Record<Reliability, string> = {
+    high: t('dataquality.screen.reliabilityLabel.high'),
+    medium: t('dataquality.screen.reliabilityLabel.medium'),
+    low: t('dataquality.screen.reliabilityLabel.low'),
+  };
+
+  const FRESH_LABEL: Record<FreshnessLevel, string> = {
+    'à jour': t('dataquality.screen.freshnessLabel.aJour'),
+    récent: t('dataquality.screen.freshnessLabel.recent'),
+    ancien: t('dataquality.screen.freshnessLabel.ancien'),
+    obsolète: t('dataquality.screen.freshnessLabel.obsolete'),
+  };
 
   const provenance = useMemo(() => metricProvenance(metrics, asOf), [metrics, asOf]);
   const score = useMemo(() => dataQualityScore(provenance), [provenance]);
@@ -75,17 +89,17 @@ export function DataQualityScreen(): React.JSX.Element {
 
   return (
     <Screen scroll>
-      <Text variant="title">Qualité des données</Text>
+      <Text variant="title">{t('dataquality.screen.title')}</Text>
       <Text variant="caption" color="textMuted">
-        D'où viennent tes données, leur fiabilité et leur fraîcheur — rien n'est une boîte noire.
+        {t('dataquality.screen.subtitle')}
       </Text>
 
       {!hasData ? (
         <EmptyState
           icon={<Icon name="search" size={44} color={colors.textSubtle} />}
-          title="Aucune donnée à évaluer"
-          message="Connecte un appareil ou importe un export pour voir la provenance et la fiabilité de tes données."
-          actionLabel="Mes appareils"
+          title={t('dataquality.screen.emptyState.title')}
+          message={t('dataquality.screen.emptyState.message')}
+          actionLabel={t('dataquality.screen.emptyState.actionLabel')}
           onAction={() => router.push('/profile/connectors')}
         />
       ) : (
@@ -95,7 +109,7 @@ export function DataQualityScreen(): React.JSX.Element {
               <View style={{ alignItems: 'center', gap: spacing[1] }}>
                 <ProgressRing value={score} segments={zones} caption="/100" size={112} />
                 <Text variant="caption" color="textMuted">
-                  Indice de qualité global
+                  {t('dataquality.screen.qualityIndex')}
                 </Text>
               </View>
             </Card>
@@ -103,7 +117,7 @@ export function DataQualityScreen(): React.JSX.Element {
 
           {provenance.length > 0 && (
             <Card>
-              <Text variant="heading">Provenance par mesure</Text>
+              <Text variant="heading">{t('dataquality.screen.provenanceHeading')}</Text>
               <View style={{ gap: spacing[3], marginTop: spacing[2] }}>
                 {provenance.map((p) => (
                   <View key={p.type} style={{ gap: spacing[1] }}>
@@ -118,7 +132,7 @@ export function DataQualityScreen(): React.JSX.Element {
                         {SOURCE_LABEL[p.source]}
                       </Text>
                       <Badge label={REL_LABEL[p.reliability]} tone={REL_TONE[p.reliability]} />
-                      <Badge label={p.freshness.level} tone={FRESH_TONE[p.freshness.level]} />
+                      <Badge label={FRESH_LABEL[p.freshness.level]} tone={FRESH_TONE[p.freshness.level]} />
                       <Text variant="caption" color="textSubtle">
                         {formatDate(p.measuredAt)}
                       </Text>
@@ -130,12 +144,12 @@ export function DataQualityScreen(): React.JSX.Element {
           )}
 
           <Card>
-            <Text variant="heading">Cohérence des activités</Text>
+            <Text variant="heading">{t('dataquality.screen.consistencyHeading')}</Text>
             {flagged.length === 0 ? (
               <Text variant="body" color="textMuted">
                 {activities.length > 0
-                  ? 'Toutes tes activités semblent cohérentes ✅'
-                  : 'Aucune activité à vérifier pour l’instant.'}
+                  ? t('dataquality.screen.consistencyOk')
+                  : t('dataquality.screen.consistencyNone')}
               </Text>
             ) : (
               <View style={{ gap: spacing[2], marginTop: spacing[1] }}>
@@ -155,7 +169,7 @@ export function DataQualityScreen(): React.JSX.Element {
                   </View>
                 ))}
                 <Text variant="caption" color="textSubtle">
-                  Ces données sont conservées, jamais supprimées — seulement signalées.
+                  {t('dataquality.screen.consistencyNote')}
                 </Text>
               </View>
             )}
@@ -164,7 +178,7 @@ export function DataQualityScreen(): React.JSX.Element {
       )}
 
       <View style={{ alignItems: 'flex-start' }}>
-        <Button label="Retour" variant="secondary" onPress={() => router.back()} />
+        <Button label={t('common.back')} variant="secondary" onPress={() => router.back()} />
       </View>
     </Screen>
   );

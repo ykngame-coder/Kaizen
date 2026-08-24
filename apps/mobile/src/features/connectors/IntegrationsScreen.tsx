@@ -1,6 +1,8 @@
 import React, { useMemo, useState } from 'react';
 import { Pressable, Share, View } from 'react-native';
 import { useRouter } from 'expo-router';
+import { useTranslation } from 'react-i18next';
+import type { TFunction } from 'i18next';
 import { Badge, Button, Card, Gradient, Screen, Text, useTheme } from '@supotsu/ui';
 import { radii, spacing } from '@supotsu/design-system';
 import type { DataSource, HealthMetric, HealthMetricType } from '@supotsu/core';
@@ -10,31 +12,50 @@ import { createDataRepository, exportUserData } from '@/lib/data/repository';
 
 const DAY_MS = 86_400_000;
 
-const SOURCE_LABEL: Partial<Record<DataSource, { name: string; icon: string }>> = {
-  garmin: { name: 'Garmin', icon: '⌚' },
-  apple_health: { name: 'Apple Santé', icon: '🍎' },
-  renpho: { name: 'Renpho', icon: '⚖' },
-  withings: { name: 'Withings', icon: '⚖' },
-  polar: { name: 'Polar', icon: '❤️' },
-  coros: { name: 'Coros', icon: '⌚' },
-  oura: { name: 'Oura', icon: '💍' },
-  fitbit: { name: 'Fitbit', icon: '⌚' },
-  manual: { name: 'Manuel', icon: '✍️' },
-};
+function sourceLabel(t: TFunction): Partial<Record<DataSource, { name: string; icon: string }>> {
+  return {
+    garmin: { name: 'Garmin', icon: '⌚' },
+    apple_health: { name: 'Apple Santé', icon: '🍎' },
+    renpho: { name: 'Renpho', icon: '⚖' },
+    withings: { name: 'Withings', icon: '⚖' },
+    polar: { name: 'Polar', icon: '❤️' },
+    coros: { name: 'Coros', icon: '⌚' },
+    oura: { name: 'Oura', icon: '💍' },
+    fitbit: { name: 'Fitbit', icon: '⌚' },
+    manual: { name: t('connectors.integrations.sourceLabel.manual'), icon: '✍️' },
+  };
+}
 
 const CORE_TYPES: HealthMetricType[] = ['sleep_duration', 'hrv', 'resting_heart_rate', 'weight', 'body_fat', 'muscle_mass'];
-const TYPE_LABEL: Partial<Record<HealthMetricType, string>> = {
-  sleep_duration: 'Sommeil', hrv: 'HRV', resting_heart_rate: 'FC repos', weight: 'Poids', body_fat: 'Masse grasse', muscle_mass: 'Masse musc.',
-};
 
-const OUTPUT_BRANCHES = ['Recovery', 'Sommeil', 'Nutrition', 'Statistiques', 'Rapports', 'Recommandations'];
+function typeLabel(t: TFunction): Partial<Record<HealthMetricType, string>> {
+  return {
+    sleep_duration: t('connectors.integrations.typeLabel.sleepDuration'),
+    hrv: t('connectors.integrations.typeLabel.hrv'),
+    resting_heart_rate: t('connectors.integrations.typeLabel.restingHeartRate'),
+    weight: t('connectors.integrations.typeLabel.weight'),
+    body_fat: t('connectors.integrations.typeLabel.bodyFat'),
+    muscle_mass: t('connectors.integrations.typeLabel.muscleMass'),
+  };
+}
 
-function fmtAgo(iso: string): string {
+function outputBranches(t: TFunction): string[] {
+  return [
+    t('connectors.integrations.outputBranches.recovery'),
+    t('connectors.integrations.outputBranches.sleep'),
+    t('connectors.integrations.outputBranches.nutrition'),
+    t('connectors.integrations.outputBranches.statistics'),
+    t('connectors.integrations.outputBranches.reports'),
+    t('connectors.integrations.outputBranches.recommendations'),
+  ];
+}
+
+function fmtAgo(iso: string, t: TFunction): string {
   const mins = Math.round((Date.now() - new Date(iso).getTime()) / 60000);
-  if (mins < 60) return `il y a ${Math.max(1, mins)} min`;
+  if (mins < 60) return t('connectors.integrations.ago.minutes', { count: Math.max(1, mins) });
   const h = Math.round(mins / 60);
-  if (h < 24) return `il y a ${h} h`;
-  return `il y a ${Math.round(h / 24)} j`;
+  if (h < 24) return t('connectors.integrations.ago.hours', { count: h });
+  return t('connectors.integrations.ago.days', { count: Math.round(h / 24) });
 }
 
 /** Quality diagnostic row — tappable when `onPress` is given (e.g. duplicates, to expand detail). */
@@ -58,7 +79,8 @@ function QRow({ ok, label, value, onPress }: { ok: 'good' | 'warn'; label: strin
 
 /** One entry within a duplicate group, with a delete action. */
 function DuplicateEntryRow({ metric, onDelete, deleting }: { metric: HealthMetric; onDelete: () => void; deleting: boolean }): React.JSX.Element {
-  const label = SOURCE_LABEL[metric.source]?.name ?? metric.source;
+  const { t } = useTranslation();
+  const label = sourceLabel(t)[metric.source]?.name ?? metric.source;
   return (
     <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing[3], paddingVertical: spacing[2] }}>
       <View style={{ flex: 1 }}>
@@ -66,21 +88,25 @@ function DuplicateEntryRow({ metric, onDelete, deleting }: { metric: HealthMetri
           {metric.value} {metric.unit}
         </Text>
         <Text variant="caption" color="textSubtle">
-          {TYPE_LABEL[metric.type] ?? metric.type} · {label} · {fmtAgo(metric.measuredAt)}
+          {typeLabel(t)[metric.type] ?? metric.type} · {label} · {fmtAgo(metric.measuredAt, t)}
         </Text>
       </View>
-      <Button label={deleting ? 'Suppression…' : 'Supprimer'} variant="secondary" onPress={onDelete} disabled={deleting} />
+      <Button label={deleting ? t('connectors.integrations.duplicates.deleting') : t('connectors.integrations.duplicates.delete')} variant="secondary" onPress={onDelete} disabled={deleting} />
     </View>
   );
 }
 
 /** Données & Intégrations (mockup #23) — data flow, quality, import/export. */
 export function IntegrationsScreen(): React.JSX.Element {
+  const { t } = useTranslation();
   const router = useRouter();
   const { colors } = useTheme();
   const { user } = useAuth();
   const { data: health = [] } = useHealthMetrics();
   const [exportState, setExportState] = useState<'idle' | 'working' | 'done' | 'error'>('idle');
+
+  const SOURCE_LABEL = sourceLabel(t);
+  const OUTPUT_BRANCHES = outputBranches(t);
 
   const sources = useMemo(() => {
     const map = new Map<DataSource, string>();
@@ -98,7 +124,7 @@ export function IntegrationsScreen(): React.JSX.Element {
 
   const quality = useMemo(() => {
     const present = new Set(health.map((m) => m.type));
-    const completeness = Math.round((CORE_TYPES.filter((t) => present.has(t)).length / CORE_TYPES.length) * 100);
+    const completeness = Math.round((CORE_TYPES.filter((t2) => present.has(t2)).length / CORE_TYPES.length) * 100);
     // Duplicate = same type+source+measuredAt seen twice — group entries so the user can see and delete one.
     const groups = new Map<string, HealthMetric[]>();
     for (const m of health) {
@@ -109,12 +135,12 @@ export function IntegrationsScreen(): React.JSX.Element {
     }
     const duplicateGroups = [...groups.values()].filter((g) => g.length > 1);
     const duplicates = duplicateGroups.reduce((sum, g) => sum + g.length - 1, 0);
-    const missing = CORE_TYPES.filter((t) => !present.has(t)).map((t) => TYPE_LABEL[t] ?? t);
+    const missing = CORE_TYPES.filter((t2) => !present.has(t2)).map((t2) => typeLabel(t)[t2] ?? t2);
     const weights = health.filter((m) => m.type === 'weight').sort((a, b) => a.measuredAt.localeCompare(b.measuredAt));
     const lastWeight = weights.at(-1)?.measuredAt;
     const weightAgeDays = lastWeight ? Math.floor((Date.now() - new Date(lastWeight).getTime()) / DAY_MS) : null;
     return { completeness, duplicates, duplicateGroups, missing, weightAgeDays };
-  }, [health]);
+  }, [health, t]);
 
   const onExport = async (): Promise<void> => {
     if (!user) return;
@@ -130,25 +156,30 @@ export function IntegrationsScreen(): React.JSX.Element {
 
   return (
     <Screen scroll>
-      <Text variant="title">Données & intégrations</Text>
+      <Text variant="title">{t('connectors.integrations.title')}</Text>
       <Text variant="caption" color="textSubtle">
-        Synchronisation • Import • Export
+        {t('connectors.integrations.subtitle')}
       </Text>
 
       {/* Résumé */}
       <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: spacing[3] }}>
-        <Sum value={`${sources.length}`} label="Sources connectées" />
-        <Sum value={`${health.length}`} label="Données santé" />
-        <Sum value={lastSync ? fmtAgo(lastSync) : '—'} label="Dernière sync" small />
-        <Sum value={health.length > 0 ? 'Tout fonctionne' : 'En attente'} label="État" small color={health.length > 0 ? colors.accentData : colors.textMuted} />
+        <Sum value={`${sources.length}`} label={t('connectors.integrations.summary.connectedSources')} />
+        <Sum value={`${health.length}`} label={t('connectors.integrations.summary.healthData')} />
+        <Sum value={lastSync ? fmtAgo(lastSync, t) : '—'} label={t('connectors.integrations.summary.lastSync')} small />
+        <Sum
+          value={health.length > 0 ? t('connectors.integrations.summary.allWorking') : t('connectors.integrations.summary.pending')}
+          label={t('connectors.integrations.summary.status')}
+          small
+          color={health.length > 0 ? colors.accentData : colors.textMuted}
+        />
       </View>
 
       {/* Flux de données */}
       <Card>
-        <Text variant="heading">Flux de données</Text>
+        <Text variant="heading">{t('connectors.integrations.dataFlow.title')}</Text>
         <View style={{ alignItems: 'center', marginTop: spacing[3], gap: spacing[2] }}>
           <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: spacing[2], justifyContent: 'center' }}>
-            {(sources.length > 0 ? sources.map(([s]) => SOURCE_LABEL[s]?.name ?? s) : ['Aucune source']).map((s) => (
+            {(sources.length > 0 ? sources.map(([s]) => SOURCE_LABEL[s]?.name ?? s) : [t('connectors.integrations.dataFlow.noSource')]).map((s) => (
               <View key={s} style={{ backgroundColor: colors.surfaceElevated, borderWidth: 1, borderColor: colors.border, borderRadius: radii.md, paddingHorizontal: spacing[3], paddingVertical: spacing[2] }}>
                 <Text variant="caption" color="textMuted">
                   {s}
@@ -176,7 +207,7 @@ export function IntegrationsScreen(): React.JSX.Element {
       {/* Historique par source */}
       {sources.length > 0 ? (
         <Card>
-          <Text variant="heading">Sources & dernière donnée</Text>
+          <Text variant="heading">{t('connectors.integrations.sourcesHistory.title')}</Text>
           <View style={{ marginTop: spacing[2] }}>
             {sources.map(([s, ts], i) => {
               const meta = SOURCE_LABEL[s] ?? { name: s, icon: '📡' };
@@ -189,7 +220,7 @@ export function IntegrationsScreen(): React.JSX.Element {
                     {meta.name}
                   </Text>
                   <Text variant="caption" color="textSubtle">
-                    {fmtAgo(ts)}
+                    {fmtAgo(ts, t)}
                   </Text>
                   <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: colors.accentData }} />
                 </View>
@@ -201,22 +232,30 @@ export function IntegrationsScreen(): React.JSX.Element {
 
       {/* Qualité des données */}
       <Card>
-        <Text variant="heading">Qualité des données</Text>
+        <Text variant="heading">{t('connectors.integrations.quality.title')}</Text>
         <View style={{ marginTop: spacing[2] }}>
-          <QRow ok={quality.completeness >= 80 ? 'good' : 'warn'} label="Complétude" value={`${quality.completeness} %`} />
+          <QRow ok={quality.completeness >= 80 ? 'good' : 'warn'} label={t('connectors.integrations.quality.completeness')} value={`${quality.completeness} %`} />
           <QRow
             ok={quality.duplicates === 0 ? 'good' : 'warn'}
-            label="Doublons"
-            value={quality.duplicates === 0 ? '0 détecté' : `${quality.duplicates} détecté(s)`}
+            label={t('connectors.integrations.quality.duplicates')}
+            value={quality.duplicates === 0 ? t('connectors.integrations.quality.noneDetected') : t('connectors.integrations.quality.detected', { count: quality.duplicates })}
             onPress={quality.duplicateGroups.length > 0 ? () => setShowDuplicates((v) => !v) : undefined}
           />
-          <QRow ok={quality.missing.length === 0 ? 'good' : 'warn'} label="Données manquantes" value={quality.missing.length === 0 ? 'Aucune' : quality.missing.join(' · ')} />
-          <QRow ok={quality.weightAgeDays == null || quality.weightAgeDays <= 7 ? 'good' : 'warn'} label="Dernière pesée" value={quality.weightAgeDays == null ? '—' : `il y a ${quality.weightAgeDays} j`} />
+          <QRow
+            ok={quality.missing.length === 0 ? 'good' : 'warn'}
+            label={t('connectors.integrations.quality.missingData')}
+            value={quality.missing.length === 0 ? t('connectors.integrations.quality.none') : quality.missing.join(' · ')}
+          />
+          <QRow
+            ok={quality.weightAgeDays == null || quality.weightAgeDays <= 7 ? 'good' : 'warn'}
+            label={t('connectors.integrations.quality.lastWeighIn')}
+            value={quality.weightAgeDays == null ? '—' : t('connectors.integrations.ago.days', { count: quality.weightAgeDays })}
+          />
         </View>
         {showDuplicates && quality.duplicateGroups.length > 0 ? (
           <View style={{ marginTop: spacing[3], paddingTop: spacing[3], borderTopWidth: 1, borderTopColor: colors.border, gap: spacing[3] }}>
             <Text variant="caption" color="textSubtle">
-              Garde une entrée par doublon et supprime les autres.
+              {t('connectors.integrations.duplicates.hint')}
             </Text>
             {quality.duplicateGroups.map((group, gi) => (
               <View key={gi} style={{ backgroundColor: colors.surfaceElevated, borderRadius: radii.md, paddingHorizontal: spacing[3] }}>
@@ -231,11 +270,17 @@ export function IntegrationsScreen(): React.JSX.Element {
 
       {/* Import / Export */}
       <Card>
-        <Text variant="heading">Import & export</Text>
+        <Text variant="heading">{t('connectors.integrations.importExport.title')}</Text>
         <View style={{ flexDirection: 'row', gap: spacing[2], marginTop: spacing[2], flexWrap: 'wrap' }}>
-          <Button label="Importer un fichier" onPress={() => router.push('/profile/import')} />
+          <Button label={t('connectors.integrations.importExport.importButton')} onPress={() => router.push('/profile/import')} />
           <Button
-            label={exportState === 'working' ? 'Export…' : exportState === 'done' ? 'Exporté ✓' : 'Exporter mes données'}
+            label={
+              exportState === 'working'
+                ? t('connectors.integrations.importExport.exporting')
+                : exportState === 'done'
+                  ? t('connectors.integrations.importExport.exported')
+                  : t('connectors.integrations.importExport.exportButton')
+            }
             variant="secondary"
             onPress={onExport}
             disabled={exportState === 'working' || !user}
@@ -243,21 +288,21 @@ export function IntegrationsScreen(): React.JSX.Element {
         </View>
         {exportState === 'error' ? (
           <Text variant="caption" color="error" style={{ marginTop: spacing[1] }}>
-            Export impossible.
+            {t('connectors.integrations.importExport.exportError')}
           </Text>
         ) : null}
       </Card>
 
       {/* Ajouter une intégration */}
       <Card>
-        <Text variant="heading">Ajouter une intégration</Text>
+        <Text variant="heading">{t('connectors.integrations.addIntegration.title')}</Text>
         <View style={{ alignItems: 'flex-start', marginTop: spacing[2] }}>
-          <Button label="Gérer les appareils & connexions" onPress={() => router.push('/profile/connectors')} />
+          <Button label={t('connectors.integrations.addIntegration.manageButton')} onPress={() => router.push('/profile/connectors')} />
         </View>
       </Card>
 
       <View style={{ alignItems: 'flex-start' }}>
-        <Button label="Retour" variant="secondary" onPress={() => router.back()} />
+        <Button label={t('common.back')} variant="secondary" onPress={() => router.back()} />
       </View>
     </Screen>
   );

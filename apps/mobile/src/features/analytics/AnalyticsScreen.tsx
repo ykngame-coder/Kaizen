@@ -1,6 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import { Share, View } from 'react-native';
 import { useRouter } from 'expo-router';
+import { useTranslation } from 'react-i18next';
 import { Badge, Button, Card, EmptyState, Icon, Screen, SegmentedControl, Sparkline, Text, useTheme } from '@supotsu/ui';
 import { radii, spacing } from '@supotsu/design-system';
 import type { ActivityType } from '@supotsu/core';
@@ -27,10 +28,6 @@ import { formatDate } from '@/lib/format';
 const DAY_MS = 86_400_000;
 type PeriodKey = (typeof ANALYTICS_PERIODS)[number]['key'];
 
-const ACTIVITY_LABEL: Record<ActivityType, string> = {
-  walking: 'Marche', running: 'Course', cycling: 'Vélo', swimming: 'Natation', strength: 'Musculation',
-  cross_training: 'Cross-training', hyrox: 'Hyrox', mobility: 'Mobilité', yoga: 'Yoga', other: 'Autre',
-};
 const DIST_COLORS = ['#2d7ff9', '#2be38b', '#f5b742', '#19d3a2', '#8b5cf6', '#3bcbff', '#ff7a8a', '#ff8b5e', '#aab6c5', '#748092'];
 
 const mean = (xs: number[]): number => (xs.length ? xs.reduce((s, x) => s + x, 0) / xs.length : 0);
@@ -59,6 +56,7 @@ function Kpi({ label, value, unit, color }: { label: string; value: string; unit
 
 /** Statistiques (mockup #13) — KPIs, evolution, distribution, load, correlations, records, heatmap, compare, export. */
 export function AnalyticsScreen(): React.JSX.Element {
+  const { t } = useTranslation();
   const router = useRouter();
   const { colors } = useTheme();
   const { user } = useAuth();
@@ -70,6 +68,11 @@ export function AnalyticsScreen(): React.JSX.Element {
   const { data: nutrition = [] } = useNutritionEntries();
   const { data: checkins = [] } = useWellnessCheckins();
   const { data: records = [] } = useRecords();
+
+  const ACTIVITY_LABEL: Record<ActivityType, string> = useMemo(() => ({
+    walking: t('analytics.screen.activityLabels.walking'), running: t('analytics.screen.activityLabels.running'), cycling: t('analytics.screen.activityLabels.cycling'), swimming: t('analytics.screen.activityLabels.swimming'), strength: t('analytics.screen.activityLabels.strength'),
+    cross_training: t('analytics.screen.activityLabels.crossTraining'), hyrox: t('analytics.screen.activityLabels.hyrox'), mobility: t('analytics.screen.activityLabels.mobility'), yoga: t('analytics.screen.activityLabels.yoga'), other: t('analytics.screen.activityLabels.other'),
+  }), [t]);
 
   const [period, setPeriod] = useState<PeriodKey>('4sem');
   const days = ANALYTICS_PERIODS.find((p) => p.key === period)!.days;
@@ -130,11 +133,11 @@ export function AnalyticsScreen(): React.JSX.Element {
       const c = correlate(a, b);
       if (c && c.strength !== 'négligeable') out.push({ insight: c, text: c.direction === 'positive' ? pos : neg });
     };
-    add(series.sleep, series.wellness, 'Mieux tu dors, mieux tu te sens les mêmes jours.', 'Tes nuits plus courtes coïncident avec un meilleur ressenti — à surveiller.');
-    add(series.training.map((v) => (v > 0 ? v : null)), series.sleep, 'Tes jours d’entraînement s’accompagnent de nuits plus longues.', 'Tes grosses journées d’entraînement riment avec des nuits plus courtes.');
-    add(series.training.map((v) => (v > 0 ? v : null)), series.wellness, 'Bouger va de pair avec un meilleur moral chez toi.', 'Les journées très chargées pèsent sur ton moral — pense à récupérer.');
+    add(series.sleep, series.wellness, t('analytics.screen.correlations.sleepWellnessPositive'), t('analytics.screen.correlations.sleepWellnessNegative'));
+    add(series.training.map((v) => (v > 0 ? v : null)), series.sleep, t('analytics.screen.correlations.trainingSleepPositive'), t('analytics.screen.correlations.trainingSleepNegative'));
+    add(series.training.map((v) => (v > 0 ? v : null)), series.wellness, t('analytics.screen.correlations.trainingWellnessPositive'), t('analytics.screen.correlations.trainingWellnessNegative'));
     return out;
-  }, [series]);
+  }, [series, t]);
 
   // Heatmap: last 18 weeks of activity (0–3 intensity by daily count).
   const heat = useMemo(() => {
@@ -192,39 +195,39 @@ export function AnalyticsScreen(): React.JSX.Element {
 
   return (
     <Screen scroll>
-      <Text variant="title">Statistiques</Text>
-      <Text variant="caption" color="textSubtle">Analyse • Tendances • Progression</Text>
+      <Text variant="title">{t('analytics.screen.title')}</Text>
+      <Text variant="caption" color="textSubtle">{t('analytics.screen.subtitle')}</Text>
 
       <SegmentedControl options={ANALYTICS_PERIODS.map((p) => ({ value: p.key, label: p.label }))} value={period} onChange={setPeriod} />
 
       {!hasAny ? (
-        <EmptyState icon={<Icon name="chartBar" size={44} color={colors.textSubtle} />} title="Pas encore assez de données" message="Enregistre des activités, des nuits, des repas et des check-in pour débloquer tes statistiques." />
+        <EmptyState icon={<Icon name="chartBar" size={44} color={colors.textSubtle} />} title={t('analytics.screen.emptyState.title')} message={t('analytics.screen.emptyState.message')} />
       ) : (
         <>
           {/* KPI */}
           <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: spacing[3] }}>
-            <Kpi label="Recovery" value={recovery.confidence !== 'to_confirm' ? `${recovery.value}` : '—'} color={colors.accentData} />
-            <Kpi label="Charge" value={acwr.ratio != null ? acwr.ratio.toFixed(2) : '—'} />
-            <Kpi label="Poids" value={weight != null ? weight.toFixed(1) : '—'} unit="kg" />
-            <Kpi label="Sommeil moy." value={avgSleep > 0 ? avgSleep.toFixed(1) : '—'} unit="h" />
-            <Kpi label="Séances" value={`${sessions}`} />
-            <Kpi label="Kcal moy." value={kcalDays.length ? `${Math.round(mean(kcalDays))}` : '—'} />
+            <Kpi label={t('analytics.screen.kpi.recovery')} value={recovery.confidence !== 'to_confirm' ? `${recovery.value}` : '—'} color={colors.accentData} />
+            <Kpi label={t('analytics.screen.kpi.load')} value={acwr.ratio != null ? acwr.ratio.toFixed(2) : '—'} />
+            <Kpi label={t('analytics.screen.kpi.weight')} value={weight != null ? weight.toFixed(1) : '—'} unit="kg" />
+            <Kpi label={t('analytics.screen.kpi.avgSleep')} value={avgSleep > 0 ? avgSleep.toFixed(1) : '—'} unit="h" />
+            <Kpi label={t('analytics.screen.kpi.sessions')} value={`${sessions}`} />
+            <Kpi label={t('analytics.screen.kpi.avgKcal')} value={kcalDays.length ? `${Math.round(mean(kcalDays))}` : '—'} />
           </View>
 
           {/* Évolution globale */}
           {(weightPts.length >= 2 || recoveryPts.length >= 2 || hrvPts.length >= 2) ? (
             <Card>
-              <SectionTitle right={<Text variant="caption" color="textSubtle">{ANALYTICS_PERIODS.find((p) => p.key === period)!.label}</Text>}>Évolution globale</SectionTitle>
-              {weightPts.length >= 2 ? <TrendLine label="Poids" values={weightPts.map((p) => p.value)} color="#ff7a8a" /> : null}
-              {recoveryPts.length >= 2 ? <TrendLine label="Recovery" values={recoveryPts} color={colors.accentData} /> : null}
-              {hrvPts.length >= 2 ? <TrendLine label="HRV" values={hrvPts} color={colors.accentEndurance} /> : null}
+              <SectionTitle right={<Text variant="caption" color="textSubtle">{ANALYTICS_PERIODS.find((p) => p.key === period)!.label}</Text>}>{t('analytics.screen.evolution.title')}</SectionTitle>
+              {weightPts.length >= 2 ? <TrendLine label={t('analytics.screen.evolution.weight')} values={weightPts.map((p) => p.value)} color="#ff7a8a" /> : null}
+              {recoveryPts.length >= 2 ? <TrendLine label={t('analytics.screen.evolution.recovery')} values={recoveryPts} color={colors.accentData} /> : null}
+              {hrvPts.length >= 2 ? <TrendLine label={t('analytics.screen.evolution.hrv')} values={hrvPts} color={colors.accentEndurance} /> : null}
             </Card>
           ) : null}
 
           {/* Répartition des entraînements */}
           {distribution.total > 0 ? (
             <Card>
-              <SectionTitle>Répartition des entraînements</SectionTitle>
+              <SectionTitle>{t('analytics.screen.distribution.title')}</SectionTitle>
               <View style={{ flexDirection: 'row', height: 12, borderRadius: 6, overflow: 'hidden' }}>
                 {distribution.items.map((d) => (<View key={d.type} style={{ flex: d.n, backgroundColor: d.color }} />))}
               </View>
@@ -242,7 +245,7 @@ export function AnalyticsScreen(): React.JSX.Element {
 
           {/* Charge ACWR */}
           <Card>
-            <SectionTitle right={<Text variant="caption" color="textSubtle">28 jours</Text>}>Charge d'entraînement</SectionTitle>
+            <SectionTitle right={<Text variant="caption" color="textSubtle">{t('analytics.screen.load.period')}</Text>}>{t('analytics.screen.load.title')}</SectionTitle>
             <View style={{ flexDirection: 'row', alignItems: 'flex-end', gap: 3, height: 110 }}>
               {loadBars.map((v, i) => {
                 const ratio = v / loadMax;
@@ -251,16 +254,16 @@ export function AnalyticsScreen(): React.JSX.Element {
               })}
             </View>
             <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: spacing[3] }}>
-              <Text variant="caption" color="textSubtle">Ratio aigu/chronique</Text>
-              {acwr.ratio != null ? <Badge label={`${acwr.ratio.toFixed(2)} · ${acwrZone(acwr.ratio)}`} tone={acwr.zone === 'optimal' ? 'success' : acwr.zone === 'risque' ? 'error' : 'info'} /> : <Text variant="caption" color="textSubtle">à calibrer</Text>}
+              <Text variant="caption" color="textSubtle">{t('analytics.screen.load.ratioLabel')}</Text>
+              {acwr.ratio != null ? <Badge label={`${acwr.ratio.toFixed(2)} · ${acwrZone(acwr.ratio)}`} tone={acwr.zone === 'optimal' ? 'success' : acwr.zone === 'risque' ? 'error' : 'info'} /> : <Text variant="caption" color="textSubtle">{t('analytics.screen.load.calibrate')}</Text>}
             </View>
           </Card>
 
           {/* Corrélations */}
           <Card>
-            <SectionTitle>Corrélations intelligentes</SectionTitle>
+            <SectionTitle>{t('analytics.screen.correlations.title')}</SectionTitle>
             {insights.length === 0 ? (
-              <Text variant="body" color="textMuted">Pas encore de lien net sur cette période — continue à enregistrer tes données.</Text>
+              <Text variant="body" color="textMuted">{t('analytics.screen.correlations.empty')}</Text>
             ) : (
               insights.map((it, i) => (
                 <View key={i} style={{ flexDirection: 'row', alignItems: 'center', gap: spacing[2], paddingVertical: spacing[2], borderBottomWidth: i < insights.length - 1 ? 1 : 0, borderBottomColor: colors.border }}>
@@ -269,13 +272,13 @@ export function AnalyticsScreen(): React.JSX.Element {
                 </View>
               ))
             )}
-            <Text variant="caption" color="textSubtle" style={{ marginTop: spacing[2] }}>Corrélation n'est pas causalité — ce sont des pistes.</Text>
+            <Text variant="caption" color="textSubtle" style={{ marginTop: spacing[2] }}>{t('analytics.screen.correlations.disclaimer')}</Text>
           </Card>
 
           {/* Records */}
           {records.length > 0 ? (
             <Card>
-              <SectionTitle>Records personnels</SectionTitle>
+              <SectionTitle>{t('analytics.screen.records.title')}</SectionTitle>
               <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: spacing[3] }}>
                 {records.slice(0, 6).map((r) => (
                   <View key={r.id} style={{ flexGrow: 1, flexBasis: '45%', backgroundColor: colors.surfaceElevated, borderRadius: radii.lg, padding: spacing[3] }}>
@@ -290,7 +293,7 @@ export function AnalyticsScreen(): React.JSX.Element {
 
           {/* Heatmap */}
           <Card>
-            <SectionTitle>Activité — 18 semaines</SectionTitle>
+            <SectionTitle>{t('analytics.screen.heatmap.title')}</SectionTitle>
             <View style={{ flexDirection: 'row', gap: 3 }}>
               {heat.map((col, i) => (
                 <View key={i} style={{ gap: 3 }}>
@@ -299,37 +302,37 @@ export function AnalyticsScreen(): React.JSX.Element {
               ))}
             </View>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, justifyContent: 'flex-end', marginTop: spacing[2] }}>
-              <Text variant="caption" color="textSubtle">Moins</Text>
+              <Text variant="caption" color="textSubtle">{t('analytics.screen.heatmap.less')}</Text>
               {[0, 1, 2, 3].map((v) => (<View key={v} style={{ width: 11, height: 11, borderRadius: 3, backgroundColor: heatColor(v) }} />))}
-              <Text variant="caption" color="textSubtle">Plus</Text>
+              <Text variant="caption" color="textSubtle">{t('analytics.screen.heatmap.more')}</Text>
             </View>
           </Card>
 
           {/* Comparaison */}
           <Card>
-            <SectionTitle right={<Text variant="caption" color="textSubtle">30 j vs 30 j précédents</Text>}>Comparaison</SectionTitle>
-            <CompareRow label="Recovery" now={recovery.confidence !== 'to_confirm' ? `${recovery.value}` : '—'} />
-            <CompareRow label="Poids" now={compare.weightNow != null ? compare.weightNow.toFixed(1) : '—'} prev={compare.weightPrev != null ? compare.weightPrev.toFixed(1) : undefined} />
-            <CompareRow label="HRV" now={compare.hrvNow != null ? `${Math.round(compare.hrvNow)}` : '—'} prev={compare.hrvPrev != null ? `${Math.round(compare.hrvPrev)}` : undefined} />
-            <CompareRow label="Sommeil moy." now={compare.sleepNow > 0 ? `${compare.sleepNow.toFixed(1)} h` : '—'} prev={compare.sleepPrev > 0 ? `${compare.sleepPrev.toFixed(1)} h` : undefined} last />
+            <SectionTitle right={<Text variant="caption" color="textSubtle">{t('analytics.screen.compare.period')}</Text>}>{t('analytics.screen.compare.title')}</SectionTitle>
+            <CompareRow label={t('analytics.screen.compare.recovery')} now={recovery.confidence !== 'to_confirm' ? `${recovery.value}` : '—'} />
+            <CompareRow label={t('analytics.screen.compare.weight')} now={compare.weightNow != null ? compare.weightNow.toFixed(1) : '—'} prev={compare.weightPrev != null ? compare.weightPrev.toFixed(1) : undefined} />
+            <CompareRow label={t('analytics.screen.compare.hrv')} now={compare.hrvNow != null ? `${Math.round(compare.hrvNow)}` : '—'} prev={compare.hrvPrev != null ? `${Math.round(compare.hrvPrev)}` : undefined} />
+            <CompareRow label={t('analytics.screen.compare.avgSleep')} now={compare.sleepNow > 0 ? `${compare.sleepNow.toFixed(1)} h` : '—'} prev={compare.sleepPrev > 0 ? `${compare.sleepPrev.toFixed(1)} h` : undefined} last />
           </Card>
 
           {/* Rapport IA */}
           <View style={{ borderRadius: radii.xl, borderWidth: 1, borderColor: 'rgba(45,127,249,0.25)', backgroundColor: 'rgba(45,127,249,0.08)', padding: spacing[5] }}>
-            <View style={{ flexDirection: 'row', gap: spacing[2], alignItems: 'center' }}><Icon name="brain" size={20} color={colors.info} /><Text variant="heading">Rapport Kaizen</Text></View>
+            <View style={{ flexDirection: 'row', gap: spacing[2], alignItems: 'center' }}><Icon name="brain" size={20} color={colors.info} /><Text variant="heading">{t('analytics.screen.report.title')}</Text></View>
             <Text variant="body" color="textMuted" style={{ marginTop: spacing[2], lineHeight: 22 }}>
-              {recovery.confidence !== 'to_confirm' ? `Ta récupération est ${recoveryBand(recovery.value)}. ` : ''}
-              {sessions > 0 ? `Tu as réalisé ${sessions} séance${sessions > 1 ? 's' : ''} sur la période. ` : ''}
-              {avgSleep > 0 && avgSleep < 7.5 ? 'Ton sommeil reste ton principal axe d’amélioration.' : avgSleep >= 7.5 ? 'Ton sommeil est solide — continue ainsi.' : ''}
+              {recovery.confidence !== 'to_confirm' ? t('analytics.screen.report.recoveryText', { band: recoveryBand(recovery.value) }) : ''}
+              {sessions > 0 ? t('analytics.screen.report.sessions', { count: sessions }) : ''}
+              {avgSleep > 0 && avgSleep < 7.5 ? t('analytics.screen.report.sleepImprove') : avgSleep >= 7.5 ? t('analytics.screen.report.sleepGood') : ''}
             </Text>
           </View>
 
           {/* Export */}
           <Card>
-            <SectionTitle>Export</SectionTitle>
+            <SectionTitle>{t('analytics.screen.export.title')}</SectionTitle>
             <View style={{ flexDirection: 'row', gap: spacing[2] }}>
-              <Button label={exporting ? 'Export…' : 'Exporter (JSON)'} onPress={onExport} disabled={exporting || !user} />
-              <Button label="Retour" variant="secondary" onPress={() => router.back()} />
+              <Button label={exporting ? t('analytics.screen.export.exporting') : t('analytics.screen.export.exportJson')} onPress={onExport} disabled={exporting || !user} />
+              <Button label={t('common.back')} variant="secondary" onPress={() => router.back()} />
             </View>
           </Card>
         </>

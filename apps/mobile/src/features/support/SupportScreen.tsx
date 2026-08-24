@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { Linking, Platform, Pressable, View } from 'react-native';
 import { useRouter, type Href } from 'expo-router';
 import Constants from 'expo-constants';
+import { useTranslation } from 'react-i18next';
 import { Badge, Button, Card, Input, Screen, Text, useTheme } from '@supotsu/ui';
 import { radii, spacing } from '@supotsu/design-system';
 import { useHealthMetrics } from '@/lib/data/queries';
@@ -13,49 +14,6 @@ const MARKETING_URL = 'https://kaizensupotsu.uk';
 const APP_STORE_ID = '6801142789';
 const RATE_URL = `https://apps.apple.com/app/id${APP_STORE_ID}?action=write-review`;
 const APP_VERSION = (Constants.expoConfig?.version as string | undefined) ?? '1.0.0';
-
-const QUICK: { icon: string; label: string; path: Href }[] = [
-  { icon: '📱', label: 'Configurer un appareil', path: '/profile/connectors' },
-  { icon: '🔄', label: 'Problème de synchronisation', path: '/profile/integrations' },
-  { icon: '🏋', label: 'Ajouter un entraînement', path: '/sport/workout/new' },
-  { icon: '🍽', label: 'Utiliser la nutrition', path: '/nutrition' },
-  { icon: '❤️', label: 'Comprendre mes données santé', path: '/sommeil' },
-  { icon: '⚙', label: 'Paramètres', path: '/profile/settings' },
-];
-
-const GUIDES: { title: string; minutes: number; level: string; steps: string[] }[] = [
-  { title: 'Premiers pas avec Kaizen', minutes: 3, level: 'Débutant', steps: ['Crée ton compte et renseigne ton profil (poids, taille, objectif).', 'Connecte une source de données (Apple Santé, Garmin ou Renpho).', 'Fixe un objectif principal dans Objectifs — il personnalise toute l’app.'] },
-  { title: 'Configurer Apple Santé (Health Auto Export)', minutes: 5, level: 'Débutant', steps: ['Installe Health Auto Export sur iPhone.', 'Profil → Appareils → Apple Santé → génère ton jeton.', 'Dans HAE : Automations → REST API, colle l’URL (jeton inclus), méthode POST, format JSON.', 'Coche sommeil, FC repos, poids… puis exécute une fois pour vérifier.'] },
-  { title: 'Connecter Garmin', minutes: 4, level: 'Intermédiaire', steps: ['Profil → Appareils → Garmin → Connecter.', 'Autorise l’accès dans la fenêtre Garmin Connect.', 'Tes activités et données santé (sommeil, HRV, FC) se synchronisent.'] },
-  { title: 'Configurer Renpho', minutes: 3, level: 'Débutant', steps: ['Active la synchronisation Apple Santé dans l’app Renpho.', 'Pèse-toi : poids, masse grasse et musculaire partent vers Apple Santé.', 'Kaizen les récupère via Health Auto Export, source “Renpho”.'] },
-  { title: 'Suivre son déficit calorique', minutes: 2, level: 'Débutant', steps: ['Ouvre Journal & déficit.', 'Ajoute tes repas (recherche, saisie manuelle).', 'Ajuste tes objectifs kcal/macros si besoin dans Nutrition.'] },
-  { title: 'Comprendre le Recovery Score', minutes: 3, level: 'Intermédiaire', steps: ['Le score combine sommeil, HRV et FC de repos vs tes moyennes.', 'Plus il est haut, plus tu es prêt pour une séance intense.', 'Sans HRV (Garmin ne la pousse pas vers Santé), il s’appuie surtout sur le sommeil.'] },
-];
-
-const FAQ: { q: string; a: string }[] = [
-  { q: 'Pourquoi mon sommeil n’apparaît-il pas ?', a: 'Vérifie que ta source envoie bien des nuits : Apple Santé via Health Auto Export (coche “Sleep Analysis”) ou un export Garmin. Sur l’écran Sommeil, la qualité s’affiche dès qu’une nuit est reçue, quelle que soit la source.' },
-  { q: 'Pourquoi mon HRV est-il vide ?', a: 'Garmin ne transmet pas la HRV à Apple Santé — aucune app tierce ne peut la re-partager. Pour la HRV, utilise l’import d’un export Garmin.' },
-  { q: 'Comment connecter Garmin ?', a: 'Profil → Appareils → Garmin → Connecter, puis autorise l’accès dans Garmin Connect. Nécessite le backend déployé.' },
-  { q: 'Comment fonctionne le Score Kaizen ?', a: 'C’est une lecture composite de ta forme : récupération, sommeil, charge d’entraînement et régularité. Chaque composante est explicable et affichée séparément — jamais un chiffre opaque.' },
-  { q: 'Comment calculer mon déficit calorique ?', a: 'Déficit = objectif calorique − calories consommées. Kaizen estime ta cible depuis ton poids, mais tu peux l’ajuster manuellement dans Nutrition (kcal, protéines, eau).' },
-  { q: 'Comment exporter mes données ?', a: 'Réglages → Confidentialité → Exporter mes données (JSON, format RGPD). Tu peux aussi le faire depuis Données & intégrations.' },
-];
-
-const SERVICES = ['API Garmin', 'Apple Santé', 'Renpho', 'Serveurs Kaizen', 'Synchronisation'];
-
-const CHANGELOG: { v: string; items: string[] }[] = [
-  { v: '2.3', items: ['Écrans Santé détaillés (HRV, FC repos, Stress, VO₂).', 'Photos d’évolution avant/après.', 'Navigation par jour dans le calendrier.'] },
-  { v: '2.2', items: ['Objectifs nutrition ajustables (kcal/macros/eau).', 'Écran Habitudes & discipline dédié.', 'Silhouette musculaire anatomique précise.'] },
-  { v: '2.1', items: ['Reconstruction premium de tous les écrans.', 'Bibliothèque de 873 exercices.', 'Import Apple Santé via Health Auto Export.'] },
-];
-
-/** Only real destinations — Documentation/Feuille de route had no actual
- *  page to send anyone to (they silently pointed at the private dev repo on
- *  GitHub), so they're gone rather than faked; the Guides section above
- *  already covers documentation in-app. */
-const RESOURCES: { label: string; path: Href }[] = [
-  { label: 'Communauté', path: '/profile/community' },
-];
 
 function Section({ title, right, children }: { title: string; right?: React.ReactNode; children: React.ReactNode }): React.JSX.Element {
   return (
@@ -89,6 +47,7 @@ function Accordion({ title, subtitle, open, onToggle, children }: { title: strin
 
 /** Aide & Support (mockup #22) — help center: search, guides, FAQ, status, diagnostic, contact, tickets. */
 export function SupportScreen(): React.JSX.Element {
+  const { t } = useTranslation();
   const router = useRouter();
   const { colors } = useTheme();
   const { data: health = [] } = useHealthMetrics();
@@ -102,6 +61,55 @@ export function SupportScreen(): React.JSX.Element {
 
   // Diagnostic state
   const [diag, setDiag] = useState<{ label: string; status: 'idle' | 'run' | 'ok' | 'warn' }[]>([]);
+
+  const QUICK: { icon: string; label: string; path: Href }[] = useMemo(() => [
+    { icon: '📱', label: t('support.screen.quickAccess.device'), path: '/profile/connectors' },
+    { icon: '🔄', label: t('support.screen.quickAccess.sync'), path: '/profile/integrations' },
+    { icon: '🏋', label: t('support.screen.quickAccess.workout'), path: '/sport/workout/new' },
+    { icon: '🍽', label: t('support.screen.quickAccess.nutrition'), path: '/nutrition' },
+    { icon: '❤️', label: t('support.screen.quickAccess.health'), path: '/sommeil' },
+    { icon: '⚙', label: t('support.screen.quickAccess.settings'), path: '/profile/settings' },
+  ], [t]);
+
+  const GUIDES: { title: string; minutes: number; level: string; steps: string[] }[] = useMemo(() => [
+    { title: t('support.screen.guides.firstSteps.title'), minutes: 3, level: t('support.screen.guides.level.beginner'), steps: [t('support.screen.guides.firstSteps.step1'), t('support.screen.guides.firstSteps.step2'), t('support.screen.guides.firstSteps.step3')] },
+    { title: t('support.screen.guides.appleHealth.title'), minutes: 5, level: t('support.screen.guides.level.beginner'), steps: [t('support.screen.guides.appleHealth.step1'), t('support.screen.guides.appleHealth.step2'), t('support.screen.guides.appleHealth.step3'), t('support.screen.guides.appleHealth.step4')] },
+    { title: t('support.screen.guides.garmin.title'), minutes: 4, level: t('support.screen.guides.level.intermediate'), steps: [t('support.screen.guides.garmin.step1'), t('support.screen.guides.garmin.step2'), t('support.screen.guides.garmin.step3')] },
+    { title: t('support.screen.guides.renpho.title'), minutes: 3, level: t('support.screen.guides.level.beginner'), steps: [t('support.screen.guides.renpho.step1'), t('support.screen.guides.renpho.step2'), t('support.screen.guides.renpho.step3')] },
+    { title: t('support.screen.guides.deficit.title'), minutes: 2, level: t('support.screen.guides.level.beginner'), steps: [t('support.screen.guides.deficit.step1'), t('support.screen.guides.deficit.step2'), t('support.screen.guides.deficit.step3')] },
+    { title: t('support.screen.guides.recovery.title'), minutes: 3, level: t('support.screen.guides.level.intermediate'), steps: [t('support.screen.guides.recovery.step1'), t('support.screen.guides.recovery.step2'), t('support.screen.guides.recovery.step3')] },
+  ], [t]);
+
+  const FAQ: { q: string; a: string }[] = useMemo(() => [
+    { q: t('support.screen.faq.sleep.q'), a: t('support.screen.faq.sleep.a') },
+    { q: t('support.screen.faq.hrv.q'), a: t('support.screen.faq.hrv.a') },
+    { q: t('support.screen.faq.garmin.q'), a: t('support.screen.faq.garmin.a') },
+    { q: t('support.screen.faq.kaizenScore.q'), a: t('support.screen.faq.kaizenScore.a') },
+    { q: t('support.screen.faq.deficit.q'), a: t('support.screen.faq.deficit.a') },
+    { q: t('support.screen.faq.export.q'), a: t('support.screen.faq.export.a') },
+  ], [t]);
+
+  const SERVICES: string[] = useMemo(() => [
+    t('support.screen.services.garminApi'),
+    t('support.screen.services.appleHealth'),
+    t('support.screen.services.renpho'),
+    t('support.screen.services.kaizenServers'),
+    t('support.screen.services.sync'),
+  ], [t]);
+
+  const CHANGELOG: { v: string; items: string[] }[] = useMemo(() => [
+    { v: '2.3', items: [t('support.screen.changelog.v23.item1'), t('support.screen.changelog.v23.item2'), t('support.screen.changelog.v23.item3')] },
+    { v: '2.2', items: [t('support.screen.changelog.v22.item1'), t('support.screen.changelog.v22.item2'), t('support.screen.changelog.v22.item3')] },
+    { v: '2.1', items: [t('support.screen.changelog.v21.item1'), t('support.screen.changelog.v21.item2'), t('support.screen.changelog.v21.item3')] },
+  ], [t]);
+
+  /** Only real destinations — Documentation/Feuille de route had no actual
+   *  page to send anyone to (they silently pointed at the private dev repo on
+   *  GitHub), so they're gone rather than faked; the Guides section above
+   *  already covers documentation in-app. */
+  const RESOURCES: { label: string; path: Href }[] = useMemo(() => [
+    { label: t('support.screen.resources.community'), path: '/profile/community' },
+  ], [t]);
 
   useEffect(() => {
     void loadTickets().then(setTickets);
@@ -121,19 +129,19 @@ export function SupportScreen(): React.JSX.Element {
     const q = query.trim().toLowerCase();
     if (!q) return FAQ;
     return FAQ.filter((f) => f.q.toLowerCase().includes(q) || f.a.toLowerCase().includes(q));
-  }, [query]);
+  }, [query, FAQ]);
 
   const openUrl = (url: string): void => { void Linking.openURL(url).catch(() => undefined); };
   const mail = (subject: string, body = ''): void => openUrl(`mailto:${SUPPORT_EMAIL}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`);
 
   const techInfo = useMemo(() => [
-    ['Version de Kaizen', APP_VERSION],
-    ['Plateforme', Platform.OS],
-    ['Version OS', `${Platform.Version}`],
-    ['Données santé', `${health.length} mesures`],
-    ['Dernière synchronisation', lastSync ? new Date(lastSync).toLocaleString('fr-FR') : '—'],
-    ['Identifiant d’installation', installId],
-  ] as [string, string][], [health.length, lastSync, installId]);
+    [t('support.screen.techInfo.version'), APP_VERSION],
+    [t('support.screen.techInfo.platform'), Platform.OS],
+    [t('support.screen.techInfo.osVersion'), `${Platform.Version}`],
+    [t('support.screen.techInfo.healthData'), t('support.screen.techInfo.healthDataValue', { count: health.length })],
+    [t('support.screen.techInfo.lastSync'), lastSync ? new Date(lastSync).toLocaleString('fr-FR') : '—'],
+    [t('support.screen.techInfo.installId'), installId],
+  ] as [string, string][], [health.length, lastSync, installId, t]);
 
   const copyTech = async (): Promise<void> => {
     const text = techInfo.map(([k, v]) => `${k}: ${v}`).join('\n');
@@ -150,11 +158,11 @@ export function SupportScreen(): React.JSX.Element {
 
   const runDiagnostic = async (): Promise<void> => {
     const items: { label: string; status: 'idle' | 'run' | 'ok' | 'warn' }[] = [
-      { label: 'Connexion Internet', status: 'run' },
-      { label: 'Serveur Kaizen (Supabase)', status: 'run' },
-      { label: 'Version de l’application', status: 'run' },
-      { label: 'Données santé présentes', status: 'run' },
-      { label: 'Synchronisation récente', status: 'run' },
+      { label: t('support.screen.diagnostic.items.internet'), status: 'run' },
+      { label: t('support.screen.diagnostic.items.server'), status: 'run' },
+      { label: t('support.screen.diagnostic.items.appVersion'), status: 'run' },
+      { label: t('support.screen.diagnostic.items.healthData'), status: 'run' },
+      { label: t('support.screen.diagnostic.items.recentSync'), status: 'run' },
     ];
     setDiag(items.map((i) => ({ ...i, status: 'idle' })));
     const set = (idx: number, status: 'ok' | 'warn') => setDiag((prev) => prev.map((p, i) => (i === idx ? { ...p, status } : p)));
@@ -175,14 +183,14 @@ export function SupportScreen(): React.JSX.Element {
   };
 
   const send = async (kind: 'bug' | 'idea'): Promise<void> => {
-    const subject = compose.trim() || (kind === 'bug' ? 'Bug signalé' : 'Idée proposée');
+    const subject = compose.trim() || (kind === 'bug' ? t('support.screen.contact.defaultBugSubject') : t('support.screen.contact.defaultIdeaSubject'));
     setTickets(await addTicket(kind, subject, compose.trim()));
     setCompose('');
-    mail(`[${kind === 'bug' ? 'Bug' : 'Idée'}] ${subject}`, `\n\n---\nKaizen ${APP_VERSION} · ${Platform.OS} ${Platform.Version} · install ${installId}`);
+    mail(`[${kind === 'bug' ? t('support.screen.contact.ticketPrefixBug') : t('support.screen.contact.ticketPrefixIdea')}] ${subject}`, `\n\n---\nKaizen ${APP_VERSION} · ${Platform.OS} ${Platform.Version} · install ${installId}`);
   };
 
   const STATUS_LABEL: Record<SupportTicket['status'], { label: string; tone: 'success' | 'warning' | 'info' }> = {
-    open: { label: 'Ouvert', tone: 'info' }, in_progress: { label: 'En cours', tone: 'warning' }, waiting: { label: 'En attente', tone: 'warning' }, resolved: { label: 'Résolu', tone: 'success' },
+    open: { label: t('support.screen.tickets.status.open'), tone: 'info' }, in_progress: { label: t('support.screen.tickets.status.inProgress'), tone: 'warning' }, waiting: { label: t('support.screen.tickets.status.waiting'), tone: 'warning' }, resolved: { label: t('support.screen.tickets.status.resolved'), tone: 'success' },
   };
 
   return (
@@ -190,16 +198,16 @@ export function SupportScreen(): React.JSX.Element {
       {/* Topbar */}
       <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' }}>
         <View>
-          <Text variant="title">Aide & Support</Text>
-          <Text variant="caption" color="textSubtle">FAQ • Assistance • Contact</Text>
+          <Text variant="title">{t('support.screen.title')}</Text>
+          <Text variant="caption" color="textSubtle">{t('support.screen.subtitle')}</Text>
         </View>
       </View>
 
       {/* Besoin d'aide */}
       <Card>
-        <Text variant="heading">Comment pouvons-nous t’aider ?</Text>
+        <Text variant="heading">{t('support.screen.helpCard.title')}</Text>
         <View style={{ marginTop: spacing[2] }}>
-          <Input placeholder="Rechercher une question ou un problème…" value={query} onChangeText={setQuery} />
+          <Input placeholder={t('support.screen.helpCard.searchPlaceholder')} value={query} onChangeText={setQuery} />
         </View>
         {query.trim() && faqFiltered.length > 0 ? (
           <View style={{ marginTop: spacing[2], gap: spacing[1] }}>
@@ -211,7 +219,7 @@ export function SupportScreen(): React.JSX.Element {
       </Card>
 
       {/* Accès rapides */}
-      <Section title="Accès rapides">
+      <Section title={t('support.screen.quickAccess.title')}>
         <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: spacing[3] }}>
           {QUICK.map((q) => (
             <Pressable key={q.label} onPress={() => router.push(q.path)} style={({ pressed }) => ({ flexGrow: 1, flexBasis: '45%', opacity: pressed ? 0.7 : 1 })}>
@@ -225,7 +233,7 @@ export function SupportScreen(): React.JSX.Element {
       </Section>
 
       {/* Guides */}
-      <Section title="Guides interactifs">
+      <Section title={t('support.screen.guides.title')}>
         {GUIDES.map((g, i) => (
           <Accordion key={g.title} title={g.title} subtitle={`${g.minutes} min · ${g.level}`} open={openGuide === i} onToggle={() => setOpenGuide(openGuide === i ? null : i)}>
             {g.steps.map((s, j) => (
@@ -239,7 +247,7 @@ export function SupportScreen(): React.JSX.Element {
       </Section>
 
       {/* FAQ */}
-      <Section title="Questions fréquentes">
+      <Section title={t('support.screen.faq.title')}>
         {faqFiltered.map((f) => {
           const idx = FAQ.indexOf(f);
           return (
@@ -251,14 +259,14 @@ export function SupportScreen(): React.JSX.Element {
       </Section>
 
       {/* État des services */}
-      <Section title="État des services">
+      <Section title={t('support.screen.services.title')}>
         <Card>
           {SERVICES.map((s, i) => (
             <View key={s} style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: spacing[2], borderBottomWidth: i < SERVICES.length - 1 ? 1 : 0, borderBottomColor: colors.border }}>
               <Text variant="body">{s}</Text>
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing[2] }}>
                 <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: colors.accentData }} />
-                <Text variant="caption" color="textSubtle">Opérationnel</Text>
+                <Text variant="caption" color="textSubtle">{t('support.screen.services.operational')}</Text>
               </View>
             </View>
           ))}
@@ -266,11 +274,11 @@ export function SupportScreen(): React.JSX.Element {
       </Section>
 
       {/* Diagnostic */}
-      <Section title="Diagnostic automatique">
+      <Section title={t('support.screen.diagnostic.title')}>
         <Card>
-          <Text variant="body" color="textMuted">Kaizen vérifie ta connexion, le serveur, tes données et la synchronisation.</Text>
+          <Text variant="body" color="textMuted">{t('support.screen.diagnostic.description')}</Text>
           <View style={{ alignItems: 'flex-start', marginTop: spacing[3] }}>
-            <Button label="Lancer un diagnostic" onPress={runDiagnostic} />
+            <Button label={t('support.screen.diagnostic.run')} onPress={runDiagnostic} />
           </View>
           {diag.length > 0 ? (
             <View style={{ marginTop: spacing[3], gap: spacing[2] }}>
@@ -280,7 +288,7 @@ export function SupportScreen(): React.JSX.Element {
                     {d.status === 'ok' ? <Text style={{ color: '#04140b', fontSize: 11, fontWeight: '800' }}>✓</Text> : d.status === 'warn' ? <Text style={{ color: '#04140b', fontSize: 11, fontWeight: '800' }}>!</Text> : null}
                   </View>
                   <Text variant="body" style={{ flex: 1 }}>{d.label}</Text>
-                  <Text variant="caption" color="textSubtle">{d.status === 'idle' ? '…' : d.status === 'ok' ? 'OK' : d.status === 'warn' ? 'À vérifier' : ''}</Text>
+                  <Text variant="caption" color="textSubtle">{d.status === 'idle' ? t('support.screen.diagnostic.status.idle') : d.status === 'ok' ? t('support.screen.diagnostic.status.ok') : d.status === 'warn' ? t('support.screen.diagnostic.status.warn') : ''}</Text>
                 </View>
               ))}
             </View>
@@ -289,30 +297,30 @@ export function SupportScreen(): React.JSX.Element {
       </Section>
 
       {/* Contacter le support */}
-      <Section title="Contacter le support">
+      <Section title={t('support.screen.contact.title')}>
         <Card>
-          <Input placeholder="Décris ton problème ou ton idée…" value={compose} onChangeText={setCompose} multiline />
+          <Input placeholder={t('support.screen.contact.placeholder')} value={compose} onChangeText={setCompose} multiline />
           <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: spacing[2], marginTop: spacing[3] }}>
-            <Button label="🐞 Signaler un bug" onPress={() => send('bug')} />
-            <Button label="💡 Proposer une idée" variant="secondary" onPress={() => send('idea')} />
-            <Button label="📧 E-mail" variant="secondary" onPress={() => mail('Demande de support Kaizen')} />
-            <Button label="🌐 Centre d’aide" variant="secondary" onPress={() => openUrl(MARKETING_URL)} />
+            <Button label={t('support.screen.contact.reportBug')} onPress={() => send('bug')} />
+            <Button label={t('support.screen.contact.proposeIdea')} variant="secondary" onPress={() => send('idea')} />
+            <Button label={t('support.screen.contact.email')} variant="secondary" onPress={() => mail(t('support.screen.contact.emailSubject'))} />
+            <Button label={t('support.screen.contact.helpCenter')} variant="secondary" onPress={() => openUrl(MARKETING_URL)} />
           </View>
         </Card>
       </Section>
 
       {/* Mes demandes */}
       {tickets.length > 0 ? (
-        <Section title="Mes demandes">
+        <Section title={t('support.screen.tickets.title')}>
           <Card>
-            {tickets.map((t, i) => (
-              <View key={t.id} style={{ flexDirection: 'row', alignItems: 'center', gap: spacing[3], paddingVertical: spacing[3], borderBottomWidth: i < tickets.length - 1 ? 1 : 0, borderBottomColor: colors.border }}>
+            {tickets.map((t2, i) => (
+              <View key={t2.id} style={{ flexDirection: 'row', alignItems: 'center', gap: spacing[3], paddingVertical: spacing[3], borderBottomWidth: i < tickets.length - 1 ? 1 : 0, borderBottomColor: colors.border }}>
                 <View style={{ flex: 1 }}>
-                  <Text variant="body">{t.subject}</Text>
-                  <Text variant="caption" color="textSubtle">{t.ref} · {new Date(t.createdAt).toLocaleDateString('fr-FR')}</Text>
+                  <Text variant="body">{t2.subject}</Text>
+                  <Text variant="caption" color="textSubtle">{t2.ref} · {new Date(t2.createdAt).toLocaleDateString('fr-FR')}</Text>
                 </View>
-                <Badge label={STATUS_LABEL[t.status].label} tone={STATUS_LABEL[t.status].tone} />
-                {t.status === 'resolved' ? <Pressable onPress={async () => setTickets(await reopenTicket(t.id))} hitSlop={8}><Text variant="caption" color="primary">Rouvrir</Text></Pressable> : null}
+                <Badge label={STATUS_LABEL[t2.status].label} tone={STATUS_LABEL[t2.status].tone} />
+                {t2.status === 'resolved' ? <Pressable onPress={async () => setTickets(await reopenTicket(t2.id))} hitSlop={8}><Text variant="caption" color="primary">{t('support.screen.tickets.reopen')}</Text></Pressable> : null}
               </View>
             ))}
           </Card>
@@ -320,10 +328,10 @@ export function SupportScreen(): React.JSX.Element {
       ) : null}
 
       {/* Nouveautés */}
-      <Section title="Nouveautés">
+      <Section title={t('support.screen.changelog.title')}>
         {CHANGELOG.map((c) => (
           <Card key={c.v}>
-            <Text variant="body" style={{ fontWeight: '700' }}>Version {c.v}</Text>
+            <Text variant="body" style={{ fontWeight: '700' }}>{t('support.screen.changelog.version', { version: c.v })}</Text>
             <View style={{ marginTop: spacing[2], gap: spacing[1] }}>
               {c.items.map((it, j) => (<Text key={j} variant="caption" color="textMuted">• {it}</Text>))}
             </View>
@@ -332,7 +340,7 @@ export function SupportScreen(): React.JSX.Element {
       </Section>
 
       {/* Ressources */}
-      <Section title="Ressources">
+      <Section title={t('support.screen.resources.title')}>
         <Card>
           {RESOURCES.map((r, i) => (
             <Pressable key={r.label} onPress={() => router.push(r.path)}>
@@ -346,7 +354,7 @@ export function SupportScreen(): React.JSX.Element {
       </Section>
 
       {/* Informations techniques */}
-      <Section title="Informations techniques" right={<Pressable onPress={copyTech}><Text variant="caption" color="primary">{copied ? 'Copié ✓' : 'Copier'}</Text></Pressable>}>
+      <Section title={t('support.screen.techInfo.title')} right={<Pressable onPress={copyTech}><Text variant="caption" color="primary">{copied ? t('support.screen.techInfo.copied') : t('support.screen.techInfo.copy')}</Text></Pressable>}>
         <Card>
           {techInfo.map(([k, v], i) => (
             <View key={k} style={{ flexDirection: 'row', justifyContent: 'space-between', paddingVertical: spacing[2], borderBottomWidth: i < techInfo.length - 1 ? 1 : 0, borderBottomColor: colors.border }}>
@@ -358,17 +366,17 @@ export function SupportScreen(): React.JSX.Element {
       </Section>
 
       {/* Actions */}
-      <Section title="Actions">
+      <Section title={t('support.screen.actions.title')}>
         <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: spacing[2] }}>
-          <Button label="📩 Support" onPress={() => mail('Demande de support Kaizen')} />
-          <Button label="⭐ Évaluer l’app" variant="secondary" onPress={() => openUrl(RATE_URL)} />
-          <Button label="📄 Confidentialité" variant="secondary" onPress={() => router.push('/privacy')} />
-          <Button label="⚖ Conditions" variant="secondary" onPress={() => router.push('/terms')} />
+          <Button label={t('support.screen.actions.support')} onPress={() => mail(t('support.screen.contact.emailSubject'))} />
+          <Button label={t('support.screen.actions.rate')} variant="secondary" onPress={() => openUrl(RATE_URL)} />
+          <Button label={t('support.screen.actions.privacy')} variant="secondary" onPress={() => router.push('/privacy')} />
+          <Button label={t('support.screen.actions.terms')} variant="secondary" onPress={() => router.push('/terms')} />
         </View>
       </Section>
 
       <View style={{ alignItems: 'flex-start', marginTop: spacing[2] }}>
-        <Button label="Retour" variant="secondary" onPress={() => router.back()} />
+        <Button label={t('common.back')} variant="secondary" onPress={() => router.back()} />
       </View>
     </Screen>
   );

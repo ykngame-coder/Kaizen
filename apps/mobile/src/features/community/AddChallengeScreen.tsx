@@ -1,26 +1,28 @@
 import React, { useState } from 'react';
 import { View } from 'react-native';
 import { useRouter } from 'expo-router';
+import { useTranslation } from 'react-i18next';
 import { Badge, Button, Input, Screen, SegmentedControl, Text } from '@supotsu/ui';
 import { spacing } from '@supotsu/design-system';
 import { challengeInputSchema, type ChallengeInput } from '@supotsu/shared';
 import { useCreateChallenge } from '@/lib/data/queries';
 
-const METRICS = [
-  { value: 'activity_count', label: 'Nb activités' },
-  { value: 'active_days', label: 'Jours actifs' },
-] as const;
-
-const DURATIONS = [
-  { value: '7', label: '7 jours' },
-  { value: '14', label: '14 jours' },
-  { value: '30', label: '30 jours' },
-] as const;
-
 /** Create a community challenge (Master Prompt P37). */
 export function AddChallengeScreen(): React.JSX.Element {
+  const { t } = useTranslation();
   const router = useRouter();
   const create = useCreateChallenge();
+
+  const METRICS = [
+    { value: 'activity_count', label: t('community.addChallenge.metrics.activityCount') },
+    { value: 'active_days', label: t('community.addChallenge.metrics.activeDays') },
+  ] as const;
+
+  const DURATIONS = [
+    { value: '7', label: t('community.addChallenge.durations.7') },
+    { value: '14', label: t('community.addChallenge.durations.14') },
+    { value: '30', label: t('community.addChallenge.durations.30') },
+  ] as const;
 
   const [title, setTitle] = useState('');
   const [metric, setMetric] = useState<(typeof METRICS)[number]['value']>('activity_count');
@@ -41,38 +43,38 @@ export function AddChallengeScreen(): React.JSX.Element {
       visibility: 'public',
     });
     if (!parsed.success) {
-      setError('Donne un titre et un objectif valide (nombre).');
+      setError(t('community.addChallenge.errors.invalid'));
       return;
     }
     try {
       await create.mutateAsync(parsed.data as ChallengeInput);
       router.back();
     } catch {
-      setError('Création impossible.');
+      setError(t('community.addChallenge.errors.createFailed'));
     }
   };
 
   return (
     <Screen scroll>
-      <Text variant="title">Nouveau défi</Text>
+      <Text variant="title">{t('community.addChallenge.title')}</Text>
       <Text variant="caption" color="textMuted">
-        Défini clairement : une métrique, un objectif, une période.
+        {t('community.addChallenge.subtitle')}
       </Text>
 
-      <Input label="Titre (ex. 5 activités cette semaine)" value={title} onChangeText={setTitle} />
+      <Input label={t('community.addChallenge.titleInputLabel')} value={title} onChangeText={setTitle} />
 
       <View style={{ gap: spacing[2] }}>
         <Text variant="label" color="textMuted">
-          MÉTRIQUE
+          {t('community.addChallenge.metricLabel')}
         </Text>
         <SegmentedControl options={METRICS} value={metric} onChange={setMetric} />
       </View>
 
-      <Input label="Objectif (nombre)" keyboardType="numeric" value={target} onChangeText={setTarget} />
+      <Input label={t('community.addChallenge.targetInputLabel')} keyboardType="numeric" value={target} onChangeText={setTarget} />
 
       <View style={{ gap: spacing[2] }}>
         <Text variant="label" color="textMuted">
-          DURÉE
+          {t('community.addChallenge.durationLabel')}
         </Text>
         <SegmentedControl options={DURATIONS} value={days} onChange={setDays} />
       </View>
@@ -80,10 +82,10 @@ export function AddChallengeScreen(): React.JSX.Element {
       {error ? <Badge label={error} tone="error" /> : null}
 
       <View style={{ flexDirection: 'row', gap: spacing[2], marginTop: spacing[2] }}>
-        <Button label="Annuler" variant="secondary" onPress={() => router.back()} />
+        <Button label={t('common.cancel')} variant="secondary" onPress={() => router.back()} />
         <View style={{ flex: 1 }} />
         <Button
-          label={create.isPending ? '…' : 'Créer le défi'}
+          label={create.isPending ? t('community.addChallenge.creating') : t('community.addChallenge.submit')}
           onPress={submit}
           disabled={create.isPending}
         />

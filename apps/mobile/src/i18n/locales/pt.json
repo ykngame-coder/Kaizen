@@ -2064,5 +2064,1005 @@
       "aimHint": "Aponte para o código de barras do produto",
       "cancelButton": "Cancelar"
     }
+  },
+  "analytics": {
+    "screen": {
+      "activityLabels": {
+        "walking": "Caminhada",
+        "running": "Corrida",
+        "cycling": "Ciclismo",
+        "swimming": "Natação",
+        "strength": "Força",
+        "crossTraining": "Cross-training",
+        "hyrox": "Hyrox",
+        "mobility": "Mobilidade",
+        "yoga": "Yoga",
+        "other": "Outro"
+      },
+      "correlations": {
+        "sleepWellnessPositive": "Quanto melhor você dorme, melhor se sente nesses mesmos dias.",
+        "sleepWellnessNegative": "Suas noites mais curtas coincidem com se sentir melhor — vale acompanhar.",
+        "trainingSleepPositive": "Seus dias de treino vêm acompanhados de noites mais longas.",
+        "trainingSleepNegative": "Seus dias de treino intenso combinam com noites mais curtas.",
+        "trainingWellnessPositive": "Se mexer anda de mãos dadas com um humor melhor no seu caso.",
+        "trainingWellnessNegative": "Dias muito cheios pesam no seu humor — lembre-se de recuperar.",
+        "title": "Correlações inteligentes",
+        "empty": "Ainda não há um vínculo claro neste período — continue registrando seus dados.",
+        "disclaimer": "Correlação não é causalidade — são apenas pistas."
+      },
+      "title": "Estatísticas",
+      "subtitle": "Análise • Tendências • Progresso",
+      "emptyState": {
+        "title": "Ainda não há dados suficientes",
+        "message": "Registre atividades, noites, refeições e check-ins para desbloquear suas estatísticas."
+      },
+      "kpi": {
+        "recovery": "Recuperação",
+        "load": "Carga",
+        "weight": "Peso",
+        "avgSleep": "Sono médio",
+        "sessions": "Sessões",
+        "avgKcal": "Kcal médias"
+      },
+      "evolution": {
+        "title": "Evolução geral",
+        "weight": "Peso",
+        "recovery": "Recuperação",
+        "hrv": "HRV"
+      },
+      "distribution": {
+        "title": "Distribuição dos treinos"
+      },
+      "load": {
+        "period": "28 dias",
+        "title": "Carga de treino",
+        "ratioLabel": "Taxa aguda/crônica",
+        "calibrate": "a calibrar"
+      },
+      "records": {
+        "title": "Recordes pessoais"
+      },
+      "heatmap": {
+        "title": "Atividade — 18 semanas",
+        "less": "Menos",
+        "more": "Mais"
+      },
+      "compare": {
+        "period": "Últimos 30 dias vs 30 anteriores",
+        "title": "Comparação",
+        "recovery": "Recuperação",
+        "weight": "Peso",
+        "hrv": "HRV",
+        "avgSleep": "Sono médio"
+      },
+      "report": {
+        "title": "Relatório Kaizen",
+        "recoveryText": "Sua recuperação está {{band}}. ",
+        "sessions": "Você completou {{count}} sessão(ões) no período. ",
+        "sleepImprove": "O sono continua sendo seu principal ponto de melhoria.",
+        "sleepGood": "Seu sono está sólido — continue assim."
+      },
+      "export": {
+        "title": "Exportar",
+        "exporting": "Exportando…",
+        "exportJson": "Exportar (JSON)"
+      }
+    },
+    "weight": {
+      "title": "Peso",
+      "subtitle": "Seu peso e composição corporal ao longo do tempo.",
+      "add": "+ Adicionar uma pesagem",
+      "inputLabel": "Peso (kg)",
+      "inputPlaceholder": "Ex. 72.5",
+      "saving": "Salvando…",
+      "emptyState": {
+        "title": "Nenhuma pesagem",
+        "message": "Conecte uma balança (Renpho via Apple Saúde), importe seus dados ou adicione uma pesagem manualmente acima."
+      },
+      "current": {
+        "unit": "kg · hoje"
+      },
+      "singlePoint": "Apenas uma medição neste período — registre mais pesagens para ver a curva.",
+      "stats": {
+        "min": "Mín",
+        "max": "Máx",
+        "start": "Início"
+      },
+      "composition": {
+        "title": "Composição corporal",
+        "bodyFat": "Gordura corporal",
+        "muscleMass": "Massa muscular",
+        "source": "Gordura e massa muscular vêm da sua balança conectada (Renpho via Apple Saúde)."
+      }
+    }
+  },
+  "community": {
+    "addChallenge": {
+      "metrics": {
+        "activityCount": "N.º de atividades",
+        "activeDays": "Dias ativos"
+      },
+      "durations": {
+        "7": "7 dias",
+        "14": "14 dias",
+        "30": "30 dias"
+      },
+      "subtitle": "Seja claro: uma métrica, um objetivo, um período.",
+      "metricLabel": "MÉTRICA",
+      "targetInputLabel": "Objetivo (número)",
+      "durationLabel": "DURAÇÃO",
+      "errors": {
+        "invalid": "Informe um título e um objetivo válido (número).",
+        "createFailed": "Não foi possível criar o desafio."
+      },
+      "title": "Novo desafio",
+      "titleInputLabel": "Título (ex. 5 atividades esta semana)",
+      "creating": "…",
+      "submit": "Criar desafio"
+    },
+    "screen": {
+      "card": {
+        "metricActiveDays": "Dias ativos",
+        "metricActivities": "Atividades",
+        "objective": "Objetivo: {{target}} · {{status}}",
+        "joined": "Você participa",
+        "open": "Aberto",
+        "leaderboard": "CLASSIFICAÇÃO",
+        "joining": "…",
+        "join": "Participar"
+      },
+      "title": "Comunidade",
+      "newChallenge": "+ Desafio",
+      "subtitle": "Desafios simples e transparentes: cada classificação é lida direto dos fatos.",
+      "emptyState": {
+        "title": "Ainda não há desafios",
+        "message": "Crie o primeiro desafio e convide seus amigos para participar.",
+        "action": "Criar um desafio"
+      }
+    }
+  },
+  "connectors": {
+    "devices": {
+      "sourceLabel": {
+        "manual": "Entrada manual"
+      },
+      "metricLabel": {
+        "sleepDuration": "Sono",
+        "hrv": "HRV",
+        "restingHeartRate": "FC em repouso",
+        "weight": "Peso",
+        "bodyFat": "Gordura corporal",
+        "muscleMass": "Massa musc."
+      },
+      "garmin": {
+        "status": {
+          "connected": "Conectado",
+          "pending": "Autorização em andamento",
+          "revoked": "Acesso revogado",
+          "disconnected": "Não conectado"
+        },
+        "caption": "Atividades · Saúde (sono, HRV, FC, estresse)",
+        "connect": "Conectar Garmin",
+        "connectError": "Não foi possível conectar.",
+        "disconnectError": "Não foi possível desconectar.",
+        "backendInfo": "Requer um backend Supabase configurado e a função Garmin implantada (ver docs/connectors-garmin.md)."
+      },
+      "ago": {
+        "minutes": "há {{count}} min",
+        "hours": "há {{count}} h",
+        "days": "há {{count}} d"
+      },
+      "backendRequired": "Backend necessário",
+      "disconnect": "Desconectar",
+      "strava": {
+        "errorWithDetail": "Ocorreu um erro. Detalhe técnico (útil se você reportar): {{detail}}",
+        "error": "Ocorreu um erro.",
+        "caption": "Atividades ao vivo (seu Garmin já sincroniza suas sessões aqui)",
+        "status": {
+          "connected": "Conectado",
+          "pending": "Em andamento",
+          "notConnected": "Não conectado"
+        },
+        "sync": "Sincronizar",
+        "upToDate": "Já está atualizado.",
+        "imported": "{{count}} atividade(s) importada(s).",
+        "connect": "Conectar Strava",
+        "backendInfo": "Requer um backend Supabase configurado e a função Strava implantada (ver docs/connectors-strava.md)."
+      },
+      "appleHealthShortcuts": {
+        "generateError": "Não foi possível gerar.",
+        "title": "Apple Saúde (Atalhos)",
+        "caption": "HRV, FC, sono — automático, gratuito, sem build (iOS)",
+        "free": "Gratuito",
+        "regenerateToken": "Regenerar token",
+        "generateToken": "Gerar meu token",
+        "urlLabel": "URL (para usar no Atalho)",
+        "tokenLabel": "TOKEN (cabeçalho X-Supotsu-Token)",
+        "tokenHint": "Mantenha este token em segredo. Siga docs/apple-health-shortcut.md para criar o Atalho.",
+        "backendInfo": "Requer um backend Supabase configurado e a função apple-health implantada (ver docs/apple-health-shortcut.md)."
+      },
+      "renpho": {
+        "title": "Renpho (balança)",
+        "caption": "Peso, gordura corporal, massa muscular — via Apple Saúde",
+        "synced": "Sincronizado",
+        "viaAppleHealth": "Via Apple Saúde",
+        "detected": "{{count}} medição(ões) em {{days}} dia(s) detectadas da sua balança Renpho.",
+        "notConnected": "Pese-se com o app Renpho (com a sincronização do Apple Saúde ativada) e depois importe sua exportação do Apple Saúde — o peso e a composição corporal aparecerão aqui."
+      },
+      "healthKit": {
+        "noNewData": "Nenhum dado novo (autorize o acesso às categorias em Ajustes → Saúde).",
+        "imported": "Importado: {{activitiesCount}} atividade(s), {{healthCount}} dado(s) de saúde.",
+        "syncErrorWithDetail": "A sincronização não é possível no momento. Detalhe técnico (útil se você reportar): {{detail}}",
+        "syncError": "A sincronização não é possível no momento. Tente novamente mais tarde.",
+        "title": "Apple Saúde (HealthKit)",
+        "caption": "Lê diretamente do seu iPhone — sono, FC, HRV, peso, composição (até 3 anos de histórico). Uma vez autorizado, ressincroniza sozinho a cada abertura do app e em segundo plano quando o Apple Saúde recebe novos dados. Suas atividades, refeições e água registradas no Kaizen também são enviadas de volta ao Apple Saúde.",
+        "native": "Nativo iOS",
+        "iosRequired": "Requer app iOS",
+        "authorizeAndSync": "Autorizar e sincronizar",
+        "notAvailable": "Disponível no app iOS (build nativo). Na web, use o Apple Saúde via Health Auto Export abaixo."
+      },
+      "title": "Dispositivos e sensores",
+      "subtitle": "Sincronização • Conexões • Fontes",
+      "kpi": {
+        "activeSources": "Fontes ativas",
+        "healthData": "Dados de saúde",
+        "lastData": "Último dado",
+        "active": "Ativo",
+        "pending": "Pendente",
+        "status": "Estado geral"
+      },
+      "appsAndDevices": "Apps e dispositivos",
+      "capability": {
+        "activities": "Atividades",
+        "health": "Saúde"
+      },
+      "comingSoon": "Em breve",
+      "dataBySource": "Dados por fonte",
+      "dataCount": "{{count}} dado(s)",
+      "compatibility": {
+        "title": "Compatibilidade",
+        "subtitle": "Dispositivos e serviços compatíveis com o Kaizen."
+      },
+      "importFile": {
+        "title": "Importar um arquivo",
+        "description": "Centralize uma exportação Garmin / Apple Saúde (JSON). Gratuito, sem conta de terceiros.",
+        "button": "Importar um arquivo"
+      },
+      "importedHealthData": {
+        "title": "Dados de saúde importados",
+        "empty": "Ainda não há dados de saúde.",
+        "summary": "{{count}} medições (sono, HRV, frequência cardíaca…)."
+      }
+    },
+    "importHealth": {
+      "importImpossible": "Falha ao importar.",
+      "noDataRecognizedWithFailed": "Nenhum dado reconhecido ({{count}} arquivo(s) ilegível(is)).",
+      "noDataRecognized": "Nenhum dado reconhecido.",
+      "workoutsNote": ", {{count}} sessão(ões) de musculação",
+      "imported": "Importado: {{activities}} atividade(s), {{health}} dado(s) de saúde, {{sleep}} noite(s), {{records}} recorde(s){{workoutsNote}}",
+      "ignoredFilesSuffix": " ({{count}} arquivo(s) ignorado(s)).",
+      "failed": "Falha: {{message}}",
+      "title": "Importar um arquivo",
+      "subtitle": "Centralize uma exportação de saúde (Garmin, Apple Saúde…) no formato JSON do Kaizen. Nada é sobrescrito: reimportar um arquivo nunca cria duplicatas.",
+      "jsonFile": {
+        "title": "Arquivo JSON",
+        "formatsIntro": "Três formatos são reconhecidos automaticamente: a exportação do app",
+        "formatsMiddle": "(Apple Saúde → sono com fases, peso, FC em repouso, hidratação, atividades…), um arquivo",
+        "formatsEnd": "de exportação do Garmin (descompactado no app, incluindo o detalhe de peso/repetições das suas sessões de musculação para o mapa muscular), ou arquivos .json do Kaizen. Ver docs/import-format.md.",
+        "chooseFile": "Escolher um arquivo",
+        "analyzing": "Analisando arquivos do Garmin… {{done}} / {{total}}"
+      },
+      "createWorkout": {
+        "title": "Criar uma sessão a partir das suas importações",
+        "description": "Suas sessões de musculação importadas podem servir como ponto de partida para uma nova sessão — exercícios e séries pré-preenchidos, prontos para editar antes de criar.",
+        "button": "Retomar uma sessão importada"
+      }
+    },
+    "integrations": {
+      "sourceLabel": {
+        "manual": "Manual"
+      },
+      "typeLabel": {
+        "sleepDuration": "Sono",
+        "hrv": "HRV",
+        "restingHeartRate": "FC em repouso",
+        "weight": "Peso",
+        "bodyFat": "Gordura corporal",
+        "muscleMass": "Massa musc."
+      },
+      "outputBranches": {
+        "recovery": "Recuperação",
+        "sleep": "Sono",
+        "nutrition": "Nutrição",
+        "statistics": "Estatísticas",
+        "reports": "Relatórios",
+        "recommendations": "Recomendações"
+      },
+      "ago": {
+        "minutes": "há {{count}} min",
+        "hours": "há {{count}} h",
+        "days": "há {{count}} d"
+      },
+      "duplicates": {
+        "deleting": "Excluindo…",
+        "delete": "Excluir",
+        "hint": "Mantenha uma entrada por duplicata e exclua as demais."
+      },
+      "title": "Dados e integrações",
+      "subtitle": "Sincronização • Importar • Exportar",
+      "summary": {
+        "connectedSources": "Fontes conectadas",
+        "healthData": "Dados de saúde",
+        "lastSync": "Última sincronização",
+        "allWorking": "Tudo funcionando",
+        "pending": "Pendente",
+        "status": "Estado"
+      },
+      "dataFlow": {
+        "title": "Fluxo de dados",
+        "noSource": "Nenhuma fonte"
+      },
+      "sourcesHistory": {
+        "title": "Fontes e último dado"
+      },
+      "quality": {
+        "title": "Qualidade dos dados",
+        "completeness": "Completude",
+        "duplicates": "Duplicatas",
+        "noneDetected": "0 detectada(s)",
+        "detected": "{{count}} detectada(s)",
+        "missingData": "Dados ausentes",
+        "none": "Nenhum",
+        "lastWeighIn": "Última pesagem"
+      },
+      "importExport": {
+        "title": "Importar e exportar",
+        "importButton": "Importar um arquivo",
+        "exporting": "Exportando…",
+        "exported": "Exportado ✓",
+        "exportButton": "Exportar meus dados",
+        "exportError": "Falha ao exportar."
+      },
+      "addIntegration": {
+        "title": "Adicionar uma integração",
+        "manageButton": "Gerenciar dispositivos e conexões"
+      }
+    }
+  },
+  "dashboard": {
+    "customize": {
+      "title": "Personalizar o painel",
+      "subtitle": "Mantenha pressionado ☰ para mover um cartão; o interruptor o exibe ou oculta."
+    },
+    "screen": {
+      "planLabel": {
+        "tbd": "Data a definir",
+        "today": "Hoje",
+        "tomorrow": "Amanhã"
+      },
+      "recoveryBand": {
+        "excellent": {
+          "label": "Excelente",
+          "advice": "Sua recuperação está excelente. Dia ideal para uma sessão intensa."
+        },
+        "good": {
+          "label": "Boa",
+          "advice": "Boa recuperação. Uma sessão de qualidade está ao seu alcance hoje."
+        },
+        "moderate": {
+          "label": "Média",
+          "advice": "Recuperação parcial — modere a intensidade e cuide do seu sono hoje à noite."
+        },
+        "low": {
+          "label": "Baixa",
+          "advice": "Recuperação baixa — priorize o descanso, a mobilidade ou uma caminhada."
+        }
+      },
+      "sleepDuration": {
+        "hoursMinutes": "{{h}} h {{m}}"
+      },
+      "sleepDelta": {
+        "minutes": "{{m}} min"
+      },
+      "energyLevel": {
+        "high": "Alta",
+        "medium": "Média",
+        "low": "Baixa"
+      },
+      "fatigueLevel": {
+        "low": "Baixa",
+        "moderate": "Moderada",
+        "high": "Alta"
+      },
+      "loadState": {
+        "underload": "Subcarga",
+        "optimal": "Ótima",
+        "high": "Alta",
+        "risk": "Risco",
+        "uncalibrated": "A calibrar"
+      },
+      "focus": {
+        "noData": "Importe seus dados de saúde para desbloquear seu foco do dia.",
+        "label": "Foco do dia"
+      },
+      "priorities": {
+        "water": {
+          "pending": "Beber mais {{liters}} L de água",
+          "done": "Hidratação atingida"
+        },
+        "protein": {
+          "pending": "Atingir {{target}} g de proteína ({{remaining}} g restantes)",
+          "done": "Proteínas atingidas"
+        },
+        "habits": {
+          "none": "Adicionar um hábito para acompanhar",
+          "allDone": "Todos os hábitos concluídos",
+          "pending": "Concluir {{count}} hábito(s)"
+        },
+        "sleep": {
+          "value": "Sono {{duration}} (meta 7 h 45)",
+          "record": "Registre sua noite"
+        },
+        "title": "Prioridades do dia"
+      },
+      "stateCard": {
+        "title": "Estado do dia",
+        "recoveryCaption": "Recuperação",
+        "energyLabel": "Energia",
+        "loadLabel": "Carga",
+        "fatigueLabel": "Fadiga",
+        "noData": "Sem dados de recuperação para hoje."
+      },
+      "kpis": {
+        "sleep": "Sono",
+        "hrv": "HRV",
+        "restingHr": "FC em repouso",
+        "weightKg": "Peso (kg)",
+        "kcalDeficit": "Déficit kcal",
+        "stepsGoal": "/ {{goal}} passos"
+      },
+      "nextSession": {
+        "planningLink": "Planejamento ›",
+        "title": "Próxima sessão",
+        "planTitle": "Planeje sua próxima sessão",
+        "loadHint": "Carga {{load}} · ajuste a intensidade",
+        "chooseFocus": "Escolha um foco de acordo com sua recuperação",
+        "viewPlanning": "Ver planejamento ›",
+        "createSession": "Criar uma sessão ›"
+      },
+      "body": {
+        "seeMore": "Ver mais ›",
+        "title": "Corpo e recuperação",
+        "weight": "Peso",
+        "bodyFat": "Gordura corporal",
+        "muscleMass": "Massa muscular",
+        "weeklyChange": "Variação em 7 dias"
+      },
+      "nutritionCard": {
+        "open": "Abrir ›",
+        "title": "Nutrição",
+        "deficit": "Déficit",
+        "protein": "Proteínas",
+        "hydration": "Hidratação"
+      },
+      "habitsCard": {
+        "seeMore": "Ver mais ›",
+        "title": "Hábitos",
+        "today": "Hoje",
+        "streak": "Sequência ativa",
+        "thisWeek": "Esta semana"
+      },
+      "trends": {
+        "last30Days": "30 dias",
+        "title": "Tendências",
+        "weight": "Peso",
+        "recovery": "Recuperação",
+        "hrv": "HRV"
+      },
+      "analysis": {
+        "title": "Análise do dia",
+        "hrvImproving": "Seu HRV está melhorando — bom sinal de recuperação.",
+        "noData": "Adicione dados (sono, HRV, atividades) para uma análise personalizada."
+      },
+      "badges": {
+        "seeAll": "Ver tudo ›",
+        "title": "Emblemas recentes"
+      },
+      "quickLinks": {
+        "title": "Acessos rápidos",
+        "meals": "Refeições",
+        "workout": "Sessão",
+        "weighIn": "Pesagem",
+        "habit": "Hábito",
+        "goal": "Objetivo",
+        "sleep": "Sono",
+        "coach": "Coach IA",
+        "stats": "Estatísticas"
+      },
+      "header": {
+        "greetingWithName": "Olá {{name}}",
+        "greeting": "Olá",
+        "tagline": "A excelência se constrói hoje."
+      },
+      "score": {
+        "title": "PONTUAÇÃO KAIZEN",
+        "summary": "{{band}} · Esporte, recuperação, sono e nutrição combinados.",
+        "noData": "Adicione uma atividade ou um dado de saúde para calibrar sua pontuação.",
+        "pillars": {
+          "sport": "Esporte",
+          "recovery": "Recuperação",
+          "sleep": "Sono",
+          "nutrition": "Nutrição"
+        }
+      }
+    },
+    "muscleWidget": {
+      "title": "Músculos",
+      "noRecentSessions": "Nenhuma sessão recente."
+    },
+    "nutritionWidget": {
+      "macroValue": "{{value}}G / {{target}}G",
+      "title": "NUTRIÇÃO",
+      "remaining": "Faltam {{kcal}} kcal",
+      "exceeded": "Excedido em {{kcal}} kcal",
+      "kcalCaption": "KCAL",
+      "protein": "Proteínas",
+      "carbs": "Carboidratos",
+      "fat": "Gorduras",
+      "targetsEstimated": "Metas estimadas — informe seu peso para personalizá-las."
+    },
+    "weightWidget": {
+      "title": "Peso",
+      "noData": "Ainda não há pesagem. Conecte uma balança ou importe seus dados.",
+      "weeklyDelta": "{{value}} kg esta semana"
+    }
+  },
+  "dataquality": {
+    "screen": {
+      "metricLabel": {
+        "sleep_duration": "Duração do sono",
+        "sleep_efficiency": "Eficiência do sono",
+        "resting_heart_rate": "FC em repouso",
+        "hrv": "VFC (HRV)",
+        "stress": "Estresse",
+        "weight": "Peso",
+        "body_fat": "Gordura corporal",
+        "muscle_mass": "Massa muscular",
+        "hydration": "Hidratação",
+        "steps": "Passos"
+      },
+      "sourceLabel": {
+        "manual": "Entrada manual",
+        "apple_health": "Apple Saúde",
+        "garmin": "Garmin",
+        "strava": "Strava",
+        "renpho": "Renpho",
+        "polar": "Polar",
+        "coros": "Coros",
+        "fitbit": "Fitbit",
+        "oura": "Oura",
+        "withings": "Withings",
+        "phone": "Telefone (estimado)",
+        "supotsu": "Calculado pela SUPOTSU"
+      },
+      "reliabilityLabel": {
+        "high": "Confiável",
+        "medium": "Média",
+        "low": "A confirmar"
+      },
+      "freshnessLabel": {
+        "aJour": "atualizado",
+        "recent": "recente",
+        "ancien": "antigo",
+        "obsolete": "desatualizado"
+      },
+      "title": "Qualidade dos dados",
+      "subtitle": "De onde vêm seus dados, sua confiabilidade e sua atualidade — nada é uma caixa-preta.",
+      "emptyState": {
+        "title": "Nenhum dado para avaliar",
+        "message": "Conecte um dispositivo ou importe uma exportação para ver a procedência e a confiabilidade dos seus dados.",
+        "actionLabel": "Meus dispositivos"
+      },
+      "qualityIndex": "Índice de qualidade geral",
+      "provenanceHeading": "Procedência por medição",
+      "consistencyHeading": "Consistência das atividades",
+      "consistencyOk": "Todas as suas atividades parecem consistentes ✅",
+      "consistencyNone": "Nenhuma atividade para verificar no momento.",
+      "consistencyNote": "Esses dados são mantidos, nunca excluídos — apenas sinalizados."
+    }
+  },
+  "notifications": {
+    "screen": {
+      "relative": {
+        "today": "Hoje",
+        "yesterday": "Ontem",
+        "daysAgo": "Há {{count}} d"
+      },
+      "groups": {
+        "important": "⚡ Importantes · ação necessária",
+        "sante": "❤️ Saúde",
+        "nutrition": "🍽 Nutrição",
+        "entrainement": "💪 Treinos",
+        "succes": "🏆 Conquistas",
+        "appareils": "⌚ Dispositivos"
+      },
+      "notifs": {
+        "habitSingular": "Hábito a concluir: {{name}}",
+        "habitPlural": "{{count}} hábitos a concluir",
+        "actions": {
+          "validate": "Concluir",
+          "addMeal": "Adicionar uma refeição",
+          "hydration": "Hidratação"
+        },
+        "proteinLeft": "Faltam {{amount}} g de proteína hoje.",
+        "waterLeft": "Faltam {{amount}} L de água para beber.",
+        "kcalLeft": "Faltam {{amount}} kcal antes da sua meta.",
+        "bandExcellent": "excelente",
+        "bandGood": "boa",
+        "recoveryScore": "Recovery Score: {{value}} — {{band}}.",
+        "trendUp": "em alta",
+        "trendDown": "em queda",
+        "hrvTrend": "Seu HRV está {{direction}} {{pct}} % em relação à sua média.",
+        "rhrAboveAvg": "FC em repouso acima da sua média (+{{diff}} bpm).",
+        "bedtimeOptimal": "Horário ideal para dormir: {{window}}.",
+        "sleepRecorded": "Noite registrada: {{duration}} de sono.",
+        "record": "Recorde: {{label}} — {{value}} {{unit}}.",
+        "habitsAllDone": "Todos os seus hábitos de hoje foram concluídos!",
+        "renphoWeight": "Nova pesagem Renpho detectada · {{value}} kg."
+      },
+      "title": "Notificações",
+      "subtitle": "Hoje • Prioridades • Histórico",
+      "markAllRead": "Marcar tudo como lido",
+      "priority": {
+        "label": "Prioridade do dia",
+        "recoveryExcellentTitle": "Recuperação excelente",
+        "recoveryGoodTitle": "Boa recuperação",
+        "recoveryWatchTitle": "Recuperação a observar",
+        "scoreLine": "Seu Recovery Score é {{value}} %.",
+        "adviceHigh": "Uma sessão intensa é recomendada hoje.",
+        "adviceLow": "Priorize uma sessão leve e um bom sono.",
+        "seeRecommendations": "Ver recomendações"
+      },
+      "emptyState": {
+        "cleared": {
+          "title": "Tudo em dia"
+        },
+        "empty": {
+          "title": "Nada novo"
+        },
+        "message": "Seus alertas são gerados a partir dos seus dados (recuperação, nutrição, recordes, sono, hábitos, dispositivos)."
+      }
+    }
+  },
+  "security": {
+    "biometricGate": {
+      "promptMessage": "Desbloqueie o Kaizen Supotsu",
+      "locked": {
+        "message": "O Kaizen Supotsu está bloqueado. Desbloqueie com Face ID / Touch ID para continuar."
+      },
+      "unlockButton": "Desbloquear"
+    }
+  },
+  "settings": {
+    "profileEdit": {
+      "sex": {
+        "options": {
+          "female": "Feminino",
+          "male": "Masculino",
+          "unspecified": "Não especificado"
+        },
+        "label": "SEXO"
+      },
+      "level": {
+        "options": {
+          "beginner": "Iniciante",
+          "intermediate": "Intermediário",
+          "confirmed": "Confirmado",
+          "advanced": "Avançado"
+        },
+        "label": "NÍVEL"
+      },
+      "title": "Meu perfil",
+      "subtitle": "Essas informações refinam suas pontuações e recomendações.",
+      "height": {
+        "label": "Altura (cm)"
+      },
+      "weight": {
+        "label": "Peso (kg)"
+      },
+      "availability": {
+        "label": "Disponibilidade (sessões / semana)"
+      },
+      "saving": "Salvando…"
+    },
+    "screen": {
+      "preferences": {
+        "units": {
+          "options": {
+            "metric": "Métrico (kg, km)",
+            "imperial": "Imperial (lb, mi)"
+          },
+          "label": "Unidades"
+        },
+        "theme": {
+          "options": {
+            "dark": "Escuro",
+            "light": "Claro",
+            "system": "Automático"
+          },
+          "label": "Tema",
+          "activeDark": "Ativo: escuro",
+          "activeLight": "Ativo: claro"
+        },
+        "timeFormat": {
+          "options": {
+            "24h": "24 h",
+            "12h": "12 h"
+          },
+          "label": "Formato de hora"
+        },
+        "languageOptions": {
+          "auto": "Automático (telefone)",
+          "fr": "Français",
+          "en": "English",
+          "es": "Español",
+          "pt": "Português",
+          "de": "Deutsch"
+        },
+        "languageLabel": "Idioma",
+        "dailyStepsGoal": {
+          "label": "Meta diária de passos"
+        },
+        "haptics": "Retorno háptico"
+      },
+      "dangerZone": {
+        "deleteError": "Não foi possível excluir.",
+        "confirm": {
+          "title": "Excluir sua conta permanentemente?",
+          "message": "Todos os seus dados — sessões, saúde, sono, nutrição, objetivos — serão excluídos imediatamente e de forma irreversível.",
+          "confirmButton": "Excluir"
+        },
+        "deleteAccount": {
+          "titleBusy": "Excluindo…",
+          "titleIdle": "Excluir minha conta",
+          "subtitle": "Irreversível — todos os seus dados são apagados imediatamente."
+        }
+      },
+      "title": "Ajustes",
+      "subtitle": "Preferências • Conta • Segurança",
+      "groups": {
+        "account": "CONTA",
+        "preferences": "PREFERÊNCIAS",
+        "notifications": "NOTIFICAÇÕES",
+        "privacy": "PRIVACIDADE E DADOS",
+        "security": "SEGURANÇA",
+        "dangerZone": "ZONA DE PERIGO",
+        "help": "AJUDA",
+        "about": "SOBRE"
+      },
+      "account": {
+        "profile": {
+          "title": "Perfil esportivo",
+          "subtitle": "Peso, altura, nível, disponibilidade"
+        },
+        "subscription": {
+          "title": "Assinatura",
+          "badge": "Grátis"
+        }
+      },
+      "notifications": {
+        "dailyBriefing": "Resumo diário",
+        "reminders": "Lembretes (hábitos, check-ins)",
+        "configureByCategory": "Configurar por categoria"
+      },
+      "privacy": {
+        "export": {
+          "titleWorking": "Exportação em andamento…",
+          "titleIdle": "Exportar meus dados (JSON)",
+          "subtitle": "Todos os seus dados, formato RGPD"
+        },
+        "dataQuality": "Qualidade e procedência",
+        "aiConsent": "Consentimento para análises com IA",
+        "exportReadyDownloaded": "Exportação pronta (baixada).",
+        "exportReadyShared": "Exportação pronta (compartilhada).",
+        "exportError": "A exportação falhou. Tente novamente."
+      },
+      "security": {
+        "biometricLock": "Bloqueio biométrico",
+        "biometricUnavailable": "Nenhum Face ID / Touch ID configurado neste dispositivo",
+        "signOut": "Sair"
+      },
+      "help": {
+        "title": "Ajuda e suporte",
+        "subtitle": "FAQ, guias, diagnóstico, contato"
+      },
+      "about": {
+        "version": "Versão",
+        "terms": "Termos de uso",
+        "privacyPolicy": "Política de privacidade"
+      },
+      "demoModeNotice": "Modo demo: seus dados permanecem neste dispositivo."
+    }
+  },
+  "support": {
+    "screen": {
+      "quickAccess": {
+        "device": "Configurar um dispositivo",
+        "sync": "Problema de sincronização",
+        "workout": "Adicionar um treino",
+        "nutrition": "Usar a nutrição",
+        "health": "Entender meus dados de saúde",
+        "settings": "Ajustes",
+        "title": "Acessos rápidos"
+      },
+      "guides": {
+        "level": {
+          "beginner": "Iniciante",
+          "intermediate": "Intermediário"
+        },
+        "firstSteps": {
+          "title": "Primeiros passos com o Kaizen",
+          "step1": "Crie sua conta e preencha seu perfil (peso, altura, objetivo).",
+          "step2": "Conecte uma fonte de dados (Apple Saúde, Garmin ou Renpho).",
+          "step3": "Defina um objetivo principal em Objetivos — ele personaliza todo o app."
+        },
+        "appleHealth": {
+          "title": "Configurar o Apple Saúde (Health Auto Export)",
+          "step1": "Instale o Health Auto Export no iPhone.",
+          "step2": "Perfil → Dispositivos → Apple Saúde → gere seu token.",
+          "step3": "No HAE: Automações → REST API, cole a URL (com o token incluído), método POST, formato JSON.",
+          "step4": "Marque sono, FC em repouso, peso… depois execute uma vez para verificar."
+        },
+        "garmin": {
+          "title": "Conectar o Garmin",
+          "step1": "Perfil → Dispositivos → Garmin → Conectar.",
+          "step2": "Autorize o acesso na janela do Garmin Connect.",
+          "step3": "Suas atividades e dados de saúde (sono, HRV, FC) são sincronizados."
+        },
+        "renpho": {
+          "title": "Configurar o Renpho",
+          "step1": "Ative a sincronização com o Apple Saúde no app Renpho.",
+          "step2": "Pese-se: peso, gordura e massa muscular vão para o Apple Saúde.",
+          "step3": "O Kaizen os recolhe via Health Auto Export, fonte “Renpho”."
+        },
+        "deficit": {
+          "title": "Acompanhar seu déficit calórico",
+          "step1": "Abra Diário e déficit.",
+          "step2": "Adicione suas refeições (busca, entrada manual).",
+          "step3": "Ajuste suas metas de kcal/macros em Nutrição se necessário."
+        },
+        "recovery": {
+          "title": "Entender o Recovery Score",
+          "step1": "A pontuação combina sono, HRV e FC em repouso em relação às suas médias.",
+          "step2": "Quanto mais alta, mais preparado você está para uma sessão intensa.",
+          "step3": "Sem HRV (o Garmin não a envia ao Saúde), ela se baseia principalmente no sono."
+        },
+        "title": "Guias interativos"
+      },
+      "faq": {
+        "sleep": {
+          "q": "Por que meu sono não aparece?",
+          "a": "Verifique se sua fonte está enviando as noites: Apple Saúde via Health Auto Export (marque “Sleep Analysis”) ou uma exportação do Garmin. Na tela de Sono, a qualidade aparece assim que uma noite é recebida, seja qual for a fonte."
+        },
+        "hrv": {
+          "q": "Por que meu HRV está vazio?",
+          "a": "O Garmin não envia o HRV para o Apple Saúde — nenhum app de terceiros pode voltar a compartilhá-lo. Para o HRV, use a importação de uma exportação do Garmin."
+        },
+        "garmin": {
+          "q": "Como conecto o Garmin?",
+          "a": "Perfil → Dispositivos → Garmin → Conectar, depois autorize o acesso no Garmin Connect. Requer que o backend esteja implantado."
+        },
+        "kaizenScore": {
+          "q": "Como funciona o Score Kaizen?",
+          "a": "É uma leitura composta da sua forma: recuperação, sono, carga de treino e regularidade. Cada componente é explicável e exibido separadamente — nunca um número opaco."
+        },
+        "deficit": {
+          "q": "Como calculo meu déficit calórico?",
+          "a": "Déficit = meta calórica − calorias consumidas. O Kaizen estima sua meta a partir do seu peso, mas você pode ajustá-la manualmente em Nutrição (kcal, proteínas, água)."
+        },
+        "export": {
+          "q": "Como exporto meus dados?",
+          "a": "Ajustes → Privacidade → Exportar meus dados (JSON, formato RGPD). Você também pode fazer isso em Dados e integrações."
+        },
+        "title": "Perguntas frequentes"
+      },
+      "services": {
+        "garminApi": "API do Garmin",
+        "appleHealth": "Apple Saúde",
+        "renpho": "Renpho",
+        "kaizenServers": "Servidores Kaizen",
+        "sync": "Sincronização",
+        "title": "Status dos serviços",
+        "operational": "Operacional"
+      },
+      "changelog": {
+        "v23": {
+          "item1": "Telas de saúde detalhadas (HRV, FC em repouso, estresse, VO2).",
+          "item2": "Fotos de evolução antes/depois.",
+          "item3": "Navegação por dia no calendário."
+        },
+        "v22": {
+          "item1": "Metas de nutrição ajustáveis (kcal/macros/água).",
+          "item2": "Tela dedicada de hábitos e disciplina.",
+          "item3": "Silhueta muscular anatômica precisa."
+        },
+        "v21": {
+          "item1": "Reconstrução premium de todas as telas.",
+          "item2": "Biblioteca com 873 exercícios.",
+          "item3": "Importação do Apple Saúde via Health Auto Export."
+        },
+        "title": "Novidades",
+        "version": "Versão {{version}}"
+      },
+      "resources": {
+        "community": "Comunidade",
+        "title": "Recursos"
+      },
+      "techInfo": {
+        "version": "Versão do Kaizen",
+        "platform": "Plataforma",
+        "osVersion": "Versão do SO",
+        "healthData": "Dados de saúde",
+        "healthDataValue": "{{count}} medições",
+        "lastSync": "Última sincronização",
+        "installId": "ID de instalação",
+        "title": "Informações técnicas",
+        "copied": "Copiado ✓",
+        "copy": "Copiar"
+      },
+      "diagnostic": {
+        "items": {
+          "internet": "Conexão com a internet",
+          "server": "Servidor Kaizen (Supabase)",
+          "appVersion": "Versão do app",
+          "healthData": "Dados de saúde presentes",
+          "recentSync": "Sincronização recente"
+        },
+        "title": "Diagnóstico automático",
+        "description": "O Kaizen verifica sua conexão, o servidor, seus dados e a sincronização.",
+        "run": "Executar diagnóstico",
+        "status": {
+          "idle": "…",
+          "ok": "OK",
+          "warn": "A verificar"
+        }
+      },
+      "contact": {
+        "defaultBugSubject": "Bug reportado",
+        "defaultIdeaSubject": "Ideia proposta",
+        "ticketPrefixBug": "Bug",
+        "ticketPrefixIdea": "Ideia",
+        "title": "Contatar o suporte",
+        "placeholder": "Descreva seu problema ou sua ideia…",
+        "reportBug": "🐞 Reportar um bug",
+        "proposeIdea": "💡 Propor uma ideia",
+        "email": "📧 E-mail",
+        "emailSubject": "Solicitação de suporte Kaizen",
+        "helpCenter": "🌐 Central de ajuda"
+      },
+      "tickets": {
+        "status": {
+          "open": "Aberto",
+          "inProgress": "Em andamento",
+          "waiting": "Aguardando",
+          "resolved": "Resolvido"
+        },
+        "title": "Minhas solicitações",
+        "reopen": "Reabrir"
+      },
+      "title": "Ajuda e suporte",
+      "subtitle": "FAQ • Assistência • Contato",
+      "helpCard": {
+        "title": "Como podemos te ajudar?",
+        "searchPlaceholder": "Busque uma pergunta ou um problema…"
+      },
+      "actions": {
+        "title": "Ações",
+        "support": "📩 Suporte",
+        "rate": "⭐ Avaliar o app",
+        "privacy": "📄 Privacidade",
+        "terms": "⚖ Termos"
+      }
+    }
   }
 }

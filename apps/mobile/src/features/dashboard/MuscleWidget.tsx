@@ -1,6 +1,7 @@
 import React, { useMemo } from 'react';
 import { Pressable, View } from 'react-native';
 import { useRouter } from 'expo-router';
+import { useTranslation } from 'react-i18next';
 import { Card, Meter, Text, useTheme } from '@supotsu/ui';
 import { spacing } from '@supotsu/design-system';
 import type { MuscleGroup } from '@supotsu/core';
@@ -22,6 +23,7 @@ const MUSCLE_LABEL: Partial<Record<MuscleGroup, string>> = {
 
 /** Muscle recovery widget: overall readiness + the two most-recently worked groups. */
 export function MuscleWidget(): React.JSX.Element {
+  const { t } = useTranslation();
   const router = useRouter();
   const { colors } = useTheme();
   const { data: sessions = [] } = useMuscleSessions();
@@ -55,14 +57,14 @@ export function MuscleWidget(): React.JSX.Element {
     <Pressable onPress={() => router.push('/sport/muscles')} style={{ flex: 1 }}>
       <Card>
         <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'baseline' }}>
-          <Text variant="heading">Muscles</Text>
+          <Text variant="heading">{t('dashboard.muscleWidget.title')}</Text>
           <Text variant="subtitle" color="accentLime">
             {readiness}%
           </Text>
         </View>
         {worked.length === 0 ? (
           <Text variant="caption" color="textMuted" style={{ marginTop: spacing[1] }}>
-            Aucune séance récente.
+            {t('dashboard.muscleWidget.noRecentSessions')}
           </Text>
         ) : (
           <View style={{ gap: spacing[2], marginTop: spacing[2] }}>

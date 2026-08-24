@@ -3,6 +3,8 @@ import { Platform, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import * as DocumentPicker from 'expo-document-picker';
 import { strFromU8, unzipSync } from 'fflate';
+import { useTranslation } from 'react-i18next';
+import type { TFunction } from 'i18next';
 import { Badge, Button, Card, Screen, Text } from '@supotsu/ui';
 import { spacing } from '@supotsu/design-system';
 import { parseGarminFitWorkoutsBatch, parseImportFile, type ImportedWorkout } from '@supotsu/connectors';
@@ -17,13 +19,13 @@ import { readFileBytes } from '@/lib/fileBytes';
  * a browser localStorage quota error is a DOMException, which doesn't extend
  * Error either. Both still carry a string `.message`.
  */
-function errorMessage(e: unknown): string {
+function errorMessage(e: unknown, t: TFunction): string {
   if (e instanceof Error) return e.message;
   if (typeof e === 'string') return e;
   if (typeof e === 'object' && e !== null && 'message' in e && typeof e.message === 'string') {
     return e.message;
   }
-  return 'Import impossible.';
+  return t('connectors.importHealth.importImpossible');
 }
 
 /** Read a picked file's text, cross-platform (web blob vs native file uri). */
@@ -43,6 +45,7 @@ async function readFileText(uri: string): Promise<string> {
  * what's new.
  */
 export function ImportHealthScreen(): React.JSX.Element {
+  const { t } = useTranslation();
   const router = useRouter();
   const importHealth = useImportHealth();
   const [status, setStatus] = useState<{ tone: 'info' | 'success' | 'error'; text: string } | null>(
@@ -140,7 +143,9 @@ export function ImportHealthScreen(): React.JSX.Element {
       if (activities.length + healthMetrics.length + records.length + sleepSessions.length + workouts.length === 0) {
         setStatus({
           tone: 'error',
-          text: failed > 0 ? `Aucune donnée reconnue (${failed} fichier(s) illisible(s)).` : 'Aucune donnée reconnue.',
+          text: failed > 0
+            ? t('connectors.importHealth.noDataRecognizedWithFailed', { count: failed })
+            : t('connectors.importHealth.noDataRecognized'),
         });
         return;
       }
@@ -149,17 +154,22 @@ export function ImportHealthScreen(): React.JSX.Element {
       // an overlapping export, where most rows are legitimate no-op dupes),
       // and the message should reflect what's actually in the database.
       const persisted = await importHealth.mutateAsync({ activities, healthMetrics, records, sleepSessions, workouts });
-      const workoutsNote = persisted.workouts > 0 ? `, ${persisted.workouts} séance(s) musculation` : '';
+      const workoutsNote = persisted.workouts > 0 ? t('connectors.importHealth.workoutsNote', { count: persisted.workouts }) : '';
       setImportedWorkouts(persisted.workouts);
+      const base = t('connectors.importHealth.imported', {
+        activities: persisted.activities,
+        health: persisted.health,
+        sleep: persisted.sleep,
+        records: records.length,
+        workoutsNote,
+      });
+      const suffix = failed > 0 ? t('connectors.importHealth.ignoredFilesSuffix', { count: failed }) : '.';
       setStatus({
         tone: 'success',
-        text:
-          `Importé : ${persisted.activities} activité(s), ${persisted.health} donnée(s) santé, ` +
-          `${persisted.sleep} nuit(s), ${records.length} record(s)${workoutsNote}` +
-          (failed > 0 ? ` (${failed} fichier(s) ignoré(s)).` : '.'),
+        text: base + suffix,
       });
     } catch (e) {
-      setStatus({ tone: 'error', text: `Échec : ${errorMessage(e)}` });
+      setStatus({ tone: 'error', text: t('connectors.importHealth.failed', { message: errorMessage(e, t) }) });
     } finally {
       setBusy(false);
       setProgress(null);
@@ -168,28 +178,25 @@ export function ImportHealthScreen(): React.JSX.Element {
 
   return (
     <Screen scroll>
-      <Text variant="title">Importer un fichier</Text>
+      <Text variant="title">{t('connectors.importHealth.title')}</Text>
       <Text variant="caption" color="textMuted">
-        Centralise un export santé (Garmin, Apple Santé…) au format JSON Kaizen. Rien n'est
-        écrasé : réimporter un fichier ne crée aucun doublon.
+        {t('connectors.importHealth.subtitle')}
       </Text>
 
       <Card>
-        <Text variant="heading">Fichier JSON</Text>
+        <Text variant="heading">{t('connectors.importHealth.jsonFile.title')}</Text>
         <Text variant="body" color="textMuted">
-          Trois formats reconnus automatiquement : l'export de l'app{' '}
-          <Text variant="body">Health Auto Export</Text> (Apple Santé → sommeil avec phases,
-          poids, FC repos, hydratation, activités…), l'archive <Text variant="body">.zip</Text>{' '}
-          d'un export Garmin (dézippée dans l'app, y compris le détail poids/répétitions de tes
-          séances de musculation pour la carte musculaire), ou des .json Kaizen. Voir
-          docs/import-format.md.
+          {t('connectors.importHealth.jsonFile.formatsIntro')}{' '}
+          <Text variant="body">Health Auto Export</Text> {t('connectors.importHealth.jsonFile.formatsMiddle')}{' '}
+          <Text variant="body">.zip</Text>{' '}
+          {t('connectors.importHealth.jsonFile.formatsEnd')}
         </Text>
         <View style={{ alignItems: 'flex-start', marginTop: spacing[2] }}>
-          <Button label={busy ? '…' : 'Choisir un fichier'} onPress={pickAndImport} disabled={busy} />
+          <Button label={busy ? '…' : t('connectors.importHealth.jsonFile.chooseFile')} onPress={pickAndImport} disabled={busy} />
         </View>
         {progress ? (
           <Text variant="caption" color="textMuted" style={{ marginTop: spacing[2] }}>
-            Analyse des fichiers Garmin… {progress.done} / {progress.total}
+            {t('connectors.importHealth.jsonFile.analyzing', { done: progress.done, total: progress.total })}
           </Text>
         ) : null}
       </Card>
@@ -198,19 +205,18 @@ export function ImportHealthScreen(): React.JSX.Element {
 
       {importedWorkouts > 0 ? (
         <Card>
-          <Text variant="heading">Créer une séance à partir de tes imports</Text>
+          <Text variant="heading">{t('connectors.importHealth.createWorkout.title')}</Text>
           <Text variant="body" color="textMuted">
-            Tes séances de musculation importées peuvent servir de point de départ pour une
-            nouvelle séance — exercices et séries préremplis, à modifier avant de créer.
+            {t('connectors.importHealth.createWorkout.description')}
           </Text>
           <View style={{ alignItems: 'flex-start', marginTop: spacing[2] }}>
-            <Button label="Reprendre une séance importée" onPress={() => router.push('/sport/workout/new?openPicker=1')} />
+            <Button label={t('connectors.importHealth.createWorkout.button')} onPress={() => router.push('/sport/workout/new?openPicker=1')} />
           </View>
         </Card>
       ) : null}
 
       <View style={{ alignItems: 'flex-start' }}>
-        <Button label="Retour" variant="secondary" onPress={() => router.back()} />
+        <Button label={t('common.back')} variant="secondary" onPress={() => router.back()} />
       </View>
     </Screen>
   );

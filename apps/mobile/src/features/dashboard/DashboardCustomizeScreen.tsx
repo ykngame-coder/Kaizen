@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Pressable, View } from 'react-native';
 import DraggableFlatList, { type RenderItemParams } from 'react-native-draggable-flatlist';
 import { useRouter } from 'expo-router';
+import { useTranslation } from 'react-i18next';
 import { Button, Screen, Text, Toggle, useTheme } from '@supotsu/ui';
 import { radii, spacing } from '@supotsu/design-system';
 import type { DashboardCardPref } from '@/lib/preferences';
@@ -20,6 +21,7 @@ const LABEL_BY_ID = new Map(DASHBOARD_CARD_DEFS.map((d) => [d.id, d.label]));
  * driving the list's own drag detection.
  */
 export function DashboardCustomizeScreen(): React.JSX.Element {
+  const { t } = useTranslation();
   const router = useRouter();
   const { colors } = useTheme();
   const { preferences, setPreference } = usePreferences();
@@ -34,9 +36,9 @@ export function DashboardCustomizeScreen(): React.JSX.Element {
 
   return (
     <Screen>
-      <Text variant="title">Personnaliser le dashboard</Text>
+      <Text variant="title">{t('dashboard.customize.title')}</Text>
       <Text variant="caption" color="textMuted" style={{ marginTop: 2 }}>
-        Reste appuyé sur ☰ pour déplacer une card ; l'interrupteur l'affiche ou la masque.
+        {t('dashboard.customize.subtitle')}
       </Text>
 
       <View style={{ flex: 1, marginTop: spacing[4] }}>
@@ -71,7 +73,7 @@ export function DashboardCustomizeScreen(): React.JSX.Element {
       </View>
 
       <View style={{ alignItems: 'flex-start', marginTop: spacing[2] }}>
-        <Button label="Retour" variant="secondary" onPress={() => router.back()} />
+        <Button label={t('common.back')} variant="secondary" onPress={() => router.back()} />
       </View>
     </Screen>
   );

@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { View } from 'react-native';
 import { useRouter } from 'expo-router';
+import { useTranslation } from 'react-i18next';
 import { Button, Card, Input, Screen, SegmentedControl, Text } from '@supotsu/ui';
 import { spacing } from '@supotsu/design-system';
 import type { AthleteProfileInput } from '@supotsu/shared';
@@ -9,18 +10,6 @@ import { useAthleteProfile, useSaveAthleteProfile } from '@/lib/data/queries';
 type Sex = AthleteProfileInput['sex'];
 type Level = AthleteProfileInput['level'];
 
-const SEX_OPTIONS: { value: Sex; label: string }[] = [
-  { value: 'female', label: 'Femme' },
-  { value: 'male', label: 'Homme' },
-  { value: 'unspecified', label: 'Non précisé' },
-];
-const LEVEL_OPTIONS: { value: Level; label: string }[] = [
-  { value: 'beginner', label: 'Débutant' },
-  { value: 'intermediate', label: 'Intermédiaire' },
-  { value: 'confirmed', label: 'Confirmé' },
-  { value: 'advanced', label: 'Avancé' },
-];
-
 const numOrUndef = (s: string): number | undefined => {
   const n = Number(s.replace(',', '.'));
   return Number.isFinite(n) && s.trim() !== '' ? n : undefined;
@@ -28,9 +17,22 @@ const numOrUndef = (s: string): number | undefined => {
 
 /** Edit the athlete profile (Master Prompt P17 profil). */
 export function ProfileEditScreen(): React.JSX.Element {
+  const { t } = useTranslation();
   const router = useRouter();
   const { data: profile, isLoading } = useAthleteProfile();
   const save = useSaveAthleteProfile();
+
+  const SEX_OPTIONS: { value: Sex; label: string }[] = [
+    { value: 'female', label: t('settings.profileEdit.sex.options.female') },
+    { value: 'male', label: t('settings.profileEdit.sex.options.male') },
+    { value: 'unspecified', label: t('settings.profileEdit.sex.options.unspecified') },
+  ];
+  const LEVEL_OPTIONS: { value: Level; label: string }[] = [
+    { value: 'beginner', label: t('settings.profileEdit.level.options.beginner') },
+    { value: 'intermediate', label: t('settings.profileEdit.level.options.intermediate') },
+    { value: 'confirmed', label: t('settings.profileEdit.level.options.confirmed') },
+    { value: 'advanced', label: t('settings.profileEdit.level.options.advanced') },
+  ];
 
   const [sex, setSex] = useState<Sex>('unspecified');
   const [level, setLevel] = useState<Level>('beginner');
@@ -63,54 +65,54 @@ export function ProfileEditScreen(): React.JSX.Element {
 
   return (
     <Screen scroll>
-      <Text variant="title">Mon profil</Text>
+      <Text variant="title">{t('settings.profileEdit.title')}</Text>
       <Text variant="caption" color="textMuted">
-        Ces informations affinent tes scores et recommandations.
+        {t('settings.profileEdit.subtitle')}
       </Text>
 
       {isLoading ? (
         <Text variant="body" color="textMuted">
-          Chargement…
+          {t('common.loading')}
         </Text>
       ) : (
         <Card>
           <View style={{ gap: spacing[3] }}>
             <View style={{ gap: spacing[1] }}>
               <Text variant="label" color="textMuted">
-                SEXE
+                {t('settings.profileEdit.sex.label')}
               </Text>
               <SegmentedControl options={SEX_OPTIONS} value={sex} onChange={setSex} />
             </View>
             <View style={{ gap: spacing[1] }}>
               <Text variant="label" color="textMuted">
-                NIVEAU
+                {t('settings.profileEdit.level.label')}
               </Text>
               <SegmentedControl options={LEVEL_OPTIONS} value={level} onChange={setLevel} />
             </View>
             <View style={{ flexDirection: 'row', gap: spacing[2] }}>
               <View style={{ flex: 1 }}>
-                <Input label="Taille (cm)" placeholder="178" value={height} onChangeText={setHeight} keyboardType="numeric" />
+                <Input label={t('settings.profileEdit.height.label')} placeholder="178" value={height} onChangeText={setHeight} keyboardType="numeric" />
               </View>
               <View style={{ flex: 1 }}>
-                <Input label="Poids (kg)" placeholder="75" value={weight} onChangeText={setWeight} keyboardType="numeric" />
+                <Input label={t('settings.profileEdit.weight.label')} placeholder="75" value={weight} onChangeText={setWeight} keyboardType="numeric" />
               </View>
             </View>
             <Input
-              label="Disponibilité (séances / semaine)"
+              label={t('settings.profileEdit.availability.label')}
               placeholder="4"
               value={availability}
               onChangeText={setAvailability}
               keyboardType="numeric"
             />
             <View style={{ alignItems: 'flex-start' }}>
-              <Button label={save.isPending ? 'Enregistrement…' : 'Enregistrer'} onPress={onSave} />
+              <Button label={save.isPending ? t('settings.profileEdit.saving') : t('common.save')} onPress={onSave} />
             </View>
           </View>
         </Card>
       )}
 
       <View style={{ alignItems: 'flex-start' }}>
-        <Button label="Annuler" variant="secondary" onPress={() => router.back()} />
+        <Button label={t('common.cancel')} variant="secondary" onPress={() => router.back()} />
       </View>
     </Screen>
   );

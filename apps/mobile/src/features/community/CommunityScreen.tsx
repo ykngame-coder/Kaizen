@@ -43,12 +43,12 @@ function ChallengeCard({
       <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
         <Text variant="subtitle">{challenge.title}</Text>
         <Badge
-          label={challenge.metric === 'active_days' ? 'Jours actifs' : 'Activités'}
+          label={challenge.metric === 'active_days' ? t('community.screen.card.metricActiveDays') : t('community.screen.card.metricActivities')}
           tone="info"
         />
       </View>
       <Text variant="caption" color="textMuted">
-        Objectif : {challenge.target} · {joined ? 'Tu participes' : 'Ouvert'}
+        {t('community.screen.card.objective', { target: challenge.target, status: joined ? t('community.screen.card.joined') : t('community.screen.card.open') })}
       </Text>
 
       {joined ? (
@@ -60,7 +60,7 @@ function ChallengeCard({
           {ranked.length > 0 ? (
             <View style={{ marginTop: spacing[2], gap: spacing[1] }}>
               <Text variant="label" color="textMuted">
-                CLASSEMENT
+                {t('community.screen.card.leaderboard')}
               </Text>
               {ranked.map((s, i) => (
                 <View key={s.userId} style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
@@ -78,7 +78,7 @@ function ChallengeCard({
       ) : (
         <View style={{ alignItems: 'flex-start', marginTop: spacing[1] }}>
           <Button
-            label={join.isPending ? '…' : 'Rejoindre'}
+            label={join.isPending ? t('community.screen.card.joining') : t('community.screen.card.join')}
             onPress={() => join.mutate(challenge.id)}
             disabled={join.isPending}
           />
@@ -90,6 +90,7 @@ function ChallengeCard({
 
 /** Community: open challenges with explainable progress + leaderboard (P37). */
 export function CommunityScreen(): React.JSX.Element {
+  const { t } = useTranslation();
   const router = useRouter();
   const { colors } = useTheme();
   const { data: challenges = [], isLoading } = useChallenges();
@@ -100,23 +101,23 @@ export function CommunityScreen(): React.JSX.Element {
   return (
     <Screen scroll>
       <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-        <Text variant="title">Communauté</Text>
-        <Button label="+ Défi" onPress={() => router.push('/profile/challenge/new')} />
+        <Text variant="title">{t('community.screen.title')}</Text>
+        <Button label={t('community.screen.newChallenge')} onPress={() => router.push('/profile/challenge/new')} />
       </View>
       <Text variant="caption" style={{ color: colors.textMuted }}>
-        Des défis simples et transparents : chaque classement se lit dans les faits.
+        {t('community.screen.subtitle')}
       </Text>
 
       {isLoading ? (
         <Text variant="body" color="textMuted">
-          Chargement…
+          {t('common.loading')}
         </Text>
       ) : challenges.length === 0 ? (
         <EmptyState
           icon={<Icon name="fire" size={44} color={colors.textSubtle} />}
-          title="Aucun défi pour l'instant"
-          message="Crée le premier défi et invite tes amis à te rejoindre."
-          actionLabel="Créer un défi"
+          title={t('community.screen.emptyState.title')}
+          message={t('community.screen.emptyState.message')}
+          actionLabel={t('community.screen.emptyState.action')}
           onAction={() => router.push('/profile/challenge/new')}
         />
       ) : (
