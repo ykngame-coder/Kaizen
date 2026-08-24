@@ -33,3 +33,15 @@ export interface LeaderboardStanding {
   reachedTarget: boolean;
   rank: number;
 }
+
+/**
+ * One row of the general/category leaderboard (opt-in, averaged over a
+ * time window) — distinct from LeaderboardStanding, which is challenge-scoped.
+ */
+export interface GeneralLeaderboardEntry {
+  userId: string;
+  displayName: string;
+  avatarUrl?: string;
+  avgScore: number;
+  rank: number;
+}
