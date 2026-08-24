@@ -600,7 +600,7 @@ export function DashboardScreen(): React.JSX.Element {
 }
 
 const QUICK_LINKS: { key: string; labelKey: string; icon: IconName; path: Href }[] = [
-  { key: 'meals', labelKey: 'dashboard.screen.quickLinks.meals', icon: 'silverware', path: '/nutrition' },
+  { key: 'meals', labelKey: 'dashboard.screen.quickLinks.meals', icon: 'silverware', path: '/nutrition/meal/new' },
   { key: 'workout', labelKey: 'dashboard.screen.quickLinks.workout', icon: 'play', path: '/sport/workout/new' },
   { key: 'weighIn', labelKey: 'dashboard.screen.quickLinks.weighIn', icon: 'scale', path: '/nutrition/weight' },
   { key: 'habit', labelKey: 'dashboard.screen.quickLinks.habit', icon: 'calendarCheck', path: '/profile/habits' },
