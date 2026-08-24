@@ -315,8 +315,12 @@ export function useUpdateLeaderboardPrefs() {
 export function useRecordDailyScore() {
   const { user } = useAuth();
   const repo = useRepository();
+  const qc = useQueryClient();
   return useMutation({
     mutationFn: (input: { column: DailyScoreColumn; value: number }) => repo.recordDailyScore(user!.id, input.column, input.value),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['generalLeaderboard'] });
+    },
   });
 }
 
