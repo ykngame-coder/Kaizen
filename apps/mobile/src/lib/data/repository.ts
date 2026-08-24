@@ -53,6 +53,7 @@ import {
   insertActivity,
   upsertActivities,
   listActivities as listActivitiesDb,
+  deleteActivity as deleteActivityDb,
   insertWorkout,
   insertWorkoutWithBlocks as insertWorkoutWithBlocksDb,
   listBlocksForWorkout as listBlocksForWorkoutDb,
@@ -209,6 +210,8 @@ export interface ImportPayload {
 export interface DataRepository {
   listActivities(userId: string): Promise<Activity[]>;
   addActivity(userId: string, input: ActivityInput): Promise<Activity>;
+  /** Remove a logged/imported activity (e.g. a duplicate or unwanted import). */
+  deleteActivity(userId: string, activityId: string): Promise<void>;
   listWorkouts(userId: string): Promise<Workout[]>;
   addWorkout(userId: string, workout: NewWorkout): Promise<Workout>;
   /** The user's planned (not-yet-done) sessions, soonest first. */
@@ -900,6 +903,13 @@ function createDemoRepository(): DataRepository {
       const items = await readJson<Activity>(actKey(userId));
       await writeJson(actKey(userId), [activity, ...items]);
       return activity;
+    },
+    async deleteActivity(userId, activityId) {
+      const items = await readJson<Activity>(actKey(userId));
+      await writeJson(
+        actKey(userId),
+        items.filter((a) => a.id !== activityId),
+      );
     },
     async listWorkouts(userId) {
       const items = await readJson<Workout>(wkKey(userId));
@@ -1706,6 +1716,9 @@ function createSupabaseRepository(
         notes: input.notes ?? null,
       });
       return rowToActivity(row);
+    },
+    async deleteActivity(_userId, activityId) {
+      await deleteActivityDb(client, activityId);
     },
     async listWorkouts(userId) {
       return (await listWorkoutsDb(client, userId)).map(rowToWorkout);

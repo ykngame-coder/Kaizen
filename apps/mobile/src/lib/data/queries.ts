@@ -71,6 +71,19 @@ export function useAddActivity() {
   });
 }
 
+/** Remove a logged/imported activity (e.g. a duplicate or unwanted import). */
+export function useDeleteActivity() {
+  const { user } = useAuth();
+  const repo = useRepository();
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (activityId: string) => repo.deleteActivity(user!.id, activityId),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['activities', user?.id] });
+    },
+  });
+}
+
 export function useHealthMetrics() {
   const { user } = useAuth();
   const repo = useRepository();

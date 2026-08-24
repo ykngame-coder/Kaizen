@@ -42,6 +42,12 @@ export async function upsertActivities(
   }
 }
 
+/** Remove a single activity (e.g. a duplicate or unwanted import). */
+export async function deleteActivity(client: SupotsuClient, activityId: string): Promise<void> {
+  const { error } = await client.from('activities').delete().eq('id', activityId);
+  if (error) throw error;
+}
+
 /** List the user's activities, most recent first. */
 export async function listActivities(
   client: SupotsuClient,

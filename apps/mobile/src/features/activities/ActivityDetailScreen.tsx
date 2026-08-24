@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import { View } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Button, Card, EmptyState, Icon, Screen, Text, useTheme } from '@supotsu/ui';
@@ -6,9 +6,12 @@ import { radii, spacing } from '@supotsu/design-system';
 import { EXERCISE_LIBRARY } from '@supotsu/shared';
 import { EXERCISES } from '@/features/exercises/catalog';
 import { BackButton } from '@/features/navigation/BackButton';
-import { useActivities, useCustomExercises, useWorkoutBlocks, useWorkoutSets, useWorkouts } from '@/lib/data/queries';
+import { useActivities, useCustomExercises, useDeleteActivity, useWorkoutBlocks, useWorkoutSets, useWorkouts } from '@/lib/data/queries';
 import { activityLabel, formatDate, formatDistance, formatDuration } from '@/lib/format';
 import { BlockSummaryCard } from '@/features/training/WorkoutDetailScreen';
+
+const formatTime = (iso: string): string =>
+  new Date(iso).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
 
 const INTENSITY_LABEL: Record<string, string> = {
   low: 'Faible',
@@ -52,6 +55,8 @@ export function ActivityDetailScreen(): React.JSX.Element {
   const { data: activities = [], isLoading } = useActivities();
   const { data: workouts = [] } = useWorkouts();
   const { data: customExercises = [] } = useCustomExercises();
+  const deleteActivity = useDeleteActivity();
+  const [confirmingDelete, setConfirmingDelete] = useState(false);
 
   const activity = useMemo(() => activities.find((a) => a.id === id), [activities, id]);
 
@@ -102,6 +107,12 @@ export function ActivityDetailScreen(): React.JSX.Element {
   }
 
   const distance = formatDistance(activity.distanceM);
+  const endedAt = new Date(new Date(activity.startedAt).getTime() + activity.durationSec * 1000).toISOString();
+
+  const onDelete = async (): Promise<void> => {
+    await deleteActivity.mutateAsync(activity.id);
+    router.back();
+  };
 
   return (
     <Screen scroll>
@@ -112,6 +123,8 @@ export function ActivityDetailScreen(): React.JSX.Element {
       </Text>
 
       <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: spacing[3], marginTop: spacing[2] }}>
+        <Stat label="Heure de début" value={formatTime(activity.startedAt)} />
+        <Stat label="Heure de fin" value={formatTime(endedAt)} />
         <Stat label="Durée" value={formatDuration(activity.durationSec)} />
         <Stat label="Distance" value={distance} />
         <Stat label="Calories" value={activity.calories != null ? `${Math.round(activity.calories)} kcal` : null} />
@@ -178,9 +191,25 @@ export function ActivityDetailScreen(): React.JSX.Element {
         </Card>
       ) : null}
 
-      <View style={{ alignItems: 'flex-start' }}>
-        <Button label="Retour" variant="secondary" onPress={() => router.back()} />
-      </View>
+      {confirmingDelete ? (
+        <Card>
+          <Text variant="body">Supprimer définitivement cette activité ?</Text>
+          <View style={{ flexDirection: 'row', gap: spacing[2], marginTop: spacing[3] }}>
+            <Button label="Annuler" variant="secondary" onPress={() => setConfirmingDelete(false)} />
+            <Button
+              label={deleteActivity.isPending ? '…' : 'Supprimer'}
+              variant="danger"
+              onPress={onDelete}
+              disabled={deleteActivity.isPending}
+            />
+          </View>
+        </Card>
+      ) : (
+        <View style={{ flexDirection: 'row', gap: spacing[3] }}>
+          <Button label="Retour" variant="secondary" onPress={() => router.back()} />
+          <Button label="Supprimer" variant="secondary" onPress={() => setConfirmingDelete(true)} />
+        </View>
+      )}
     </Screen>
   );
 }
