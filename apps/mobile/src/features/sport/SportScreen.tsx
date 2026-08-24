@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { Pressable, View } from 'react-native';
 import { useRouter, type Href } from 'expo-router';
@@ -11,8 +11,10 @@ import { computeAcwr, computeRecoveryScore, computeSportScore } from '@supotsu/e
 import {
   useActivities,
   useHealthMetrics,
+  useLeaderboardPrefs,
   useMuscleSessions,
   usePlannedWorkouts,
+  useRecordDailyScore,
   useWorkouts,
 } from '@/lib/data/queries';
 import { formatDate } from '@/lib/format';
@@ -131,6 +133,15 @@ export function SportScreen(): React.JSX.Element {
     const r = computeSportScore(activities, asOf);
     return r.confidence === 'to_confirm' ? null : r;
   }, [activities, asOf]);
+
+  const { data: leaderboardPrefs } = useLeaderboardPrefs();
+  const recordDailyScore = useRecordDailyScore();
+  useEffect(() => {
+    if (!leaderboardPrefs?.leaderboardOptIn) return;
+    if (selectedDayKey !== todayKey) return;
+    if (sport == null) return;
+    recordDailyScore.mutate({ column: 'sport', value: Math.round(sport.value) });
+  }, [leaderboardPrefs?.leaderboardOptIn, selectedDayKey, todayKey, sport?.value]);
 
   const muscleStates = useMemo(() => muscleStatesFor(muscleSessions, asOf), [muscleSessions, asOf]);
   const colorFor = useMemo(() => muscleColorFor(muscleStates, colors), [muscleStates, colors]);

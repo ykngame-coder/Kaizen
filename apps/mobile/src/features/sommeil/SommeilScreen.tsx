@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { Pressable, View } from 'react-native';
 import { useRouter, type Href } from 'expo-router';
@@ -21,7 +21,7 @@ import {
   type SleepBand,
   type SleepNight,
 } from '@supotsu/engines';
-import { useActivities, useHealthMetrics, useSleepSessions, useWellnessCheckins } from '@/lib/data/queries';
+import { useActivities, useHealthMetrics, useLeaderboardPrefs, useRecordDailyScore, useSleepSessions, useWellnessCheckins } from '@/lib/data/queries';
 import { useManualHealthKitSync } from '@/features/connectors/useHealthKitAutoSync';
 import { formatClock, formatClockFromIso, usePreferences, type TimeFormat } from '@/lib/preferences';
 import { DayNav, useSelectedDay } from '@/features/navigation/DayNav';
@@ -235,6 +235,15 @@ export function SommeilScreen(): React.JSX.Element {
     () => computeSleepScore2(metrics, asOf, 7, sessions),
     [metrics, asOf, sessions],
   );
+  const { data: leaderboardPrefs } = useLeaderboardPrefs();
+  const recordDailyScore = useRecordDailyScore();
+  const todayKey = new Date().toISOString().slice(0, 10);
+  const selectedDayKey = asOf.slice(0, 10);
+  useEffect(() => {
+    if (!leaderboardPrefs?.leaderboardOptIn) return;
+    if (selectedDayKey !== todayKey) return;
+    recordDailyScore.mutate({ column: 'sleep', value: Math.round(score.value) });
+  }, [leaderboardPrefs?.leaderboardOptIn, selectedDayKey, todayKey, score.value]);
   const trend = useMemo(() => sleepTrend(metrics, asOf, 7), [metrics, asOf]);
   const chrono = useMemo(() => [...trend].sort((a, b) => a.date.localeCompare(b.date)), [trend]);
   const chronoMax = Math.max(1, ...chrono.map((n) => n.hours));

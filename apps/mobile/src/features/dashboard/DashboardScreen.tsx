@@ -20,7 +20,7 @@ import {
   sumDay,
   weightTrend,
 } from '@supotsu/engines';
-import { useActivities, useHabitLogs, useHabits, useHealthMetrics, useNutritionEntries, usePlannedWorkouts, useSleepSessions } from '@/lib/data/queries';
+import { useActivities, useHabitLogs, useHabits, useHealthMetrics, useLeaderboardPrefs, useNutritionEntries, usePlannedWorkouts, useRecordDailyScore, useSleepSessions } from '@/lib/data/queries';
 import { useAuth } from '@/features/auth/AuthProvider';
 import { MuscleBody } from '@/features/muscles/MuscleBody';
 import { getCloudAvatarUrl, loadAvatarUri } from '@/lib/profileAvatar';
@@ -227,6 +227,14 @@ export function DashboardScreen(): React.JSX.Element {
       }),
     [activities, health, asOf, nutrition, targets, sleepSessions],
   );
+  const { data: leaderboardPrefs } = useLeaderboardPrefs();
+  const recordDailyScore = useRecordDailyScore();
+  useEffect(() => {
+    if (!leaderboardPrefs?.leaderboardOptIn) return;
+    const value = snapshot.value.overall;
+    if (!Number.isFinite(value)) return;
+    recordDailyScore.mutate({ column: 'kaizen', value: Math.round(value) });
+  }, [leaderboardPrefs?.leaderboardOptIn, snapshot.value.overall]);
   const hasScoreData = snapshot.confidence !== 'to_confirm';
   const kaizenBand = recoveryBand(snapshot.value.overall);
 

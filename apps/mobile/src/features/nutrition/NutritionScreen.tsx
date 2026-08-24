@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { Pressable, ScrollView, TextInput, View } from 'react-native';
 import { useRouter } from 'expo-router';
@@ -15,7 +15,7 @@ import {
 } from '@supotsu/engines';
 import type { TrendPoint } from '@supotsu/engines';
 import type { HealthMetricType } from '@supotsu/core';
-import { useAddNutritionEntry, useHealthMetrics, useNutritionEntries } from '@/lib/data/queries';
+import { useAddNutritionEntry, useHealthMetrics, useLeaderboardPrefs, useNutritionEntries, useRecordDailyScore } from '@/lib/data/queries';
 import { useManualHealthKitSync } from '@/features/connectors/useHealthKitAutoSync';
 import { CalorieCalculatorForm } from './CalorieCalculatorForm';
 import { usePreferences } from '@/lib/preferences';
@@ -179,6 +179,15 @@ export function NutritionScreen(): React.JSX.Element {
   const totals = useMemo(() => sumDay(entries, asOf), [entries, asOf]);
   const today = useMemo(() => entriesForDay(entries, asOf), [entries, asOf]);
   const score = useMemo(() => computeNutritionScore(entries, goals, asOf), [entries, goals, asOf]);
+  const { data: leaderboardPrefs } = useLeaderboardPrefs();
+  const recordDailyScore = useRecordDailyScore();
+  const todayKey = new Date().toISOString().slice(0, 10);
+  const selectedDayKey = asOf.slice(0, 10);
+  useEffect(() => {
+    if (!leaderboardPrefs?.leaderboardOptIn) return;
+    if (selectedDayKey !== todayKey) return;
+    recordDailyScore.mutate({ column: 'nutrition', value: Math.round(score.value) });
+  }, [leaderboardPrefs?.leaderboardOptIn, selectedDayKey, todayKey, score.value]);
   const explanation = useMemo(() => nutritionExplanation(entries, goals, asOf), [entries, goals, asOf]);
   const hasData = today.length > 0;
 
