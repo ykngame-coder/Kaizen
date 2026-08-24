@@ -14,12 +14,6 @@ const CHRONOTYPE_TONE: Record<Chronotype, 'info' | 'success' | 'warning'> = {
   tardif: 'warning',
 };
 
-const CHRONOTYPE_HINT: Record<Chronotype, string> = {
-  précoce: 'Tu es plutôt du matin : énergie tôt, coup de barre en soirée.',
-  intermédiaire: 'Rythme équilibré : tu t’adaptes bien matin comme soir.',
-  tardif: 'Tu es plutôt du soir : démarrage lent, pic d’énergie tardif.',
-};
-
 /**
  * Circadian Engine screen (Sleep Suite §3.2). Derives the user's chronotype and
  * optimal timing from sleep history, in local time. Every figure is explained;
@@ -42,31 +36,36 @@ export function CircadianScreen(): React.JSX.Element {
   const profile = result.value;
   const explanation = result.explanation;
 
+  const CHRONOTYPE_HINT: Record<Chronotype, string> = {
+    précoce: t('wellbeing.circadian.chronotypeHint.précoce'),
+    intermédiaire: t('wellbeing.circadian.chronotypeHint.intermédiaire'),
+    tardif: t('wellbeing.circadian.chronotypeHint.tardif'),
+  };
+
   return (
     <Screen scroll>
-      <Text variant="title">Rythme circadien</Text>
+      <Text variant="title">{t('wellbeing.circadian.title')}</Text>
       <Text variant="caption" color="textMuted">
-        Ton chronotype et tes horaires optimaux, déduits de tes nuits — des repères, pas des
-        prescriptions médicales.
+        {t('wellbeing.circadian.subtitle')}
       </Text>
 
       {isLoading ? (
         <Text variant="body" color="textMuted">
-          Chargement…
+          {t('wellbeing.circadian.loading')}
         </Text>
       ) : !profile ? (
         <EmptyState
           icon={<Icon name="moon" size={44} color={colors.textSubtle} />}
-          title="Encore un peu de patience"
-          message="Il faut au moins 4 nuits enregistrées pour établir ton rythme. Continue à synchroniser tes données."
-          actionLabel="Importer / connecter"
+          title={t('wellbeing.circadian.emptyTitle')}
+          message={t('wellbeing.circadian.emptyMessage')}
+          actionLabel={t('wellbeing.circadian.emptyAction')}
           onAction={() => router.push('/profile/import')}
         />
       ) : (
         <>
           <Card>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing[2] }}>
-              <Text variant="heading">Chronotype</Text>
+              <Text variant="heading">{t('wellbeing.circadian.chronotypeTitle')}</Text>
               <Badge label={profile.chronotype} tone={CHRONOTYPE_TONE[profile.chronotype]} />
             </View>
             <Text variant="caption" color="textMuted" style={{ marginTop: spacing[1] }}>
@@ -75,13 +74,13 @@ export function CircadianScreen(): React.JSX.Element {
           </Card>
 
           <Card>
-            <Text variant="heading">Ta fenêtre de sommeil</Text>
+            <Text variant="heading">{t('wellbeing.circadian.windowTitle')}</Text>
             <View
               style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: spacing[2] }}
             >
               <View>
                 <Text variant="caption" color="textSubtle">
-                  Habituelle
+                  {t('wellbeing.circadian.habitual')}
                 </Text>
                 <Text variant="subtitle">
                   {profile.habitualBedtime} → {profile.habitualWake}
@@ -89,7 +88,7 @@ export function CircadianScreen(): React.JSX.Element {
               </View>
               <View>
                 <Text variant="caption" color="textSubtle">
-                  Idéale (8 h)
+                  {t('wellbeing.circadian.ideal')}
                 </Text>
                 <Text variant="subtitle" color="primary">
                   {profile.idealBedtime} → {profile.idealWake}
@@ -98,18 +97,20 @@ export function CircadianScreen(): React.JSX.Element {
             </View>
             {profile.socialJetlagMin !== null && (
               <Text variant="caption" color="textMuted" style={{ marginTop: spacing[2] }}>
-                Décalage social (semaine vs week-end) : {profile.socialJetlagMin} min
-                {profile.socialJetlagMin >= 60
-                  ? ' — un vrai « jet lag » à réduire pour un réveil plus facile.'
-                  : ' — bien maîtrisé.'}
+                {t(
+                  profile.socialJetlagMin >= 60
+                    ? 'wellbeing.circadian.socialJetlagHigh'
+                    : 'wellbeing.circadian.socialJetlagLow',
+                  { min: profile.socialJetlagMin },
+                )}
               </Text>
             )}
           </Card>
 
           <Card>
-            <Text variant="heading">Ton énergie dans la journée</Text>
+            <Text variant="heading">{t('wellbeing.circadian.energyTitle')}</Text>
             <Text variant="caption" color="textSubtle" style={{ marginTop: 2, marginBottom: spacing[2] }}>
-              Estimée à partir de ton chronotype — un repère, pas une mesure.
+              {t('wellbeing.circadian.energyHint')}
             </Text>
             <View style={{ alignItems: 'center' }}>
               <EnergyWave points={profile.energyCurve} />
@@ -117,7 +118,7 @@ export function CircadianScreen(): React.JSX.Element {
           </Card>
 
           <Card>
-            <Text variant="heading">Tes horaires optimaux</Text>
+            <Text variant="heading">{t('wellbeing.circadian.scheduleTitle')}</Text>
             <View style={{ gap: spacing[3], marginTop: spacing[2] }}>
               {profile.recommendations.map((r) => (
                 <View key={r.key} style={{ gap: spacing[1] }}>
@@ -139,7 +140,7 @@ export function CircadianScreen(): React.JSX.Element {
 
           {explanation && (
             <Card>
-              <Text variant="heading">En résumé</Text>
+              <Text variant="heading">{t('wellbeing.circadian.summaryTitle')}</Text>
               <Text variant="caption" color="textMuted">
                 {t(explanation.observation.key, explanation.observation.params)}
               </Text>
@@ -155,7 +156,7 @@ export function CircadianScreen(): React.JSX.Element {
       )}
 
       <View style={{ alignItems: 'flex-start' }}>
-        <Button label="Retour" variant="secondary" onPress={() => router.back()} />
+        <Button label={t('common.back')} variant="secondary" onPress={() => router.back()} />
       </View>
     </Screen>
   );

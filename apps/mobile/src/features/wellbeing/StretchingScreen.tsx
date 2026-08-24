@@ -1,6 +1,7 @@
 import React from 'react';
 import { Pressable, View } from 'react-native';
 import { useRouter } from 'expo-router';
+import { useTranslation } from 'react-i18next';
 import { Badge, Button, Card, Screen, Text } from '@supotsu/ui';
 import { spacing } from '@supotsu/design-system';
 import { ZONE_LABEL, stretchesForZone } from './stretchCatalog';
@@ -15,6 +16,7 @@ function totalSec(count: number, sides: number): number {
 /** Étirements guidés — routine du jour (selon la fatigue musculaire) ou par zone (GOWOD/Pliability-style). */
 export function StretchingScreen(): React.JSX.Element {
   const router = useRouter();
+  const { t } = useTranslation();
   const { stretches: todayStretches, muscles: todayMuscles, loading } = useTodayStretchRoutine();
 
   const todaySides = todayStretches.filter((s) => s.sides).length;
@@ -22,18 +24,18 @@ export function StretchingScreen(): React.JSX.Element {
 
   return (
     <Screen scroll>
-      <Text variant="title">Étirements</Text>
+      <Text variant="title">{t('wellbeing.stretching.title')}</Text>
       <Text variant="caption" color="textMuted">
-        Routine guidée, tenue chronométrée — comme GOWOD/Pliability.
+        {t('wellbeing.stretching.subtitle')}
       </Text>
 
-      <Text variant="heading" style={{ marginTop: spacing[3] }}>Routine du jour</Text>
+      <Text variant="heading" style={{ marginTop: spacing[3] }}>{t('wellbeing.stretching.todayHeading')}</Text>
       {loading ? (
-        <Text variant="body" color="textMuted">Chargement…</Text>
+        <Text variant="body" color="textMuted">{t('common.loading')}</Text>
       ) : todayStretches.length === 0 ? (
         <Card>
           <Text variant="body" color="textMuted">
-            Pas encore de séance récente pour te proposer une routine ciblée — choisis une zone ci-dessous.
+            {t('wellbeing.stretching.emptyToday')}
           </Text>
         </Card>
       ) : (
@@ -42,15 +44,18 @@ export function StretchingScreen(): React.JSX.Element {
             {todayMuscles.map((m) => ZONE_LABEL[m]).join(', ')}
           </Text>
           <Text variant="caption" color="textMuted">
-            {todayStretches.length} étirements · ≈ {Math.round(todayDuration / 60)} min
+            {t('wellbeing.stretching.todaySummary', {
+              count: todayStretches.length,
+              minutes: Math.round(todayDuration / 60),
+            })}
           </Text>
           <View style={{ alignItems: 'flex-start', marginTop: spacing[1] }}>
-            <Button label="Commencer" onPress={() => router.push({ pathname: '/sport/stretching/session', params: { mode: 'today' } })} />
+            <Button label={t('wellbeing.stretching.start')} onPress={() => router.push({ pathname: '/sport/stretching/session', params: { mode: 'today' } })} />
           </View>
         </Card>
       )}
 
-      <Text variant="heading" style={{ marginTop: spacing[4] }}>Par zone</Text>
+      <Text variant="heading" style={{ marginTop: spacing[4] }}>{t('wellbeing.stretching.byZoneHeading')}</Text>
       <View style={{ gap: spacing[2] }}>
         {ZONES.map((zone) => {
           const zoneStretches = stretchesForZone(zone);
@@ -64,7 +69,7 @@ export function StretchingScreen(): React.JSX.Element {
               <Card>
                 <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
                   <Text variant="body" style={{ fontWeight: '600' }}>{ZONE_LABEL[zone]}</Text>
-                  <Badge label={`${zoneStretches.length} étirements`} tone="neutral" />
+                  <Badge label={t('wellbeing.stretching.zoneCount', { count: zoneStretches.length })} tone="neutral" />
                 </View>
               </Card>
             </Pressable>
@@ -73,7 +78,7 @@ export function StretchingScreen(): React.JSX.Element {
       </View>
 
       <Text variant="caption" color="textSubtle" style={{ marginTop: spacing[4] }}>
-        Étirements en douceur, jamais jusqu'à la douleur. En cas de blessure, consulte un professionnel avant de reprendre.
+        {t('wellbeing.stretching.footer')}
       </Text>
     </Screen>
   );

@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Animated, View, useWindowDimensions } from 'react-native';
 import { useRouter } from 'expo-router';
+import { useTranslation } from 'react-i18next';
 import { useAudioPlayer, useAudioPlayerStatus } from 'expo-audio';
 import { Button, Card, FilterChip, Screen, SegmentedControl, Text, useTheme } from '@supotsu/ui';
 import { spacing } from '@supotsu/design-system';
@@ -24,12 +25,13 @@ const FADE_MS = 800;
 const FADE_STEP_MS = 50;
 
 const SPEEDS = [
-  { value: 'slow', label: 'Lent', sweepMs: 2200 },
-  { value: 'medium', label: 'Moyen', sweepMs: 1400 },
-  { value: 'fast', label: 'Rapide', sweepMs: 900 },
+  { value: 'slow', labelKey: 'wellbeing.bilateral.speed.slow', sweepMs: 2200 },
+  { value: 'medium', labelKey: 'wellbeing.bilateral.speed.medium', sweepMs: 1400 },
+  { value: 'fast', labelKey: 'wellbeing.bilateral.speed.fast', sweepMs: 900 },
 ] as const;
 
 export function BilateralScreen(): React.JSX.Element {
+  const { t } = useTranslation();
   const router = useRouter();
   const { colors } = useTheme();
   const { width } = useWindowDimensions();
@@ -102,35 +104,32 @@ export function BilateralScreen(): React.JSX.Element {
 
   return (
     <Screen scroll>
-      <Text variant="title">Stimulation bilatérale</Text>
+      <Text variant="title">{t('wellbeing.bilateral.title')}</Text>
       <Text variant="caption" color="textMuted">
-        Suis le point des yeux, tête immobile, en respirant lentement. Un outil de détente avant le
-        sommeil.
+        {t('wellbeing.bilateral.subtitle')}
       </Text>
 
       <Card>
         <Text variant="label" color="warning">
-          ⚠️ CE N’EST PAS UNE THÉRAPIE EMDR
+          {t('wellbeing.bilateral.warningTitle')}
         </Text>
         <Text variant="caption" color="textMuted" style={{ marginTop: spacing[1] }}>
-          L’EMDR est une psychothérapie pratiquée par un professionnel de santé formé. La
-          stimulation bilatérale ci-dessous est un simple outil de relaxation, sans visée
-          thérapeutique. En cas de difficulté psychologique, consulte un professionnel.
+          {t('wellbeing.bilateral.warningBody')}
         </Text>
       </Card>
 
       <View style={{ marginTop: spacing[2] }}>
         <SegmentedControl
-          options={SPEEDS.map((s) => ({ value: s.value, label: s.label }))}
+          options={SPEEDS.map((s) => ({ value: s.value, label: t(s.labelKey) }))}
           value={speed}
           onChange={setSpeed}
         />
       </View>
 
       <View style={{ marginTop: spacing[4], gap: spacing[2] }}>
-        <Text variant="label" color="textSubtle">Son d'ambiance (optionnel)</Text>
+        <Text variant="label" color="textSubtle">{t('wellbeing.bilateral.ambientSoundLabel')}</Text>
         <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: spacing[2] }}>
-          <FilterChip label="Sans son" active={soundId === null} onPress={() => setSoundId(null)} />
+          <FilterChip label={t('wellbeing.bilateral.noSound')} active={soundId === null} onPress={() => setSoundId(null)} />
           {BILATERAL_AUDIO_CATALOG.map((s) =>
             s.available ? (
               <FilterChip
@@ -172,13 +171,13 @@ export function BilateralScreen(): React.JSX.Element {
 
       <View style={{ alignItems: 'center' }}>
         <Button
-          label={running ? 'Arrêter' : 'Commencer'}
+          label={running ? t('wellbeing.bilateral.stop') : t('wellbeing.bilateral.start')}
           onPress={() => setRunning((r) => !r)}
         />
       </View>
 
       <View style={{ alignItems: 'flex-start', marginTop: spacing[4] }}>
-        <Button label="Retour" variant="secondary" onPress={() => router.back()} />
+        <Button label={t('common.back')} variant="secondary" onPress={() => router.back()} />
       </View>
     </Screen>
   );

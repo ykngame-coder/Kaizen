@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useRef } from 'react';
 import { View } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useAudioPlayer, useAudioPlayerStatus } from 'expo-audio';
+import { useTranslation } from 'react-i18next';
 import { Button, EmptyState, Icon, Screen, Text, useTheme } from '@supotsu/ui';
 import { radii, spacing } from '@supotsu/design-system';
 import { meditationAudioUrl } from '@/lib/meditationAudio';
@@ -20,6 +21,7 @@ function fmtClock(sec: number): string {
 export function MeditationPlayerScreen(): React.JSX.Element {
   const router = useRouter();
   const { colors } = useTheme();
+  const { t } = useTranslation();
   const { id } = useLocalSearchParams<{ id: string }>();
   const session = useMemo(() => MEDITATION_CATALOG.find((s) => s.id === id), [id]);
   const url = session ? meditationAudioUrl(session.audioPath) : null;
@@ -55,7 +57,7 @@ export function MeditationPlayerScreen(): React.JSX.Element {
   if (!session) {
     return (
       <Screen>
-        <EmptyState icon={<Icon name="yoga" size={44} color={colors.textSubtle} />} title="Séance introuvable" actionLabel="Retour" onAction={() => router.back()} />
+        <EmptyState icon={<Icon name="yoga" size={44} color={colors.textSubtle} />} title={t('wellbeing.meditationPlayer.notFound')} actionLabel={t('common.back')} onAction={() => router.back()} />
       </Screen>
     );
   }
@@ -63,7 +65,7 @@ export function MeditationPlayerScreen(): React.JSX.Element {
   if (!url) {
     return (
       <Screen>
-        <EmptyState icon={<Icon name="yoga" size={44} color={colors.textSubtle} />} title="Indisponible hors connexion" message="La lecture nécessite une connexion au backend." actionLabel="Retour" onAction={() => router.back()} />
+        <EmptyState icon={<Icon name="yoga" size={44} color={colors.textSubtle} />} title={t('wellbeing.meditationPlayer.offlineTitle')} message={t('wellbeing.meditationPlayer.offlineMessage')} actionLabel={t('common.back')} onAction={() => router.back()} />
       </Screen>
     );
   }
@@ -97,11 +99,11 @@ export function MeditationPlayerScreen(): React.JSX.Element {
           <View style={{ width: `${progress * 100}%`, height: '100%', backgroundColor: colors.primary }} />
         </View>
 
-        <Button label={status.playing ? 'Pause' : 'Lecture'} onPress={toggle} />
+        <Button label={status.playing ? t('wellbeing.meditationPlayer.pause') : t('wellbeing.meditationPlayer.play')} onPress={toggle} />
       </View>
 
       <View style={{ alignItems: 'flex-start' }}>
-        <Button label="Retour" variant="secondary" onPress={() => router.back()} />
+        <Button label={t('common.back')} variant="secondary" onPress={() => router.back()} />
       </View>
     </Screen>
   );

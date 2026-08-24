@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { View } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useTranslation } from 'react-i18next';
 import { Button, EmptyState, Icon, Screen, Text, triggerHaptic, useTheme } from '@supotsu/ui';
 import { radii, spacing } from '@supotsu/design-system';
 import type { MuscleGroup } from '@supotsu/core';
@@ -27,6 +28,7 @@ function flatten(stretches: Stretch[]): Hold[] {
 export function StretchingSessionScreen(): React.JSX.Element {
   const router = useRouter();
   const { colors } = useTheme();
+  const { t } = useTranslation();
   const { mode, zone } = useLocalSearchParams<{ mode?: string; zone?: string }>();
 
   const today = useTodayStretchRoutine();
@@ -74,10 +76,15 @@ export function StretchingSessionScreen(): React.JSX.Element {
     // Only (re)start when the routine itself changes.
   }, [holds.length]);
 
+  const sideLabel: Record<'gauche' | 'droite', string> = {
+    gauche: t('wellbeing.stretchingSession.sideLeft'),
+    droite: t('wellbeing.stretchingSession.sideRight'),
+  };
+
   if (holds.length === 0) {
     return (
       <Screen>
-        <EmptyState icon={<Icon name="yoga" size={44} color={colors.textSubtle} />} title="Aucun étirement" message="Cette routine est vide." actionLabel="Retour" onAction={() => router.back()} />
+        <EmptyState icon={<Icon name="yoga" size={44} color={colors.textSubtle} />} title={t('wellbeing.stretchingSession.emptyTitle')} message={t('wellbeing.stretchingSession.emptyMessage')} actionLabel={t('common.back')} onAction={() => router.back()} />
       </Screen>
     );
   }
@@ -87,9 +94,9 @@ export function StretchingSessionScreen(): React.JSX.Element {
       <Screen>
         <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', gap: spacing[4] }}>
           <Icon name="yoga" size={40} color={colors.primary} />
-          <Text variant="heading">Routine terminée</Text>
-          <Text variant="caption" color="textMuted">{holds.length} tenues réalisées</Text>
-          <Button label="Retour" onPress={() => router.back()} />
+          <Text variant="heading">{t('wellbeing.stretchingSession.completedTitle')}</Text>
+          <Text variant="caption" color="textMuted">{t('wellbeing.stretchingSession.completedCount', { count: holds.length })}</Text>
+          <Button label={t('common.back')} onPress={() => router.back()} />
         </View>
       </Screen>
     );
@@ -99,7 +106,7 @@ export function StretchingSessionScreen(): React.JSX.Element {
 
   return (
     <Screen>
-      <Text variant="caption" color="textSubtle">Étirement {idx + 1} / {holds.length}</Text>
+      <Text variant="caption" color="textSubtle">{t('wellbeing.stretchingSession.progress', { current: idx + 1, total: holds.length })}</Text>
 
       <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', gap: spacing[6] }}>
         <View
@@ -115,17 +122,17 @@ export function StretchingSessionScreen(): React.JSX.Element {
             paddingHorizontal: spacing[4],
           }}
         >
-          <Text variant="caption" color="textSubtle">{phase === 'prep' ? 'Prépare-toi' : 'Tiens la position'}</Text>
+          <Text variant="caption" color="textSubtle">{phase === 'prep' ? t('wellbeing.stretchingSession.prepare') : t('wellbeing.stretchingSession.hold')}</Text>
           <Text variant="heading" style={{ textAlign: 'center', marginTop: spacing[1] }}>
             {current.stretch.name}
-            {current.side ? ` (${current.side})` : ''}
+            {current.side ? ` (${sideLabel[current.side]})` : ''}
           </Text>
           <Text variant="display" style={{ marginTop: spacing[2] }}>{secondsLeft}</Text>
         </View>
       </View>
 
       <View style={{ alignItems: 'flex-start' }}>
-        <Button label="Arrêter" variant="secondary" onPress={() => router.back()} />
+        <Button label={t('wellbeing.stretchingSession.stop')} variant="secondary" onPress={() => router.back()} />
       </View>
     </Screen>
   );

@@ -1,26 +1,25 @@
 import React from 'react';
 import { Pressable, View } from 'react-native';
 import { useRouter } from 'expo-router';
+import { useTranslation } from 'react-i18next';
 import { Badge, Card, Screen, Text } from '@supotsu/ui';
 import { spacing } from '@supotsu/design-system';
 import { BackButton } from '@/features/navigation/BackButton';
 import { MEDITATION_CATALOG, MEDITATION_CATEGORIES } from './meditationCatalog';
 
-function fmtDuration(sec: number): string {
-  const m = Math.round(sec / 60);
-  return `${m} min`;
-}
-
 /** Méditation guidée — catalogue par catégorie (Neuro Recovery Suite). */
 export function MeditationScreen(): React.JSX.Element {
   const router = useRouter();
+  const { t } = useTranslation();
+
+  const fmtDuration = (sec: number): string => t('wellbeing.meditation.duration', { m: Math.round(sec / 60) });
 
   return (
     <Screen scroll>
       <BackButton />
-      <Text variant="title">Méditation guidée</Text>
+      <Text variant="title">{t('wellbeing.meditation.title')}</Text>
       <Text variant="caption" color="textMuted">
-        Séances audio narrées, par thème.
+        {t('wellbeing.meditation.subtitle')}
       </Text>
 
       {MEDITATION_CATEGORIES.map((cat) => {
@@ -37,7 +36,7 @@ export function MeditationScreen(): React.JSX.Element {
                       {s.available ? (
                         <Text variant="caption" color="textSubtle">{fmtDuration(s.durationSec)}</Text>
                       ) : (
-                        <Badge label="Bientôt disponible" tone="neutral" />
+                        <Badge label={t('wellbeing.meditation.comingSoon')} tone="neutral" />
                       )}
                     </View>
                   </Card>
@@ -59,7 +58,7 @@ export function MeditationScreen(): React.JSX.Element {
       })}
 
       <Text variant="caption" color="textSubtle" style={{ marginTop: spacing[4] }}>
-        Ces séances sont fournies par l'équipe Kaizen Supotsu — pas de conseil médical, un simple temps pour toi.
+        {t('wellbeing.meditation.footer')}
       </Text>
     </Screen>
   );

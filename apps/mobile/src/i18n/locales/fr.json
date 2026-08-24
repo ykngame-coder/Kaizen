@@ -1424,6 +1424,393 @@
           "mobility": "Ajouter une séance de mobilité"
         }
       }
+    },
+    "load": {
+      "title": "Charge d'entraînement",
+      "subtitle": "Le ratio charge aiguë / chronique — pour progresser sans te blesser.",
+      "empty": {
+        "title": "Pas encore assez d'activités",
+        "message": "Enregistre tes séances sur quelques semaines pour calculer ta charge et ton risque.",
+        "action": "Ajouter une activité"
+      },
+      "ratioCaption": "ratio",
+      "zone": {
+        "underload": "sous-charge",
+        "optimal": "optimal",
+        "high": "élevé",
+        "risk": "risque"
+      },
+      "analysisHeading": "Analyse",
+      "acuteLabel": "CHARGE AIGUË",
+      "acuteCaption": "7 derniers jours",
+      "chronicLabel": "CHARGE CHRONIQUE",
+      "chronicCaption": "moyenne / semaine",
+      "dailyChartCaption": "Charge quotidienne — 28 jours"
     }
+  },
+  "sommeil": {
+    "screen": {
+      "subtitle": "Ta dernière nuit, ton score et tes horaires optimaux.",
+      "band": {
+        "excellent": "Excellent",
+        "correct": "Correct",
+        "moyen": "Moyen",
+        "faible": "Faible"
+      },
+      "empty": {
+        "title": "Pas encore de données de sommeil",
+        "message": "Synchronise Apple Santé (Health Auto Export) ou importe un export pour suivre tes nuits — toute source est prise en compte.",
+        "action": "Importer / connecter"
+      },
+      "score": {
+        "average": "Moyenne 7 jours : {{avg}} h / nuit",
+        "totalDuration": "Durée totale",
+        "deepSleep": "Sommeil profond"
+      },
+      "wellness": {
+        "label": "Bien-être",
+        "labelWithBand": "Bien-être · {{band}}"
+      },
+      "last7Nights": {
+        "title": "7 dernières nuits",
+        "average": "moy. {{avg}} h"
+      },
+      "phases": {
+        "title": "Phases de sommeil",
+        "estimatedPhoneBadge": "Estimé — téléphone",
+        "summary": "{{start}} → {{end}} · {{inBed}} au lit, {{asleep}} dormies",
+        "stage": {
+          "deep": "Profond",
+          "light": "Léger",
+          "rem": "Paradoxal",
+          "awake": "Éveillé"
+        },
+        "noTimeline": "Chronologie minute par minute non fournie par cet export — seules les durées par phase sont disponibles.",
+        "phoneEstimate": "Sommeil paradoxal non mesurable par téléphone (nécessite une montre) — profond/léger sont estimés à partir des mouvements."
+      },
+      "bedtime": {
+        "title": "Heure de coucher optimale",
+        "estimate": "Estimation basée sur ton rythme et ta récupération (chronotype {{chronotype}})."
+      },
+      "advice": {
+        "title": "Conseil"
+      },
+      "detail": {
+        "title": "Détail du score",
+        "description": "Chaque composante est notée sur 100. Les composantes sans donnée n’entrent pas dans le calcul."
+      },
+      "prediction": {
+        "title": "Prévision de demain",
+        "fatigueBadge": "Fatigue {{risk}}",
+        "energy": "Énergie estimée {{score}}/100"
+      },
+      "signals": {
+        "title": "Signaux de récupération",
+        "hrv": "VFC (HRV)",
+        "restingHr": "FC repos",
+        "stress": "Stress"
+      },
+      "circadian": {
+        "title": "Rythme circadien",
+        "description": "Découvre ton chronotype et tes horaires optimaux (coucher, caféine, sport, lumière).",
+        "cta": "Voir mes horaires optimaux"
+      },
+      "tools": {
+        "title": "Outils de récupération",
+        "breathing": "Respiration",
+        "stomachVacuum": "Stomach Vacuum",
+        "neuroRecovery": "Neuro-récupération",
+        "sounds": "Sons",
+        "phoneTracking": "Suivi téléphone",
+        "smartAlarm": "Réveil intelligent"
+      }
+    },
+    "tracking": {
+      "title": "Mode nuit",
+      "unavailable": {
+        "message": "Le suivi du sommeil par le téléphone utilise l'accéléromètre de l'appareil — indisponible sur le web."
+      },
+      "idle": {
+        "description": "Pose ton téléphone sur le lit ou la table de chevet et lance le suivi juste avant de dormir. La lecture des mouvements se fait entièrement sur l'appareil — rien n'est envoyé nulle part.",
+        "beforeStart": {
+          "title": "Avant de commencer",
+          "tip1": "🔌 Branche ton téléphone — le suivi tourne toute la nuit, écran allumé (très sombre) mais actif.",
+          "tip2": "📱 Garde l'app ouverte : si tu la fermes complètement, le suivi s'arrête (limite iOS/Android hors de l'app).",
+          "tip3": "🎯 Sans montre, le sommeil paradoxal n'est pas mesurable et le profond/léger sont estimés — fiabilité annoncée plus basse qu'un vrai capteur."
+        },
+        "alarmScheduled": {
+          "title": "Réveil programmé",
+          "smartWindow": " · fenêtre intelligente de {{min}} min",
+          "simple": " · alarme simple"
+        },
+        "scheduleAlarmCta": "Programmer un réveil →",
+        "startCta": "Démarrer le suivi"
+      },
+      "summary": {
+        "title": "Nuit enregistrée",
+        "notInserted": "Une nuit plus fiable existait déjà pour cette date — suivi téléphone non ajouté.",
+        "confidence": {
+          "high": "Lecture fiable",
+          "medium": "À prendre avec recul",
+          "toConfirm": "Peu de données"
+        },
+        "deep": "Profond : {{time}}",
+        "light": "Léger : {{time}}",
+        "awake": "Éveillé : {{time}}",
+        "remNotAvailable": "Paradoxal : non mesurable par téléphone (nécessite une montre).",
+        "viewInSleepCta": "Voir dans Sommeil"
+      },
+      "ringing": {
+        "title": "Réveil",
+        "stopCta": "Arrêter",
+        "snoozeCta": "Répéter dans {{min}} min"
+      },
+      "savingNight": "Enregistrement de la nuit…",
+      "active": {
+        "status": "Suivi en cours · {{elapsed}}",
+        "backgroundWarning": "L'app a été mise en arrière-plan — une partie de la nuit n'a peut-être pas été suivie.",
+        "finishCta": "Terminer"
+      }
+    },
+    "alarmSettings": {
+      "title": "Réveil intelligent",
+      "warningBadge": "Fonctionne uniquement pendant que le mode nuit est ouvert — pas d'alarme en arrière-plan (limite iOS/Android).",
+      "enableToggle": "Activer le réveil",
+      "hourLabel": "Heure",
+      "minuteLabel": "Minute",
+      "repeatDaysLabel": "JOURS DE RÉPÉTITION",
+      "dayInitials": [
+        "D",
+        "L",
+        "M",
+        "M",
+        "J",
+        "V",
+        "S"
+      ],
+      "repeatDaysHint": {
+        "everyDay": "Tous les jours.",
+        "informative": "Informatif pour l’instant — lance le mode nuit chaque soir où tu veux le réveil."
+      },
+      "smartWindow": {
+        "title": "Fenêtre intelligente",
+        "description": "Sonne dès que tu sembles en sommeil léger dans les N minutes avant l'heure réglée — sinon à l'heure pile."
+      },
+      "window": {
+        "simple": "Alarme simple",
+        "min15": "15 min",
+        "min30": "30 min"
+      },
+      "sound": {
+        "title": "Son",
+        "description": "Tonalité intégrée (générée sur l'appareil, pas de fichier téléchargé).",
+        "volumeRampLabel": "MONTÉE DE VOLUME",
+        "vibration": "Vibration",
+        "snoozeLabel": "REPORT (SNOOZE)"
+      },
+      "ramp": {
+        "instant": "Volume direct",
+        "sec15": "15 s",
+        "sec30": "30 s",
+        "sec60": "60 s"
+      },
+      "snooze": {
+        "off": "Désactivé",
+        "min5": "5 min",
+        "min9": "9 min",
+        "min15": "15 min"
+      },
+      "startNightModeCta": "Lancer le mode nuit"
+    }
+  },
+  "wellbeing": {
+    "wellness": {
+      "title": "Bien-être mental",
+      "subtitle": "Comment tu te sens vraiment — ton ressenti, jamais déduit de tes capteurs.",
+      "bandLabel": {
+        "rayonnant": "Rayonnant",
+        "stable": "Stable",
+        "fragile": "Fragile",
+        "difficile": "Difficile"
+      },
+      "streak_one": "🔥 {{count}} jour de suivi d'affilée",
+      "streak_other": "🔥 {{count}} jours de suivi d'affilée",
+      "checkinTitle": "Check-in du jour",
+      "mood": {
+        "label": "Humeur",
+        "hint": "1 = maussade · 5 = au top"
+      },
+      "energy": {
+        "label": "Énergie",
+        "hint": "1 = épuisé · 5 = plein d'énergie"
+      },
+      "stress": {
+        "label": "Stress",
+        "hint": "1 = serein · 5 = débordé"
+      },
+      "noteLabel": "Note (optionnel)",
+      "notePlaceholder": "Un mot sur ta journée…",
+      "saving": "Enregistrement…",
+      "analysisTitle": "Analyse",
+      "recoveryTitle": "Récupération neuro-sensorielle",
+      "recoveryBody": "Respiration guidée, cohérence cardiaque et stimulation bilatérale pour faire redescendre la pression.",
+      "openTools": "Ouvrir les outils",
+      "historyTitle": "Historique",
+      "historyRow": "😊 {{mood}} · ⚡ {{energy}} · 🌡️ {{stress}}"
+    },
+    "circadian": {
+      "title": "Rythme circadien",
+      "subtitle": "Ton chronotype et tes horaires optimaux, déduits de tes nuits — des repères, pas des prescriptions médicales.",
+      "loading": "Chargement…",
+      "emptyTitle": "Encore un peu de patience",
+      "emptyMessage": "Il faut au moins 4 nuits enregistrées pour établir ton rythme. Continue à synchroniser tes données.",
+      "emptyAction": "Importer / connecter",
+      "chronotypeTitle": "Chronotype",
+      "chronotypeHint": {
+        "précoce": "Tu es plutôt du matin : énergie tôt, coup de barre en soirée.",
+        "intermédiaire": "Rythme équilibré : tu t’adaptes bien matin comme soir.",
+        "tardif": "Tu es plutôt du soir : démarrage lent, pic d’énergie tardif."
+      },
+      "windowTitle": "Ta fenêtre de sommeil",
+      "habitual": "Habituelle",
+      "ideal": "Idéale (8 h)",
+      "socialJetlagHigh": "Décalage social (semaine vs week-end) : {{min}} min — un vrai « jet lag » à réduire pour un réveil plus facile.",
+      "socialJetlagLow": "Décalage social (semaine vs week-end) : {{min}} min — bien maîtrisé.",
+      "energyTitle": "Ton énergie dans la journée",
+      "energyHint": "Estimée à partir de ton chronotype — un repère, pas une mesure.",
+      "scheduleTitle": "Tes horaires optimaux",
+      "summaryTitle": "En résumé"
+    },
+    "sound": {
+      "title": "Sons apaisants",
+      "unsupported": "La lecture des sons est disponible sur la version web de SUPOTSU pour l’instant. Ouvre l’app dans ton navigateur pour en profiter — la version {{platform}} arrivera plus tard.",
+      "subtitle": "Ambiances générées par l’app (libres de droits) ou tes propres sons. Minuterie et fondu de sortie inclus.",
+      "ambiancesTitle": "Ambiances",
+      "volumeTitle": "Volume",
+      "volume": {
+        "soft": "Doux",
+        "medium": "Moyen",
+        "loud": "Fort"
+      },
+      "timerTitle": "Minuterie",
+      "timer": {
+        "off": "Off",
+        "min15": "15 min",
+        "min30": "30 min",
+        "min60": "60 min"
+      },
+      "timerHint": "Le son s’arrêtera après {{min}} min avec un fondu de sortie.",
+      "mySoundsTitle": "Mes sons (appareil)",
+      "mySoundsHint": "Ajoute des fichiers audio de ta machine. Ils restent en local — rien n’est envoyé.",
+      "addSound": "Ajouter un son",
+      "fileError": "Impossible de lire ce fichier audio."
+    },
+    "bilateral": {
+      "title": "Stimulation bilatérale",
+      "subtitle": "Suis le point des yeux, tête immobile, en respirant lentement. Un outil de détente avant le sommeil.",
+      "warningTitle": "⚠️ CE N’EST PAS UNE THÉRAPIE EMDR",
+      "warningBody": "L’EMDR est une psychothérapie pratiquée par un professionnel de santé formé. La stimulation bilatérale ci-dessous est un simple outil de relaxation, sans visée thérapeutique. En cas de difficulté psychologique, consulte un professionnel.",
+      "speed": {
+        "slow": "Lent",
+        "medium": "Moyen",
+        "fast": "Rapide"
+      },
+      "ambientSoundLabel": "Son d'ambiance (optionnel)",
+      "noSound": "Sans son",
+      "start": "Commencer",
+      "stop": "Arrêter"
+    },
+    "breathing": {
+      "title": "Respiration guidée",
+      "ready": "Prêt ?",
+      "start": "Commencer",
+      "stop": "Arrêter",
+      "phase": {
+        "inhale": "Inspire",
+        "hold": "Retiens",
+        "exhale": "Expire"
+      },
+      "pattern": {
+        "box": {
+          "label": "Carré",
+          "caption": "Inspire 4 s · retiens 4 s · expire 4 s · retiens 4 s. Équilibrant."
+        },
+        "fourSevenEight": {
+          "label": "4-7-8",
+          "caption": "Inspire 4 s · retiens 7 s · expire 8 s. Favorise l’endormissement."
+        },
+        "coherence": {
+          "label": "Cohérence",
+          "caption": "Inspire 5 s · expire 5 s. Cohérence cardiaque (~6 respirations/min)."
+        }
+      }
+    },
+    "meditation": {
+      "title": "Méditation guidée",
+      "subtitle": "Séances audio narrées, par thème.",
+      "comingSoon": "Bientôt disponible",
+      "duration": "{{m}} min",
+      "footer": "Ces séances sont fournies par l'équipe Kaizen Supotsu — pas de conseil médical, un simple temps pour toi."
+    },
+    "meditationPlayer": {
+      "notFound": "Séance introuvable",
+      "offlineTitle": "Indisponible hors connexion",
+      "offlineMessage": "La lecture nécessite une connexion au backend.",
+      "pause": "Pause",
+      "play": "Lecture"
+    },
+    "neuroRecovery": {
+      "title": "Récupération neuro-sensorielle",
+      "subtitle": "Des outils simples pour faire redescendre la pression et préparer le sommeil.",
+      "warningLabel": "⚠️ À LIRE AVANT UTILISATION",
+      "warningText": "Ces outils sont des aides à la relaxation, sans visée thérapeutique. En particulier, la stimulation bilatérale proposée ici n'est pas de la thérapie EMDR : l'EMDR est une psychothérapie réalisée par un professionnel de santé formé. En cas de difficulté psychologique, consulte un professionnel.",
+      "soon": "Bientôt",
+      "open": "Ouvrir",
+      "tools": {
+        "breathing": {
+          "title": "Respiration guidée",
+          "description": "Carré, 4-7-8 ou cohérence cardiaque — suis le cercle qui respire avec toi."
+        },
+        "bilateral": {
+          "title": "Stimulation bilatérale",
+          "description": "Un point qui se déplace de gauche à droite ; suis-le des yeux pour te détendre. Outil de relaxation, pas une thérapie."
+        },
+        "sound": {
+          "title": "Sons apaisants",
+          "description": "Pluie, vagues, vent, bruits colorés — ou tes propres sons — avec minuterie et fondu de sortie."
+        },
+        "meditation": {
+          "title": "Méditation guidée",
+          "description": "Séances audio narrées par thème — sommeil, anti-stress, réveil, focus."
+        }
+      }
+    },
+    "stretching": {
+      "title": "Étirements",
+      "subtitle": "Routine guidée, tenue chronométrée — comme GOWOD/Pliability.",
+      "todayHeading": "Routine du jour",
+      "emptyToday": "Pas encore de séance récente pour te proposer une routine ciblée — choisis une zone ci-dessous.",
+      "todaySummary_one": "{{count}} étirement · ≈ {{minutes}} min",
+      "todaySummary_other": "{{count}} étirements · ≈ {{minutes}} min",
+      "start": "Commencer",
+      "byZoneHeading": "Par zone",
+      "zoneCount_one": "{{count}} étirement",
+      "zoneCount_other": "{{count}} étirements",
+      "footer": "Étirements en douceur, jamais jusqu'à la douleur. En cas de blessure, consulte un professionnel avant de reprendre."
+    },
+    "stretchingSession": {
+      "emptyTitle": "Aucun étirement",
+      "emptyMessage": "Cette routine est vide.",
+      "completedTitle": "Routine terminée",
+      "completedCount_one": "{{count}} tenue réalisée",
+      "completedCount_other": "{{count}} tenues réalisées",
+      "progress": "Étirement {{current}} / {{total}}",
+      "prepare": "Prépare-toi",
+      "hold": "Tiens la position",
+      "stop": "Arrêter",
+      "sideLeft": "gauche",
+      "sideRight": "droite"
+    },
+    "energyWave": {}
   }
 }

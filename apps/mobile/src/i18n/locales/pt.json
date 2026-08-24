@@ -1424,6 +1424,393 @@
           "mobility": "Adicionar um treino de mobilidade"
         }
       }
+    },
+    "load": {
+      "title": "Carga de treino",
+      "subtitle": "A relação entre carga aguda e crônica — para evoluir sem se machucar.",
+      "empty": {
+        "title": "Ainda não há atividades suficientes",
+        "message": "Registre suas sessões por algumas semanas para calcular sua carga e seu risco.",
+        "action": "Adicionar uma atividade"
+      },
+      "ratioCaption": "proporção",
+      "zone": {
+        "underload": "subcarga",
+        "optimal": "ideal",
+        "high": "elevado",
+        "risk": "risco"
+      },
+      "analysisHeading": "Análise",
+      "acuteLabel": "CARGA AGUDA",
+      "acuteCaption": "Últimos 7 dias",
+      "chronicLabel": "CARGA CRÔNICA",
+      "chronicCaption": "média / semana",
+      "dailyChartCaption": "Carga diária — 28 dias"
     }
+  },
+  "sommeil": {
+    "screen": {
+      "subtitle": "Sua última noite, sua pontuação e seus horários ideais.",
+      "band": {
+        "excellent": "Excelente",
+        "correct": "Bom",
+        "moyen": "Médio",
+        "faible": "Fraco"
+      },
+      "empty": {
+        "title": "Ainda não há dados de sono",
+        "message": "Sincronize o Apple Saúde (Health Auto Export) ou importe uma exportação para acompanhar suas noites — qualquer fonte é aceita.",
+        "action": "Importar / conectar"
+      },
+      "score": {
+        "average": "Média de 7 dias: {{avg}} h/noite",
+        "totalDuration": "Duração total",
+        "deepSleep": "Sono profundo"
+      },
+      "wellness": {
+        "label": "Bem-estar",
+        "labelWithBand": "Bem-estar · {{band}}"
+      },
+      "last7Nights": {
+        "title": "Últimas 7 noites",
+        "average": "méd. {{avg}} h"
+      },
+      "phases": {
+        "title": "Fases do sono",
+        "estimatedPhoneBadge": "Estimado — celular",
+        "summary": "{{start}} → {{end}} · {{inBed}} na cama, {{asleep}} dormindo",
+        "stage": {
+          "deep": "Profundo",
+          "light": "Leve",
+          "rem": "REM",
+          "awake": "Acordado"
+        },
+        "noTimeline": "Linha do tempo minuto a minuto não fornecida por esta exportação — apenas as durações por fase estão disponíveis.",
+        "phoneEstimate": "Sono REM não é mensurável pelo celular (requer um relógio) — profundo/leve são estimados a partir dos movimentos."
+      },
+      "bedtime": {
+        "title": "Horário ideal para dormir",
+        "estimate": "Estimativa baseada no seu ritmo e na sua recuperação (cronotipo {{chronotype}})."
+      },
+      "advice": {
+        "title": "Conselho"
+      },
+      "detail": {
+        "title": "Detalhe da pontuação",
+        "description": "Cada componente é avaliado em uma escala de 100. Os componentes sem dados não entram no cálculo."
+      },
+      "prediction": {
+        "title": "Previsão de amanhã",
+        "fatigueBadge": "Fadiga {{risk}}",
+        "energy": "Energia estimada {{score}}/100"
+      },
+      "signals": {
+        "title": "Sinais de recuperação",
+        "hrv": "VFC (HRV)",
+        "restingHr": "FC repouso",
+        "stress": "Estresse"
+      },
+      "circadian": {
+        "title": "Ritmo circadiano",
+        "description": "Descubra seu cronotipo e seus horários ideais (dormir, cafeína, exercício, luz).",
+        "cta": "Ver meus horários ideais"
+      },
+      "tools": {
+        "title": "Ferramentas de recuperação",
+        "breathing": "Respiração",
+        "stomachVacuum": "Stomach Vacuum",
+        "neuroRecovery": "Neurorrecuperação",
+        "sounds": "Sons",
+        "phoneTracking": "Monitoramento pelo celular",
+        "smartAlarm": "Alarme inteligente"
+      }
+    },
+    "tracking": {
+      "title": "Modo noturno",
+      "unavailable": {
+        "message": "O monitoramento do sono pelo celular usa o acelerômetro do aparelho — indisponível na versão web."
+      },
+      "idle": {
+        "description": "Coloque seu celular na cama ou na mesa de cabeceira e inicie o monitoramento pouco antes de dormir. A leitura dos movimentos é feita inteiramente no aparelho — nada é enviado a lugar nenhum.",
+        "beforeStart": {
+          "title": "Antes de começar",
+          "tip1": "🔌 Conecte seu celular ao carregador — o monitoramento roda a noite toda, com a tela ligada (bem escura), mas ativa.",
+          "tip2": "📱 Mantenha o app aberto: se você fechá-lo completamente, o monitoramento para (limitação do iOS/Android fora do app).",
+          "tip3": "🎯 Sem um relógio, o sono REM não é mensurável e o profundo/leve são estimados — confiabilidade indicada mais baixa que a de um sensor real."
+        },
+        "alarmScheduled": {
+          "title": "Alarme programado",
+          "smartWindow": " · janela inteligente de {{min}} min",
+          "simple": " · alarme simples"
+        },
+        "scheduleAlarmCta": "Programar um alarme →",
+        "startCta": "Iniciar monitoramento"
+      },
+      "summary": {
+        "title": "Noite registrada",
+        "notInserted": "Já existia uma noite mais confiável registrada para esta data — monitoramento pelo celular não adicionado.",
+        "confidence": {
+          "high": "Leitura confiável",
+          "medium": "Considere com cautela",
+          "toConfirm": "Poucos dados"
+        },
+        "deep": "Profundo: {{time}}",
+        "light": "Leve: {{time}}",
+        "awake": "Acordado: {{time}}",
+        "remNotAvailable": "REM: não mensurável pelo celular (requer um relógio).",
+        "viewInSleepCta": "Ver em Sono"
+      },
+      "ringing": {
+        "title": "Alarme",
+        "stopCta": "Parar",
+        "snoozeCta": "Repetir em {{min}} min"
+      },
+      "savingNight": "Salvando a noite…",
+      "active": {
+        "status": "Monitoramento em andamento · {{elapsed}}",
+        "backgroundWarning": "O app foi colocado em segundo plano — parte da noite pode não ter sido monitorada.",
+        "finishCta": "Finalizar"
+      }
+    },
+    "alarmSettings": {
+      "title": "Alarme inteligente",
+      "warningBadge": "Funciona apenas enquanto o modo noturno estiver aberto — sem alarme em segundo plano (limitação do iOS/Android).",
+      "enableToggle": "Ativar alarme",
+      "hourLabel": "Hora",
+      "minuteLabel": "Minuto",
+      "repeatDaysLabel": "DIAS DE REPETIÇÃO",
+      "dayInitials": [
+        "D",
+        "S",
+        "T",
+        "Q",
+        "Q",
+        "S",
+        "S"
+      ],
+      "repeatDaysHint": {
+        "everyDay": "Todos os dias.",
+        "informative": "Por enquanto, apenas informativo — inicie o modo noturno em cada noite em que quiser o alarme."
+      },
+      "smartWindow": {
+        "title": "Janela inteligente",
+        "description": "Toca assim que você parecer estar em sono leve dentro dos N minutos antes do horário definido — caso contrário, toca no horário certo."
+      },
+      "window": {
+        "simple": "Alarme simples",
+        "min15": "15 min",
+        "min30": "30 min"
+      },
+      "sound": {
+        "title": "Som",
+        "description": "Toque integrado (gerado no aparelho, sem download de arquivo).",
+        "volumeRampLabel": "AUMENTO DE VOLUME",
+        "vibration": "Vibração",
+        "snoozeLabel": "ADIAR (SONECA)"
+      },
+      "ramp": {
+        "instant": "Volume direto",
+        "sec15": "15 s",
+        "sec30": "30 s",
+        "sec60": "60 s"
+      },
+      "snooze": {
+        "off": "Desativado",
+        "min5": "5 min",
+        "min9": "9 min",
+        "min15": "15 min"
+      },
+      "startNightModeCta": "Iniciar modo noturno"
+    }
+  },
+  "wellbeing": {
+    "wellness": {
+      "title": "Bem-estar mental",
+      "subtitle": "Como você realmente se sente — sua percepção, nunca deduzida dos seus sensores.",
+      "bandLabel": {
+        "rayonnant": "Radiante",
+        "stable": "Estável",
+        "fragile": "Frágil",
+        "difficile": "Difícil"
+      },
+      "streak_one": "🔥 {{count}} dia de acompanhamento seguido",
+      "streak_other": "🔥 {{count}} dias de acompanhamento seguidos",
+      "checkinTitle": "Check-in do dia",
+      "mood": {
+        "label": "Humor",
+        "hint": "1 = de mau humor · 5 = ótimo"
+      },
+      "energy": {
+        "label": "Energia",
+        "hint": "1 = exausto · 5 = cheio de energia"
+      },
+      "stress": {
+        "label": "Estresse",
+        "hint": "1 = tranquilo · 5 = sobrecarregado"
+      },
+      "noteLabel": "Nota (opcional)",
+      "notePlaceholder": "Uma palavra sobre o seu dia…",
+      "saving": "Salvando…",
+      "analysisTitle": "Análise",
+      "recoveryTitle": "Recuperação neurossensorial",
+      "recoveryBody": "Respiração guiada, coerência cardíaca e estimulação bilateral para aliviar a pressão.",
+      "openTools": "Abrir ferramentas",
+      "historyTitle": "Histórico",
+      "historyRow": "😊 {{mood}} · ⚡ {{energy}} · 🌡️ {{stress}}"
+    },
+    "circadian": {
+      "title": "Ritmo circadiano",
+      "subtitle": "Seu cronotipo e seus horários ideais, deduzidos das suas noites — referências, não prescrições médicas.",
+      "loading": "Carregando…",
+      "emptyTitle": "Um pouco mais de paciência",
+      "emptyMessage": "São necessárias pelo menos 4 noites registradas para estabelecer seu ritmo. Continue sincronizando seus dados.",
+      "emptyAction": "Importar / conectar",
+      "chronotypeTitle": "Cronotipo",
+      "chronotypeHint": {
+        "précoce": "Você é mais matutino: energia logo cedo, cansaço à noite.",
+        "intermédiaire": "Ritmo equilibrado: você se adapta bem tanto de manhã quanto à noite.",
+        "tardif": "Você é mais noturno: começo lento, pico de energia mais tarde."
+      },
+      "windowTitle": "Sua janela de sono",
+      "habitual": "Habitual",
+      "ideal": "Ideal (8 h)",
+      "socialJetlagHigh": "Jetlag social (semana vs. fim de semana): {{min}} min — um verdadeiro \"jet lag\" a reduzir para um despertar mais fácil.",
+      "socialJetlagLow": "Jetlag social (semana vs. fim de semana): {{min}} min — bem controlado.",
+      "energyTitle": "Sua energia ao longo do dia",
+      "energyHint": "Estimada a partir do seu cronotipo — uma referência, não uma medição.",
+      "scheduleTitle": "Seus horários ideais",
+      "summaryTitle": "Em resumo"
+    },
+    "sound": {
+      "title": "Sons relaxantes",
+      "unsupported": "A reprodução de sons está disponível na versão web do SUPOTSU por enquanto. Abra o app no seu navegador para aproveitar — a versão {{platform}} chegará em breve.",
+      "subtitle": "Ambientes sonoros gerados pelo app (livres de direitos autorais) ou seus próprios sons. Temporizador e fade-out incluídos.",
+      "ambiancesTitle": "Ambientes",
+      "volumeTitle": "Volume",
+      "volume": {
+        "soft": "Suave",
+        "medium": "Médio",
+        "loud": "Alto"
+      },
+      "timerTitle": "Temporizador",
+      "timer": {
+        "off": "Off",
+        "min15": "15 min",
+        "min30": "30 min",
+        "min60": "60 min"
+      },
+      "timerHint": "O som vai parar após {{min}} min com um fade-out.",
+      "mySoundsTitle": "Meus sons (aparelho)",
+      "mySoundsHint": "Adicione arquivos de áudio do seu dispositivo. Eles ficam armazenados localmente — nada é enviado.",
+      "addSound": "Adicionar um som",
+      "fileError": "Não foi possível ler este arquivo de áudio."
+    },
+    "bilateral": {
+      "title": "Estimulação bilateral",
+      "subtitle": "Siga o ponto com os olhos, mantendo a cabeça parada, respirando lentamente. Uma ferramenta de relaxamento antes de dormir.",
+      "warningTitle": "⚠️ ISTO NÃO É UMA TERAPIA EMDR",
+      "warningBody": "O EMDR é uma psicoterapia praticada por um profissional de saúde qualificado. A estimulação bilateral abaixo é apenas uma ferramenta de relaxamento, sem finalidade terapêutica. Em caso de dificuldade psicológica, consulte um profissional.",
+      "speed": {
+        "slow": "Lento",
+        "medium": "Médio",
+        "fast": "Rápido"
+      },
+      "ambientSoundLabel": "Som ambiente (opcional)",
+      "noSound": "Sem som",
+      "start": "Começar",
+      "stop": "Parar"
+    },
+    "breathing": {
+      "title": "Respiração guiada",
+      "ready": "Pronto?",
+      "start": "Começar",
+      "stop": "Parar",
+      "phase": {
+        "inhale": "Inspire",
+        "hold": "Segure",
+        "exhale": "Expire"
+      },
+      "pattern": {
+        "box": {
+          "label": "Quadrado",
+          "caption": "Inspire 4 s · segure 4 s · expire 4 s · segure 4 s. Equilibrante."
+        },
+        "fourSevenEight": {
+          "label": "4-7-8",
+          "caption": "Inspire 4 s · segure 7 s · expire 8 s. Favorece o adormecimento."
+        },
+        "coherence": {
+          "label": "Coerência",
+          "caption": "Inspire 5 s · expire 5 s. Coerência cardíaca (~6 respirações/min)."
+        }
+      }
+    },
+    "meditation": {
+      "title": "Meditação guiada",
+      "subtitle": "Sessões de áudio narradas, por tema.",
+      "comingSoon": "Em breve",
+      "duration": "{{m}} min",
+      "footer": "Estas sessões são fornecidas pela equipe Kaizen Supotsu — não são aconselhamento médico, apenas um momento para você."
+    },
+    "meditationPlayer": {
+      "notFound": "Sessão não encontrada",
+      "offlineTitle": "Indisponível sem conexão",
+      "offlineMessage": "A reprodução requer uma conexão com o backend.",
+      "pause": "Pausar",
+      "play": "Reproduzir"
+    },
+    "neuroRecovery": {
+      "title": "Recuperação neurossensorial",
+      "subtitle": "Ferramentas simples para aliviar a pressão e preparar o sono.",
+      "warningLabel": "⚠️ LEIA ANTES DE USAR",
+      "warningText": "Estas ferramentas são auxílios ao relaxamento, sem finalidade terapêutica. Em particular, a estimulação bilateral oferecida aqui não é terapia EMDR: o EMDR é uma psicoterapia realizada por um profissional de saúde qualificado. Em caso de dificuldade psicológica, consulte um profissional.",
+      "soon": "Em breve",
+      "open": "Abrir",
+      "tools": {
+        "breathing": {
+          "title": "Respiração guiada",
+          "description": "Quadrado, 4-7-8 ou coerência cardíaca — siga o círculo que respira com você."
+        },
+        "bilateral": {
+          "title": "Estimulação bilateral",
+          "description": "Um ponto que se move da esquerda para a direita; siga-o com os olhos para relaxar. Ferramenta de relaxamento, não uma terapia."
+        },
+        "sound": {
+          "title": "Sons relaxantes",
+          "description": "Chuva, ondas, vento, ruídos coloridos — ou seus próprios sons — com temporizador e fade-out."
+        },
+        "meditation": {
+          "title": "Meditação guiada",
+          "description": "Sessões de áudio narradas por tema — sono, antiestresse, despertar, foco."
+        }
+      }
+    },
+    "stretching": {
+      "title": "Alongamentos",
+      "subtitle": "Rotina guiada, com tempo cronometrado — como GOWOD/Pliability.",
+      "todayHeading": "Rotina do dia",
+      "emptyToday": "Ainda não há uma sessão recente para sugerir uma rotina personalizada — escolha uma região abaixo.",
+      "todaySummary_one": "{{count}} alongamento · ≈ {{minutes}} min",
+      "todaySummary_other": "{{count}} alongamentos · ≈ {{minutes}} min",
+      "start": "Começar",
+      "byZoneHeading": "Por região",
+      "zoneCount_one": "{{count}} alongamento",
+      "zoneCount_other": "{{count}} alongamentos",
+      "footer": "Alongue-se com suavidade, nunca até sentir dor. Em caso de lesão, consulte um profissional antes de retomar."
+    },
+    "stretchingSession": {
+      "emptyTitle": "Nenhum alongamento",
+      "emptyMessage": "Esta rotina está vazia.",
+      "completedTitle": "Rotina concluída",
+      "completedCount_one": "{{count}} posição concluída",
+      "completedCount_other": "{{count}} posições concluídas",
+      "progress": "Alongamento {{current}} / {{total}}",
+      "prepare": "Prepare-se",
+      "hold": "Segure a posição",
+      "stop": "Parar",
+      "sideLeft": "esquerda",
+      "sideRight": "direita"
+    },
+    "energyWave": {}
   }
 }

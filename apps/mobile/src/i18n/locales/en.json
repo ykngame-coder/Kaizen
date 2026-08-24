@@ -1424,6 +1424,393 @@
           "mobility": "Add a mobility session"
         }
       }
+    },
+    "load": {
+      "title": "Training load",
+      "subtitle": "The acute-to-chronic load ratio — to progress without getting injured.",
+      "empty": {
+        "title": "Not enough activity yet",
+        "message": "Log your sessions over a few weeks to calculate your load and risk.",
+        "action": "Add an activity"
+      },
+      "ratioCaption": "ratio",
+      "zone": {
+        "underload": "underload",
+        "optimal": "optimal",
+        "high": "high",
+        "risk": "risk"
+      },
+      "analysisHeading": "Analysis",
+      "acuteLabel": "ACUTE LOAD",
+      "acuteCaption": "Last 7 days",
+      "chronicLabel": "CHRONIC LOAD",
+      "chronicCaption": "average / week",
+      "dailyChartCaption": "Daily load — 28 days"
     }
+  },
+  "sommeil": {
+    "screen": {
+      "subtitle": "Your last night, your score, and your optimal schedule.",
+      "band": {
+        "excellent": "Excellent",
+        "correct": "Good",
+        "moyen": "Average",
+        "faible": "Poor"
+      },
+      "empty": {
+        "title": "No sleep data yet",
+        "message": "Sync Apple Health (Health Auto Export) or import an export to track your nights — any source is supported.",
+        "action": "Import / connect"
+      },
+      "score": {
+        "average": "7-day average: {{avg}} h / night",
+        "totalDuration": "Total duration",
+        "deepSleep": "Deep sleep"
+      },
+      "wellness": {
+        "label": "Wellbeing",
+        "labelWithBand": "Wellbeing · {{band}}"
+      },
+      "last7Nights": {
+        "title": "Last 7 nights",
+        "average": "avg. {{avg}} h"
+      },
+      "phases": {
+        "title": "Sleep phases",
+        "estimatedPhoneBadge": "Estimated — phone",
+        "summary": "{{start}} → {{end}} · {{inBed}} in bed, {{asleep}} asleep",
+        "stage": {
+          "deep": "Deep",
+          "light": "Light",
+          "rem": "REM",
+          "awake": "Awake"
+        },
+        "noTimeline": "Minute-by-minute timeline not provided by this export — only phase durations are available.",
+        "phoneEstimate": "REM sleep can't be measured by phone (requires a watch) — deep/light are estimated from movement."
+      },
+      "bedtime": {
+        "title": "Optimal bedtime",
+        "estimate": "Estimate based on your rhythm and recovery (chronotype {{chronotype}})."
+      },
+      "advice": {
+        "title": "Advice"
+      },
+      "detail": {
+        "title": "Score breakdown",
+        "description": "Each component is scored out of 100. Components with no data aren't included in the calculation."
+      },
+      "prediction": {
+        "title": "Tomorrow's forecast",
+        "fatigueBadge": "Fatigue {{risk}}",
+        "energy": "Estimated energy {{score}}/100"
+      },
+      "signals": {
+        "title": "Recovery signals",
+        "hrv": "HRV",
+        "restingHr": "Resting HR",
+        "stress": "Stress"
+      },
+      "circadian": {
+        "title": "Circadian rhythm",
+        "description": "Discover your chronotype and optimal schedule (bedtime, caffeine, exercise, light).",
+        "cta": "View my optimal schedule"
+      },
+      "tools": {
+        "title": "Recovery tools",
+        "breathing": "Breathing",
+        "stomachVacuum": "Stomach Vacuum",
+        "neuroRecovery": "Neuro-recovery",
+        "sounds": "Sounds",
+        "phoneTracking": "Phone tracking",
+        "smartAlarm": "Smart alarm"
+      }
+    },
+    "tracking": {
+      "title": "Night mode",
+      "unavailable": {
+        "message": "Phone-based sleep tracking uses the device's accelerometer — unavailable on web."
+      },
+      "idle": {
+        "description": "Place your phone on the bed or nightstand and start tracking right before you sleep. Movement is read entirely on the device — nothing is sent anywhere.",
+        "beforeStart": {
+          "title": "Before you start",
+          "tip1": "🔌 Plug in your phone — tracking runs all night with the screen on (very dim) but active.",
+          "tip2": "📱 Keep the app open: if you close it completely, tracking stops (an iOS/Android limitation outside the app).",
+          "tip3": "🎯 Without a watch, REM sleep can't be measured and deep/light are estimated — reported reliability is lower than a real sensor."
+        },
+        "alarmScheduled": {
+          "title": "Alarm scheduled",
+          "smartWindow": " · smart window of {{min}} min",
+          "simple": " · simple alarm"
+        },
+        "scheduleAlarmCta": "Schedule an alarm →",
+        "startCta": "Start tracking"
+      },
+      "summary": {
+        "title": "Night recorded",
+        "notInserted": "A more reliable night already existed for this date — phone tracking wasn't added.",
+        "confidence": {
+          "high": "Reliable reading",
+          "medium": "Take with a grain of salt",
+          "toConfirm": "Limited data"
+        },
+        "deep": "Deep: {{time}}",
+        "light": "Light: {{time}}",
+        "awake": "Awake: {{time}}",
+        "remNotAvailable": "REM: can't be measured by phone (requires a watch).",
+        "viewInSleepCta": "View in Sleep"
+      },
+      "ringing": {
+        "title": "Alarm",
+        "stopCta": "Stop",
+        "snoozeCta": "Snooze for {{min}} min"
+      },
+      "savingNight": "Saving the night…",
+      "active": {
+        "status": "Tracking in progress · {{elapsed}}",
+        "backgroundWarning": "The app was moved to the background — part of the night may not have been tracked.",
+        "finishCta": "Finish"
+      }
+    },
+    "alarmSettings": {
+      "title": "Smart alarm",
+      "warningBadge": "Only works while night mode is open — no background alarm (an iOS/Android limitation).",
+      "enableToggle": "Enable alarm",
+      "hourLabel": "Hour",
+      "minuteLabel": "Minute",
+      "repeatDaysLabel": "REPEAT DAYS",
+      "dayInitials": [
+        "S",
+        "M",
+        "T",
+        "W",
+        "T",
+        "F",
+        "S"
+      ],
+      "repeatDaysHint": {
+        "everyDay": "Every day.",
+        "informative": "Informational for now — start night mode each evening you want the alarm."
+      },
+      "smartWindow": {
+        "title": "Smart window",
+        "description": "Rings as soon as you seem to be in light sleep within N minutes before the set time — otherwise right on time."
+      },
+      "window": {
+        "simple": "Simple alarm",
+        "min15": "15 min",
+        "min30": "30 min"
+      },
+      "sound": {
+        "title": "Sound",
+        "description": "Built-in tone (generated on the device, no downloaded file).",
+        "volumeRampLabel": "VOLUME RAMP",
+        "vibration": "Vibration",
+        "snoozeLabel": "SNOOZE"
+      },
+      "ramp": {
+        "instant": "Instant volume",
+        "sec15": "15 s",
+        "sec30": "30 s",
+        "sec60": "60 s"
+      },
+      "snooze": {
+        "off": "Off",
+        "min5": "5 min",
+        "min9": "9 min",
+        "min15": "15 min"
+      },
+      "startNightModeCta": "Start night mode"
+    }
+  },
+  "wellbeing": {
+    "wellness": {
+      "title": "Mental wellbeing",
+      "subtitle": "How you really feel — your own input, never inferred from your sensors.",
+      "bandLabel": {
+        "rayonnant": "Radiant",
+        "stable": "Stable",
+        "fragile": "Fragile",
+        "difficile": "Difficult"
+      },
+      "streak_one": "🔥 {{count}} day tracked in a row",
+      "streak_other": "🔥 {{count}} days tracked in a row",
+      "checkinTitle": "Today's check-in",
+      "mood": {
+        "label": "Mood",
+        "hint": "1 = down · 5 = great"
+      },
+      "energy": {
+        "label": "Energy",
+        "hint": "1 = exhausted · 5 = full of energy"
+      },
+      "stress": {
+        "label": "Stress",
+        "hint": "1 = calm · 5 = overwhelmed"
+      },
+      "noteLabel": "Note (optional)",
+      "notePlaceholder": "A word about your day…",
+      "saving": "Saving…",
+      "analysisTitle": "Analysis",
+      "recoveryTitle": "Neuro-sensory recovery",
+      "recoveryBody": "Guided breathing, heart coherence, and bilateral stimulation to help you release the pressure.",
+      "openTools": "Open tools",
+      "historyTitle": "History",
+      "historyRow": "😊 {{mood}} · ⚡ {{energy}} · 🌡️ {{stress}}"
+    },
+    "circadian": {
+      "title": "Circadian rhythm",
+      "subtitle": "Your chronotype and optimal schedule, inferred from your nights — guidelines, not medical prescriptions.",
+      "loading": "Loading…",
+      "emptyTitle": "A little more patience",
+      "emptyMessage": "At least 4 recorded nights are needed to establish your rhythm. Keep syncing your data.",
+      "emptyAction": "Import / connect",
+      "chronotypeTitle": "Chronotype",
+      "chronotypeHint": {
+        "précoce": "You're more of a morning person: energy comes early, with a slump in the evening.",
+        "intermédiaire": "Balanced rhythm: you adapt well to both morning and evening.",
+        "tardif": "You're more of an evening person: a slow start, with a late energy peak."
+      },
+      "windowTitle": "Your sleep window",
+      "habitual": "Usual",
+      "ideal": "Ideal (8 h)",
+      "socialJetlagHigh": "Social jetlag (weekday vs weekend): {{min}} min — a real \"jet lag\" worth reducing for an easier wake-up.",
+      "socialJetlagLow": "Social jetlag (weekday vs weekend): {{min}} min — well under control.",
+      "energyTitle": "Your energy throughout the day",
+      "energyHint": "Estimated from your chronotype — a guideline, not a measurement.",
+      "scheduleTitle": "Your optimal schedule",
+      "summaryTitle": "In summary"
+    },
+    "sound": {
+      "title": "Soothing sounds",
+      "unsupported": "Sound playback is currently available on the web version of SUPOTSU. Open the app in your browser to use it — the {{platform}} version is coming later.",
+      "subtitle": "App-generated ambiences (royalty-free) or your own sounds. Timer and fade-out included.",
+      "ambiancesTitle": "Ambiences",
+      "volumeTitle": "Volume",
+      "volume": {
+        "soft": "Soft",
+        "medium": "Medium",
+        "loud": "Loud"
+      },
+      "timerTitle": "Timer",
+      "timer": {
+        "off": "Off",
+        "min15": "15 min",
+        "min30": "30 min",
+        "min60": "60 min"
+      },
+      "timerHint": "The sound will stop after {{min}} min with a fade-out.",
+      "mySoundsTitle": "My sounds (device)",
+      "mySoundsHint": "Add audio files from your device. They stay local — nothing is sent.",
+      "addSound": "Add a sound",
+      "fileError": "Unable to play this audio file."
+    },
+    "bilateral": {
+      "title": "Bilateral stimulation",
+      "subtitle": "Follow the dot with your eyes, keeping your head still, while breathing slowly. A relaxation tool before sleep.",
+      "warningTitle": "⚠️ THIS IS NOT EMDR THERAPY",
+      "warningBody": "EMDR is a psychotherapy practiced by a trained healthcare professional. The bilateral stimulation below is simply a relaxation tool, with no therapeutic aim. If you're experiencing psychological difficulties, consult a professional.",
+      "speed": {
+        "slow": "Slow",
+        "medium": "Medium",
+        "fast": "Fast"
+      },
+      "ambientSoundLabel": "Ambient sound (optional)",
+      "noSound": "No sound",
+      "start": "Start",
+      "stop": "Stop"
+    },
+    "breathing": {
+      "title": "Guided breathing",
+      "ready": "Ready?",
+      "start": "Start",
+      "stop": "Stop",
+      "phase": {
+        "inhale": "Inhale",
+        "hold": "Hold",
+        "exhale": "Exhale"
+      },
+      "pattern": {
+        "box": {
+          "label": "Box",
+          "caption": "Inhale 4 s · hold 4 s · exhale 4 s · hold 4 s. Balancing."
+        },
+        "fourSevenEight": {
+          "label": "4-7-8",
+          "caption": "Inhale 4 s · hold 7 s · exhale 8 s. Helps you fall asleep."
+        },
+        "coherence": {
+          "label": "Coherence",
+          "caption": "Inhale 5 s · exhale 5 s. Heart coherence (~6 breaths/min)."
+        }
+      }
+    },
+    "meditation": {
+      "title": "Guided meditation",
+      "subtitle": "Narrated audio sessions, by theme.",
+      "comingSoon": "Coming soon",
+      "duration": "{{m}} min",
+      "footer": "These sessions are provided by the Kaizen Supotsu team — not medical advice, just time for yourself."
+    },
+    "meditationPlayer": {
+      "notFound": "Session not found",
+      "offlineTitle": "Unavailable offline",
+      "offlineMessage": "Playback requires a connection to the backend.",
+      "pause": "Pause",
+      "play": "Play"
+    },
+    "neuroRecovery": {
+      "title": "Neuro-sensory recovery",
+      "subtitle": "Simple tools to help release the pressure and prepare for sleep.",
+      "warningLabel": "⚠️ READ BEFORE USE",
+      "warningText": "These tools are relaxation aids with no therapeutic aim. In particular, the bilateral stimulation offered here is not EMDR therapy: EMDR is a psychotherapy carried out by a trained healthcare professional. If you're experiencing psychological difficulties, consult a professional.",
+      "soon": "Soon",
+      "open": "Open",
+      "tools": {
+        "breathing": {
+          "title": "Guided breathing",
+          "description": "Box, 4-7-8, or heart coherence — follow the circle as it breathes with you."
+        },
+        "bilateral": {
+          "title": "Bilateral stimulation",
+          "description": "A dot moving left to right; follow it with your eyes to relax. A relaxation tool, not a therapy."
+        },
+        "sound": {
+          "title": "Soothing sounds",
+          "description": "Rain, waves, wind, colored noise — or your own sounds — with timer and fade-out."
+        },
+        "meditation": {
+          "title": "Guided meditation",
+          "description": "Narrated audio sessions by theme — sleep, stress relief, wake-up, focus."
+        }
+      }
+    },
+    "stretching": {
+      "title": "Stretching",
+      "subtitle": "Guided routine, timed holds — like GOWOD/Pliability.",
+      "todayHeading": "Today's routine",
+      "emptyToday": "No recent session yet to suggest a targeted routine — choose a zone below.",
+      "todaySummary_one": "{{count}} stretch · ≈ {{minutes}} min",
+      "todaySummary_other": "{{count}} stretches · ≈ {{minutes}} min",
+      "start": "Start",
+      "byZoneHeading": "By zone",
+      "zoneCount_one": "{{count}} stretch",
+      "zoneCount_other": "{{count}} stretches",
+      "footer": "Stretch gently, never to the point of pain. If you're injured, consult a professional before resuming."
+    },
+    "stretchingSession": {
+      "emptyTitle": "No stretches",
+      "emptyMessage": "This routine is empty.",
+      "completedTitle": "Routine complete",
+      "completedCount_one": "{{count}} hold completed",
+      "completedCount_other": "{{count}} holds completed",
+      "progress": "Stretch {{current}} / {{total}}",
+      "prepare": "Get ready",
+      "hold": "Hold the position",
+      "stop": "Stop",
+      "sideLeft": "left",
+      "sideRight": "right"
+    },
+    "energyWave": {}
   }
 }

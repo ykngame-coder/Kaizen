@@ -24,12 +24,6 @@ import {
 import { useAddWellnessCheckin, useWellnessCheckins } from '@/lib/data/queries';
 import { formatDate } from '@/lib/format';
 
-const BAND_LABEL: Record<WellnessBand, string> = {
-  rayonnant: 'Rayonnant',
-  stable: 'Stable',
-  fragile: 'Fragile',
-  difficile: 'Difficile',
-};
 const BAND_TONE: Record<WellnessBand, 'success' | 'info' | 'warning' | 'error'> = {
   rayonnant: 'success',
   stable: 'info',
@@ -84,6 +78,13 @@ export function WellnessScreen(): React.JSX.Element {
   const addCheckin = useAddWellnessCheckin();
   const asOf = new Date().toISOString();
 
+  const BAND_LABEL: Record<WellnessBand, string> = {
+    rayonnant: t('wellbeing.wellness.bandLabel.rayonnant'),
+    stable: t('wellbeing.wellness.bandLabel.stable'),
+    fragile: t('wellbeing.wellness.bandLabel.fragile'),
+    difficile: t('wellbeing.wellness.bandLabel.difficile'),
+  };
+
   const [mood, setMood] = useState(3);
   const [energy, setEnergy] = useState(3);
   const [stress, setStress] = useState(3);
@@ -110,9 +111,9 @@ export function WellnessScreen(): React.JSX.Element {
 
   return (
     <Screen scroll>
-      <Text variant="title">Bien-être mental</Text>
+      <Text variant="title">{t('wellbeing.wellness.title')}</Text>
       <Text variant="caption" color="textMuted">
-        Comment tu te sens vraiment — ton ressenti, jamais déduit de tes capteurs.
+        {t('wellbeing.wellness.subtitle')}
       </Text>
 
       {hasData && (
@@ -122,7 +123,7 @@ export function WellnessScreen(): React.JSX.Element {
             <Badge label={BAND_LABEL[band]} tone={BAND_TONE[band]} />
             {streak > 0 && (
               <Text variant="caption" color="textMuted">
-                🔥 {streak} jour{streak > 1 ? 's' : ''} de suivi d'affilée
+                {t('wellbeing.wellness.streak', { count: streak })}
               </Text>
             )}
           </View>
@@ -130,21 +131,36 @@ export function WellnessScreen(): React.JSX.Element {
       )}
 
       <Card>
-        <Text variant="heading">Check-in du jour</Text>
+        <Text variant="heading">{t('wellbeing.wellness.checkinTitle')}</Text>
         <View style={{ gap: spacing[3], marginTop: spacing[2] }}>
-          <RatingRow label="Humeur" hint="1 = maussade · 5 = au top" value={mood} onChange={setMood} />
-          <RatingRow label="Énergie" hint="1 = épuisé · 5 = plein d'énergie" value={energy} onChange={setEnergy} />
-          <RatingRow label="Stress" hint="1 = serein · 5 = débordé" value={stress} onChange={setStress} />
+          <RatingRow
+            label={t('wellbeing.wellness.mood.label')}
+            hint={t('wellbeing.wellness.mood.hint')}
+            value={mood}
+            onChange={setMood}
+          />
+          <RatingRow
+            label={t('wellbeing.wellness.energy.label')}
+            hint={t('wellbeing.wellness.energy.hint')}
+            value={energy}
+            onChange={setEnergy}
+          />
+          <RatingRow
+            label={t('wellbeing.wellness.stress.label')}
+            hint={t('wellbeing.wellness.stress.hint')}
+            value={stress}
+            onChange={setStress}
+          />
           <Input
-            label="Note (optionnel)"
-            placeholder="Un mot sur ta journée…"
+            label={t('wellbeing.wellness.noteLabel')}
+            placeholder={t('wellbeing.wellness.notePlaceholder')}
             value={note}
             onChangeText={setNote}
             multiline
           />
           <View style={{ alignItems: 'flex-start' }}>
             <Button
-              label={addCheckin.isPending ? 'Enregistrement…' : 'Enregistrer'}
+              label={addCheckin.isPending ? t('wellbeing.wellness.saving') : t('common.save')}
               onPress={onSubmit}
             />
           </View>
@@ -153,7 +169,7 @@ export function WellnessScreen(): React.JSX.Element {
 
       {explanation && (
         <Card>
-          <Text variant="heading">Analyse</Text>
+          <Text variant="heading">{t('wellbeing.wellness.analysisTitle')}</Text>
           <Text variant="caption" color="textMuted">
             {t(explanation.observation.key, explanation.observation.params)}
           </Text>
@@ -167,14 +183,13 @@ export function WellnessScreen(): React.JSX.Element {
       )}
 
       <Card>
-        <Text variant="heading">Récupération neuro-sensorielle</Text>
+        <Text variant="heading">{t('wellbeing.wellness.recoveryTitle')}</Text>
         <Text variant="body" color="textMuted">
-          Respiration guidée, cohérence cardiaque et stimulation bilatérale pour faire redescendre
-          la pression.
+          {t('wellbeing.wellness.recoveryBody')}
         </Text>
         <View style={{ alignItems: 'flex-start', marginTop: spacing[1] }}>
           <Button
-            label="Ouvrir les outils"
+            label={t('wellbeing.wellness.openTools')}
             variant="secondary"
             onPress={() => router.push('/sommeil/neuro-recovery')}
           />
@@ -183,7 +198,7 @@ export function WellnessScreen(): React.JSX.Element {
 
       {checkins.length > 0 && (
         <Card>
-          <Text variant="heading">Historique</Text>
+          <Text variant="heading">{t('wellbeing.wellness.historyTitle')}</Text>
           <View style={{ gap: spacing[2], marginTop: spacing[1] }}>
             {checkins.slice(0, 7).map((c) => (
               <View
@@ -199,7 +214,7 @@ export function WellnessScreen(): React.JSX.Element {
                   ) : null}
                 </View>
                 <Text variant="caption" color="textMuted">
-                  😊 {c.mood} · ⚡ {c.energy} · 🌡️ {c.stress}
+                  {t('wellbeing.wellness.historyRow', { mood: c.mood, energy: c.energy, stress: c.stress })}
                 </Text>
               </View>
             ))}
@@ -208,7 +223,7 @@ export function WellnessScreen(): React.JSX.Element {
       )}
 
       <View style={{ alignItems: 'flex-start' }}>
-        <Button label="Retour" variant="secondary" onPress={() => router.back()} />
+        <Button label={t('common.back')} variant="secondary" onPress={() => router.back()} />
       </View>
     </Screen>
   );

@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { Platform, Pressable, View } from 'react-native';
 import { useRouter } from 'expo-router';
+import { useTranslation } from 'react-i18next';
 import { Button, Card, Screen, SegmentedControl, Text, useTheme } from '@supotsu/ui';
 import { spacing } from '@supotsu/design-system';
 import {
@@ -10,18 +11,6 @@ import {
   type SoundEngine,
   type SoundPresetKey,
 } from './soundEngine';
-
-const VOLUME_OPTIONS = [
-  { value: '0.3', label: 'Doux' },
-  { value: '0.6', label: 'Moyen' },
-  { value: '1', label: 'Fort' },
-];
-const TIMER_OPTIONS = [
-  { value: '0', label: 'Off' },
-  { value: '15', label: '15 min' },
-  { value: '30', label: '30 min' },
-  { value: '60', label: '60 min' },
-];
 
 interface LocalSound {
   name: string;
@@ -34,11 +23,24 @@ interface LocalSound {
  * playback for now (Web Audio); native shows a graceful notice.
  */
 export function SoundScreen(): React.JSX.Element {
+  const { t } = useTranslation();
   const router = useRouter();
   const { colors } = useTheme();
   const engineRef = useRef<SoundEngine | null>(null);
   if (engineRef.current === null) engineRef.current = createSoundEngine();
   const engine = engineRef.current;
+
+  const VOLUME_OPTIONS = [
+    { value: '0.3', label: t('wellbeing.sound.volume.soft') },
+    { value: '0.6', label: t('wellbeing.sound.volume.medium') },
+    { value: '1', label: t('wellbeing.sound.volume.loud') },
+  ];
+  const TIMER_OPTIONS = [
+    { value: '0', label: t('wellbeing.sound.timer.off') },
+    { value: '15', label: t('wellbeing.sound.timer.min15') },
+    { value: '30', label: t('wellbeing.sound.timer.min30') },
+    { value: '60', label: t('wellbeing.sound.timer.min60') },
+  ];
 
   const [playingKey, setPlayingKey] = useState<string | null>(null);
   const [volume, setVolume] = useState(0.6);
@@ -76,7 +78,7 @@ export function SoundScreen(): React.JSX.Element {
       setPlayingKey(key);
       armTimer();
     } catch {
-      setFileError('Impossible de lire ce fichier audio.');
+      setFileError(t('wellbeing.sound.fileError'));
       setPlayingKey(null);
     }
   };
@@ -104,15 +106,14 @@ export function SoundScreen(): React.JSX.Element {
   if (!engine.isSupported) {
     return (
       <Screen scroll>
-        <Text variant="title">Sons apaisants</Text>
+        <Text variant="title">{t('wellbeing.sound.title')}</Text>
         <Card>
           <Text variant="body" color="textMuted">
-            La lecture des sons est disponible sur la version web de SUPOTSU pour l’instant. Ouvre
-            l’app dans ton navigateur pour en profiter — la version {Platform.OS} arrivera plus tard.
+            {t('wellbeing.sound.unsupported', { platform: Platform.OS })}
           </Text>
         </Card>
         <View style={{ alignItems: 'flex-start' }}>
-          <Button label="Retour" variant="secondary" onPress={() => router.back()} />
+          <Button label={t('common.back')} variant="secondary" onPress={() => router.back()} />
         </View>
       </Screen>
     );
@@ -120,14 +121,13 @@ export function SoundScreen(): React.JSX.Element {
 
   return (
     <Screen scroll>
-      <Text variant="title">Sons apaisants</Text>
+      <Text variant="title">{t('wellbeing.sound.title')}</Text>
       <Text variant="caption" color="textMuted">
-        Ambiances générées par l’app (libres de droits) ou tes propres sons. Minuterie et fondu de
-        sortie inclus.
+        {t('wellbeing.sound.subtitle')}
       </Text>
 
       <Card>
-        <Text variant="heading">Ambiances</Text>
+        <Text variant="heading">{t('wellbeing.sound.ambiancesTitle')}</Text>
         <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: spacing[2], marginTop: spacing[2] }}>
           {SOUND_PRESETS.map((p) => {
             const active = playingKey === p.key;
@@ -159,30 +159,30 @@ export function SoundScreen(): React.JSX.Element {
       </Card>
 
       <Card>
-        <Text variant="heading">Volume</Text>
+        <Text variant="heading">{t('wellbeing.sound.volumeTitle')}</Text>
         <View style={{ marginTop: spacing[2] }}>
           <SegmentedControl options={VOLUME_OPTIONS} value={String(volume)} onChange={onVolume} />
         </View>
         <Text variant="heading" style={{ marginTop: spacing[4] }}>
-          Minuterie
+          {t('wellbeing.sound.timerTitle')}
         </Text>
         <View style={{ marginTop: spacing[2] }}>
           <SegmentedControl options={TIMER_OPTIONS} value={String(timerMin)} onChange={onTimer} />
         </View>
         {timerMin > 0 && (
           <Text variant="caption" color="textSubtle" style={{ marginTop: spacing[2] }}>
-            Le son s’arrêtera après {timerMin} min avec un fondu de sortie.
+            {t('wellbeing.sound.timerHint', { min: timerMin })}
           </Text>
         )}
       </Card>
 
       <Card>
-        <Text variant="heading">Mes sons (appareil)</Text>
+        <Text variant="heading">{t('wellbeing.sound.mySoundsTitle')}</Text>
         <Text variant="caption" color="textSubtle" style={{ marginTop: spacing[1] }}>
-          Ajoute des fichiers audio de ta machine. Ils restent en local — rien n’est envoyé.
+          {t('wellbeing.sound.mySoundsHint')}
         </Text>
         <View style={{ alignItems: 'flex-start', marginTop: spacing[2] }}>
-          <Button label="Ajouter un son" variant="secondary" onPress={addFiles} />
+          <Button label={t('wellbeing.sound.addSound')} variant="secondary" onPress={addFiles} />
         </View>
         {fileError && (
           <Text variant="caption" color="error" style={{ marginTop: spacing[2] }}>
@@ -223,7 +223,7 @@ export function SoundScreen(): React.JSX.Element {
       </Card>
 
       <View style={{ alignItems: 'flex-start' }}>
-        <Button label="Retour" variant="secondary" onPress={() => router.back()} />
+        <Button label={t('common.back')} variant="secondary" onPress={() => router.back()} />
       </View>
     </Screen>
   );

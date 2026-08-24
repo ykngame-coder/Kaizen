@@ -1,6 +1,7 @@
 import React from 'react';
 import { View } from 'react-native';
 import { useRouter } from 'expo-router';
+import { useTranslation } from 'react-i18next';
 import { Badge, Button, Card, Screen, Text } from '@supotsu/ui';
 import { spacing } from '@supotsu/design-system';
 
@@ -24,11 +25,12 @@ function ToolCard({
   onPress?: () => void;
   soon?: boolean;
 }): React.JSX.Element {
+  const { t } = useTranslation();
   return (
     <Card>
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing[2] }}>
         <Text variant="heading">{title}</Text>
-        {soon && <Badge label="Bientôt" tone="info" />}
+        {soon && <Badge label={t('wellbeing.neuroRecovery.soon')} tone="info" />}
       </View>
       <Text variant="caption" color="textMuted" style={{ marginTop: spacing[1] }}>
         {description}
@@ -47,56 +49,54 @@ function ToolCard({
 
 export function NeuroRecoveryScreen(): React.JSX.Element {
   const router = useRouter();
+  const { t } = useTranslation();
 
   return (
     <Screen scroll>
-      <Text variant="title">Récupération neuro-sensorielle</Text>
+      <Text variant="title">{t('wellbeing.neuroRecovery.title')}</Text>
       <Text variant="caption" color="textMuted">
-        Des outils simples pour faire redescendre la pression et préparer le sommeil.
+        {t('wellbeing.neuroRecovery.subtitle')}
       </Text>
 
       <Card>
         <Text variant="label" color="warning">
-          ⚠️ À LIRE AVANT UTILISATION
+          {t('wellbeing.neuroRecovery.warningLabel')}
         </Text>
         <Text variant="caption" color="textMuted" style={{ marginTop: spacing[1] }}>
-          Ces outils sont des aides à la relaxation, sans visée thérapeutique. En particulier, la
-          stimulation bilatérale proposée ici n’est <Text variant="caption">pas</Text> de la
-          thérapie EMDR : l’EMDR est une psychothérapie réalisée par un professionnel de santé
-          formé. En cas de difficulté psychologique, consulte un professionnel.
+          {t('wellbeing.neuroRecovery.warningText')}
         </Text>
       </Card>
 
       <ToolCard
-        title="Respiration guidée"
-        description="Carré, 4-7-8 ou cohérence cardiaque — suis le cercle qui respire avec toi."
-        actionLabel="Ouvrir"
+        title={t('wellbeing.neuroRecovery.tools.breathing.title')}
+        description={t('wellbeing.neuroRecovery.tools.breathing.description')}
+        actionLabel={t('wellbeing.neuroRecovery.open')}
         onPress={() => router.push('/sommeil/breathing')}
       />
 
       <ToolCard
-        title="Stimulation bilatérale"
-        description="Un point qui se déplace de gauche à droite ; suis-le des yeux pour te détendre. Outil de relaxation, pas une thérapie."
-        actionLabel="Ouvrir"
+        title={t('wellbeing.neuroRecovery.tools.bilateral.title')}
+        description={t('wellbeing.neuroRecovery.tools.bilateral.description')}
+        actionLabel={t('wellbeing.neuroRecovery.open')}
         onPress={() => router.push('/sommeil/bilateral')}
       />
 
       <ToolCard
-        title="Sons apaisants"
-        description="Pluie, vagues, vent, bruits colorés — ou tes propres sons — avec minuterie et fondu de sortie."
-        actionLabel="Ouvrir"
+        title={t('wellbeing.neuroRecovery.tools.sound.title')}
+        description={t('wellbeing.neuroRecovery.tools.sound.description')}
+        actionLabel={t('wellbeing.neuroRecovery.open')}
         onPress={() => router.push('/sommeil/sound')}
       />
 
       <ToolCard
-        title="Méditation guidée"
-        description="Séances audio narrées par thème — sommeil, anti-stress, réveil, focus."
-        actionLabel="Ouvrir"
+        title={t('wellbeing.neuroRecovery.tools.meditation.title')}
+        description={t('wellbeing.neuroRecovery.tools.meditation.description')}
+        actionLabel={t('wellbeing.neuroRecovery.open')}
         onPress={() => router.push('/sommeil/meditation')}
       />
 
       <View style={{ alignItems: 'flex-start', marginTop: spacing[2] }}>
-        <Button label="Retour" variant="secondary" onPress={() => router.back()} />
+        <Button label={t('common.back')} variant="secondary" onPress={() => router.back()} />
       </View>
     </Screen>
   );

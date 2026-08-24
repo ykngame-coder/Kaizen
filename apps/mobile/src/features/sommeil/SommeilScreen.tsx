@@ -33,11 +33,11 @@ const RISK_TONE: Record<FatigueRisk, 'success' | 'warning' | 'error'> = {
   élevé: 'error',
 };
 
-const BAND_LABEL: Record<SleepBand, string> = {
-  excellent: 'Excellent',
-  correct: 'Correct',
-  moyen: 'Moyen',
-  faible: 'Faible',
+const BAND_LABEL_KEY: Record<SleepBand, string> = {
+  excellent: 'sommeil.screen.band.excellent',
+  correct: 'sommeil.screen.band.correct',
+  moyen: 'sommeil.screen.band.moyen',
+  faible: 'sommeil.screen.band.faible',
 };
 const BAND_TONE: Record<SleepBand, 'success' | 'info' | 'warning' | 'error'> = {
   excellent: 'success',
@@ -128,12 +128,13 @@ function ToolTile({ icon, label, path }: { icon: React.ReactNode; label: string;
  * drawing a fabricated timeline (Master Prompt : pas de boîte noire).
  */
 function PhasesCard({ session, timeFormat }: { session: SleepSession; timeFormat: TimeFormat }): React.JSX.Element {
+  const { t } = useTranslation();
   const { colors } = useTheme();
   const stages = [
-    { key: 'deep', label: 'Profond', min: session.deepMin, color: colors.primary },
-    { key: 'light', label: 'Léger', min: session.lightMin, color: colors.info },
-    { key: 'rem', label: 'Paradoxal', min: session.remMin, color: colors.accentLime },
-    { key: 'awake', label: 'Éveillé', min: session.awakeMin, color: colors.border },
+    { key: 'deep', label: t('sommeil.screen.phases.stage.deep'), min: session.deepMin, color: colors.primary },
+    { key: 'light', label: t('sommeil.screen.phases.stage.light'), min: session.lightMin, color: colors.info },
+    { key: 'rem', label: t('sommeil.screen.phases.stage.rem'), min: session.remMin, color: colors.accentLime },
+    { key: 'awake', label: t('sommeil.screen.phases.stage.awake'), min: session.awakeMin, color: colors.border },
   ].filter((s) => s.min > 0);
   const total = stages.reduce((s, x) => s + x.min, 0) || 1;
   const asleep = session.asleepMin || 1;
@@ -141,12 +142,16 @@ function PhasesCard({ session, timeFormat }: { session: SleepSession; timeFormat
   return (
     <Card>
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing[2] }}>
-        <Text variant="heading">Phases de sommeil</Text>
-        {session.source === 'phone' && <Badge label="Estimé — téléphone" tone="warning" />}
+        <Text variant="heading">{t('sommeil.screen.phases.title')}</Text>
+        {session.source === 'phone' && <Badge label={t('sommeil.screen.phases.estimatedPhoneBadge')} tone="warning" />}
       </View>
       <Text variant="caption" color="textSubtle">
-        {formatClockFromIso(session.startedAt, timeFormat)} → {formatClockFromIso(session.endedAt, timeFormat)} · {fmtHM(session.inBedMin)} au
-        lit, {fmtHM(session.asleepMin)} dormies
+        {t('sommeil.screen.phases.summary', {
+          start: formatClockFromIso(session.startedAt, timeFormat),
+          end: formatClockFromIso(session.endedAt, timeFormat),
+          inBed: fmtHM(session.inBedMin),
+          asleep: fmtHM(session.asleepMin),
+        })}
       </Text>
 
       <View
@@ -183,14 +188,12 @@ function PhasesCard({ session, timeFormat }: { session: SleepSession; timeFormat
 
       {!session.segments && (
         <Text variant="caption" color="textSubtle" style={{ marginTop: spacing[3] }}>
-          Chronologie minute par minute non fournie par cet export — seules les durées par phase
-          sont disponibles.
+          {t('sommeil.screen.phases.noTimeline')}
         </Text>
       )}
       {session.source === 'phone' && (
         <Text variant="caption" color="textSubtle" style={{ marginTop: spacing[3] }}>
-          Sommeil paradoxal non mesurable par téléphone (nécessite une montre) — profond/léger
-          sont estimés à partir des mouvements.
+          {t('sommeil.screen.phases.phoneEstimate')}
         </Text>
       )}
     </Card>
@@ -258,18 +261,18 @@ export function SommeilScreen(): React.JSX.Element {
   const rhr = latestOf(metrics, 'resting_heart_rate');
   const stress = latestOf(metrics, 'stress');
   const signals = [
-    hrv && { label: 'VFC (HRV)', value: `${Math.round(hrv.value)} ms` },
-    rhr && { label: 'FC repos', value: `${Math.round(rhr.value)} bpm` },
-    stress && { label: 'Stress', value: `${Math.round(stress.value)}/100` },
+    hrv && { label: t('sommeil.screen.signals.hrv'), value: `${Math.round(hrv.value)} ms` },
+    rhr && { label: t('sommeil.screen.signals.restingHr'), value: `${Math.round(rhr.value)} bpm` },
+    stress && { label: t('sommeil.screen.signals.stress'), value: `${Math.round(stress.value)}/100` },
   ].filter(Boolean) as { label: string; value: string }[];
 
   return (
     <Screen scroll onRefresh={onRefresh} refreshing={refreshing}>
       <View style={{ position: 'relative' }}>
         <View style={{ alignItems: 'center' }}>
-          <Text variant="title">Sommeil</Text>
+          <Text variant="title">{t('common.tab.sommeil')}</Text>
           <Text variant="caption" color="textMuted">
-            Ta dernière nuit, ton score et tes horaires optimaux.
+            {t('sommeil.screen.subtitle')}
           </Text>
         </View>
         <Pressable onPress={() => router.push('/search')} style={({ pressed }) => ({ opacity: pressed ? 0.6 : 1, position: 'absolute', right: 0, top: 0 })}>
@@ -282,14 +285,14 @@ export function SommeilScreen(): React.JSX.Element {
 
       {isLoading ? (
         <Text variant="body" color="textMuted">
-          Chargement…
+          {t('common.loading')}
         </Text>
       ) : !hasData ? (
         <EmptyState
           icon={<Icon name="bedtime" size={44} color={colors.textSubtle} />}
-          title="Pas encore de données de sommeil"
-          message="Synchronise Apple Santé (Health Auto Export) ou importe un export pour suivre tes nuits — toute source est prise en compte."
-          actionLabel="Importer / connecter"
+          title={t('sommeil.screen.empty.title')}
+          message={t('sommeil.screen.empty.message')}
+          actionLabel={t('sommeil.screen.empty.action')}
           onAction={() => router.push('/profile/import')}
         />
       ) : (
@@ -298,10 +301,10 @@ export function SommeilScreen(): React.JSX.Element {
           <Card>
             <View style={{ alignItems: 'center', gap: spacing[1] }}>
               <ProgressRing value={score.value} segments={zones} caption="/100" size={116} />
-              <Badge label={BAND_LABEL[band]} tone={BAND_TONE[band]} />
+              <Badge label={t(BAND_LABEL_KEY[band])} tone={BAND_TONE[band]} />
               {avg !== undefined && (
                 <Text variant="caption" color="textMuted">
-                  Moyenne 7 jours : {avg.toFixed(1)} h / nuit
+                  {t('sommeil.screen.score.average', { avg: avg.toFixed(1) })}
                 </Text>
               )}
             </View>
@@ -319,7 +322,7 @@ export function SommeilScreen(): React.JSX.Element {
                 <View style={{ alignItems: 'center' }}>
                   <Text variant="subtitle">{fmtHM(lastSession.asleepMin)}</Text>
                   <Text variant="caption" color="textSubtle">
-                    Durée totale
+                    {t('sommeil.screen.score.totalDuration')}
                   </Text>
                 </View>
                 <View style={{ alignItems: 'center' }}>
@@ -327,7 +330,7 @@ export function SommeilScreen(): React.JSX.Element {
                     {fmtHM(lastSession.deepMin)}
                   </Text>
                   <Text variant="caption" color="textSubtle">
-                    Sommeil profond
+                    {t('sommeil.screen.score.deepSleep')}
                   </Text>
                 </View>
               </View>
@@ -336,11 +339,15 @@ export function SommeilScreen(): React.JSX.Element {
 
           {/* 2. Stress + Bien-être mental */}
           <View style={{ flexDirection: 'row', gap: spacing[3] }}>
-            <QuickStat icon={<Icon name="windy" size={15} color={colors.info} />} value={stress ? `${Math.round(stress.value)}/100` : '—'} label="Stress" />
+            <QuickStat icon={<Icon name="windy" size={15} color={colors.info} />} value={stress ? `${Math.round(stress.value)}/100` : '—'} label={t('sommeil.screen.signals.stress')} />
             <QuickStat
               icon={<Icon name="emoticonHappy" size={15} color={colors.accentData} />}
               value={wellness.confidence !== 'to_confirm' ? `${wellness.value}/100` : '—'}
-              label={wellness.confidence !== 'to_confirm' ? `Bien-être · ${wellnessBand(wellness.value)}` : 'Bien-être'}
+              label={
+                wellness.confidence !== 'to_confirm'
+                  ? t('sommeil.screen.wellness.labelWithBand', { band: wellnessBand(wellness.value) })
+                  : t('sommeil.screen.wellness.label')
+              }
             />
           </View>
 
@@ -348,10 +355,10 @@ export function SommeilScreen(): React.JSX.Element {
           {chrono.length > 0 && (
             <Card>
               <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'baseline' }}>
-                <Text variant="heading">7 dernières nuits</Text>
+                <Text variant="heading">{t('sommeil.screen.last7Nights.title')}</Text>
                 {avg !== undefined && (
                   <Text variant="caption" color="textMuted">
-                    moy. {avg.toFixed(1)} h
+                    {t('sommeil.screen.last7Nights.average', { avg: avg.toFixed(1) })}
                   </Text>
                 )}
               </View>
@@ -384,14 +391,13 @@ export function SommeilScreen(): React.JSX.Element {
           {circadian.value && (
             <Card>
               <Text variant="caption" color="textMuted">
-                Heure de coucher optimale
+                {t('sommeil.screen.bedtime.title')}
               </Text>
               <Text variant="display" color="primary" style={{ marginTop: spacing[1] }}>
                 {bedtimeWindow(circadian.value.idealBedtime, preferences.timeFormat)}
               </Text>
               <Text variant="caption" color="textSubtle">
-                Estimation basée sur ton rythme et ta récupération (chronotype{' '}
-                {circadian.value.chronotype}).
+                {t('sommeil.screen.bedtime.estimate', { chronotype: circadian.value.chronotype })}
               </Text>
             </Card>
           )}
@@ -399,7 +405,7 @@ export function SommeilScreen(): React.JSX.Element {
           {/* 6. Conseil du jour */}
           {coaching && (
             <Card>
-              <Text variant="heading">Conseil</Text>
+              <Text variant="heading">{t('sommeil.screen.advice.title')}</Text>
               <Text variant="caption" color="textMuted">
                 {t(coaching.observation.key, coaching.observation.params)}
               </Text>
@@ -414,10 +420,9 @@ export function SommeilScreen(): React.JSX.Element {
 
           {/* 7. Détail — plus analytique, repoussé en fin */}
           <Card>
-            <Text variant="heading">Détail du score</Text>
+            <Text variant="heading">{t('sommeil.screen.detail.title')}</Text>
             <Text variant="caption" color="textSubtle">
-              Chaque composante est notée sur 100. Les composantes sans donnée n’entrent pas dans le
-              calcul.
+              {t('sommeil.screen.detail.description')}
             </Text>
             <View style={{ gap: spacing[3], marginTop: spacing[3] }}>
               {score.components.map((c) => {
@@ -446,14 +451,14 @@ export function SommeilScreen(): React.JSX.Element {
           {prediction.value && prediction.explanation && (
             <Card>
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing[2] }}>
-                <Text variant="heading">Prévision de demain</Text>
+                <Text variant="heading">{t('sommeil.screen.prediction.title')}</Text>
                 <Badge
-                  label={`Fatigue ${prediction.value.fatigueRisk}`}
+                  label={t('sommeil.screen.prediction.fatigueBadge', { risk: prediction.value.fatigueRisk })}
                   tone={RISK_TONE[prediction.value.fatigueRisk]}
                 />
               </View>
               <Text variant="subtitle" color="primary" style={{ marginTop: spacing[1] }}>
-                Énergie estimée {prediction.value.energyScore}/100
+                {t('sommeil.screen.prediction.energy', { score: prediction.value.energyScore })}
               </Text>
               <Text variant="caption" color="textMuted" style={{ marginTop: spacing[1] }}>
                 {t(prediction.explanation.analysis.key, prediction.explanation.analysis.params)}
@@ -466,7 +471,7 @@ export function SommeilScreen(): React.JSX.Element {
 
           {signals.length > 0 && (
             <Card>
-              <Text variant="heading">Signaux de récupération</Text>
+              <Text variant="heading">{t('sommeil.screen.signals.title')}</Text>
               <View
                 style={{ flexDirection: 'row', flexWrap: 'wrap', gap: spacing[4], marginTop: spacing[2] }}
               >
@@ -484,13 +489,13 @@ export function SommeilScreen(): React.JSX.Element {
 
           {/* 8. Rythme circadien */}
           <Card>
-            <Text variant="heading">Rythme circadien</Text>
+            <Text variant="heading">{t('sommeil.screen.circadian.title')}</Text>
             <Text variant="caption" color="textMuted">
-              Découvre ton chronotype et tes horaires optimaux (coucher, caféine, sport, lumière).
+              {t('sommeil.screen.circadian.description')}
             </Text>
             <View style={{ alignItems: 'flex-start', marginTop: spacing[2] }}>
               <Button
-                label="Voir mes horaires optimaux"
+                label={t('sommeil.screen.circadian.cta')}
                 variant="gradient"
                 onPress={() => router.push('/sommeil/circadian')}
               />
@@ -499,15 +504,15 @@ export function SommeilScreen(): React.JSX.Element {
 
           {/* 9. Outils de récupération */}
           <Text variant="heading" style={{ marginTop: spacing[2] }}>
-            Outils de récupération
+            {t('sommeil.screen.tools.title')}
           </Text>
           <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: spacing[3] }}>
-            <ToolTile icon={<Icon name="windy" size={16} color={colors.text} />} label="Respiration" path="/sommeil/breathing" />
-            <ToolTile icon={<Icon name="lungs" size={16} color={colors.text} />} label="Stomach Vacuum" path="/sport/stomach-vacuum" />
-            <ToolTile icon={<Icon name="puzzle" size={16} color={colors.text} />} label="Neuro-récupération" path="/sommeil/neuro-recovery" />
-            <ToolTile icon={<Icon name="headphones" size={16} color={colors.text} />} label="Sons" path="/sommeil/sound" />
-            <ToolTile icon={<Icon name="moon" size={16} color={colors.text} />} label="Suivi téléphone" path="/sommeil/track" />
-            <ToolTile icon={<Icon name="alarm" size={16} color={colors.text} />} label="Réveil intelligent" path="/sommeil/alarm" />
+            <ToolTile icon={<Icon name="windy" size={16} color={colors.text} />} label={t('sommeil.screen.tools.breathing')} path="/sommeil/breathing" />
+            <ToolTile icon={<Icon name="lungs" size={16} color={colors.text} />} label={t('sommeil.screen.tools.stomachVacuum')} path="/sport/stomach-vacuum" />
+            <ToolTile icon={<Icon name="puzzle" size={16} color={colors.text} />} label={t('sommeil.screen.tools.neuroRecovery')} path="/sommeil/neuro-recovery" />
+            <ToolTile icon={<Icon name="headphones" size={16} color={colors.text} />} label={t('sommeil.screen.tools.sounds')} path="/sommeil/sound" />
+            <ToolTile icon={<Icon name="moon" size={16} color={colors.text} />} label={t('sommeil.screen.tools.phoneTracking')} path="/sommeil/track" />
+            <ToolTile icon={<Icon name="alarm" size={16} color={colors.text} />} label={t('sommeil.screen.tools.smartAlarm')} path="/sommeil/alarm" />
           </View>
 
           {/* 10. Comprendre + Objectifs */}

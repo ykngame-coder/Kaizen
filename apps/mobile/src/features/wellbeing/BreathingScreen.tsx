@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { Animated, View } from 'react-native';
 import { useRouter } from 'expo-router';
+import { useTranslation } from 'react-i18next';
 import { Button, Screen, SegmentedControl, Text, useTheme } from '@supotsu/ui';
 import { spacing } from '@supotsu/design-system';
 
@@ -11,15 +12,15 @@ import { spacing } from '@supotsu/design-system';
  * no audio dependency.
  */
 interface Phase {
-  label: string;
+  labelKey: string;
   sec: number;
   /** Circle scale target for this phase (inhale ⇒ big, exhale ⇒ small). */
   scale: number;
 }
 interface Pattern {
   key: string;
-  label: string;
-  caption: string;
+  labelKey: string;
+  captionKey: string;
   phases: Phase[];
 }
 
@@ -29,37 +30,38 @@ const MAX_SCALE = 1;
 const PATTERNS: Pattern[] = [
   {
     key: 'box',
-    label: 'Carré',
-    caption: 'Inspire 4 s · retiens 4 s · expire 4 s · retiens 4 s. Équilibrant.',
+    labelKey: 'wellbeing.breathing.pattern.box.label',
+    captionKey: 'wellbeing.breathing.pattern.box.caption',
     phases: [
-      { label: 'Inspire', sec: 4, scale: MAX_SCALE },
-      { label: 'Retiens', sec: 4, scale: MAX_SCALE },
-      { label: 'Expire', sec: 4, scale: MIN_SCALE },
-      { label: 'Retiens', sec: 4, scale: MIN_SCALE },
+      { labelKey: 'wellbeing.breathing.phase.inhale', sec: 4, scale: MAX_SCALE },
+      { labelKey: 'wellbeing.breathing.phase.hold', sec: 4, scale: MAX_SCALE },
+      { labelKey: 'wellbeing.breathing.phase.exhale', sec: 4, scale: MIN_SCALE },
+      { labelKey: 'wellbeing.breathing.phase.hold', sec: 4, scale: MIN_SCALE },
     ],
   },
   {
     key: '478',
-    label: '4-7-8',
-    caption: 'Inspire 4 s · retiens 7 s · expire 8 s. Favorise l’endormissement.',
+    labelKey: 'wellbeing.breathing.pattern.fourSevenEight.label',
+    captionKey: 'wellbeing.breathing.pattern.fourSevenEight.caption',
     phases: [
-      { label: 'Inspire', sec: 4, scale: MAX_SCALE },
-      { label: 'Retiens', sec: 7, scale: MAX_SCALE },
-      { label: 'Expire', sec: 8, scale: MIN_SCALE },
+      { labelKey: 'wellbeing.breathing.phase.inhale', sec: 4, scale: MAX_SCALE },
+      { labelKey: 'wellbeing.breathing.phase.hold', sec: 7, scale: MAX_SCALE },
+      { labelKey: 'wellbeing.breathing.phase.exhale', sec: 8, scale: MIN_SCALE },
     ],
   },
   {
     key: 'coherence',
-    label: 'Cohérence',
-    caption: 'Inspire 5 s · expire 5 s. Cohérence cardiaque (~6 respirations/min).',
+    labelKey: 'wellbeing.breathing.pattern.coherence.label',
+    captionKey: 'wellbeing.breathing.pattern.coherence.caption',
     phases: [
-      { label: 'Inspire', sec: 5, scale: MAX_SCALE },
-      { label: 'Expire', sec: 5, scale: MIN_SCALE },
+      { labelKey: 'wellbeing.breathing.phase.inhale', sec: 5, scale: MAX_SCALE },
+      { labelKey: 'wellbeing.breathing.phase.exhale', sec: 5, scale: MIN_SCALE },
     ],
   },
 ];
 
 export function BreathingScreen(): React.JSX.Element {
+  const { t } = useTranslation();
   const router = useRouter();
   const { colors } = useTheme();
   const scale = useRef(new Animated.Value(MIN_SCALE)).current;
@@ -108,14 +110,14 @@ export function BreathingScreen(): React.JSX.Element {
 
   return (
     <Screen>
-      <Text variant="title">Respiration guidée</Text>
+      <Text variant="title">{t('wellbeing.breathing.title')}</Text>
       <Text variant="caption" color="textMuted">
-        {pattern.caption}
+        {t(pattern.captionKey)}
       </Text>
 
       <View style={{ marginTop: spacing[2] }}>
         <SegmentedControl
-          options={PATTERNS.map((p) => ({ value: p.key, label: p.label }))}
+          options={PATTERNS.map((p) => ({ value: p.key, label: t(p.labelKey) }))}
           value={patternKey}
           onChange={setPatternKey}
         />
@@ -145,14 +147,19 @@ export function BreathingScreen(): React.JSX.Element {
               position: 'absolute',
             }}
           />
-          <Text variant="heading">{running ? pattern.phases[phaseIdx]!.label : 'Prêt ?'}</Text>
+          <Text variant="heading">
+            {running ? t(pattern.phases[phaseIdx]!.labelKey) : t('wellbeing.breathing.ready')}
+          </Text>
         </View>
 
-        <Button label={running ? 'Arrêter' : 'Commencer'} onPress={toggle} />
+        <Button
+          label={running ? t('wellbeing.breathing.stop') : t('wellbeing.breathing.start')}
+          onPress={toggle}
+        />
       </View>
 
       <View style={{ alignItems: 'flex-start' }}>
-        <Button label="Retour" variant="secondary" onPress={() => router.back()} />
+        <Button label={t('common.back')} variant="secondary" onPress={() => router.back()} />
       </View>
     </Screen>
   );

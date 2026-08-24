@@ -1,28 +1,10 @@
 import React from 'react';
 import { Pressable, View } from 'react-native';
 import { useRouter } from 'expo-router';
+import { useTranslation } from 'react-i18next';
 import { Badge, Button, Card, Input, Screen, SegmentedControl, Text, Toggle, useTheme } from '@supotsu/ui';
 import { spacing } from '@supotsu/design-system';
 import { DEFAULT_SLEEP_ALARM, formatClock, usePreferences, type SleepAlarmSettings } from '@/lib/preferences';
-
-const DAY_LABELS = ['D', 'L', 'M', 'M', 'J', 'V', 'S']; // index = Date#getDay() (0 = dimanche)
-const WINDOW_OPTIONS = [
-  { value: '0', label: 'Alarme simple' },
-  { value: '15', label: '15 min' },
-  { value: '30', label: '30 min' },
-] as const;
-const SNOOZE_OPTIONS = [
-  { value: '0', label: 'Désactivé' },
-  { value: '5', label: '5 min' },
-  { value: '9', label: '9 min' },
-  { value: '15', label: '15 min' },
-] as const;
-const RAMP_OPTIONS = [
-  { value: '0', label: 'Volume direct' },
-  { value: '15', label: '15 s' },
-  { value: '30', label: '30 s' },
-  { value: '60', label: '60 s' },
-] as const;
 
 const clampHour = (n: number): number => Math.max(0, Math.min(23, Math.round(n) || 0));
 const clampMinute = (n: number): number => Math.max(0, Math.min(59, Math.round(n) || 0));
@@ -33,10 +15,30 @@ const clampMinute = (n: number): number => Math.max(0, Math.min(59, Math.round(n
  * limite iOS/Android, pas d'alarme système en arrière-plan sans app dédiée.
  */
 export function AlarmSettingsScreen(): React.JSX.Element {
+  const { t } = useTranslation();
   const router = useRouter();
   const { colors } = useTheme();
   const { preferences, setPreference } = usePreferences();
   const alarm = preferences.sleepAlarm ?? DEFAULT_SLEEP_ALARM;
+
+  const dayLabels = t('sommeil.alarmSettings.dayInitials', { returnObjects: true }) as string[];
+  const windowOptions = [
+    { value: '0', label: t('sommeil.alarmSettings.window.simple') },
+    { value: '15', label: t('sommeil.alarmSettings.window.min15') },
+    { value: '30', label: t('sommeil.alarmSettings.window.min30') },
+  ] as const;
+  const snoozeOptions = [
+    { value: '0', label: t('sommeil.alarmSettings.snooze.off') },
+    { value: '5', label: t('sommeil.alarmSettings.snooze.min5') },
+    { value: '9', label: t('sommeil.alarmSettings.snooze.min9') },
+    { value: '15', label: t('sommeil.alarmSettings.snooze.min15') },
+  ] as const;
+  const rampOptions = [
+    { value: '0', label: t('sommeil.alarmSettings.ramp.instant') },
+    { value: '15', label: t('sommeil.alarmSettings.ramp.sec15') },
+    { value: '30', label: t('sommeil.alarmSettings.ramp.sec30') },
+    { value: '60', label: t('sommeil.alarmSettings.ramp.sec60') },
+  ] as const;
 
   const update = (patch: Partial<SleepAlarmSettings>): void => {
     setPreference('sleepAlarm', { ...alarm, ...patch });
@@ -48,22 +50,22 @@ export function AlarmSettingsScreen(): React.JSX.Element {
 
   return (
     <Screen scroll>
-      <Text variant="title">Réveil intelligent</Text>
+      <Text variant="title">{t('sommeil.alarmSettings.title')}</Text>
       <Badge
-        label="Fonctionne uniquement pendant que le mode nuit est ouvert — pas d'alarme en arrière-plan (limite iOS/Android)."
+        label={t('sommeil.alarmSettings.warningBadge')}
         tone="warning"
       />
 
       <Card>
         <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-          <Text variant="heading">Activer le réveil</Text>
+          <Text variant="heading">{t('sommeil.alarmSettings.enableToggle')}</Text>
           <Toggle value={alarm.enabled} onValueChange={(v) => update({ enabled: v })} />
         </View>
 
         <View style={{ flexDirection: 'row', gap: spacing[4], marginTop: spacing[3] }}>
           <View style={{ flex: 1 }}>
             <Input
-              label="Heure"
+              label={t('sommeil.alarmSettings.hourLabel')}
               keyboardType="numeric"
               value={String(alarm.hour)}
               onChangeText={(v) => update({ hour: clampHour(Number(v)) })}
@@ -71,7 +73,7 @@ export function AlarmSettingsScreen(): React.JSX.Element {
           </View>
           <View style={{ flex: 1 }}>
             <Input
-              label="Minute"
+              label={t('sommeil.alarmSettings.minuteLabel')}
               keyboardType="numeric"
               value={String(alarm.minute).padStart(2, '0')}
               onChangeText={(v) => update({ minute: clampMinute(Number(v)) })}
@@ -83,10 +85,10 @@ export function AlarmSettingsScreen(): React.JSX.Element {
         </Text>
 
         <Text variant="label" color="textMuted" style={{ marginTop: spacing[3] }}>
-          JOURS DE RÉPÉTITION
+          {t('sommeil.alarmSettings.repeatDaysLabel')}
         </Text>
         <View style={{ flexDirection: 'row', gap: spacing[2], marginTop: spacing[1] }}>
-          {DAY_LABELS.map((label, day) => {
+          {dayLabels.map((label, day) => {
             const on = alarm.repeatDays.includes(day);
             return (
               <Pressable
@@ -109,50 +111,49 @@ export function AlarmSettingsScreen(): React.JSX.Element {
           })}
         </View>
         <Text variant="caption" color="textSubtle" style={{ marginTop: spacing[1] }}>
-          {alarm.repeatDays.length === 0 ? 'Tous les jours.' : 'Informatif pour l’instant — lance le mode nuit chaque soir où tu veux le réveil.'}
+          {alarm.repeatDays.length === 0 ? t('sommeil.alarmSettings.repeatDaysHint.everyDay') : t('sommeil.alarmSettings.repeatDaysHint.informative')}
         </Text>
       </Card>
 
       <Card>
-        <Text variant="heading">Fenêtre intelligente</Text>
+        <Text variant="heading">{t('sommeil.alarmSettings.smartWindow.title')}</Text>
         <Text variant="caption" color="textMuted" style={{ marginBottom: spacing[2] }}>
-          Sonne dès que tu sembles en sommeil léger dans les N minutes avant l'heure réglée —
-          sinon à l'heure pile.
+          {t('sommeil.alarmSettings.smartWindow.description')}
         </Text>
         <SegmentedControl
-          options={WINDOW_OPTIONS}
+          options={windowOptions}
           value={String(alarm.windowMin) as '0' | '15' | '30'}
           onChange={(v) => update({ windowMin: Number(v) as 0 | 15 | 30 })}
         />
       </Card>
 
       <Card>
-        <Text variant="heading">Son</Text>
-        <Text variant="body" color="textMuted">Tonalité intégrée (générée sur l'appareil, pas de fichier téléchargé).</Text>
+        <Text variant="heading">{t('sommeil.alarmSettings.sound.title')}</Text>
+        <Text variant="body" color="textMuted">{t('sommeil.alarmSettings.sound.description')}</Text>
 
-        <Text variant="label" color="textMuted" style={{ marginTop: spacing[3] }}>MONTÉE DE VOLUME</Text>
+        <Text variant="label" color="textMuted" style={{ marginTop: spacing[3] }}>{t('sommeil.alarmSettings.sound.volumeRampLabel')}</Text>
         <SegmentedControl
-          options={RAMP_OPTIONS}
+          options={rampOptions}
           value={String(alarm.volumeRampSec) as '0' | '15' | '30' | '60'}
           onChange={(v) => update({ volumeRampSec: Number(v) })}
         />
 
         <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: spacing[3] }}>
-          <Text variant="body">Vibration</Text>
+          <Text variant="body">{t('sommeil.alarmSettings.sound.vibration')}</Text>
           <Toggle value={alarm.vibration} onValueChange={(v) => update({ vibration: v })} />
         </View>
 
-        <Text variant="label" color="textMuted" style={{ marginTop: spacing[3] }}>REPORT (SNOOZE)</Text>
+        <Text variant="label" color="textMuted" style={{ marginTop: spacing[3] }}>{t('sommeil.alarmSettings.sound.snoozeLabel')}</Text>
         <SegmentedControl
-          options={SNOOZE_OPTIONS}
+          options={snoozeOptions}
           value={String(alarm.snoozeMin) as '0' | '5' | '9' | '15'}
           onChange={(v) => update({ snoozeMin: Number(v) })}
         />
       </Card>
 
-      <Button label="Lancer le mode nuit" onPress={() => router.push('/sommeil/track')} fullWidth />
+      <Button label={t('sommeil.alarmSettings.startNightModeCta')} onPress={() => router.push('/sommeil/track')} fullWidth />
       <View style={{ alignItems: 'flex-start' }}>
-        <Button label="Retour" variant="secondary" onPress={() => router.back()} />
+        <Button label={t('common.back')} variant="secondary" onPress={() => router.back()} />
       </View>
     </Screen>
   );

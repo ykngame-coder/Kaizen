@@ -5,6 +5,7 @@ import { useRouter } from 'expo-router';
 import { activateKeepAwakeAsync, deactivateKeepAwake } from 'expo-keep-awake';
 import { useAudioPlayer } from 'expo-audio';
 import * as Haptics from 'expo-haptics';
+import { useTranslation } from 'react-i18next';
 import { Badge, Button, Card, Screen, Text, useTheme } from '@supotsu/ui';
 import { radii, spacing } from '@supotsu/design-system';
 import { analyzeSleep, isLightSleep, type MovementEpoch } from '@supotsu/engines';
@@ -29,7 +30,7 @@ interface Summary {
   inserted: boolean;
 }
 
-const CONFIDENCE_LABEL: Record<Confidence, string> = { high: 'Lecture fiable', medium: 'À prendre avec recul', to_confirm: 'Peu de données' };
+const CONFIDENCE_KEY: Record<Confidence, string> = { high: 'high', medium: 'medium', to_confirm: 'toConfirm' };
 const CONFIDENCE_TONE: Record<Confidence, 'success' | 'warning' | 'error'> = { high: 'success', medium: 'warning', to_confirm: 'error' };
 
 function computeAlarmTarget(hour: number, minute: number, from: Date): Date {
@@ -53,6 +54,7 @@ function fmtElapsed(sec: number): string {
  * arrière-plan pendant le suivi). 100% local : rien n'est envoyé nulle part.
  */
 export function SleepTrackingScreen(): React.JSX.Element {
+  const { t } = useTranslation();
   const router = useRouter();
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
@@ -236,15 +238,14 @@ export function SleepTrackingScreen(): React.JSX.Element {
   if (!nightTrackingAvailable()) {
     return (
       <Screen>
-        <Text variant="title">Mode nuit</Text>
+        <Text variant="title">{t('sommeil.tracking.title')}</Text>
         <Card>
           <Text variant="body" color="textMuted">
-            Le suivi du sommeil par le téléphone utilise l'accéléromètre de l'appareil —
-            indisponible sur le web.
+            {t('sommeil.tracking.unavailable.message')}
           </Text>
         </Card>
         <View style={{ alignItems: 'flex-start' }}>
-          <Button label="Retour" variant="secondary" onPress={() => router.back()} />
+          <Button label={t('common.back')} variant="secondary" onPress={() => router.back()} />
         </View>
       </Screen>
     );
@@ -253,36 +254,36 @@ export function SleepTrackingScreen(): React.JSX.Element {
   if (phase === 'idle') {
     return (
       <Screen scroll>
-        <Text variant="title">Mode nuit</Text>
+        <Text variant="title">{t('sommeil.tracking.title')}</Text>
         <Text variant="caption" color="textMuted">
-          Pose ton téléphone sur le lit ou la table de chevet et lance le suivi juste avant de
-          dormir. La lecture des mouvements se fait entièrement sur l'appareil — rien n'est
-          envoyé nulle part.
+          {t('sommeil.tracking.idle.description')}
         </Text>
         <Card>
-          <Text variant="heading">Avant de commencer</Text>
+          <Text variant="heading">{t('sommeil.tracking.idle.beforeStart.title')}</Text>
           <View style={{ gap: spacing[2], marginTop: spacing[2] }}>
-            <Text variant="body" color="textMuted">🔌 Branche ton téléphone — le suivi tourne toute la nuit, écran allumé (très sombre) mais actif.</Text>
-            <Text variant="body" color="textMuted">📱 Garde l'app ouverte : si tu la fermes complètement, le suivi s'arrête (limite iOS/Android hors de l'app).</Text>
-            <Text variant="body" color="textMuted">🎯 Sans montre, le sommeil paradoxal n'est pas mesurable et le profond/léger sont estimés — fiabilité annoncée plus basse qu'un vrai capteur.</Text>
+            <Text variant="body" color="textMuted">{t('sommeil.tracking.idle.beforeStart.tip1')}</Text>
+            <Text variant="body" color="textMuted">{t('sommeil.tracking.idle.beforeStart.tip2')}</Text>
+            <Text variant="body" color="textMuted">{t('sommeil.tracking.idle.beforeStart.tip3')}</Text>
           </View>
         </Card>
         {preferences.sleepAlarm?.enabled ? (
           <Card>
-            <Text variant="heading">Réveil programmé</Text>
+            <Text variant="heading">{t('sommeil.tracking.idle.alarmScheduled.title')}</Text>
             <Text variant="body" color="textMuted">
               {formatClock(preferences.sleepAlarm.hour, preferences.sleepAlarm.minute, preferences.timeFormat)}
-              {preferences.sleepAlarm.windowMin > 0 ? ` · fenêtre intelligente de ${preferences.sleepAlarm.windowMin} min` : ' · alarme simple'}
+              {preferences.sleepAlarm.windowMin > 0
+                ? t('sommeil.tracking.idle.alarmScheduled.smartWindow', { min: preferences.sleepAlarm.windowMin })
+                : t('sommeil.tracking.idle.alarmScheduled.simple')}
             </Text>
           </Card>
         ) : (
           <Pressable onPress={() => router.push('/sommeil/alarm')}>
-            <Text variant="caption" color="primary">Programmer un réveil →</Text>
+            <Text variant="caption" color="primary">{t('sommeil.tracking.idle.scheduleAlarmCta')}</Text>
           </Pressable>
         )}
-        <Button label="Démarrer le suivi" onPress={() => void start()} fullWidth />
+        <Button label={t('sommeil.tracking.idle.startCta')} onPress={() => void start()} fullWidth />
         <View style={{ alignItems: 'flex-start' }}>
-          <Button label="Retour" variant="secondary" onPress={() => router.back()} />
+          <Button label={t('common.back')} variant="secondary" onPress={() => router.back()} />
         </View>
       </Screen>
     );
@@ -291,23 +292,23 @@ export function SleepTrackingScreen(): React.JSX.Element {
   if (phase === 'summary' && summary) {
     return (
       <Screen scroll>
-        <Text variant="title">Nuit enregistrée</Text>
+        <Text variant="title">{t('sommeil.tracking.summary.title')}</Text>
         {!summary.inserted ? (
-          <Badge label="Une nuit plus fiable existait déjà pour cette date — suivi téléphone non ajouté." tone="warning" />
+          <Badge label={t('sommeil.tracking.summary.notInserted')} tone="warning" />
         ) : (
           <>
-            <Badge label={CONFIDENCE_LABEL[summary.confidence]} tone={CONFIDENCE_TONE[summary.confidence]} />
+            <Badge label={t(`sommeil.tracking.summary.confidence.${CONFIDENCE_KEY[summary.confidence]}`)} tone={CONFIDENCE_TONE[summary.confidence]} />
             <Card>
               <View style={{ gap: spacing[1] }}>
-                <Text variant="body">Profond : {fmtElapsed(summary.deepMin * 60)}</Text>
-                <Text variant="body">Léger : {fmtElapsed(summary.lightMin * 60)}</Text>
-                <Text variant="body">Éveillé : {fmtElapsed(summary.awakeMin * 60)}</Text>
-                <Text variant="caption" color="textSubtle">Paradoxal : non mesurable par téléphone (nécessite une montre).</Text>
+                <Text variant="body">{t('sommeil.tracking.summary.deep', { time: fmtElapsed(summary.deepMin * 60) })}</Text>
+                <Text variant="body">{t('sommeil.tracking.summary.light', { time: fmtElapsed(summary.lightMin * 60) })}</Text>
+                <Text variant="body">{t('sommeil.tracking.summary.awake', { time: fmtElapsed(summary.awakeMin * 60) })}</Text>
+                <Text variant="caption" color="textSubtle">{t('sommeil.tracking.summary.remNotAvailable')}</Text>
               </View>
             </Card>
           </>
         )}
-        <Button label="Voir dans Sommeil" onPress={() => router.replace('/sommeil')} fullWidth />
+        <Button label={t('sommeil.tracking.summary.viewInSleepCta')} onPress={() => router.replace('/sommeil')} fullWidth />
       </Screen>
     );
   }
@@ -316,10 +317,10 @@ export function SleepTrackingScreen(): React.JSX.Element {
     const snoozeMin = preferences.sleepAlarm?.snoozeMin ?? 0;
     return (
       <View style={{ flex: 1, backgroundColor: colors.background, paddingTop: insets.top + spacing[6], padding: spacing[6], alignItems: 'center', justifyContent: 'center', gap: spacing[6] }}>
-        <Text variant="title">Réveil</Text>
+        <Text variant="title">{t('sommeil.tracking.ringing.title')}</Text>
         <Text variant="heading">{now.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' })}</Text>
-        <Button label="Arrêter" onPress={dismissAlarm} fullWidth />
-        {snoozeMin > 0 ? <Button label={`Répéter dans ${snoozeMin} min`} variant="secondary" onPress={snooze} fullWidth /> : null}
+        <Button label={t('sommeil.tracking.ringing.stopCta')} onPress={dismissAlarm} fullWidth />
+        {snoozeMin > 0 ? <Button label={t('sommeil.tracking.ringing.snoozeCta', { min: snoozeMin })} variant="secondary" onPress={snooze} fullWidth /> : null}
       </View>
     );
   }
@@ -330,7 +331,7 @@ export function SleepTrackingScreen(): React.JSX.Element {
     // rather than falling through to the near-black tracking view.
     return (
       <Screen>
-        <Text variant="body" color="textMuted">Enregistrement de la nuit…</Text>
+        <Text variant="body" color="textMuted">{t('sommeil.tracking.savingNight')}</Text>
       </Screen>
     );
   }
@@ -339,17 +340,17 @@ export function SleepTrackingScreen(): React.JSX.Element {
   const elapsedSec = inBedStartRef.current ? Math.floor((now.getTime() - new Date(inBedStartRef.current).getTime()) / 1000) : 0;
   return (
     <View style={{ flex: 1, backgroundColor: '#000', paddingTop: insets.top + spacing[6], padding: spacing[6], alignItems: 'center', justifyContent: 'center', gap: spacing[4] }}>
-      <Text style={{ color: '#333', fontSize: 15 }}>Suivi en cours · {fmtElapsed(elapsedSec)}</Text>
+      <Text style={{ color: '#333', fontSize: 15 }}>{t('sommeil.tracking.active.status', { elapsed: fmtElapsed(elapsedSec) })}</Text>
       <Text style={{ color: '#222', fontSize: 13 }}>
         {now.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' })}
       </Text>
       {backgroundWarning ? (
         <Text style={{ color: '#443', fontSize: 12, textAlign: 'center', maxWidth: 260 }}>
-          L'app a été mise en arrière-plan — une partie de la nuit n'a peut-être pas été suivie.
+          {t('sommeil.tracking.active.backgroundWarning')}
         </Text>
       ) : null}
       <Pressable onPress={() => void stopManually()} style={{ marginTop: spacing[8], padding: spacing[3], borderRadius: radii.md, borderWidth: 1, borderColor: '#222' }}>
-        <Text style={{ color: '#444', fontSize: 13 }}>Terminer</Text>
+        <Text style={{ color: '#444', fontSize: 13 }}>{t('sommeil.tracking.active.finishCta')}</Text>
       </Pressable>
     </View>
   );

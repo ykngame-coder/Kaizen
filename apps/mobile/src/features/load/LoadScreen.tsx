@@ -43,24 +43,30 @@ export function LoadScreen(): React.JSX.Element {
     'élevé': colors.warning,
     risque: colors.error,
   };
+  const zoneLabel: Record<LoadZone, string> = {
+    'sous-charge': t('sport.load.zone.underload'),
+    optimal: t('sport.load.zone.optimal'),
+    'élevé': t('sport.load.zone.high'),
+    risque: t('sport.load.zone.risk'),
+  };
 
   return (
     <Screen scroll>
-      <Text variant="title">Charge d'entraînement</Text>
+      <Text variant="title">{t('sport.load.title')}</Text>
       <Text variant="caption" color="textMuted">
-        Le ratio charge aiguë / chronique — pour progresser sans te blesser.
+        {t('sport.load.subtitle')}
       </Text>
 
       {isLoading ? (
         <Text variant="body" color="textMuted">
-          Chargement…
+          {t('common.loading')}
         </Text>
       ) : !hasData ? (
         <EmptyState
           icon={<Icon name="trendingUp" size={44} color={colors.textSubtle} />}
-          title="Pas encore assez d'activités"
-          message="Enregistre tes séances sur quelques semaines pour calculer ta charge et ton risque."
-          actionLabel="Ajouter une activité"
+          title={t('sport.load.empty.title')}
+          message={t('sport.load.empty.message')}
+          actionLabel={t('sport.load.empty.action')}
           onAction={() => router.push('/sport/activity/new')}
         />
       ) : (
@@ -71,10 +77,10 @@ export function LoadScreen(): React.JSX.Element {
                 value={marker}
                 segments={zones}
                 centerLabel={acwr.ratio!.toFixed(2)}
-                caption="ratio"
+                caption={t('sport.load.ratioCaption')}
                 size={124}
               />
-              <Badge label={acwr.zone!} tone={ZONE_TONE[acwr.zone!]} />
+              <Badge label={zoneLabel[acwr.zone!]} tone={ZONE_TONE[acwr.zone!]} />
             </View>
             <View
               style={{
@@ -89,7 +95,7 @@ export function LoadScreen(): React.JSX.Element {
                 <View key={z} style={{ flexDirection: 'row', alignItems: 'center', gap: spacing[1] }}>
                   <View style={{ width: 12, height: 12, borderRadius: 6, backgroundColor: zoneColor[z] }} />
                   <Text variant="caption" color="textMuted">
-                    {z}
+                    {zoneLabel[z]}
                   </Text>
                 </View>
               ))}
@@ -98,7 +104,7 @@ export function LoadScreen(): React.JSX.Element {
 
           {explanation && (
             <Card>
-              <Text variant="heading">Analyse</Text>
+              <Text variant="heading">{t('sport.load.analysisHeading')}</Text>
               <Text variant="caption" color="textMuted">
                 {t(explanation.observation.key, explanation.observation.params)}
               </Text>
@@ -115,26 +121,26 @@ export function LoadScreen(): React.JSX.Element {
             <View style={{ flexDirection: 'row', gap: spacing[6] }}>
               <View>
                 <Text variant="label" color="textMuted">
-                  CHARGE AIGUË
+                  {t('sport.load.acuteLabel')}
                 </Text>
                 <Text variant="subtitle">{acwr.acute}</Text>
                 <Text variant="caption" color="textSubtle">
-                  7 derniers jours
+                  {t('sport.load.acuteCaption')}
                 </Text>
               </View>
               <View>
                 <Text variant="label" color="textMuted">
-                  CHARGE CHRONIQUE
+                  {t('sport.load.chronicLabel')}
                 </Text>
                 <Text variant="subtitle">{acwr.chronic}</Text>
                 <Text variant="caption" color="textSubtle">
-                  moyenne / semaine
+                  {t('sport.load.chronicCaption')}
                 </Text>
               </View>
             </View>
             <View style={{ marginTop: spacing[3] }}>
               <Text variant="caption" color="textMuted">
-                Charge quotidienne — 28 jours
+                {t('sport.load.dailyChartCaption')}
               </Text>
               <View style={{ marginTop: spacing[1] }}>
                 <Sparkline values={trend} width={280} height={56} color={colors.accentStrength} />
@@ -145,7 +151,7 @@ export function LoadScreen(): React.JSX.Element {
       )}
 
       <View style={{ alignItems: 'flex-start' }}>
-        <Button label="Retour" variant="secondary" onPress={() => router.back()} />
+        <Button label={t('common.back')} variant="secondary" onPress={() => router.back()} />
       </View>
     </Screen>
   );
