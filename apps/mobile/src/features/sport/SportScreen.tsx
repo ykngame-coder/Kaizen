@@ -224,10 +224,11 @@ export function SportScreen(): React.JSX.Element {
           ]}
           keyExtractor={(k) => k}
           peek={20}
+          minItemHeight={340}
           renderItem={(page) => {
             if (page === 'seance') {
               return (
-                <Card>
+                <Card style={{ flex: 1 }}>
                   <View style={{ flexDirection: 'row', gap: spacing[4], alignItems: 'center' }}>
                     <View style={{ width: 64, height: 64, borderRadius: radii.lg, backgroundColor: colors.surfaceElevated, alignItems: 'center', justifyContent: 'center' }}>
                       <Icon name="dumbbell" size={28} color={colors.primary} />
@@ -264,7 +265,7 @@ export function SportScreen(): React.JSX.Element {
             }
             if (page === 'score') {
               return (
-                <Card>
+                <Card style={{ flex: 1 }}>
                   <Text variant="heading">{t('sport.screen.score.heading')}</Text>
                   <View style={{ flexDirection: 'row', gap: spacing[4], alignItems: 'center', marginTop: spacing[3] }}>
                     <ProgressRing value={sport?.value ?? 0} size={72} thickness={8} gradient centerLabel={sport ? `${sport.value}` : '—'} />
@@ -282,7 +283,7 @@ export function SportScreen(): React.JSX.Element {
             }
             if (page === 'corps') {
               return (
-                <Card>
+                <Card style={{ flex: 1 }}>
                   <Text variant="heading">{t('sport.screen.body.heading')}</Text>
                   <View style={{ flexDirection: 'row', gap: spacing[4], alignItems: 'center', marginTop: spacing[3] }}>
                     <ProgressRing value={recovery ?? 0} size={72} thickness={8} gradient centerLabel={recovery != null ? `${recovery}` : '—'} />
@@ -320,7 +321,7 @@ export function SportScreen(): React.JSX.Element {
               );
             }
             return (
-              <Card>
+              <Card style={{ flex: 1 }}>
                 <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'baseline' }}>
                   <Text variant="heading">{t('sport.screen.muscleRecovery.heading')}</Text>
                   <Pressable onPress={() => router.push('/sport/muscles')}>

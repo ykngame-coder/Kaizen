@@ -21,6 +21,10 @@ export interface CarouselProps<T> {
   showDots?: boolean;
   onIndexChange?: (index: number) => void;
   initialIndex?: number;
+  /** Floor applied to every card's height so pages with less content don't
+   * visibly shrink the carousel as the user swipes (content still grows
+   * past this if it needs to). */
+  minItemHeight?: number;
 }
 
 /**
@@ -38,6 +42,7 @@ export function Carousel<T>({
   showDots = true,
   onIndexChange,
   initialIndex = 0,
+  minItemHeight,
 }: CarouselProps<T>): React.JSX.Element {
   const { colors } = useTheme();
   // Measures its own container instead of the window: the caller may embed
@@ -76,7 +81,7 @@ export function Carousel<T>({
           keyExtractor={keyExtractor ?? ((_, i) => String(i))}
           onMomentumScrollEnd={handleMomentumEnd}
           renderItem={({ item, index: i }: ListRenderItemInfo<T>) => (
-            <View style={{ width: cardWidth, marginRight: i === data.length - 1 ? 0 : gap }}>
+            <View style={{ width: cardWidth, minHeight: minItemHeight, marginRight: i === data.length - 1 ? 0 : gap }}>
               {renderItem(item, i)}
             </View>
           )}
