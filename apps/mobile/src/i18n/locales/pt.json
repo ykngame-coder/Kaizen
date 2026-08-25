@@ -2220,7 +2220,35 @@
         "title": "Ainda não há desafios",
         "message": "Crie o primeiro desafio e convide seus amigos para participar.",
         "action": "Criar um desafio"
+      },
+      "tabs": {
+        "challenges": "Desafios",
+        "leaderboard": "Classificação"
       }
+    },
+    "leaderboard": {
+      "category": {
+        "general": "Geral",
+        "sport": "Desporto",
+        "nutrition": "Nutrição",
+        "sleep": "Sono"
+      },
+      "period": {
+        "week": "7 dias",
+        "quarter": "3 meses",
+        "year": "1 ano"
+      },
+      "emptyState": {
+        "title": "Ainda ninguém",
+        "message": "Sê o primeiro a aparecer aqui neste período."
+      },
+      "optIn": {
+        "title": "Junta-te à classificação",
+        "message": "Compara as tuas pontuações com outros utilizadores participantes.",
+        "button": "Participar na classificação"
+      },
+      "notRanked": "Não estás classificado neste período.",
+      "you": "Tu"
     }
   },
   "connectors": {
@@ -2775,7 +2803,16 @@
       "availability": {
         "label": "Disponibilidade (sessões / semana)"
       },
-      "saving": "Salvando…"
+      "saving": "Salvando…",
+      "pseudo": {
+        "label": "Pseudónimo",
+        "placeholder": "Ex.: AtletaDeFimDeSemana"
+      },
+      "leaderboardOptIn": {
+        "label": "Participar na classificação",
+        "yes": "Sim",
+        "no": "Não"
+      }
     },
     "screen": {
       "preferences": {

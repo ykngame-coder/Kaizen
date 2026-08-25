@@ -2220,7 +2220,35 @@
         "title": "Aucun défi pour l'instant",
         "message": "Crée le premier défi et invite tes amis à te rejoindre.",
         "action": "Créer un défi"
+      },
+      "tabs": {
+        "challenges": "Défis",
+        "leaderboard": "Classement"
       }
+    },
+    "leaderboard": {
+      "category": {
+        "general": "Général",
+        "sport": "Sport",
+        "nutrition": "Nutrition",
+        "sleep": "Sommeil"
+      },
+      "period": {
+        "week": "7 jours",
+        "quarter": "3 mois",
+        "year": "1 an"
+      },
+      "emptyState": {
+        "title": "Personne pour l'instant",
+        "message": "Sois le·la premier·ère à apparaître ici sur cette période."
+      },
+      "optIn": {
+        "title": "Rejoins le classement",
+        "message": "Compare tes scores avec les autres utilisateurs opt-in.",
+        "button": "Participer au classement"
+      },
+      "notRanked": "Tu n'es pas classé·e sur cette période.",
+      "you": "Toi"
     }
   },
   "connectors": {
@@ -2775,7 +2803,16 @@
       "availability": {
         "label": "Disponibilité (séances / semaine)"
       },
-      "saving": "Enregistrement…"
+      "saving": "Enregistrement…",
+      "pseudo": {
+        "label": "Pseudo",
+        "placeholder": "Ex : SportifDuDimanche"
+      },
+      "leaderboardOptIn": {
+        "label": "Participer au classement",
+        "yes": "Oui",
+        "no": "Non"
+      }
     },
     "screen": {
       "preferences": {

@@ -2220,7 +2220,35 @@
         "title": "Aún no hay retos",
         "message": "Crea el primer reto e invita a tus amigos a unirse.",
         "action": "Crear un reto"
+      },
+      "tabs": {
+        "challenges": "Desafíos",
+        "leaderboard": "Clasificación"
       }
+    },
+    "leaderboard": {
+      "category": {
+        "general": "General",
+        "sport": "Deporte",
+        "nutrition": "Nutrición",
+        "sleep": "Sueño"
+      },
+      "period": {
+        "week": "7 días",
+        "quarter": "3 meses",
+        "year": "1 año"
+      },
+      "emptyState": {
+        "title": "Nadie todavía",
+        "message": "Sé el primero en aparecer aquí en este período."
+      },
+      "optIn": {
+        "title": "Únete a la clasificación",
+        "message": "Compara tus puntuaciones con otros usuarios que participan.",
+        "button": "Participar en la clasificación"
+      },
+      "notRanked": "No estás clasificado en este período.",
+      "you": "Tú"
     }
   },
   "connectors": {
@@ -2775,7 +2803,16 @@
       "availability": {
         "label": "Disponibilidad (sesiones / semana)"
       },
-      "saving": "Guardando…"
+      "saving": "Guardando…",
+      "pseudo": {
+        "label": "Apodo",
+        "placeholder": "Ej.: AtletaDeFinde"
+      },
+      "leaderboardOptIn": {
+        "label": "Participar en la clasificación",
+        "yes": "Sí",
+        "no": "No"
+      }
     },
     "screen": {
       "preferences": {

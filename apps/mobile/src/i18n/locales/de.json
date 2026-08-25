@@ -2220,7 +2220,35 @@
         "title": "Noch keine Challenges",
         "message": "Erstelle die erste Challenge und lade deine Freunde ein, mitzumachen.",
         "action": "Challenge erstellen"
+      },
+      "tabs": {
+        "challenges": "Challenges",
+        "leaderboard": "Rangliste"
       }
+    },
+    "leaderboard": {
+      "category": {
+        "general": "Allgemein",
+        "sport": "Sport",
+        "nutrition": "Ernährung",
+        "sleep": "Schlaf"
+      },
+      "period": {
+        "week": "7 Tage",
+        "quarter": "3 Monate",
+        "year": "1 Jahr"
+      },
+      "emptyState": {
+        "title": "Noch niemand",
+        "message": "Sei die erste Person, die hier für diesen Zeitraum erscheint."
+      },
+      "optIn": {
+        "title": "Rangliste beitreten",
+        "message": "Vergleiche deine Werte mit anderen teilnehmenden Nutzern.",
+        "button": "An der Rangliste teilnehmen"
+      },
+      "notRanked": "Du bist für diesen Zeitraum nicht platziert.",
+      "you": "Du"
     }
   },
   "connectors": {
@@ -2775,7 +2803,16 @@
       "availability": {
         "label": "Verfügbarkeit (Einheiten / Woche)"
       },
-      "saving": "Speichern…"
+      "saving": "Speichern…",
+      "pseudo": {
+        "label": "Pseudonym",
+        "placeholder": "z. B. WochenendAthlet"
+      },
+      "leaderboardOptIn": {
+        "label": "An der Rangliste teilnehmen",
+        "yes": "Ja",
+        "no": "Nein"
+      }
     },
     "screen": {
       "preferences": {

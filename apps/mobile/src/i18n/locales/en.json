@@ -2220,7 +2220,35 @@
         "title": "No challenges yet",
         "message": "Create the first challenge and invite your friends to join.",
         "action": "Create a challenge"
+      },
+      "tabs": {
+        "challenges": "Challenges",
+        "leaderboard": "Leaderboard"
       }
+    },
+    "leaderboard": {
+      "category": {
+        "general": "General",
+        "sport": "Sport",
+        "nutrition": "Nutrition",
+        "sleep": "Sleep"
+      },
+      "period": {
+        "week": "7 days",
+        "quarter": "3 months",
+        "year": "1 year"
+      },
+      "emptyState": {
+        "title": "No one yet",
+        "message": "Be the first to show up here for this period."
+      },
+      "optIn": {
+        "title": "Join the leaderboard",
+        "message": "Compare your scores with other opted-in users.",
+        "button": "Join the leaderboard"
+      },
+      "notRanked": "You're not ranked for this period.",
+      "you": "You"
     }
   },
   "connectors": {
@@ -2775,7 +2803,16 @@
       "availability": {
         "label": "Availability (sessions / week)"
       },
-      "saving": "Saving…"
+      "saving": "Saving…",
+      "pseudo": {
+        "label": "Pseudo",
+        "placeholder": "e.g. WeekendAthlete"
+      },
+      "leaderboardOptIn": {
+        "label": "Join the leaderboard",
+        "yes": "Yes",
+        "no": "No"
+      }
     },
     "screen": {
       "preferences": {
