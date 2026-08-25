@@ -1,8 +1,8 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import { View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
-import { Badge, Button, Card, EmptyState, Icon, Screen, Text, useTheme } from '@supotsu/ui';
+import { Badge, Button, Card, EmptyState, Icon, Screen, SegmentedControl, Text, useTheme } from '@supotsu/ui';
 import { spacing } from '@supotsu/design-system';
 import { challengeExplanation, computeChallengeProgress } from '@supotsu/engines';
 import type { Activity, Challenge } from '@supotsu/core';
@@ -13,6 +13,7 @@ import {
   useJoinChallenge,
   useMyChallengeIds,
 } from '@/lib/data/queries';
+import { LeaderboardTab } from './LeaderboardTab';
 
 function ChallengeCard({
   challenge,
@@ -97,18 +98,32 @@ export function CommunityScreen(): React.JSX.Element {
   const { data: myIds = [] } = useMyChallengeIds();
   const { data: activities = [] } = useActivities();
   const joinedSet = new Set(myIds);
+  const [tab, setTab] = useState<'challenges' | 'leaderboard'>('challenges');
 
   return (
     <Screen scroll>
       <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
         <Text variant="title">{t('community.screen.title')}</Text>
-        <Button label={t('community.screen.newChallenge')} onPress={() => router.push('/profile/challenge/new')} />
+        {tab === 'challenges' ? (
+          <Button label={t('community.screen.newChallenge')} onPress={() => router.push('/profile/challenge/new')} />
+        ) : null}
       </View>
       <Text variant="caption" style={{ color: colors.textMuted }}>
         {t('community.screen.subtitle')}
       </Text>
 
-      {isLoading ? (
+      <SegmentedControl
+        options={[
+          { value: 'challenges' as const, label: t('community.screen.tabs.challenges') },
+          { value: 'leaderboard' as const, label: t('community.screen.tabs.leaderboard') },
+        ]}
+        value={tab}
+        onChange={setTab}
+      />
+
+      {tab === 'leaderboard' ? (
+        <LeaderboardTab />
+      ) : isLoading ? (
         <Text variant="body" color="textMuted">
           {t('common.loading')}
         </Text>
