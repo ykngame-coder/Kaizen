@@ -58,7 +58,8 @@ begin
       ) as rank
     from public.daily_scores ds
     join public.profiles p on p.id = ds.user_id and p.leaderboard_opt_in
-    where ds.date >= current_date - p_days
+    -- Inclusive on both ends: -(p_days - 1) makes "7 jours" cover exactly 7 calendar days.
+    where ds.date >= current_date - (p_days - 1)
     group by ds.user_id, p.display_name, p.avatar_url
     having avg(
       case p_category
@@ -73,4 +74,7 @@ begin
 end;
 $$;
 
+-- Postgres grants EXECUTE to PUBLIC by default; this security-definer function has no
+-- auth.uid() check of its own, so close it off to the anonymous role explicitly.
+revoke execute on function public.leaderboard(text, int) from public;
 grant execute on function public.leaderboard(text, int) to authenticated;
