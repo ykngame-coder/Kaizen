@@ -138,10 +138,13 @@ export function SportScreen(): React.JSX.Element {
   const recordDailyScore = useRecordDailyScore();
   useEffect(() => {
     if (!leaderboardPrefs?.leaderboardOptIn) return;
-    if (selectedDayKey !== todayKey) return;
+    const now = new Date();
+    const viewed = new Date(asOf);
+    const isToday = viewed.getFullYear() === now.getFullYear() && viewed.getMonth() === now.getMonth() && viewed.getDate() === now.getDate();
+    if (!isToday) return;
     if (sport == null) return;
     recordDailyScore.mutate({ column: 'sport', value: Math.round(sport.value) });
-  }, [leaderboardPrefs?.leaderboardOptIn, selectedDayKey, todayKey, sport?.value]);
+  }, [leaderboardPrefs?.leaderboardOptIn, asOf, sport?.value]);
 
   const muscleStates = useMemo(() => muscleStatesFor(muscleSessions, asOf), [muscleSessions, asOf]);
   const colorFor = useMemo(() => muscleColorFor(muscleStates, colors), [muscleStates, colors]);

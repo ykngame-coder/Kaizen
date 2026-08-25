@@ -237,13 +237,14 @@ export function SommeilScreen(): React.JSX.Element {
   );
   const { data: leaderboardPrefs } = useLeaderboardPrefs();
   const recordDailyScore = useRecordDailyScore();
-  const todayKey = new Date().toISOString().slice(0, 10);
-  const selectedDayKey = asOf.slice(0, 10);
   useEffect(() => {
     if (!leaderboardPrefs?.leaderboardOptIn) return;
-    if (selectedDayKey !== todayKey) return;
+    const now = new Date();
+    const viewed = new Date(asOf);
+    const isToday = viewed.getFullYear() === now.getFullYear() && viewed.getMonth() === now.getMonth() && viewed.getDate() === now.getDate();
+    if (!isToday) return;
     recordDailyScore.mutate({ column: 'sleep', value: Math.round(score.value) });
-  }, [leaderboardPrefs?.leaderboardOptIn, selectedDayKey, todayKey, score.value]);
+  }, [leaderboardPrefs?.leaderboardOptIn, asOf, score.value]);
   const trend = useMemo(() => sleepTrend(metrics, asOf, 7), [metrics, asOf]);
   const chrono = useMemo(() => [...trend].sort((a, b) => a.date.localeCompare(b.date)), [trend]);
   const chronoMax = Math.max(1, ...chrono.map((n) => n.hours));

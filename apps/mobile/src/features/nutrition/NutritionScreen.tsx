@@ -181,13 +181,14 @@ export function NutritionScreen(): React.JSX.Element {
   const score = useMemo(() => computeNutritionScore(entries, goals, asOf), [entries, goals, asOf]);
   const { data: leaderboardPrefs } = useLeaderboardPrefs();
   const recordDailyScore = useRecordDailyScore();
-  const todayKey = new Date().toISOString().slice(0, 10);
-  const selectedDayKey = asOf.slice(0, 10);
   useEffect(() => {
     if (!leaderboardPrefs?.leaderboardOptIn) return;
-    if (selectedDayKey !== todayKey) return;
+    const now = new Date();
+    const viewed = new Date(asOf);
+    const isToday = viewed.getFullYear() === now.getFullYear() && viewed.getMonth() === now.getMonth() && viewed.getDate() === now.getDate();
+    if (!isToday) return;
     recordDailyScore.mutate({ column: 'nutrition', value: Math.round(score.value) });
-  }, [leaderboardPrefs?.leaderboardOptIn, selectedDayKey, todayKey, score.value]);
+  }, [leaderboardPrefs?.leaderboardOptIn, asOf, score.value]);
   const explanation = useMemo(() => nutritionExplanation(entries, goals, asOf), [entries, goals, asOf]);
   const hasData = today.length > 0;
 
