@@ -5,7 +5,7 @@ import { Card, EmptyState, Icon, SegmentedControl, Text, useTheme } from '@supot
 import { spacing, radii } from '@supotsu/design-system';
 import { useAuth } from '@/features/auth/AuthProvider';
 import { useLeaderboard, useLeaderboardPrefs, useUpdateLeaderboardPrefs } from '@/lib/data/queries';
-import type { LeaderboardCategory, LeaderboardPeriod } from './leaderboardHelpers';
+import { defaultDisplayName, type LeaderboardCategory, type LeaderboardPeriod } from './leaderboardHelpers';
 
 export function LeaderboardTab(): React.JSX.Element {
   const { t } = useTranslation();
@@ -47,7 +47,14 @@ export function LeaderboardTab(): React.JSX.Element {
                 { value: 'yes' as const, label: t('settings.profileEdit.leaderboardOptIn.yes') },
               ]}
               value="no"
-              onChange={(v) => updatePrefs.mutate({ leaderboardOptIn: v === 'yes' })}
+              onChange={(v) => {
+                const nextOptedIn = v === 'yes';
+                updatePrefs.mutate({
+                  leaderboardOptIn: nextOptedIn,
+                  // Opting in from here would otherwise leave everyone as a bare "Athlète".
+                  displayName: nextOptedIn && !prefs?.displayName && user ? defaultDisplayName(user.id) : undefined,
+                });
+              }}
             />
           </View>
         </Card>
@@ -99,7 +106,7 @@ export function LeaderboardTab(): React.JSX.Element {
         </View>
       )}
 
-      {optedIn && !isLoading && !meRanked ? (
+      {optedIn && !isLoading && entries.length > 0 && !meRanked ? (
         <Text variant="caption" color="textSubtle">
           {t('community.leaderboard.notRanked')}
         </Text>

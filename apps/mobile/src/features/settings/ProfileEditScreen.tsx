@@ -72,7 +72,10 @@ export function ProfileEditScreen(): React.JSX.Element {
   };
 
   const onSavePseudo = (): void => {
-    updateLeaderboardPrefs.mutate({ displayName: pseudo.trim() || undefined });
+    const trimmed = pseudo.trim();
+    // Don't fire an empty or no-op patch on an ordinary blur.
+    if (!trimmed || trimmed === (leaderboardPrefs?.displayName ?? '')) return;
+    updateLeaderboardPrefs.mutate({ displayName: trimmed });
   };
 
   const onSave = (): void => {

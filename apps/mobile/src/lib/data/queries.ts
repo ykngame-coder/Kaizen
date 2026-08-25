@@ -307,6 +307,8 @@ export function useUpdateLeaderboardPrefs() {
     mutationFn: (patch: { displayName?: string; leaderboardOptIn?: boolean }) => repo.updateLeaderboardPrefs(user!.id, patch),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['leaderboardPrefs', user?.id] });
+      // Opting in/out changes who appears in the standings — refetch them too.
+      qc.invalidateQueries({ queryKey: ['generalLeaderboard'] });
     },
   });
 }
@@ -328,7 +330,7 @@ export function useLeaderboard(category: LeaderboardCategory, period: Leaderboar
   const { user } = useAuth();
   const repo = useRepository();
   return useQuery({
-    queryKey: ['generalLeaderboard', category, period],
+    queryKey: ['generalLeaderboard', category, period, user?.id],
     enabled: !!user,
     queryFn: () => repo.getLeaderboard(user!.id, category, periodToDays(period)),
   });

@@ -25,6 +25,7 @@ import { MuscleBody } from '@/features/muscles/MuscleBody';
 import { muscleColorFor, muscleStatesFor } from '@/features/muscles/muscleColor';
 import { ComprendreCard } from '@/features/knowledge/ComprendreCard';
 import { ObjectifsCard } from '@/features/goals/ObjectifsCard';
+import { isTodayLocal } from '@/features/community/leaderboardHelpers';
 
 const DAY_MS = 86_400_000;
 
@@ -138,10 +139,8 @@ export function SportScreen(): React.JSX.Element {
   const recordDailyScore = useRecordDailyScore();
   useEffect(() => {
     if (!leaderboardPrefs?.leaderboardOptIn) return;
-    const now = new Date();
-    const viewed = new Date(asOf);
-    const isToday = viewed.getFullYear() === now.getFullYear() && viewed.getMonth() === now.getMonth() && viewed.getDate() === now.getDate();
-    if (!isToday) return;
+    if (!isTodayLocal(asOf)) return;
+    // `sport` is already null when the score is "to_confirm" — no placeholder 0 gets published.
     if (sport == null) return;
     recordDailyScore.mutate({ column: 'sport', value: Math.round(sport.value) });
   }, [leaderboardPrefs?.leaderboardOptIn, asOf, sport?.value]);

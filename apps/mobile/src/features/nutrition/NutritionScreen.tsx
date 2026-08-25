@@ -21,6 +21,7 @@ import { CalorieCalculatorForm } from './CalorieCalculatorForm';
 import { usePreferences } from '@/lib/preferences';
 import { DayNav, useSelectedDay } from '@/features/navigation/DayNav';
 import { ComprendreCard } from '@/features/knowledge/ComprendreCard';
+import { isTodayLocal } from '@/features/community/leaderboardHelpers';
 
 const DAY_MS = 86_400_000;
 
@@ -183,12 +184,12 @@ export function NutritionScreen(): React.JSX.Element {
   const recordDailyScore = useRecordDailyScore();
   useEffect(() => {
     if (!leaderboardPrefs?.leaderboardOptIn) return;
-    const now = new Date();
-    const viewed = new Date(asOf);
-    const isToday = viewed.getFullYear() === now.getFullYear() && viewed.getMonth() === now.getMonth() && viewed.getDate() === now.getDate();
-    if (!isToday) return;
+    if (!isTodayLocal(asOf)) return;
+    // "to_confirm" means there's no real data yet — don't publish a placeholder 0.
+    if (score.confidence === 'to_confirm') return;
+    if (!Number.isFinite(score.value)) return;
     recordDailyScore.mutate({ column: 'nutrition', value: Math.round(score.value) });
-  }, [leaderboardPrefs?.leaderboardOptIn, asOf, score.value]);
+  }, [leaderboardPrefs?.leaderboardOptIn, asOf, score.confidence, score.value]);
   const explanation = useMemo(() => nutritionExplanation(entries, goals, asOf), [entries, goals, asOf]);
   const hasData = today.length > 0;
 

@@ -50,7 +50,7 @@ import type {
 import type { MuscleSession } from '@supotsu/engines';
 import { EXERCISE_LIBRARY } from '@supotsu/shared';
 import { EXERCISES as FULL_EXERCISE_CATALOG } from '@/features/exercises/catalog';
-import { categoryToColumn, defaultDisplayName, type DailyScoreColumn, type LeaderboardCategory } from '@/features/community/leaderboardHelpers';
+import { categoryToColumn, defaultDisplayName, localDateKey, type DailyScoreColumn, type LeaderboardCategory } from '@/features/community/leaderboardHelpers';
 import {
   insertActivity,
   upsertActivities,
@@ -1439,7 +1439,7 @@ function createDemoRepository(): DataRepository {
       await secureStorage.setItem(lbPrefsKey(userId), JSON.stringify(next));
     },
     async recordDailyScore(userId, column, value) {
-      const today = new Date().toISOString().slice(0, 10);
+      const today = localDateKey(new Date());
       const rows = await readJson<{ date: string; kaizen?: number; sport?: number; nutrition?: number; sleep?: number }>(dailyScoreKey(userId));
       const idx = rows.findIndex((r) => r.date === today);
       if (idx >= 0) rows[idx] = { ...rows[idx], [column]: value };
@@ -1454,7 +1454,7 @@ function createDemoRepository(): DataRepository {
       if (!prefs.leaderboardOptIn) return [];
       const rows = await readJson<{ date: string; kaizen?: number; sport?: number; nutrition?: number; sleep?: number }>(dailyScoreKey(userId));
       const column = categoryToColumn(category);
-      const cutoff = new Date(Date.now() - days * 86_400_000).toISOString().slice(0, 10);
+      const cutoff = localDateKey(new Date(Date.now() - days * 86_400_000));
       const inWindow = rows.filter((r) => r.date >= cutoff && r[column] != null);
       if (inWindow.length === 0) return [];
       const avg = inWindow.reduce((sum, r) => sum + (r[column] as number), 0) / inWindow.length;

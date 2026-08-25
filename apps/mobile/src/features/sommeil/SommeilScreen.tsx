@@ -27,6 +27,7 @@ import { formatClock, formatClockFromIso, usePreferences, type TimeFormat } from
 import { DayNav, useSelectedDay } from '@/features/navigation/DayNav';
 import { ComprendreCard } from '@/features/knowledge/ComprendreCard';
 import { ObjectifsCard } from '@/features/goals/ObjectifsCard';
+import { isTodayLocal } from '@/features/community/leaderboardHelpers';
 
 const RISK_TONE: Record<FatigueRisk, 'success' | 'warning' | 'error'> = {
   faible: 'success',
@@ -239,12 +240,12 @@ export function SommeilScreen(): React.JSX.Element {
   const recordDailyScore = useRecordDailyScore();
   useEffect(() => {
     if (!leaderboardPrefs?.leaderboardOptIn) return;
-    const now = new Date();
-    const viewed = new Date(asOf);
-    const isToday = viewed.getFullYear() === now.getFullYear() && viewed.getMonth() === now.getMonth() && viewed.getDate() === now.getDate();
-    if (!isToday) return;
+    if (!isTodayLocal(asOf)) return;
+    // "to_confirm" means there's no real data yet — don't publish a placeholder 0.
+    if (score.confidence === 'to_confirm') return;
+    if (!Number.isFinite(score.value)) return;
     recordDailyScore.mutate({ column: 'sleep', value: Math.round(score.value) });
-  }, [leaderboardPrefs?.leaderboardOptIn, asOf, score.value]);
+  }, [leaderboardPrefs?.leaderboardOptIn, asOf, score.confidence, score.value]);
   const trend = useMemo(() => sleepTrend(metrics, asOf, 7), [metrics, asOf]);
   const chrono = useMemo(() => [...trend].sort((a, b) => a.date.localeCompare(b.date)), [trend]);
   const chronoMax = Math.max(1, ...chrono.map((n) => n.hours));

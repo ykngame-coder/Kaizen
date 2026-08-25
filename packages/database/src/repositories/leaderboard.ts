@@ -11,7 +11,10 @@ export async function upsertDailyScore(
   column: DailyScoreColumn,
   value: number,
 ): Promise<void> {
-  const today = new Date().toISOString().slice(0, 10);
+  // Local calendar day, not UTC — the write-side bucket must match the app's
+  // local-day "is this today?" guard, or non-UTC users land under the wrong day.
+  const now = new Date();
+  const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
   const payload = {
     user_id: userId,
     date: today,

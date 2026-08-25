@@ -231,10 +231,12 @@ export function DashboardScreen(): React.JSX.Element {
   const recordDailyScore = useRecordDailyScore();
   useEffect(() => {
     if (!leaderboardPrefs?.leaderboardOptIn) return;
+    // "to_confirm" means there's no real data yet — don't publish a placeholder 0.
+    if (snapshot.confidence === 'to_confirm') return;
     const value = snapshot.value.overall;
     if (!Number.isFinite(value)) return;
     recordDailyScore.mutate({ column: 'kaizen', value: Math.round(value) });
-  }, [leaderboardPrefs?.leaderboardOptIn, snapshot.value.overall]);
+  }, [leaderboardPrefs?.leaderboardOptIn, snapshot.confidence, snapshot.value.overall]);
   const hasScoreData = snapshot.confidence !== 'to_confirm';
   const kaizenBand = recoveryBand(snapshot.value.overall);
 
