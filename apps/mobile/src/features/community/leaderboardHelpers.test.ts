@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { categoryToColumn, defaultDisplayName, periodToDays } from './leaderboardHelpers';
+import { categoryToColumn, defaultDisplayName, isTodayLocal, localDateKey, periodToDays } from './leaderboardHelpers';
 
 describe('periodToDays', () => {
   it('maps week to 7 days', () => {
@@ -21,6 +21,30 @@ describe('categoryToColumn', () => {
     expect(categoryToColumn('sport')).toBe('sport');
     expect(categoryToColumn('nutrition')).toBe('nutrition');
     expect(categoryToColumn('sleep')).toBe('sleep');
+  });
+});
+
+describe('localDateKey', () => {
+  it('formats a local Date as YYYY-MM-DD, zero-padding month and day', () => {
+    // Local-time constructor (year, monthIndex, day) so the expectation holds in any timezone.
+    expect(localDateKey(new Date(2026, 0, 5))).toBe('2026-01-05');
+    expect(localDateKey(new Date(2026, 11, 31))).toBe('2026-12-31');
+  });
+  it('uses local calendar components, not the UTC ones', () => {
+    const d = new Date(2026, 5, 15, 23, 30);
+    expect(localDateKey(d)).toBe(
+      `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`,
+    );
+  });
+});
+
+describe('isTodayLocal', () => {
+  it('is true for an ISO string on the current local calendar day', () => {
+    // Build today's local date at noon so it stays "today" whatever the machine's offset.
+    expect(isTodayLocal(`${localDateKey(new Date())}T12:00:00`)).toBe(true);
+  });
+  it('is false for a date in the past', () => {
+    expect(isTodayLocal('2020-01-01T12:00:00.000Z')).toBe(false);
   });
 });
 
