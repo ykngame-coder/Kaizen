@@ -5,7 +5,9 @@ import { useTranslation } from 'react-i18next';
 import { Button, Card, Input, Screen, SegmentedControl, Text } from '@supotsu/ui';
 import { spacing } from '@supotsu/design-system';
 import type { AthleteProfileInput } from '@supotsu/shared';
-import { useAthleteProfile, useSaveAthleteProfile } from '@/lib/data/queries';
+import { useAthleteProfile, useLeaderboardPrefs, useSaveAthleteProfile, useUpdateLeaderboardPrefs } from '@/lib/data/queries';
+import { useAuth } from '@/features/auth/AuthProvider';
+import { defaultDisplayName } from '@/features/community/leaderboardHelpers';
 
 type Sex = AthleteProfileInput['sex'];
 type Level = AthleteProfileInput['level'];
@@ -48,6 +50,30 @@ export function ProfileEditScreen(): React.JSX.Element {
     setWeight(profile.weightKg !== undefined ? String(profile.weightKg) : '');
     setAvailability(profile.weeklyAvailability !== undefined ? String(profile.weeklyAvailability) : '');
   }, [profile]);
+
+  const { user } = useAuth();
+  const { data: leaderboardPrefs } = useLeaderboardPrefs();
+  const updateLeaderboardPrefs = useUpdateLeaderboardPrefs();
+  const [pseudo, setPseudo] = useState('');
+  const [optedIn, setOptedIn] = useState(false);
+
+  useEffect(() => {
+    if (!leaderboardPrefs) return;
+    setPseudo(leaderboardPrefs.displayName ?? '');
+    setOptedIn(leaderboardPrefs.leaderboardOptIn);
+  }, [leaderboardPrefs]);
+
+  const onToggleOptIn = (value: 'yes' | 'no'): void => {
+    const nextOptedIn = value === 'yes';
+    setOptedIn(nextOptedIn);
+    const nextPseudo = nextOptedIn && !pseudo.trim() && user ? defaultDisplayName(user.id) : pseudo;
+    if (nextOptedIn && !pseudo.trim()) setPseudo(nextPseudo);
+    updateLeaderboardPrefs.mutate({ leaderboardOptIn: nextOptedIn, displayName: nextPseudo || undefined });
+  };
+
+  const onSavePseudo = (): void => {
+    updateLeaderboardPrefs.mutate({ displayName: pseudo.trim() || undefined });
+  };
 
   const onSave = (): void => {
     const input: AthleteProfileInput = {
@@ -104,6 +130,26 @@ export function ProfileEditScreen(): React.JSX.Element {
               onChangeText={setAvailability}
               keyboardType="numeric"
             />
+            <Input
+              label={t('settings.profileEdit.pseudo.label')}
+              placeholder={t('settings.profileEdit.pseudo.placeholder')}
+              value={pseudo}
+              onChangeText={setPseudo}
+              onBlur={onSavePseudo}
+            />
+            <View style={{ gap: spacing[1] }}>
+              <Text variant="label" color="textMuted">
+                {t('settings.profileEdit.leaderboardOptIn.label')}
+              </Text>
+              <SegmentedControl
+                options={[
+                  { value: 'no' as const, label: t('settings.profileEdit.leaderboardOptIn.no') },
+                  { value: 'yes' as const, label: t('settings.profileEdit.leaderboardOptIn.yes') },
+                ]}
+                value={optedIn ? 'yes' : 'no'}
+                onChange={onToggleOptIn}
+              />
+            </View>
             <View style={{ alignItems: 'flex-start' }}>
               <Button label={save.isPending ? t('settings.profileEdit.saving') : t('common.save')} onPress={onSave} />
             </View>
