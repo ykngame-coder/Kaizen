@@ -203,17 +203,8 @@ export function ImportHealthScreen(): React.JSX.Element {
 
       {status ? <Badge label={status.text} tone={status.tone} /> : null}
 
-      {importedWorkouts > 0 ? (
-        <Card>
-          <Text variant="heading">{t('connectors.importHealth.createWorkout.title')}</Text>
-          <Text variant="body" color="textMuted">
-            {t('connectors.importHealth.createWorkout.description')}
-          </Text>
-          <View style={{ alignItems: 'flex-start', marginTop: spacing[2] }}>
-            <Button label={t('connectors.importHealth.createWorkout.button')} onPress={() => router.push('/sport/workout/new?openPicker=1')} />
-          </View>
-        </Card>
-      ) : null}
+      {/* This card's sole purpose was to open NewWorkoutScreen's "importer une
+          séance déjà faite" picker (?openPicker=1) — paused along with it. */}
 
       <View style={{ alignItems: 'flex-start' }}>
         <Button label={t('common.back')} variant="secondary" onPress={() => router.back()} />

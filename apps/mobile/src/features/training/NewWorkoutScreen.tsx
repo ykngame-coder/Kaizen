@@ -72,6 +72,7 @@ export function NewWorkoutScreen(): React.JSX.Element {
   const [blocks, setBlocks] = useState<BlockDraft[]>([emptyBlock()]);
   const [activeBlock, setActiveBlock] = useState(0);
   const [error, setError] = useState<string | null>(null);
+  // "Importer une séance déjà faite" picker is paused (no UI entry point below) — state kept for when it comes back.
   const [pickerOpen, setPickerOpen] = useState(params.openPicker === '1');
   const [importSourceId, setImportSourceId] = useState<string | undefined>();
 
@@ -95,6 +96,7 @@ export function NewWorkoutScreen(): React.JSX.Element {
   const isCustom = (id: string): boolean => id.startsWith('custom-');
 
   // Séances déjà faites (incl. import Garmin) qu'on peut reprendre comme point de départ.
+  // Paused along with the picker above — kept for when it comes back.
   const pastWorkouts = useMemo(
     () =>
       [...allWorkouts]
@@ -231,55 +233,11 @@ export function NewWorkoutScreen(): React.JSX.Element {
       </Text>
 
       <View style={{ marginTop: spacing[2], flexDirection: 'row', flexWrap: 'wrap', gap: spacing[2] }}>
-        <Button
-          label={pickerOpen ? t('common.close') : t('sport.newWorkout.import.openButton')}
-          variant="secondary"
-          onPress={() => setPickerOpen((v) => !v)}
-        />
         <Button label={t('sport.newWorkout.import.fromScreenshot')} variant="secondary" onPress={() => router.push('/sport/workout/import')} />
       </View>
-      {pickerOpen && (
-        <Card style={{ marginTop: spacing[2] }}>
-          <Text variant="heading">{t('sport.newWorkout.import.title')}</Text>
-          <Text variant="caption" color="textMuted" style={{ marginBottom: spacing[2] }}>
-            {t('sport.newWorkout.import.hint')}
-          </Text>
-          {pastWorkouts.length === 0 ? (
-            <Text variant="body" color="textMuted">
-              {t('sport.newWorkout.import.empty')}
-            </Text>
-          ) : (
-          <View style={{ gap: spacing[2] }}>
-            {pastWorkouts.slice(0, 20).map((w) => (
-              <Pressable
-                key={w.id}
-                onPress={() => setImportSourceId(w.id)}
-                style={({ pressed }) => ({ opacity: pressed ? 0.7 : 1 })}
-              >
-                <Card elevated>
-                  <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <View style={{ flex: 1 }}>
-                      <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing[2] }}>
-                        <Text variant="subtitle">{w.name}</Text>
-                        {w.name === GARMIN_IMPORT_NAME && <Badge label="Garmin" tone="info" />}
-                      </View>
-                      {w.completedAt && (
-                        <Text variant="caption" color="textMuted">
-                          {formatDate(w.completedAt)}
-                        </Text>
-                      )}
-                    </View>
-                    <Text variant="heading" style={{ color: colors.primary }}>
-                      {importSourceId === w.id ? '…' : '↓'}
-                    </Text>
-                  </View>
-                </Card>
-              </Pressable>
-            ))}
-          </View>
-          )}
-        </Card>
-      )}
+      {/* "Importer une séance déjà faite" (pastWorkouts picker) is paused — kept
+          in code (pickerOpen/importSourceId/pastWorkouts below still wired for
+          when it comes back) but no longer has a UI entry point. */}
 
       <Input
         label={t('sport.newWorkout.form.nameLabel')}
