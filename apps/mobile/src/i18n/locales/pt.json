@@ -1623,6 +1623,16 @@
         "min15": "15 min"
       },
       "startNightModeCta": "Iniciar modo noturno"
+    },
+    "trackPlaceholder": {
+      "title": "Monitorização do sono",
+      "subtitle": "Deteção do sono diretamente pelo telemóvel.",
+      "comingIn": "Esta funcionalidade está em pausa — a monitorização parava durante a noite assim que o telemóvel passava para segundo plano (limitação do iOS)."
+    },
+    "alarmPlaceholder": {
+      "title": "Alarme inteligente",
+      "subtitle": "Um alarme que toca durante a tua fase de sono leve.",
+      "comingIn": "Esta funcionalidade está em pausa enquanto procuramos uma solução fiável em segundo plano."
     }
   },
   "wellbeing": {

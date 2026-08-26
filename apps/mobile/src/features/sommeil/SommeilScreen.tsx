@@ -544,8 +544,6 @@ export function SommeilScreen(): React.JSX.Element {
             <ToolTile icon={<Icon name="lungs" size={16} color={colors.text} />} label={t('sommeil.screen.tools.stomachVacuum')} path="/sport/stomach-vacuum" />
             <ToolTile icon={<Icon name="puzzle" size={16} color={colors.text} />} label={t('sommeil.screen.tools.neuroRecovery')} path="/sommeil/neuro-recovery" />
             <ToolTile icon={<Icon name="headphones" size={16} color={colors.text} />} label={t('sommeil.screen.tools.sounds')} path="/sommeil/sound" />
-            <ToolTile icon={<Icon name="moon" size={16} color={colors.text} />} label={t('sommeil.screen.tools.phoneTracking')} path="/sommeil/track" />
-            <ToolTile icon={<Icon name="alarm" size={16} color={colors.text} />} label={t('sommeil.screen.tools.smartAlarm')} path="/sommeil/alarm" />
           </View>
 
           {/* 10. Comprendre + Objectifs */}

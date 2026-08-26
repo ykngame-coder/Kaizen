@@ -1623,6 +1623,16 @@
         "min15": "15 Min."
       },
       "startNightModeCta": "Nachtmodus starten"
+    },
+    "trackPlaceholder": {
+      "title": "Schlaf-Tracking",
+      "subtitle": "Schlaferkennung direkt über das Telefon.",
+      "comingIn": "Diese Funktion ist pausiert — die Aufzeichnung stoppte nachts, sobald das Telefon in den Hintergrund wechselte (iOS-Einschränkung)."
+    },
+    "alarmPlaceholder": {
+      "title": "Intelligenter Wecker",
+      "subtitle": "Ein Wecker, der während deiner Leichtschlafphase klingelt.",
+      "comingIn": "Diese Funktion ist pausiert, bis wir eine zuverlässige Hintergrundlösung finden."
     }
   },
   "wellbeing": {

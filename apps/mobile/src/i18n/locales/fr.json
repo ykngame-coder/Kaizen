@@ -1623,6 +1623,16 @@
         "min15": "15 min"
       },
       "startNightModeCta": "Lancer le mode nuit"
+    },
+    "trackPlaceholder": {
+      "title": "Suivi du sommeil",
+      "subtitle": "Détection du sommeil directement via le téléphone.",
+      "comingIn": "Cette fonctionnalité est mise en pause — le suivi s'interrompait pendant la nuit dès que le téléphone passait en arrière-plan (limite iOS)."
+    },
+    "alarmPlaceholder": {
+      "title": "Réveil intelligent",
+      "subtitle": "Un réveil qui sonne pendant ta phase de sommeil léger.",
+      "comingIn": "Cette fonctionnalité est mise en pause, le temps de trouver une solution fiable en arrière-plan."
     }
   },
   "wellbeing": {

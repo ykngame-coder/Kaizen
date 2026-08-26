@@ -1623,6 +1623,16 @@
         "min15": "15 min"
       },
       "startNightModeCta": "Start night mode"
+    },
+    "trackPlaceholder": {
+      "title": "Sleep tracking",
+      "subtitle": "Sleep detection directly from your phone.",
+      "comingIn": "This feature is paused — tracking stopped overnight as soon as the phone went to the background (an iOS limitation)."
+    },
+    "alarmPlaceholder": {
+      "title": "Smart alarm",
+      "subtitle": "An alarm that rings during your light sleep phase.",
+      "comingIn": "This feature is paused while we find a reliable background solution."
     }
   },
   "wellbeing": {
