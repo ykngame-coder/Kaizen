@@ -649,8 +649,7 @@
           "performance": "Rendimiento",
           "strength": "Fuerza",
           "endurance": "Resistencia",
-          "health": "Salud",
-          "habit": "Hábito"
+          "health": "Salud"
         },
         "archetypes": {
           "fatLoss": {
@@ -795,6 +794,8 @@
       "habitsScreen": {
         "addButton": "+ Hábito",
         "addButtonA11y": "Nuevo hábito",
+        "combinedTitle": "Objetivos y hábitos",
+        "combinedSubtitle": "Metas, disciplina y regularidad en un solo lugar.",
         "title": "Hábitos y disciplina",
         "subtitle": "Disciplina • Rachas • Progresión",
         "daysSuffix": "{{count}} d",

@@ -1,6 +1,5 @@
 import React, { useMemo, useState } from 'react';
 import { Pressable, View } from 'react-native';
-import { useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import type { TFunction } from 'i18next';
 import {
@@ -11,7 +10,6 @@ import {
   Gradient,
   Icon,
   Input,
-  Screen,
   SegmentedControl,
   Sparkline,
   Text,
@@ -39,7 +37,6 @@ function typeOptions(t: TFunction): TypeOption[] {
     { value: 'strength', label: t('sport.goals.screen.typeOptions.strength') },
     { value: 'endurance', label: t('sport.goals.screen.typeOptions.endurance') },
     { value: 'health', label: t('sport.goals.screen.typeOptions.health') },
-    { value: 'habit', label: t('sport.goals.screen.typeOptions.habit') },
   ];
 }
 
@@ -237,10 +234,29 @@ function GoalCard({ goal }: { goal: Goal }): React.JSX.Element {
   );
 }
 
-/** Objectifs (mockup #17): primary goal, body targets, tracked goals, priorities. */
-export function GoalsScreen(): React.JSX.Element {
+/** Label ↔ value row (settings field). */
+function Field({ label, value, last }: { label: string; value: string; last?: boolean }): React.JSX.Element {
+  const { colors } = useTheme();
+  return (
+    <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: spacing[3], borderBottomWidth: last ? 0 : 1, borderBottomColor: colors.border }}>
+      <Text variant="body" color="textMuted">
+        {label}
+      </Text>
+      <Text variant="body" style={{ fontWeight: '700' }}>
+        {value}
+      </Text>
+    </View>
+  );
+}
+
+/**
+ * Objectifs content (mockup #17): primary goal, body targets, tracked goals,
+ * priorities. Rendered inside the merged Objectifs & Habitudes screen
+ * (HabitsScreen) — `showForm`/`onToggleForm` are lifted to that screen's
+ * header "+ Objectif" button so both create actions live in one place.
+ */
+export function GoalsSection({ showForm, onCloseForm }: { showForm: boolean; onCloseForm: () => void }): React.JSX.Element {
   const { t } = useTranslation();
-  const router = useRouter();
   const { colors } = useTheme();
   const typeOpts = useMemo(() => typeOptions(t), [t]);
   const archetypeList = useMemo(() => archetypes(t), [t]);
@@ -251,7 +267,6 @@ export function GoalsScreen(): React.JSX.Element {
   const updateGoal = useUpdateGoal();
   const asOf = new Date().toISOString();
 
-  const [showForm, setShowForm] = useState(false);
   const [type, setType] = useState<GoalType>('body_composition');
   const [title, setTitle] = useState('');
   const [target, setTarget] = useState('');
@@ -304,39 +319,60 @@ export function GoalsScreen(): React.JSX.Element {
         setTitle('');
         setTarget('');
         setCurrent('');
-        setShowForm(false);
+        onCloseForm();
       },
     });
   };
 
   const active = goals.filter((g) => g.status !== 'abandoned');
-  const primaryKey = preferences.primaryGoal ?? 'fat_loss';
 
   return (
-    <Screen scroll>
-      <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-        <View>
-          <Text variant="title">{t('sport.goals.screen.title')}</Text>
-          <Text variant="caption" color="textSubtle">
-            {t('sport.goals.screen.subtitle')}
-          </Text>
-        </View>
-        <Button label={showForm ? t('common.close') : t('sport.goals.screen.addGoalButton')} onPress={() => setShowForm((s) => !s)} />
-      </View>
+    <View style={{ gap: spacing[4] }}>
+      <Text variant="heading">{t('sport.goals.screen.title')}</Text>
+
+      {showForm && (
+        <Card>
+          <Text variant="heading">{t('sport.goals.screen.form.heading')}</Text>
+          <View style={{ gap: spacing[3], marginTop: spacing[2] }}>
+            <View style={{ gap: spacing[1] }}>
+              <Text variant="label" color="textMuted">
+                {t('sport.goals.screen.form.typeLabel')}
+              </Text>
+              <SegmentedControl options={typeOpts} value={type} onChange={setType} />
+            </View>
+            <Input label={t('sport.goals.screen.form.titleLabel')} placeholder={t('sport.goals.screen.form.titlePlaceholder')} value={title} onChangeText={setTitle} />
+            <View style={{ flexDirection: 'row', gap: spacing[2] }}>
+              <View style={{ flex: 1 }}>
+                <Input label={t('sport.goals.screen.form.currentLabel')} placeholder="102" value={current} onChangeText={setCurrent} keyboardType="numeric" />
+              </View>
+              <View style={{ flex: 1 }}>
+                <Input label={t('sport.goals.screen.form.targetLabel')} placeholder="96" value={target} onChangeText={setTarget} keyboardType="numeric" />
+              </View>
+              <View style={{ width: 72 }}>
+                <Input label={t('sport.goals.screen.form.unitLabel')} placeholder="kg" value={unit} onChangeText={setUnit} />
+              </View>
+            </View>
+            <View style={{ flexDirection: 'row', gap: spacing[2] }}>
+              <Button label={t('common.cancel')} variant="secondary" onPress={onCloseForm} />
+              <Button label={addGoal.isPending ? t('sport.goals.screen.form.creating') : t('sport.goals.screen.form.createButton')} onPress={save} disabled={!canSave} />
+            </View>
+          </View>
+        </Card>
+      )}
 
       {/* Objectif principal */}
-      <Text variant="heading" style={{ marginTop: spacing[2] }}>
-        {t('sport.goals.screen.primaryGoal.heading')}
-      </Text>
-      <Text variant="caption" color="textSubtle">
-        {t('sport.goals.screen.primaryGoal.hint')}
-      </Text>
-      <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: spacing[3] }}>
-        {archetypeList.map((a) => (
-          <View key={a.key} style={{ width: '47%' }}>
-            <ArchetypeTile item={a} active={primaryKey === a.key} onPress={() => setPreference('primaryGoal', a.key)} />
-          </View>
-        ))}
+      <View>
+        <Text variant="heading">{t('sport.goals.screen.primaryGoal.heading')}</Text>
+        <Text variant="caption" color="textSubtle">
+          {t('sport.goals.screen.primaryGoal.hint')}
+        </Text>
+        <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: spacing[3], marginTop: spacing[2] }}>
+          {archetypeList.map((a) => (
+            <View key={a.key} style={{ width: '47%' }}>
+              <ArchetypeTile item={a} active={(preferences.primaryGoal ?? 'fat_loss') === a.key} onPress={() => setPreference('primaryGoal', a.key)} />
+            </View>
+          ))}
+        </View>
       </View>
 
       {/* Objectifs corporels */}
@@ -402,66 +438,37 @@ export function GoalsScreen(): React.JSX.Element {
         </Card>
       )}
 
-      {showForm && (
-        <Card>
-          <Text variant="heading">{t('sport.goals.screen.form.heading')}</Text>
-          <View style={{ gap: spacing[3], marginTop: spacing[2] }}>
-            <View style={{ gap: spacing[1] }}>
-              <Text variant="label" color="textMuted">
-                {t('sport.goals.screen.form.typeLabel')}
-              </Text>
-              <SegmentedControl options={typeOpts} value={type} onChange={setType} />
-            </View>
-            <Input label={t('sport.goals.screen.form.titleLabel')} placeholder={t('sport.goals.screen.form.titlePlaceholder')} value={title} onChangeText={setTitle} />
-            <View style={{ flexDirection: 'row', gap: spacing[2] }}>
-              <View style={{ flex: 1 }}>
-                <Input label={t('sport.goals.screen.form.currentLabel')} placeholder="102" value={current} onChangeText={setCurrent} keyboardType="numeric" />
-              </View>
-              <View style={{ flex: 1 }}>
-                <Input label={t('sport.goals.screen.form.targetLabel')} placeholder="96" value={target} onChangeText={setTarget} keyboardType="numeric" />
-              </View>
-              <View style={{ width: 72 }}>
-                <Input label={t('sport.goals.screen.form.unitLabel')} placeholder="kg" value={unit} onChangeText={setUnit} />
-              </View>
-            </View>
-            <View style={{ alignItems: 'flex-start' }}>
-              <Button label={addGoal.isPending ? t('sport.goals.screen.form.creating') : t('sport.goals.screen.form.createButton')} onPress={save} disabled={!canSave} />
-            </View>
-          </View>
-        </Card>
-      )}
-
       {/* Mes objectifs suivis */}
-      <Text variant="heading" style={{ marginTop: spacing[2] }}>
-        {t('sport.goals.screen.myGoals.heading')}
-      </Text>
-      {isLoading ? (
-        <Text variant="body" color="textMuted">
-          {t('common.loading')}
-        </Text>
-      ) : active.length === 0 ? (
-        <EmptyState
-          icon={<Icon name="target" size={44} color={colors.textSubtle} />}
-          title={t('sport.goals.screen.myGoals.emptyTitle')}
-          message={t('sport.goals.screen.myGoals.emptyMessage')}
-          actionLabel={t('sport.goals.screen.myGoals.emptyAction')}
-          onAction={() => setShowForm(true)}
-        />
-      ) : (
-        active.map((g) => {
-          const eta = g.targetValue !== undefined && g.type === 'body_composition' ? projectTargetDate(weight, g.targetValue, asOf) : undefined;
-          return (
-            <View key={g.id}>
-              <GoalCard goal={g} />
-              {eta && (
-                <Text variant="caption" color="textSubtle" style={{ marginTop: spacing[1], marginLeft: spacing[1] }}>
-                  {t('sport.goals.screen.myGoals.projection', { date: formatDate(eta) })}
-                </Text>
-              )}
-            </View>
-          );
-        })
-      )}
+      <View>
+        <Text variant="heading">{t('sport.goals.screen.myGoals.heading')}</Text>
+        {isLoading ? (
+          <Text variant="body" color="textMuted">
+            {t('common.loading')}
+          </Text>
+        ) : active.length === 0 ? (
+          <EmptyState
+            icon={<Icon name="target" size={44} color={colors.textSubtle} />}
+            title={t('sport.goals.screen.myGoals.emptyTitle')}
+            message={t('sport.goals.screen.myGoals.emptyMessage')}
+          />
+        ) : (
+          <View style={{ gap: spacing[3], marginTop: spacing[2] }}>
+            {active.map((g) => {
+              const eta = g.targetValue !== undefined && g.type === 'body_composition' ? projectTargetDate(weight, g.targetValue, asOf) : undefined;
+              return (
+                <View key={g.id}>
+                  <GoalCard goal={g} />
+                  {eta && (
+                    <Text variant="caption" color="textSubtle" style={{ marginTop: spacing[1], marginLeft: spacing[1] }}>
+                      {t('sport.goals.screen.myGoals.projection', { date: formatDate(eta) })}
+                    </Text>
+                  )}
+                </View>
+              );
+            })}
+          </View>
+        )}
+      </View>
 
       {/* Priorités */}
       {active.length > 1 ? (
@@ -485,25 +492,6 @@ export function GoalsScreen(): React.JSX.Element {
           </View>
         </Card>
       ) : null}
-
-      <View style={{ alignItems: 'flex-start' }}>
-        <Button label={t('common.back')} variant="secondary" onPress={() => router.back()} />
-      </View>
-    </Screen>
-  );
-}
-
-/** Label ↔ value row (settings field). */
-function Field({ label, value, last }: { label: string; value: string; last?: boolean }): React.JSX.Element {
-  const { colors } = useTheme();
-  return (
-    <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: spacing[3], borderBottomWidth: last ? 0 : 1, borderBottomColor: colors.border }}>
-      <Text variant="body" color="textMuted">
-        {label}
-      </Text>
-      <Text variant="body" style={{ fontWeight: '700' }}>
-        {value}
-      </Text>
     </View>
   );
 }

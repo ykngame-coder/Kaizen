@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { Pressable, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
@@ -10,6 +10,7 @@ import { BackButton } from '@/features/navigation/BackButton';
 import { DayNav, useSelectedDay } from '@/features/navigation/DayNav';
 import { useHabitLogs, useHabits, useHealthMetrics, useLogHabit, useNutritionEntries } from '@/lib/data/queries';
 import { usePreferences } from '@/lib/preferences';
+import { GoalsSection } from '@/features/goals/GoalsSection';
 import { linkedKindFor, type LinkedKind } from './linkedHabits';
 
 const DAY_MS = 86_400_000;
@@ -65,7 +66,11 @@ function MiniBar({ pct, color }: { pct: number; color: string }): React.JSX.Elem
   );
 }
 
-/** Habitudes & Discipline (mockup #9) — daily checklist, streaks, 30-day calendar. */
+/**
+ * Objectifs & Habitudes (mockup #9 + #17) — daily checklist, streaks, 30-day
+ * calendar (unchanged habits logic), plus the Objectifs content below it
+ * (see GoalsSection) since the two screens were merged into one.
+ */
 export function HabitsScreen(): React.JSX.Element {
   const { t } = useTranslation();
   const router = useRouter();
@@ -77,6 +82,7 @@ export function HabitsScreen(): React.JSX.Element {
   const { data: nutrition = [] } = useNutritionEntries();
   const logHabit = useLogHabit();
   const [selectedDate, setSelectedDate] = useSelectedDay();
+  const [showGoalForm, setShowGoalForm] = useState(false);
   const now = new Date();
   const todayK = dayKey(now);
   const viewedK = dayKey(new Date(selectedDate));
@@ -179,12 +185,18 @@ export function HabitsScreen(): React.JSX.Element {
   return (
     <View style={{ flex: 1 }}>
       <Screen scroll>
-        <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+        <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' }}>
           <BackButton />
-          <Button label={t('sport.gamification.habitsScreen.addButton')} onPress={() => router.push('/profile/habit/new')} accessibilityLabel={t('sport.gamification.habitsScreen.addButtonA11y')} />
+          <View style={{ flexDirection: 'row', gap: spacing[2] }}>
+            <Button label={t('sport.goals.screen.addGoalButton')} variant="secondary" onPress={() => setShowGoalForm((v) => !v)} />
+            <Button label={t('sport.gamification.habitsScreen.addButton')} onPress={() => router.push('/profile/habit/new')} accessibilityLabel={t('sport.gamification.habitsScreen.addButtonA11y')} />
+          </View>
         </View>
-        <Text variant="title">{t('sport.gamification.habitsScreen.title')}</Text>
-        <Text variant="caption" color="textSubtle">{t('sport.gamification.habitsScreen.subtitle')}</Text>
+        <Text variant="title">{t('sport.gamification.habitsScreen.combinedTitle')}</Text>
+        <Text variant="caption" color="textSubtle">{t('sport.gamification.habitsScreen.combinedSubtitle')}</Text>
+
+        {/* Habitudes & discipline */}
+        <Text variant="heading" style={{ marginTop: spacing[2] }}>{t('sport.gamification.habitsScreen.title')}</Text>
 
         {/* KPI */}
         <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: spacing[3] }}>
@@ -296,6 +308,11 @@ export function HabitsScreen(): React.JSX.Element {
             </View>
           </Card>
         ) : null}
+
+        {/* Objectifs */}
+        <View style={{ marginTop: spacing[2] }}>
+          <GoalsSection showForm={showGoalForm} onCloseForm={() => setShowGoalForm(false)} />
+        </View>
       </Screen>
     </View>
   );

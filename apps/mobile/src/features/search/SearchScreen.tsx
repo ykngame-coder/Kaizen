@@ -47,8 +47,7 @@ const PAGES: Omit<Item, 'category' | 'icon'>[] = [
   { title: 'Poids & composition', subtitle: 'Nutrition', path: '/nutrition/weight', keywords: ['pesée', 'poids', 'masse grasse'] },
   { title: 'Rechercher un aliment', subtitle: 'Nutrition', path: '/nutrition/food/search' },
   { title: 'Scanner un code-barres', subtitle: 'Nutrition', path: '/nutrition/food/scan', keywords: ['scan', 'code-barres'] },
-  { title: 'Objectifs', subtitle: 'Profil', path: '/profile/goals', keywords: ['objectif', 'but', 'cible'] },
-  { title: 'Habitudes & discipline', subtitle: 'Profil', path: '/profile/habits', keywords: ['habitude', 'discipline', 'série', 'streak'] },
+  { title: 'Objectifs & habitudes', subtitle: 'Profil', path: '/profile/habits', keywords: ['objectif', 'but', 'cible', 'habitude', 'discipline', 'série', 'streak'] },
   { title: 'Programmes', subtitle: 'Programmes', path: '/marketplace', keywords: ['catalogue', 'communauté', 'créations', 'marketplace'] },
   { title: 'Réglages', subtitle: 'Profil', path: '/profile/settings', keywords: ['paramètres', 'préférences'] },
   { title: 'Importer / connecter', subtitle: 'Profil', path: '/profile/import', keywords: ['import', 'export', 'fichier'] },
@@ -93,7 +92,7 @@ export function SearchScreen(): React.JSX.Element {
     for (const w of workouts) items.push({ category: 'Séances', icon: CAT_ICON.Séances, title: w.name, subtitle: formatDate(w.completedAt ?? w.createdAt), path: { pathname: '/sport/workout/[id]', params: { id: w.id } } });
     for (const a of activities) items.push({ category: 'Activités', icon: CAT_ICON.Activités, title: ACTIVITY_LABEL[a.type], subtitle: `${formatDate(a.startedAt)} · ${Math.round(a.durationSec / 60)} min`, path: '/profile/analytics' });
     for (const n of nutrition) items.push({ category: 'Nutrition', icon: CAT_ICON.Nutrition, title: n.description, subtitle: `${Math.round(n.kcal)} kcal · ${formatDate(n.loggedAt)}`, path: '/nutrition' });
-    for (const g of goals) items.push({ category: 'Objectifs', icon: CAT_ICON.Objectifs, title: g.title, subtitle: g.description ?? 'Objectif', path: '/profile/goals' });
+    for (const g of goals) items.push({ category: 'Objectifs', icon: CAT_ICON.Objectifs, title: g.title, subtitle: g.description ?? 'Objectif', path: '/profile/habits' });
     for (const r of records) items.push({ category: 'Records', icon: CAT_ICON.Records, title: r.label, subtitle: `${r.value} ${r.unit} · ${formatDate(r.achievedAt)}`, path: '/sport/muscle-progress' });
     return items;
   }, [workouts, activities, nutrition, goals, records]);

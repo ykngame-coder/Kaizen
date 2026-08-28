@@ -614,7 +614,7 @@ const QUICK_LINKS: { key: string; labelKey: string; icon: IconName; path: Href }
   { key: 'workout', labelKey: 'dashboard.screen.quickLinks.workout', icon: 'play', path: '/sport/workout/new' },
   { key: 'weighIn', labelKey: 'dashboard.screen.quickLinks.weighIn', icon: 'scale', path: '/nutrition/weight' },
   { key: 'habit', labelKey: 'dashboard.screen.quickLinks.habit', icon: 'calendarCheck', path: '/profile/habits' },
-  { key: 'goal', labelKey: 'dashboard.screen.quickLinks.goal', icon: 'target', path: '/profile/goals' },
+  { key: 'goal', labelKey: 'dashboard.screen.quickLinks.goal', icon: 'target', path: '/profile/habits' },
   { key: 'sleep', labelKey: 'dashboard.screen.quickLinks.sleep', icon: 'bedtime', path: '/sommeil' },
   { key: 'coach', labelKey: 'dashboard.screen.quickLinks.coach', icon: 'sparkle', path: '/coach' },
   { key: 'stats', labelKey: 'dashboard.screen.quickLinks.stats', icon: 'chartBar', path: '/profile/analytics' },

@@ -9,7 +9,7 @@ import { useGoals } from '@/lib/data/queries';
 
 /**
  * Objectifs contextualisés par pilier — filtre la liste partagée (`useGoals`)
- * par type plutôt que de dupliquer l'UI de gestion de `/profile/goals`,
+ * par type plutôt que de dupliquer l'UI de gestion de `/profile/habits`,
  * shared across the Sport/Sommeil/Nutrition mini-accueils (design spec
  * "Comprendre & Objectifs éclatés par pilier").
  */
@@ -28,7 +28,7 @@ export function ObjectifsCard({ types, max = 2 }: { types: GoalType[]; max?: num
     <Card>
       <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: spacing[2] }}>
         <Text variant="heading">{t('sport.goals.objectifsCard.heading')}</Text>
-        <Pressable onPress={() => router.push('/profile/goals')}>
+        <Pressable onPress={() => router.push('/profile/habits')}>
           <Text variant="caption" color="primary">{t('sport.goals.objectifsCard.seeAll')}</Text>
         </Pressable>
       </View>
