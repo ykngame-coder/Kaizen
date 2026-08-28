@@ -1223,6 +1223,27 @@
         "calves": "Panturrilhas",
         "core": "Abdômen",
         "fullBody": "Corpo inteiro"
+      },
+      "reuse": {
+        "toggleNew": "Nova sessão",
+        "toggleReuse": "Reutilizar uma sessão",
+        "mySessions": "Minhas sessões",
+        "programSessions": "Sessões dos meus programas",
+        "pastSessions": "Sessões já feitas",
+        "successTitle": "Sessão agendada",
+        "successMessage": "\"{{name}}\" foi agendada para {{date}}, com os mesmos exercícios."
+      },
+      "startProgram": {
+        "heading": "Iniciar um programa a partir deste dia",
+        "toggleClose": "Fechar",
+        "subtitle": "A partir de {{date}} — cada sessão do programa será agendada na sua data correspondente.",
+        "emptyTitle": "Programa vazio",
+        "emptyMessage": "Este programa não tem sessões atribuídas a nenhum dia — abra-o em Minhas criações para atribuir.",
+        "confirmTitle": "Iniciar este programa?",
+        "confirmMessage": "\"{{title}}\" será agendado em {{count}} sessão(ões), a partir de {{date}}.",
+        "confirmAction": "Agendar",
+        "successTitle": "Programa agendado",
+        "successMessage": "{{count}} sessão(ões) adicionada(s) ao seu planejamento."
       }
     },
     "calendar": {
@@ -1285,7 +1306,8 @@
         "walking": "Caminhada",
         "crossTraining": "Cross-training",
         "other": "Atividade"
-      }
+      },
+      "planSession": "Agendar uma sessão"
     },
     "progress": {
       "progression": {

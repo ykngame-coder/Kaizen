@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import { Platform } from 'react-native';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQueries, useQuery, useQueryClient } from '@tanstack/react-query';
 import type {
   ActivityInput,
   AthleteProfileInput,
@@ -478,6 +478,17 @@ export function useProgramSessions(programId: string | undefined) {
   });
 }
 
+/** Every program's week×day slots at once — e.g. to flatten "which sessions belong to which program" for a picker, without breaking the rules of hooks over a variable-length program list. */
+export function useAllProgramSessions(programIds: string[]) {
+  const repo = useRepository();
+  return useQueries({
+    queries: programIds.map((programId) => ({
+      queryKey: ['programSessions', programId],
+      queryFn: () => repo.getProgramSessions(programId),
+    })),
+  });
+}
+
 export function useAddUserProgram() {
   const { user } = useAuth();
   const repo = useRepository();
@@ -882,6 +893,64 @@ export function useReprogramWorkout() {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['plannedWorkouts', user?.id] });
       qc.invalidateQueries({ queryKey: ['workouts', user?.id] });
+    },
+  });
+}
+
+/** Schedule a new session by copying a user-created template's (Mes séances, or one belonging to a program) exercises. */
+export function usePlanUserSession() {
+  const { user } = useAuth();
+  const repo = useRepository();
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (input: { sessionId: string; name: string; plannedFor: string; notes?: string }) => {
+      const exercises = await repo.getSessionExercises(input.sessionId);
+      return repo.addPlannedWorkout(user!.id, {
+        name: input.name,
+        plannedFor: input.plannedFor,
+        notes: input.notes,
+        sets: exercises.map((e) => ({
+          exerciseId: e.exerciseId,
+          order: e.order,
+          reps: e.reps,
+          weightKg: e.weightKg,
+          durationSec: e.durationSec,
+          restSec: e.restSec,
+        })),
+      });
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['plannedWorkouts', user?.id] });
+    },
+  });
+}
+
+/** Bulk-schedule a whole program's week×day slots at once, each carrying its session's exercises — the dates are computed by the caller (from the chosen anchor day) and passed in already resolved. */
+export function useScheduleProgramEntries() {
+  const { user } = useAuth();
+  const repo = useRepository();
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (entries: { sessionId: string; name: string; plannedFor: string }[]) => {
+      for (const entry of entries) {
+        const exercises = await repo.getSessionExercises(entry.sessionId);
+        await repo.addPlannedWorkout(user!.id, {
+          name: entry.name,
+          plannedFor: entry.plannedFor,
+          sets: exercises.map((e) => ({
+            exerciseId: e.exerciseId,
+            order: e.order,
+            reps: e.reps,
+            weightKg: e.weightKg,
+            durationSec: e.durationSec,
+            restSec: e.restSec,
+          })),
+        });
+      }
+      return entries.length;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['plannedWorkouts', user?.id] });
     },
   });
 }

@@ -1223,6 +1223,27 @@
         "calves": "Calves",
         "core": "Core",
         "fullBody": "Full body"
+      },
+      "reuse": {
+        "toggleNew": "New session",
+        "toggleReuse": "Reuse a session",
+        "mySessions": "My sessions",
+        "programSessions": "Sessions from my programs",
+        "pastSessions": "Sessions already done",
+        "successTitle": "Session scheduled",
+        "successMessage": "\"{{name}}\" has been scheduled for {{date}}, with the same exercises."
+      },
+      "startProgram": {
+        "heading": "Start a program from this day",
+        "toggleClose": "Close",
+        "subtitle": "Starting {{date}} — each session in the program will be scheduled on its matching date.",
+        "emptyTitle": "Empty program",
+        "emptyMessage": "This program has no sessions assigned to a day yet — open it from My creations to assign some.",
+        "confirmTitle": "Start this program?",
+        "confirmMessage": "\"{{title}}\" will be scheduled across {{count}} session(s), starting {{date}}.",
+        "confirmAction": "Schedule",
+        "successTitle": "Program scheduled",
+        "successMessage": "{{count}} session(s) added to your planning."
       }
     },
     "calendar": {
@@ -1285,7 +1306,8 @@
         "walking": "Walking",
         "crossTraining": "Cross-training",
         "other": "Activity"
-      }
+      },
+      "planSession": "Schedule a session"
     },
     "progress": {
       "progression": {

@@ -1223,6 +1223,27 @@
         "calves": "Mollets",
         "core": "Abdos",
         "fullBody": "Corps entier"
+      },
+      "reuse": {
+        "toggleNew": "Nouvelle séance",
+        "toggleReuse": "Reprendre une séance",
+        "mySessions": "Mes séances",
+        "programSessions": "Séances de mes programmes",
+        "pastSessions": "Séances déjà faites",
+        "successTitle": "Séance planifiée",
+        "successMessage": "« {{name}} » a été planifiée pour le {{date}}, avec les mêmes exercices."
+      },
+      "startProgram": {
+        "heading": "Démarrer un programme à partir de ce jour",
+        "toggleClose": "Fermer",
+        "subtitle": "À partir du {{date}} — chaque séance du programme sera programmée sur sa date correspondante.",
+        "emptyTitle": "Programme vide",
+        "emptyMessage": "Ce programme n'a aucune séance assignée à un jour — ouvre-le depuis Mes créations pour en assigner.",
+        "confirmTitle": "Démarrer ce programme ?",
+        "confirmMessage": "« {{title}} » sera programmé sur {{count}} séance(s), à partir du {{date}}.",
+        "confirmAction": "Programmer",
+        "successTitle": "Programme programmé",
+        "successMessage": "{{count}} séance(s) ajoutée(s) à ton planning."
       }
     },
     "calendar": {
@@ -1285,7 +1306,8 @@
         "walking": "Marche",
         "crossTraining": "Cross-training",
         "other": "Activité"
-      }
+      },
+      "planSession": "Planifier une séance"
     },
     "progress": {
       "progression": {

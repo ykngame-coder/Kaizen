@@ -1223,6 +1223,27 @@
         "calves": "Gemelos",
         "core": "Abdominales",
         "fullBody": "Cuerpo entero"
+      },
+      "reuse": {
+        "toggleNew": "Nueva sesión",
+        "toggleReuse": "Reutilizar una sesión",
+        "mySessions": "Mis sesiones",
+        "programSessions": "Sesiones de mis programas",
+        "pastSessions": "Sesiones ya realizadas",
+        "successTitle": "Sesión programada",
+        "successMessage": "«{{name}}» se ha programado para el {{date}}, con los mismos ejercicios."
+      },
+      "startProgram": {
+        "heading": "Iniciar un programa desde este día",
+        "toggleClose": "Cerrar",
+        "subtitle": "A partir del {{date}} — cada sesión del programa se programará en su fecha correspondiente.",
+        "emptyTitle": "Programa vacío",
+        "emptyMessage": "Este programa no tiene sesiones asignadas a ningún día — ábrelo desde Mis creaciones para asignarlas.",
+        "confirmTitle": "¿Iniciar este programa?",
+        "confirmMessage": "«{{title}}» se programará en {{count}} sesión(es), a partir del {{date}}.",
+        "confirmAction": "Programar",
+        "successTitle": "Programa programado",
+        "successMessage": "{{count}} sesión(es) añadida(s) a tu planificación."
       }
     },
     "calendar": {
@@ -1285,7 +1306,8 @@
         "walking": "Caminata",
         "crossTraining": "Cross-training",
         "other": "Actividad"
-      }
+      },
+      "planSession": "Programar una sesión"
     },
     "progress": {
       "progression": {

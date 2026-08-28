@@ -1223,6 +1223,27 @@
         "calves": "Waden",
         "core": "Bauch",
         "fullBody": "Ganzer Körper"
+      },
+      "reuse": {
+        "toggleNew": "Neue Einheit",
+        "toggleReuse": "Einheit wiederverwenden",
+        "mySessions": "Meine Einheiten",
+        "programSessions": "Einheiten meiner Programme",
+        "pastSessions": "Bereits absolvierte Einheiten",
+        "successTitle": "Einheit geplant",
+        "successMessage": "„{{name}}“ wurde für den {{date}} geplant, mit denselben Übungen."
+      },
+      "startProgram": {
+        "heading": "Ein Programm ab diesem Tag starten",
+        "toggleClose": "Schließen",
+        "subtitle": "Ab {{date}} — jede Einheit des Programms wird auf ihr entsprechendes Datum geplant.",
+        "emptyTitle": "Leeres Programm",
+        "emptyMessage": "Diesem Programm sind noch keine Einheiten zugewiesen — öffne es unter Meine Kreationen, um welche zuzuweisen.",
+        "confirmTitle": "Dieses Programm starten?",
+        "confirmMessage": "„{{title}}“ wird für {{count}} Einheit(en) geplant, ab {{date}}.",
+        "confirmAction": "Planen",
+        "successTitle": "Programm geplant",
+        "successMessage": "{{count}} Einheit(en) zu deiner Planung hinzugefügt."
       }
     },
     "calendar": {
@@ -1285,7 +1306,8 @@
         "walking": "Gehen",
         "crossTraining": "Cross-Training",
         "other": "Aktivität"
-      }
+      },
+      "planSession": "Einheit planen"
     },
     "progress": {
       "progression": {

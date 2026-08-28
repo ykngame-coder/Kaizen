@@ -1,6 +1,7 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { Alert, Pressable, View } from 'react-native';
 import { Swipeable } from 'react-native-gesture-handler';
+import { useLocalSearchParams } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { Button, Card, Icon, Input, Screen, Text, useTheme } from '@supotsu/ui';
 import { radii, spacing } from '@supotsu/design-system';
@@ -8,12 +9,17 @@ import type { ISODateString, MuscleGroup, Workout } from '@supotsu/core';
 import { computeMuscleStates } from '@supotsu/engines';
 import {
   useAddPlannedWorkout,
+  useAllProgramSessions,
   useCustomExercises,
   useDeletePlannedWorkout,
   useMuscleSessions,
   usePlannedWorkouts,
+  usePlanUserSession,
   useReprogramWorkout,
+  useScheduleProgramEntries,
   useSetWorkoutStatus,
+  useUserPrograms,
+  useUserSessions,
   useWorkoutSets,
   useWorkouts,
 } from '@/lib/data/queries';
@@ -103,6 +109,15 @@ export function PlanningScreen(): React.JSX.Element {
   const setStatus = useSetWorkoutStatus();
   const removePlanned = useDeletePlannedWorkout();
   const reprogram = useReprogramWorkout();
+  const { data: userSessions = [] } = useUserSessions();
+  const { data: userPrograms = [] } = useUserPrograms();
+  const programIds = useMemo(() => userPrograms.map((p) => p.id), [userPrograms]);
+  const programSessionsResults = useAllProgramSessions(programIds);
+  const planUserSession = usePlanUserSession();
+  const scheduleProgram = useScheduleProgramEntries();
+
+  // Deep-link bridge from Calendar's "Planifier une séance" (?date=YYYY-MM-DD).
+  const params = useLocalSearchParams<{ date?: string }>();
 
   const WEEKDAYS = t('sport.planning.weekdaysShort', { returnObjects: true }) as string[];
 
@@ -157,6 +172,18 @@ export function PlanningScreen(): React.JSX.Element {
   const [adding, setAdding] = useState(false);
   const [name, setName] = useState('');
   const [notes, setNotes] = useState('');
+  const [reuseMode, setReuseMode] = useState(false);
+  const [startingProgram, setStartingProgram] = useState(false);
+
+  useEffect(() => {
+    const d = params.date;
+    if (typeof d === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(d)) {
+      setSelected(d);
+      setWeekAnchor(mondayOf(new Date(`${d}T12:00:00`)));
+      setAdding(true);
+    }
+    // Only react to the param actually changing, not to the setters below.
+  }, [params.date]);
 
   // planned sessions grouped by day
   const byDay = useMemo(() => {
@@ -190,6 +217,98 @@ export function PlanningScreen(): React.JSX.Element {
       .slice(0, 6),
     [planned, todayKey],
   );
+
+  // "Reprendre une séance" pools: sessions belonging to one of the user's
+  // programs, flattened and de-duped, badged with their program's title.
+  const programSessionPool = useMemo(() => {
+    const items: { sessionId: string; sessionName: string; programTitle: string }[] = [];
+    const seen = new Set<string>();
+    userPrograms.forEach((program, i) => {
+      const slots = programSessionsResults[i]?.data ?? [];
+      for (const slot of slots) {
+        const key = `${program.id}:${slot.sessionId}`;
+        if (seen.has(key)) continue;
+        seen.add(key);
+        const session = userSessions.find((s) => s.id === slot.sessionId);
+        items.push({
+          sessionId: slot.sessionId,
+          sessionName: session?.name ?? t('sport.planning.exerciseFallbackName'),
+          programTitle: program.title,
+        });
+      }
+    });
+    return items;
+  }, [userPrograms, programSessionsResults, userSessions, t]);
+
+  const pastCompletedWorkouts = useMemo(
+    () => allWorkouts
+      .filter((w) => w.status === 'completed')
+      .sort((a, b) => (b.completedAt ?? b.plannedFor ?? '').localeCompare(a.completedAt ?? a.plannedFor ?? ''))
+      .slice(0, 20),
+    [allWorkouts],
+  );
+
+  function planFromUserSession(sessionId: string, label: string): void {
+    planUserSession.mutate(
+      { sessionId, name: label, plannedFor: selected },
+      {
+        onSuccess: () => {
+          setAdding(false);
+          setReuseMode(false);
+          Alert.alert(t('sport.planning.reuse.successTitle'), t('sport.planning.reuse.successMessage', { name: label, date: longDate(selected) }));
+        },
+        onError: () => Alert.alert(t('sport.planning.reprogramErrorTitle'), t('sport.planning.reprogramErrorMessage')),
+      },
+    );
+  }
+
+  function planFromPastWorkout(w: Workout): void {
+    reprogram.mutate(
+      { workoutId: w.id, name: w.name, notes: w.notes, plannedFor: selected },
+      {
+        onSuccess: () => {
+          setAdding(false);
+          setReuseMode(false);
+          Alert.alert(t('sport.planning.reuse.successTitle'), t('sport.planning.reuse.successMessage', { name: w.name, date: longDate(selected) }));
+        },
+        onError: () => Alert.alert(t('sport.planning.reprogramErrorTitle'), t('sport.planning.reprogramErrorMessage')),
+      },
+    );
+  }
+
+  function startProgram(programId: string, programTitle: string): void {
+    const idx = userPrograms.findIndex((p) => p.id === programId);
+    const slots = idx >= 0 ? (programSessionsResults[idx]?.data ?? []) : [];
+    const base = mondayOf(new Date(`${selected}T12:00:00`));
+    const entries = slots.map((slot) => {
+      const date = new Date(base.getTime() + ((slot.weekNumber - 1) * 7 + slot.dayIndex) * DAY_MS);
+      const session = userSessions.find((s) => s.id === slot.sessionId);
+      return { sessionId: slot.sessionId, name: session?.name ?? t('sport.planning.exerciseFallbackName'), plannedFor: dayKey(date) };
+    });
+    if (entries.length === 0) {
+      Alert.alert(t('sport.planning.startProgram.emptyTitle'), t('sport.planning.startProgram.emptyMessage'));
+      return;
+    }
+    Alert.alert(
+      t('sport.planning.startProgram.confirmTitle'),
+      t('sport.planning.startProgram.confirmMessage', { title: programTitle, count: entries.length, date: longDate(selected) }),
+      [
+        { text: t('common.cancel'), style: 'cancel' },
+        {
+          text: t('sport.planning.startProgram.confirmAction'),
+          onPress: () => {
+            scheduleProgram.mutate(entries, {
+              onSuccess: (count) => {
+                setStartingProgram(false);
+                Alert.alert(t('sport.planning.startProgram.successTitle'), t('sport.planning.startProgram.successMessage', { count }));
+              },
+              onError: () => Alert.alert(t('sport.planning.reprogramErrorTitle'), t('sport.planning.reprogramErrorMessage')),
+            });
+          },
+        },
+      ],
+    );
+  }
 
   function submit(): void {
     const label = name.trim() || t('sport.planning.defaultSessionName');
@@ -281,46 +400,158 @@ export function PlanningScreen(): React.JSX.Element {
 
       {adding && (
         <Card style={{ marginTop: spacing[2] }}>
-          <Text variant="label" color="textMuted">
-            {t('sport.planning.addForm.typeLabel')}
-          </Text>
-          <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: spacing[2], marginTop: spacing[2] }}>
-            {FOCUS.map((f) => {
-              const label = t(f.labelKey);
-              const active = name.trim() === label;
-              return (
+          {(userSessions.length > 0 || programSessionPool.length > 0 || pastCompletedWorkouts.length > 0) && (
+            <View style={{ flexDirection: 'row', gap: spacing[2], marginBottom: spacing[3] }}>
+              <Pressable
+                onPress={() => setReuseMode(false)}
+                style={{
+                  flex: 1, alignItems: 'center', paddingVertical: 8, borderRadius: radii.full,
+                  backgroundColor: !reuseMode ? colors.primary : colors.surfaceElevated,
+                  borderWidth: 1, borderColor: !reuseMode ? colors.primary : colors.border,
+                }}
+              >
+                <Text variant="caption" style={{ color: !reuseMode ? colors.onPrimary : colors.text, fontWeight: '600' }}>
+                  {t('sport.planning.reuse.toggleNew')}
+                </Text>
+              </Pressable>
+              <Pressable
+                onPress={() => setReuseMode(true)}
+                style={{
+                  flex: 1, alignItems: 'center', paddingVertical: 8, borderRadius: radii.full,
+                  backgroundColor: reuseMode ? colors.primary : colors.surfaceElevated,
+                  borderWidth: 1, borderColor: reuseMode ? colors.primary : colors.border,
+                }}
+              >
+                <Text variant="caption" style={{ color: reuseMode ? colors.onPrimary : colors.text, fontWeight: '600' }}>
+                  {t('sport.planning.reuse.toggleReuse')}
+                </Text>
+              </Pressable>
+            </View>
+          )}
+
+          {reuseMode ? (
+            <View style={{ gap: spacing[4] }}>
+              {userSessions.length > 0 && (
+                <View>
+                  <Text variant="label" color="textMuted">{t('sport.planning.reuse.mySessions')}</Text>
+                  <View style={{ gap: spacing[1], marginTop: spacing[2] }}>
+                    {userSessions.map((s) => (
+                      <Pressable
+                        key={s.id}
+                        onPress={() => planFromUserSession(s.id, s.name)}
+                        style={{ paddingVertical: spacing[2], paddingHorizontal: spacing[3], borderRadius: radii.md, backgroundColor: colors.surfaceElevated }}
+                      >
+                        <Text variant="body">{s.name}</Text>
+                      </Pressable>
+                    ))}
+                  </View>
+                </View>
+              )}
+              {programSessionPool.length > 0 && (
+                <View>
+                  <Text variant="label" color="textMuted">{t('sport.planning.reuse.programSessions')}</Text>
+                  <View style={{ gap: spacing[1], marginTop: spacing[2] }}>
+                    {programSessionPool.map((item, i) => (
+                      <Pressable
+                        key={`${item.sessionId}-${i}`}
+                        onPress={() => planFromUserSession(item.sessionId, item.sessionName)}
+                        style={{ paddingVertical: spacing[2], paddingHorizontal: spacing[3], borderRadius: radii.md, backgroundColor: colors.surfaceElevated }}
+                      >
+                        <Text variant="body">{item.sessionName}</Text>
+                        <Text variant="caption" color="textSubtle">{item.programTitle}</Text>
+                      </Pressable>
+                    ))}
+                  </View>
+                </View>
+              )}
+              {pastCompletedWorkouts.length > 0 && (
+                <View>
+                  <Text variant="label" color="textMuted">{t('sport.planning.reuse.pastSessions')}</Text>
+                  <View style={{ gap: spacing[1], marginTop: spacing[2] }}>
+                    {pastCompletedWorkouts.map((w) => (
+                      <Pressable
+                        key={w.id}
+                        onPress={() => planFromPastWorkout(w)}
+                        style={{ paddingVertical: spacing[2], paddingHorizontal: spacing[3], borderRadius: radii.md, backgroundColor: colors.surfaceElevated }}
+                      >
+                        <Text variant="body">{w.name}</Text>
+                        <Text variant="caption" color="textSubtle">{longDate((w.completedAt ?? w.plannedFor ?? '').slice(0, 10))}</Text>
+                      </Pressable>
+                    ))}
+                  </View>
+                </View>
+              )}
+            </View>
+          ) : (
+            <>
+              <Text variant="label" color="textMuted">
+                {t('sport.planning.addForm.typeLabel')}
+              </Text>
+              <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: spacing[2], marginTop: spacing[2] }}>
+                {FOCUS.map((f) => {
+                  const label = t(f.labelKey);
+                  const active = name.trim() === label;
+                  return (
+                    <Pressable
+                      key={f.key}
+                      onPress={() => setName(label)}
+                      style={{
+                        flexDirection: 'row', alignItems: 'center', gap: 6,
+                        paddingHorizontal: 12, paddingVertical: 8, borderRadius: radii.full,
+                        backgroundColor: active ? colors.primary : colors.surfaceElevated,
+                        borderWidth: 1, borderColor: active ? colors.primary : colors.border,
+                      }}
+                    >
+                      <Text style={{ fontSize: 13 }}>{f.icon}</Text>
+                      <Text variant="caption" style={{ color: active ? colors.onPrimary : colors.text, fontWeight: '600' }}>
+                        {label}
+                      </Text>
+                    </Pressable>
+                  );
+                })}
+              </View>
+              <View style={{ marginTop: spacing[3] }}>
+                <Input label={t('sport.planning.addForm.nameLabel')} value={name} onChangeText={setName} placeholder={t('sport.planning.addForm.namePlaceholder')} />
+              </View>
+              <View style={{ marginTop: spacing[2] }}>
+                <Input label={t('sport.planning.addForm.notesLabel')} value={notes} onChangeText={setNotes} placeholder={t('sport.planning.addForm.notesPlaceholder')} />
+              </View>
+              <View style={{ marginTop: spacing[3] }}>
+                <Button
+                  label={addPlanned.isPending ? t('sport.planning.addForm.submitPending') : t('sport.planning.addForm.submit', { date: longDate(selected).split(' ').slice(1).join(' ') })}
+                  onPress={submit}
+                  disabled={addPlanned.isPending}
+                  fullWidth
+                />
+              </View>
+            </>
+          )}
+        </Card>
+      )}
+
+      {userPrograms.length > 0 && (
+        <Card style={{ marginTop: spacing[2] }}>
+          <Pressable onPress={() => setStartingProgram((v) => !v)}>
+            <Text variant="body" style={{ color: colors.primary, fontWeight: '700' }}>
+              {startingProgram ? t('sport.planning.startProgram.toggleClose') : t('sport.planning.startProgram.heading')}
+            </Text>
+          </Pressable>
+          {startingProgram && (
+            <View style={{ gap: spacing[1], marginTop: spacing[3] }}>
+              <Text variant="caption" color="textSubtle" style={{ marginBottom: spacing[1] }}>
+                {t('sport.planning.startProgram.subtitle', { date: longDate(selected) })}
+              </Text>
+              {userPrograms.map((p) => (
                 <Pressable
-                  key={f.key}
-                  onPress={() => setName(label)}
-                  style={{
-                    flexDirection: 'row', alignItems: 'center', gap: 6,
-                    paddingHorizontal: 12, paddingVertical: 8, borderRadius: radii.full,
-                    backgroundColor: active ? colors.primary : colors.surfaceElevated,
-                    borderWidth: 1, borderColor: active ? colors.primary : colors.border,
-                  }}
+                  key={p.id}
+                  onPress={() => startProgram(p.id, p.title)}
+                  style={{ paddingVertical: spacing[2], paddingHorizontal: spacing[3], borderRadius: radii.md, backgroundColor: colors.surfaceElevated }}
                 >
-                  <Text style={{ fontSize: 13 }}>{f.icon}</Text>
-                  <Text variant="caption" style={{ color: active ? colors.onPrimary : colors.text, fontWeight: '600' }}>
-                    {label}
-                  </Text>
+                  <Text variant="body">{p.title}</Text>
                 </Pressable>
-              );
-            })}
-          </View>
-          <View style={{ marginTop: spacing[3] }}>
-            <Input label={t('sport.planning.addForm.nameLabel')} value={name} onChangeText={setName} placeholder={t('sport.planning.addForm.namePlaceholder')} />
-          </View>
-          <View style={{ marginTop: spacing[2] }}>
-            <Input label={t('sport.planning.addForm.notesLabel')} value={notes} onChangeText={setNotes} placeholder={t('sport.planning.addForm.notesPlaceholder')} />
-          </View>
-          <View style={{ marginTop: spacing[3] }}>
-            <Button
-              label={addPlanned.isPending ? t('sport.planning.addForm.submitPending') : t('sport.planning.addForm.submit', { date: longDate(selected).split(' ').slice(1).join(' ') })}
-              onPress={submit}
-              disabled={addPlanned.isPending}
-              fullWidth
-            />
-          </View>
+              ))}
+            </View>
+          )}
         </Card>
       )}
 

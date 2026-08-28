@@ -2,7 +2,7 @@ import React, { useMemo, useState } from 'react';
 import { Pressable, ScrollView, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
-import { Card, Icon, Screen, Text, useTheme } from '@supotsu/ui';
+import { Button, Card, Icon, Screen, Text, useTheme } from '@supotsu/ui';
 import { radii, spacing } from '@supotsu/design-system';
 import type { ActivityType } from '@supotsu/core';
 import { computeAcwr, computeRecoveryScore, sleepTrend, sumDay } from '@supotsu/engines';
@@ -187,6 +187,14 @@ export function CalendarScreen(): React.JSX.Element {
         ) : (
           <Text variant="body" color="textMuted">{t('sport.calendar.timelineEmpty')}</Text>
         )}
+        <View style={{ marginTop: spacing[3] }}>
+          <Button
+            label={t('sport.calendar.planSession')}
+            variant="secondary"
+            onPress={() => router.push({ pathname: '/sport/planning', params: { date: selectedKey } })}
+            fullWidth
+          />
+        </View>
       </Card>
 
       {/* Deadlines */}
