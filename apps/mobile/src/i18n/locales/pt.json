@@ -1557,6 +1557,9 @@
         "sounds": "Sons",
         "phoneTracking": "Monitoramento pelo celular",
         "smartAlarm": "Alarme inteligente"
+      },
+      "hypnogram": {
+        "title": "Cronologia do sono"
       }
     },
     "tracking": {

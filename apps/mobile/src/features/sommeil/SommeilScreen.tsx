@@ -1,11 +1,11 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
-import { Pressable, View } from 'react-native';
+import { Pressable, ScrollView, View, useWindowDimensions } from 'react-native';
 import { useRouter, type Href } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { Badge, Button, Card, EmptyState, Icon, ProgressRing, Screen, Text, useTheme } from '@supotsu/ui';
 import { radii, spacing } from '@supotsu/design-system';
-import type { HealthMetric, SleepSession } from '@supotsu/core';
+import type { HealthMetric, SleepSession, SleepStage } from '@supotsu/core';
 import {
   averageSleepHours,
   computeAcwr,
@@ -204,6 +204,143 @@ function PhasesCard({ session, timeFormat }: { session: SleepSession; timeFormat
         </Text>
       )}
     </Card>
+  );
+}
+
+const LANE_LABEL_WIDTH = 64;
+/** Top-to-bottom lane order for the hypnogram, matching the mockup the request was based on. */
+const HYPNOGRAM_LANES: { stage: SleepStage; labelKey: string }[] = [
+  { stage: 'awake', labelKey: 'sommeil.screen.phases.stage.awake' },
+  { stage: 'rem', labelKey: 'sommeil.screen.phases.stage.rem' },
+  { stage: 'light', labelKey: 'sommeil.screen.phases.stage.light' },
+  { stage: 'deep', labelKey: 'sommeil.screen.phases.stage.deep' },
+];
+
+/**
+ * Minute-by-minute hypnogram — one lane per stage, bars placed by real time
+ * across the night. Only rendered when `session.segments` is present (same
+ * "no fabricated timeline" rule as PhasesCard's noTimeline message).
+ */
+function HypnogramCard({ session, timeFormat }: { session: SleepSession; timeFormat: TimeFormat }): React.JSX.Element {
+  const { t } = useTranslation();
+  const { colors } = useTheme();
+  const segments = session.segments ?? [];
+  // Awake gets a distinctly visible color here (unlike the subtle border tone
+  // in PhasesCard's stacked bar) — spotting wake bursts is the whole point of
+  // a hypnogram, matching the reference screenshots.
+  const stageColor: Record<SleepStage, string> = {
+    deep: colors.primary,
+    light: colors.info,
+    rem: colors.accentLime,
+    awake: colors.warning,
+  };
+  const startMs = new Date(session.startedAt).getTime();
+  const endMs = new Date(session.endedAt).getTime();
+  const totalMs = Math.max(1, endMs - startMs);
+
+  const hourMarks = useMemo(() => {
+    const marks: { hour: number; pct: number }[] = [];
+    const first = new Date(session.startedAt);
+    first.setMinutes(0, 0, 0);
+    if (first.getTime() < startMs) first.setHours(first.getHours() + 1);
+    for (let ms = first.getTime(); ms < endMs; ms += 3_600_000) {
+      marks.push({ hour: new Date(ms).getHours(), pct: ((ms - startMs) / totalMs) * 100 });
+    }
+    return marks;
+  }, [session.startedAt, session.endedAt, startMs, endMs, totalMs]);
+
+  return (
+    <Card>
+      <Text variant="heading">{t('sommeil.screen.hypnogram.title')}</Text>
+      <Text variant="caption" color="textSubtle">
+        {t('sommeil.screen.phases.summary', {
+          start: formatClockFromIso(session.startedAt, timeFormat),
+          end: formatClockFromIso(session.endedAt, timeFormat),
+          inBed: fmtHM(session.inBedMin),
+          asleep: fmtHM(session.asleepMin),
+        })}
+      </Text>
+
+      <View style={{ marginTop: spacing[4], gap: spacing[1] }}>
+        {HYPNOGRAM_LANES.map((lane) => (
+          <View key={lane.stage} style={{ flexDirection: 'row', alignItems: 'center', height: 22 }}>
+            <Text variant="caption" color="textSubtle" style={{ width: LANE_LABEL_WIDTH }}>{t(lane.labelKey)}</Text>
+            <View style={{ flex: 1, height: 14, position: 'relative' }}>
+              {segments.filter((s) => s.stage === lane.stage).map((s, i) => {
+                const segStart = new Date(s.startedAt).getTime();
+                const segEnd = new Date(s.endedAt).getTime();
+                const left = Math.min(100, Math.max(0, ((segStart - startMs) / totalMs) * 100));
+                const width = Math.max(0.6, ((segEnd - segStart) / totalMs) * 100);
+                return (
+                  <View
+                    key={i}
+                    style={{
+                      position: 'absolute',
+                      left: `${left}%`,
+                      width: `${width}%`,
+                      height: 14,
+                      borderRadius: 4,
+                      backgroundColor: stageColor[lane.stage],
+                    }}
+                  />
+                );
+              })}
+            </View>
+          </View>
+        ))}
+      </View>
+
+      <View style={{ flexDirection: 'row', marginTop: spacing[1] }}>
+        <View style={{ width: LANE_LABEL_WIDTH }} />
+        <View style={{ flex: 1, height: 14, position: 'relative' }}>
+          {hourMarks.map((m) => (
+            <Text key={m.hour} variant="caption" color="textSubtle" style={{ position: 'absolute', left: `${m.pct}%` }}>
+              {String(m.hour).padStart(2, '0')}
+            </Text>
+          ))}
+        </View>
+      </View>
+    </Card>
+  );
+}
+
+/**
+ * Swipeable carousel over the two sleep-phase views (proportional breakdown
+ * + hypnogram timeline) — falls back to just PhasesCard when the source
+ * doesn't provide real segments, so there's never a single-dot carousel.
+ */
+function SleepPhaseCarousel({ session, timeFormat }: { session: SleepSession; timeFormat: TimeFormat }): React.JSX.Element {
+  const { colors } = useTheme();
+  const { width } = useWindowDimensions();
+  const pageWidth = width - spacing[4] * 2;
+  const [index, setIndex] = useState(0);
+  const hasTimeline = !!session.segments && session.segments.length > 0;
+
+  if (!hasTimeline) {
+    return <PhasesCard session={session} timeFormat={timeFormat} />;
+  }
+
+  return (
+    <View>
+      <ScrollView
+        horizontal
+        pagingEnabled
+        showsHorizontalScrollIndicator={false}
+        onMomentumScrollEnd={(e) => setIndex(Math.round(e.nativeEvent.contentOffset.x / pageWidth))}
+      >
+        <View style={{ width: pageWidth }}>
+          <PhasesCard session={session} timeFormat={timeFormat} />
+        </View>
+        <View style={{ width: pageWidth }}>
+          <HypnogramCard session={session} timeFormat={timeFormat} />
+        </View>
+      </ScrollView>
+      <View style={{ flexDirection: 'row', justifyContent: 'center', gap: 6, marginTop: spacing[2] }}>
+        {[0, 1].map((i) => (
+          <View key={i} style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: i === index ? colors.primary : colors.border }} />
+        ))}
+      </View>
+    </View>
   );
 }
 
@@ -418,7 +555,7 @@ export function SommeilScreen(): React.JSX.Element {
           )}
 
           {/* 4. Phases de sommeil */}
-          {lastSession && <PhasesCard session={lastSession} timeFormat={preferences.timeFormat} />}
+          {lastSession && <SleepPhaseCarousel session={lastSession} timeFormat={preferences.timeFormat} />}
 
           {/* 5. Coucher optimal */}
           {circadian.value && (
