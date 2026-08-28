@@ -1,115 +1,72 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { Pressable, View } from 'react-native';
+import { View } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
-import type { TFunction } from 'i18next';
-import { Badge, Button, Card, Input, Screen, SegmentedControl, Text, useTheme } from '@supotsu/ui';
-import { radii, spacing } from '@supotsu/design-system';
-import { suggestProgression } from '@supotsu/engines';
+import { Button, Screen, SegmentedControl, Text, Toggle, useTheme } from '@supotsu/ui';
+import { spacing } from '@supotsu/design-system';
 import { EXERCISE_LIBRARY } from '@supotsu/shared';
-import type { BlockFormat } from '@supotsu/core';
-import { EXERCISES, MUSCLE_LABEL, toCatalogExercise, type Exercise } from '@/features/exercises/catalog';
-import { useAddCircuitWorkout, useAddWorkout, useCustomExercises, useExerciseHistory, useWorkouts, useWorkoutSets } from '@/lib/data/queries';
-import { formatDate } from '@/lib/format';
+import { toCatalogExercise } from '@/features/exercises/catalog';
+import {
+  useAddCircuitWorkout,
+  useAddUserSession,
+  useAddWorkout,
+  useCustomExercises,
+  useExerciseHistory,
+  useUserSessions,
+  useWorkouts,
+  useWorkoutSets,
+} from '@/lib/data/queries';
+import { flattenBlocksToExercises, useSessionBlocks, type SetDraft } from './sessionBuilder';
+import { SessionBlocksEditor } from './SessionBlocksEditor';
 
-const LIMIT = 60;
+const SESSIONS_QUOTA = 50;
 /** Name Garmin imports are stored under (repository.ts upsertImportedWorkouts) — flags the badge below. */
 const GARMIN_IMPORT_NAME = 'Musculation (import Garmin)';
-
-function formatLabel(format: BlockFormat, t: TFunction): string {
-  if (format === 'strength') return t('sport.newWorkout.blockFormat.strength');
-  if (format === 'for_time') return t('sport.newWorkout.blockFormat.forTime');
-  if (format === 'amrap') return 'AMRAP';
-  return 'EMOM';
-}
-
-interface SetDraft {
-  reps: string;
-  weight: string;
-  rest: string;
-}
-
-interface BlockDraft {
-  format: BlockFormat;
-  timeCapSec: string;
-  targetRounds: string;
-  order: string[];
-  selected: Record<string, SetDraft>;
-}
-
-const emptyBlock = (): BlockDraft => ({ format: 'strength', timeCapSec: '12', targetRounds: '10', order: [], selected: {} });
 
 /**
  * Create a session plan: name, one or more blocks (Musculation/AMRAP/EMOM/
  * Pour le temps), each with its own search + add exercises, set target
- * reps/charge. It's saved "planned" — the muscle map, ACWR etc. only count
- * it once the user actually marks it done from Planification (or runs it
- * live via CircuitRunnerScreen for a circuit-format session).
+ * reps/charge. Same block editor as EditWorkoutScreen and SessionBuilderScreen
+ * (harmonized creation flow) — see SessionBlocksEditor.
  */
 export function NewWorkoutScreen(): React.JSX.Element {
   const router = useRouter();
   const { t } = useTranslation();
-  const { colors } = useTheme();
   const params = useLocalSearchParams<{ openPicker?: string }>();
   const addWorkout = useAddWorkout();
   const addCircuitWorkout = useAddCircuitWorkout();
+  const addUserSession = useAddUserSession();
   const { data: history = {} } = useExerciseHistory();
   const { data: customExercises = [] } = useCustomExercises();
   const { data: allWorkouts = [] } = useWorkouts();
+  const { data: userSessions = [] } = useUserSessions();
 
-  const FORMAT_OPTIONS: { value: BlockFormat; label: string }[] = useMemo(
-    () => [
-      { value: 'strength', label: formatLabel('strength', t) },
-      { value: 'amrap', label: formatLabel('amrap', t) },
-      { value: 'emom', label: formatLabel('emom', t) },
-      { value: 'for_time', label: formatLabel('for_time', t) },
-    ],
-    [t],
-  );
+  const isCustomExercise = (id: string): boolean => id.startsWith('custom-');
+  const catalogCustom = useMemo(() => customExercises.map(toCatalogExercise), [customExercises]);
+  const resolvableExercises = useMemo(() => EXERCISE_LIBRARY.map(toCatalogExercise), []);
+  const recentExerciseIds = useMemo(() => Object.keys(history), [history]);
 
-  const [name, setName] = useState('');
-  const [query, setQuery] = useState('');
-  const [blocks, setBlocks] = useState<BlockDraft[]>([emptyBlock()]);
-  const [activeBlock, setActiveBlock] = useState(0);
+  const builder = useSessionBlocks({
+    customExercises: catalogCustom,
+    resolvableExercises,
+    recentExerciseIds,
+  });
+
+  const [visibility, setVisibility] = useState<'private' | 'public'>('private');
+  const [addToLibrary, setAddToLibrary] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  // "Importer une séance déjà faite" picker is paused (no UI entry point below) — state kept for when it comes back.
+  const atQuota = userSessions.length >= SESSIONS_QUOTA;
+
+  // "Importer une séance déjà faite" (pastWorkouts picker) is paused — kept
+  // wired (pickerOpen/importSourceId below) for when it comes back, but has
+  // no UI entry point.
   const [pickerOpen, setPickerOpen] = useState(params.openPicker === '1');
   const [importSourceId, setImportSourceId] = useState<string | undefined>();
-
-  const order = blocks[activeBlock]!.order;
-  const selected = blocks[activeBlock]!.selected;
-  const updateActiveBlock = (patch: Partial<BlockDraft>): void => {
-    setBlocks((prev) => prev.map((b, i) => (i === activeBlock ? { ...b, ...patch } : b)));
-  };
-
-  const allExercises = useMemo(() => [...customExercises.map(toCatalogExercise), ...EXERCISES], [customExercises]);
-  // Lookup used to resolve an exercise id to its card (name, muscles…) — wider
-  // than `allExercises` (the search/pick surface) on purpose: it also covers
-  // EXERCISE_LIBRARY ids that aren't offered in manual search (e.g.
-  // ex-garmin-*, auto-mapped from a Garmin import), so a resumed/imported
-  // session still resolves instead of silently dropping every row.
-  const byId = useMemo(() => {
-    const map = new Map(allExercises.map((ex) => [ex.id, ex]));
-    for (const ex of EXERCISE_LIBRARY) if (!map.has(ex.id)) map.set(ex.id, toCatalogExercise(ex));
-    return map;
-  }, [allExercises]);
-  const isCustom = (id: string): boolean => id.startsWith('custom-');
-
-  // Séances déjà faites (incl. import Garmin) qu'on peut reprendre comme point de départ.
-  // Paused along with the picker above — kept for when it comes back.
   const pastWorkouts = useMemo(
-    () =>
-      [...allWorkouts]
-        .filter((w) => w.status === 'completed')
-        .sort((a, b) => (b.completedAt ?? '').localeCompare(a.completedAt ?? '')),
+    () => [...allWorkouts].filter((w) => w.status === 'completed').sort((a, b) => (b.completedAt ?? '').localeCompare(a.completedAt ?? '')),
     [allWorkouts],
   );
   const { data: importSets } = useWorkoutSets(importSourceId);
-
-  // Une fois les séries de la séance choisie chargées, préremplit le formulaire — même
-  // logique que le préremplissage d'EditWorkoutScreen, mais ça reste une nouvelle séance.
-  // Un import démarre toujours une séance à un seul bloc musculation (les séances
-  // reprises/importées, notamment Garmin, sont toujours de ce format aujourd'hui).
   useEffect(() => {
     if (!importSourceId || !importSets) return;
     const source = allWorkouts.find((w) => w.id === importSourceId);
@@ -126,64 +83,39 @@ export function NewWorkoutScreen(): React.JSX.Element {
       }
     }
     if (source && source.name !== GARMIN_IMPORT_NAME) {
-      setName((prev) => (prev.trim() ? prev : source.name));
+      builder.setName((prev) => (prev.trim() ? prev : source.name));
     }
-    setBlocks([{ ...emptyBlock(), order: nextOrder, selected: nextSelected }]);
-    setActiveBlock(0);
+    builder.setBlocks([{ format: 'strength', timeCapSec: '12', targetRounds: '10', order: nextOrder, selected: nextSelected }]);
+    builder.setActiveBlock(0);
     setImportSourceId(undefined);
     setPickerOpen(false);
   }, [importSourceId, importSets, allWorkouts]);
 
-  const q = query.trim().toLowerCase();
-  const searchResults = q
-    ? allExercises
-        .filter(
-          (ex) =>
-            !selected[ex.id] &&
-            (ex.name.toLowerCase().includes(q) || MUSCLE_LABEL[ex.primary].toLowerCase().includes(q) || ex.equipment.toLowerCase().includes(q)),
-        )
-        .slice(0, LIMIT)
-    : [];
-
-  const add = (id: string): void => {
-    updateActiveBlock({ selected: { ...selected, [id]: { reps: '', weight: '', rest: '' } }, order: [...order, id] });
-    setQuery('');
-  };
-  const remove = (id: string): void => {
-    const nextSelected = { ...selected };
-    delete nextSelected[id];
-    updateActiveBlock({ selected: nextSelected, order: order.filter((x) => x !== id) });
-  };
-  const update = (id: string, patch: Partial<SetDraft>): void => {
-    updateActiveBlock({ selected: { ...selected, [id]: { ...selected[id], ...patch } } });
+  const lastKnownFor = (exerciseId: string): { reps?: number; weightKg?: number } | undefined => {
+    const sets = history[exerciseId];
+    if (!sets || sets.length === 0) return undefined;
+    const top = [...sets].sort((a, b) => (b.weightKg ?? 0) - (a.weightKg ?? 0))[0]!;
+    return { reps: top.reps, weightKg: top.weightKg };
   };
 
-  const addBlock = (): void => {
-    setBlocks((prev) => [...prev, emptyBlock()]);
-    setActiveBlock(blocks.length);
-  };
-  const removeBlock = (index: number): void => {
-    setBlocks((prev) => prev.filter((_, i) => i !== index));
-    setActiveBlock(0);
-  };
+  const isPending = addWorkout.isPending || addCircuitWorkout.isPending || addUserSession.isPending;
 
   const submit = async (): Promise<void> => {
     setError(null);
-    if (!name.trim()) {
-      setError(t('sport.newWorkout.errors.missingName'));
+    if (!builder.name.trim()) {
+      setError(t('sport.sessionBuilder.errors.missingName'));
       return;
     }
-    if (blocks.every((b) => b.order.length === 0)) {
-      setError(t('sport.newWorkout.errors.missingExercise'));
+    if (builder.blocks.every((b) => b.order.length === 0)) {
+      setError(t('sport.sessionBuilder.errors.missingExercise'));
       return;
     }
-    const isSingleStrength = blocks.length === 1 && blocks[0]!.format === 'strength';
     try {
-      if (isSingleStrength) {
+      if (builder.isSingleStrength) {
         await addWorkout.mutateAsync({
-          name: name.trim(),
-          sets: blocks[0]!.order.map((id, i) => {
-            const s = blocks[0]!.selected[id]!;
+          name: builder.name.trim(),
+          sets: builder.blocks[0]!.order.map((id, i) => {
+            const s = builder.blocks[0]!.selected[id]!;
             return {
               exerciseId: id,
               order: i,
@@ -195,10 +127,9 @@ export function NewWorkoutScreen(): React.JSX.Element {
         });
       } else {
         await addCircuitWorkout.mutateAsync({
-          name: name.trim(),
-          blocks: blocks.map((b) => ({
+          name: builder.name.trim(),
+          blocks: builder.blocks.map((b) => ({
             format: b.format,
-            // AMRAP's field is minutes ("Temps limite (min)"); EMOM's is already seconds ("Intervalle (s)") — timeCapSec is always stored in seconds.
             timeCapSec: b.format === 'amrap' ? (Number(b.timeCapSec) || 0) * 60 || undefined : b.format === 'emom' ? Number(b.timeCapSec) || undefined : undefined,
             targetRounds: b.format === 'emom' || b.format === 'for_time' ? Number(b.targetRounds) || undefined : undefined,
             sets: b.order.map((id, i) => {
@@ -214,231 +145,67 @@ export function NewWorkoutScreen(): React.JSX.Element {
           })),
         });
       }
+      if (addToLibrary && !atQuota) {
+        await addUserSession.mutateAsync({
+          name: builder.name.trim(),
+          visibility,
+          exercises: flattenBlocksToExercises(builder.blocks),
+        });
+      }
       router.back();
     } catch {
-      setError(t('sport.newWorkout.errors.saveFailed'));
+      setError(t('sport.sessionBuilder.errors.saveFailed'));
     }
   };
 
-  const isPending = addWorkout.isPending || addCircuitWorkout.isPending;
-
-  const exerciseSubtitle = (ex: Exercise): string =>
-    `${isCustom(ex.id) ? t('sport.newWorkout.exercise.customPrefix') : ''}${[ex.primary, ...ex.secondary].map((m) => MUSCLE_LABEL[m]).join(', ')} · ${ex.equipment}`;
+  const { colors } = useTheme();
 
   return (
-    <Screen scroll>
+    <Screen>
       <Text variant="title">{t('sport.newWorkout.title')}</Text>
-      <Text variant="caption" color="textMuted">
+      <Text variant="caption" color="textMuted" style={{ marginBottom: spacing[3] }}>
         {t('sport.newWorkout.subtitle')}
       </Text>
-
-      <View style={{ marginTop: spacing[2], flexDirection: 'row', flexWrap: 'wrap', gap: spacing[2] }}>
-        <Button label={t('sport.newWorkout.import.fromScreenshot')} variant="secondary" onPress={() => router.push('/sport/workout/import')} />
-      </View>
-      {/* "Importer une séance déjà faite" (pastWorkouts picker) is paused — kept
-          in code (pickerOpen/importSourceId/pastWorkouts below still wired for
-          when it comes back) but no longer has a UI entry point. */}
-
-      <Input
-        label={t('sport.newWorkout.form.nameLabel')}
-        placeholder={t('sport.newWorkout.form.namePlaceholder')}
-        value={name}
-        onChangeText={setName}
-      />
-
-      <View style={{ gap: spacing[3] }}>
-        {blocks.map((b, i) => (
-          <Pressable key={i} onPress={() => setActiveBlock(i)}>
-            <Card elevated={i === activeBlock} style={i === activeBlock ? { borderColor: colors.primary } : undefined}>
-              <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-                <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing[2] }}>
-                  <View style={{ width: 22, height: 22, borderRadius: 11, backgroundColor: colors.primary, alignItems: 'center', justifyContent: 'center' }}>
-                    <Text variant="caption" style={{ color: '#04140b', fontWeight: '700' }}>{i + 1}</Text>
-                  </View>
-                  <Text variant="body" style={{ fontWeight: '700' }}>{formatLabel(b.format, t)}</Text>
-                </View>
-                {blocks.length > 1 ? (
-                  <Pressable onPress={() => removeBlock(i)} hitSlop={8}>
-                    <Text variant="body" style={{ color: colors.error }}>×</Text>
-                  </Pressable>
-                ) : null}
+      <View style={{ flex: 1 }}>
+        <SessionBlocksEditor
+          t={t}
+          builder={builder}
+          isCustomExercise={isCustomExercise}
+          onCreateExercise={() => router.push('/sport/exercise/new')}
+          lastKnownFor={lastKnownFor}
+          error={error}
+          saving={isPending}
+          saveLabel={isPending ? t('sport.sessionBuilder.form.submitPending') : t('sport.newWorkout.form.submit')}
+          onSave={submit}
+          cancelLabel={t('common.cancel')}
+          onCancel={() => router.back()}
+          headerTop={
+            <Button label={t('sport.newWorkout.import.fromScreenshot')} variant="secondary" onPress={() => router.push('/sport/workout/import')} />
+          }
+          headerAfterName={
+            <View style={{ gap: spacing[3] }}>
+              <View>
+                <Text variant="label" color="textMuted" style={{ marginBottom: spacing[2] }}>{t('sport.sessionBuilder.visibility.label')}</Text>
+                <SegmentedControl
+                  options={[
+                    { value: 'private', label: t('sport.sessionBuilder.visibility.private') },
+                    { value: 'public', label: t('sport.sessionBuilder.visibility.public') },
+                  ]}
+                  value={visibility}
+                  onChange={setVisibility}
+                />
               </View>
-              {i === activeBlock ? (
-                <>
-                  <SegmentedControl options={FORMAT_OPTIONS} value={b.format} onChange={(v) => updateActiveBlock({ format: v })} />
-                  {b.format === 'amrap' ? (
-                    <Input label={t('sport.newWorkout.block.timeCapLabel')} keyboardType="numeric" value={b.timeCapSec} onChangeText={(v) => updateActiveBlock({ timeCapSec: v })} />
-                  ) : null}
-                  {b.format === 'emom' ? (
-                    <View style={{ flexDirection: 'row', gap: spacing[3] }}>
-                      <View style={{ flex: 1 }}>
-                        <Input label={t('sport.newWorkout.block.intervalLabel')} keyboardType="numeric" value={b.timeCapSec} onChangeText={(v) => updateActiveBlock({ timeCapSec: v })} />
-                      </View>
-                      <View style={{ flex: 1 }}>
-                        <Input label={t('sport.newWorkout.block.intervalCountLabel')} keyboardType="numeric" value={b.targetRounds} onChangeText={(v) => updateActiveBlock({ targetRounds: v })} />
-                      </View>
-                    </View>
-                  ) : null}
-                  {b.format === 'for_time' ? (
-                    <Input label={t('sport.newWorkout.block.roundsLabel')} keyboardType="numeric" value={b.targetRounds} onChangeText={(v) => updateActiveBlock({ targetRounds: v })} />
-                  ) : null}
-                </>
-              ) : (
-                <Text variant="caption" color="textSubtle">
-                  {t('sport.newWorkout.block.exerciseCount', { count: b.order.length })} · {t('sport.newWorkout.block.tapToEdit')}
-                </Text>
-              )}
-            </Card>
-          </Pressable>
-        ))}
-        <Pressable onPress={addBlock}>
-          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: spacing[2], borderWidth: 1, borderStyle: 'dashed', borderColor: colors.border, borderRadius: radii.lg, padding: spacing[4] }}>
-            <Text variant="body" color="textMuted">{t('sport.newWorkout.block.addBlock')}</Text>
-          </View>
-        </Pressable>
-      </View>
-
-      <Text variant="heading">{t('sport.newWorkout.addExercise.title')}</Text>
-      {blocks.length > 1 ? (
-        <Text variant="caption" color="primary" style={{ fontWeight: '600' }}>
-          {t('sport.newWorkout.addExercise.activeBlock', { n: activeBlock + 1, format: formatLabel(blocks[activeBlock]!.format, t) })}
-        </Text>
-      ) : null}
-      <Input
-        label={t('sport.newWorkout.addExercise.searchLabel')}
-        placeholder={t('sport.newWorkout.addExercise.searchPlaceholder')}
-        value={query}
-        onChangeText={setQuery}
-      />
-      {q ? (
-        searchResults.length === 0 ? (
-          <Text variant="caption" color="textSubtle">
-            {t('sport.newWorkout.addExercise.noResults', { query })}{' '}
-            <Text variant="caption" color="primary" onPress={() => router.push('/sport/exercise/new')}>
-              {t('sport.newWorkout.addExercise.createLink')}
-            </Text>
-            .
-          </Text>
-        ) : (
-          <View style={{ gap: spacing[2] }}>
-            {searchResults.map((ex) => (
-              <Pressable key={ex.id} onPress={() => add(ex.id)} style={({ pressed }) => ({ opacity: pressed ? 0.7 : 1 })}>
-                <Card>
-                  <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <View style={{ flex: 1 }}>
-                      <Text variant="subtitle">{ex.name}</Text>
-                      <Text variant="caption" color="textMuted">{exerciseSubtitle(ex)}</Text>
-                    </View>
-                    <Text variant="heading" style={{ color: colors.primary }}>+</Text>
-                  </View>
-                </Card>
-              </Pressable>
-            ))}
-          </View>
-        )
-      ) : null}
-
-      <Text variant="heading" style={{ marginTop: spacing[3] }}>
-        {order.length > 0 ? t('sport.newWorkout.session.titleWithCount', { count: order.length }) : t('sport.newWorkout.session.title')}
-      </Text>
-      {order.length === 0 ? (
-        <Text variant="caption" color="textSubtle">{t('sport.newWorkout.session.emptyHint')}</Text>
-      ) : (
-        <View style={{ gap: spacing[2] }}>
-          {order.map((id) => {
-            const ex = byId.get(id);
-            if (!ex) return null;
-            const activeFormat = blocks[activeBlock]!.format;
-            return (
-              <Card key={id} elevated>
-                <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <View style={{ flex: 1 }}>
-                    <Text variant="subtitle">{ex.name}</Text>
-                    <Text variant="caption" color="textMuted">{exerciseSubtitle(ex)}</Text>
-                  </View>
-                  <Pressable onPress={() => remove(id)} hitSlop={8}>
-                    <Text variant="heading" style={{ color: colors.error }}>×</Text>
-                  </Pressable>
+              <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', borderWidth: 1, borderColor: colors.border, borderRadius: 12, padding: spacing[3] }}>
+                <View style={{ flex: 1, marginRight: spacing[3] }}>
+                  <Text variant="body" style={{ fontWeight: '700' }}>{t('sport.sessionBuilder.addToLibrary.label')}</Text>
+                  <Text variant="caption" color="textMuted" style={{ marginTop: 2 }}>
+                    {atQuota ? t('sport.sessionBuilder.addToLibrary.quotaReached') : t('sport.sessionBuilder.addToLibrary.hint')}
+                  </Text>
                 </View>
-
-                {activeFormat === 'strength' &&
-                  (() => {
-                    const suggestion = history[id] ? suggestProgression(history[id]) : undefined;
-                    if (!suggestion) return null;
-                    return (
-                      <View
-                        style={{
-                          marginTop: spacing[2],
-                          padding: spacing[2],
-                          borderRadius: radii.md,
-                          backgroundColor: colors.surfaceElevated,
-                          gap: spacing[1],
-                        }}
-                      >
-                        <Text variant="caption" color="textMuted">
-                          {t('sport.newWorkout.suggestion.label', { rationale: suggestion.rationale })}
-                        </Text>
-                        <View style={{ alignItems: 'flex-start' }}>
-                          <Button
-                            label={t('sport.newWorkout.suggestion.useButton')}
-                            variant="secondary"
-                            onPress={() =>
-                              update(id, {
-                                reps: suggestion.reps !== undefined ? String(suggestion.reps) : '',
-                                weight: suggestion.weightKg !== undefined ? String(suggestion.weightKg) : '',
-                              })
-                            }
-                          />
-                        </View>
-                      </View>
-                    );
-                  })()}
-                <View style={{ flexDirection: 'row', gap: spacing[4], marginTop: spacing[2] }}>
-                  <View style={{ flex: 1 }}>
-                    <Input
-                      label={t('sport.newWorkout.set.repsLabel')}
-                      keyboardType="numeric"
-                      value={selected[id]!.reps}
-                      onChangeText={(v) => update(id, { reps: v })}
-                    />
-                  </View>
-                  {activeFormat === 'strength' ? (
-                    <View style={{ flex: 1 }}>
-                      <Input
-                        label={t('sport.newWorkout.set.weightLabel')}
-                        keyboardType="numeric"
-                        value={selected[id]!.weight}
-                        onChangeText={(v) => update(id, { weight: v })}
-                      />
-                    </View>
-                  ) : null}
-                </View>
-                {activeFormat === 'strength' ? (
-                  <View style={{ marginTop: spacing[2] }}>
-                    <Input
-                      label={t('sport.newWorkout.set.restLabel')}
-                      placeholder={t('sport.newWorkout.set.restPlaceholder')}
-                      keyboardType="numeric"
-                      value={selected[id]!.rest}
-                      onChangeText={(v) => update(id, { rest: v })}
-                    />
-                  </View>
-                ) : null}
-              </Card>
-            );
-          })}
-        </View>
-      )}
-
-      {error ? <Badge label={error} tone="error" /> : null}
-
-      <View style={{ flexDirection: 'row', gap: spacing[2], marginTop: spacing[2] }}>
-        <Button label={t('common.cancel')} variant="secondary" onPress={() => router.back()} />
-        <View style={{ flex: 1 }} />
-        <Button
-          label={isPending ? '…' : t('sport.newWorkout.form.submit')}
-          onPress={submit}
-          disabled={isPending}
+                <Toggle value={addToLibrary && !atQuota} onValueChange={setAddToLibrary} disabled={atQuota} />
+              </View>
+            </View>
+          }
         />
       </View>
     </Screen>

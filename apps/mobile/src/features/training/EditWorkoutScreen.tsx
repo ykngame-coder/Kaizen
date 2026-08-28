@@ -1,41 +1,27 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { Pressable, View } from 'react-native';
+import { View } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
-import type { TFunction } from 'i18next';
-import { Badge, Button, Card, EmptyState, Icon, Input, Screen, SegmentedControl, Text, useTheme } from '@supotsu/ui';
-import { radii, spacing } from '@supotsu/design-system';
-import type { BlockFormat } from '@supotsu/core';
-import { EXERCISES, MUSCLE_LABEL, toCatalogExercise, type Exercise } from '@/features/exercises/catalog';
+import { EmptyState, Icon, Screen, SegmentedControl, Text, Toggle, useTheme } from '@supotsu/ui';
+import { spacing } from '@supotsu/design-system';
+import { toCatalogExercise } from '@/features/exercises/catalog';
 import { BackButton } from '@/features/navigation/BackButton';
-import { useCustomExercises, useEditCircuitWorkout, useEditWorkout, useWorkoutBlocks, useWorkoutSets, useWorkouts } from '@/lib/data/queries';
+import {
+  useAddUserSession,
+  useCustomExercises,
+  useEditCircuitWorkout,
+  useEditWorkout,
+  useUserSessions,
+  useWorkoutBlocks,
+  useWorkoutSets,
+  useWorkouts,
+} from '@/lib/data/queries';
+import { emptyBlock, flattenBlocksToExercises, useSessionBlocks, type BlockDraft, type SetDraft } from './sessionBuilder';
+import { SessionBlocksEditor } from './SessionBlocksEditor';
 
-const LIMIT = 60;
+const SESSIONS_QUOTA = 50;
 
-function formatLabel(format: BlockFormat, t: TFunction): string {
-  if (format === 'strength') return t('sport.newWorkout.blockFormat.strength');
-  if (format === 'for_time') return t('sport.newWorkout.blockFormat.forTime');
-  if (format === 'amrap') return 'AMRAP';
-  return 'EMOM';
-}
-
-interface SetDraft {
-  reps: string;
-  weight: string;
-  rest: string;
-}
-
-interface BlockDraft {
-  format: BlockFormat;
-  timeCapSec: string;
-  targetRounds: string;
-  order: string[];
-  selected: Record<string, SetDraft>;
-}
-
-const emptyBlock = (): BlockDraft => ({ format: 'strength', timeCapSec: '12', targetRounds: '10', order: [], selected: {} });
-
-/** Edit an existing session's name and exercise list — same search-to-add UI as Nouvelle séance, pre-filled from the current sets. */
+/** Edit an existing session's name and exercise list — same block editor as Nouvelle séance, pre-filled from the current sets/blocks. */
 export function EditWorkoutScreen(): React.JSX.Element {
   const router = useRouter();
   const { t } = useTranslation();
@@ -45,64 +31,32 @@ export function EditWorkoutScreen(): React.JSX.Element {
   const { data: existingSets, isLoading: loadingSets } = useWorkoutSets(id);
   const { data: existingBlocks, isLoading: loadingBlocks } = useWorkoutBlocks(id);
   const { data: customExercises = [] } = useCustomExercises();
+  const { data: userSessions = [] } = useUserSessions();
   const editWorkout = useEditWorkout();
   const editCircuitWorkout = useEditCircuitWorkout();
-
-  const FORMAT_OPTIONS: { value: BlockFormat; label: string }[] = useMemo(
-    () => [
-      { value: 'strength', label: formatLabel('strength', t) },
-      { value: 'amrap', label: formatLabel('amrap', t) },
-      { value: 'emom', label: formatLabel('emom', t) },
-      { value: 'for_time', label: formatLabel('for_time', t) },
-    ],
-    [t],
-  );
+  const addUserSession = useAddUserSession();
 
   const workout = useMemo(() => workouts.find((w) => w.id === id), [workouts, id]);
+  const isCustomExercise = (exId: string): boolean => exId.startsWith('custom-');
+  const catalogCustom = useMemo(() => customExercises.map(toCatalogExercise), [customExercises]);
 
-  const [name, setName] = useState('');
-  const [query, setQuery] = useState('');
-  // Flat (single exercise list) mode — a plain strength session with no blocks.
-  const [order, setOrder] = useState<string[]>([]);
-  const [selected, setSelected] = useState<Record<string, SetDraft>>({});
-  // Block mode — a circuit session (AMRAP/EMOM/Pour le temps/multi-block strength).
-  const [isCircuit, setIsCircuit] = useState(false);
-  const [blocks, setBlocks] = useState<BlockDraft[]>([]);
-  const [activeBlock, setActiveBlock] = useState(0);
-  const [error, setError] = useState<string | null>(null);
+  const builder = useSessionBlocks({ customExercises: catalogCustom });
   const [prefilled, setPrefilled] = useState(false);
+  const [visibility, setVisibility] = useState<'private' | 'public'>('private');
+  const [addToLibrary, setAddToLibrary] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const atQuota = userSessions.length >= SESSIONS_QUOTA;
 
-  const updateActiveBlock = (patch: Partial<BlockDraft>): void => {
-    setBlocks((prev) => prev.map((b, i) => (i === activeBlock ? { ...b, ...patch } : b)));
-  };
-  const addBlock = (): void => {
-    setBlocks((prev) => [...prev, emptyBlock()]);
-    setActiveBlock(blocks.length);
-  };
-  const removeBlock = (index: number): void => {
-    setBlocks((prev) => prev.filter((_, i) => i !== index));
-    setActiveBlock(0);
-  };
-
-  // The list currently being edited — the active block's when this session
-  // has blocks, otherwise the flat single list.
-  const activeOrder = isCircuit ? (blocks[activeBlock]?.order ?? []) : order;
-  const activeSelected = isCircuit ? (blocks[activeBlock]?.selected ?? {}) : selected;
-
-  const allExercises = useMemo(() => [...customExercises.map(toCatalogExercise), ...EXERCISES], [customExercises]);
-  const byId = useMemo(() => new Map(allExercises.map((ex) => [ex.id, ex])), [allExercises]);
-  const isCustom = (exId: string): boolean => exId.startsWith('custom-');
-
-  // Pre-fill once the workout, its sets and its blocks have all loaded.
-  // A session with blocks pre-fills into `blocks` (grouped by blockId);
-  // otherwise it's the flat single-list path, exactly as before.
+  // Pre-fill once the workout, its sets and its blocks have all loaded. A
+  // flat (no-block) session becomes a single strength block, matching
+  // Nouvelle séance's convention (blocks are always the source of truth).
   useEffect(() => {
     if (prefilled || !workout || !existingSets || !existingBlocks) return;
-    setName(workout.name);
+    builder.setName(workout.name);
     if (existingBlocks.length > 0) {
-      setIsCircuit(true);
-      setBlocks(
-        existingBlocks.map((b) => {
+      const sorted = [...existingBlocks].sort((a, b) => a.order - b.order);
+      builder.setBlocks(
+        sorted.map((b) => {
           const blockSets = existingSets.filter((s) => s.blockId === b.id).sort((a, c) => a.order - c.order);
           const nextOrder: string[] = [];
           const nextSelected: Record<string, SetDraft> = {};
@@ -116,13 +70,14 @@ export function EditWorkoutScreen(): React.JSX.Element {
               };
             }
           }
-          return {
+          const block: BlockDraft = {
             format: b.format,
             timeCapSec: b.timeCapSec != null ? String(b.format === 'amrap' ? Math.round(b.timeCapSec / 60) : b.timeCapSec) : '12',
             targetRounds: b.targetRounds != null ? String(b.targetRounds) : '10',
             order: nextOrder,
             selected: nextSelected,
           };
+          return block;
         }),
       );
     } else {
@@ -138,68 +93,40 @@ export function EditWorkoutScreen(): React.JSX.Element {
           };
         }
       }
-      setOrder(nextOrder);
-      setSelected(nextSelected);
+      builder.setBlocks([{ ...emptyBlock(), order: nextOrder, selected: nextSelected }]);
     }
+    builder.setActiveBlock(0);
     setPrefilled(true);
   }, [prefilled, workout, existingSets, existingBlocks]);
 
-  const q = query.trim().toLowerCase();
-  const searchResults = q
-    ? allExercises
-        .filter(
-          (ex) =>
-            !activeSelected[ex.id] &&
-            (ex.name.toLowerCase().includes(q) || MUSCLE_LABEL[ex.primary].toLowerCase().includes(q) || ex.equipment.toLowerCase().includes(q)),
-        )
-        .slice(0, LIMIT)
-    : [];
-
-  const add = (exId: string): void => {
-    if (isCircuit) {
-      updateActiveBlock({ selected: { ...activeSelected, [exId]: { reps: '', weight: '', rest: '' } }, order: [...activeOrder, exId] });
-    } else {
-      setSelected((prev) => ({ ...prev, [exId]: { reps: '', weight: '', rest: '' } }));
-      setOrder((prev) => [...prev, exId]);
-    }
-    setQuery('');
-  };
-  const remove = (exId: string): void => {
-    if (isCircuit) {
-      const nextSelected = { ...activeSelected };
-      delete nextSelected[exId];
-      updateActiveBlock({ selected: nextSelected, order: activeOrder.filter((x) => x !== exId) });
-    } else {
-      setSelected((prev) => {
-        const next = { ...prev };
-        delete next[exId];
-        return next;
-      });
-      setOrder((prev) => prev.filter((x) => x !== exId));
-    }
-  };
-  const update = (exId: string, patch: Partial<SetDraft>): void => {
-    if (isCircuit) {
-      updateActiveBlock({ selected: { ...activeSelected, [exId]: { ...activeSelected[exId]!, ...patch } } });
-    } else {
-      setSelected((prev) => ({ ...prev, [exId]: { ...prev[exId]!, ...patch } }));
-    }
-  };
+  const isSaving = editWorkout.isPending || editCircuitWorkout.isPending || addUserSession.isPending;
 
   const submit = async (): Promise<void> => {
     setError(null);
     if (!workout) return;
-    if (isCircuit) {
-      if (!name.trim() || blocks.every((b) => b.order.length === 0)) {
-        setError(t('sport.editWorkout.errors.missingFields'));
-        return;
-      }
-      try {
+    if (!builder.name.trim() || builder.blocks.every((b) => b.order.length === 0)) {
+      setError(t('sport.sessionBuilder.errors.missingFields'));
+      return;
+    }
+    try {
+      if (builder.isSingleStrength) {
+        const sets = builder.blocks[0]!.order.map((exerciseId, index) => {
+          const s = builder.blocks[0]!.selected[exerciseId]!;
+          return {
+            exerciseId,
+            order: index,
+            reps: s.reps ? Number(s.reps) : undefined,
+            weightKg: s.weight ? Number(s.weight) : undefined,
+            restSec: s.rest ? Number(s.rest) : undefined,
+          };
+        });
+        await editWorkout.mutateAsync({ workoutId: workout.id, name: builder.name.trim(), notes: workout.notes, sets });
+      } else {
         await editCircuitWorkout.mutateAsync({
           workoutId: workout.id,
-          name: name.trim(),
+          name: builder.name.trim(),
           notes: workout.notes,
-          blocks: blocks.map((b) => ({
+          blocks: builder.blocks.map((b) => ({
             format: b.format,
             timeCapSec: b.format === 'amrap' ? (Number(b.timeCapSec) || 0) * 60 || undefined : b.format === 'emom' ? Number(b.timeCapSec) || undefined : undefined,
             targetRounds: b.format === 'emom' || b.format === 'for_time' ? Number(b.targetRounds) || undefined : undefined,
@@ -215,35 +142,19 @@ export function EditWorkoutScreen(): React.JSX.Element {
             }),
           })),
         });
-        router.back();
-      } catch {
-        setError(t('sport.editWorkout.errors.saveFailed'));
       }
-      return;
-    }
-    if (!name.trim() || order.length === 0) {
-      setError(t('sport.editWorkout.errors.missingFields'));
-      return;
-    }
-    const sets = order.map((exerciseId, index) => ({
-      exerciseId,
-      order: index,
-      reps: selected[exerciseId]!.reps ? Number(selected[exerciseId]!.reps) : undefined,
-      weightKg: selected[exerciseId]!.weight ? Number(selected[exerciseId]!.weight) : undefined,
-      restSec: selected[exerciseId]!.rest ? Number(selected[exerciseId]!.rest) : undefined,
-    }));
-    try {
-      await editWorkout.mutateAsync({ workoutId: workout.id, name: name.trim(), notes: workout.notes, sets });
+      if (addToLibrary && !atQuota) {
+        await addUserSession.mutateAsync({
+          name: builder.name.trim(),
+          visibility,
+          exercises: flattenBlocksToExercises(builder.blocks),
+        });
+      }
       router.back();
     } catch {
-      setError(t('sport.editWorkout.errors.saveFailed'));
+      setError(t('sport.sessionBuilder.errors.saveFailed'));
     }
   };
-
-  const isSaving = editWorkout.isPending || editCircuitWorkout.isPending;
-
-  const exerciseSubtitle = (ex: Exercise): string =>
-    `${isCustom(ex.id) ? t('sport.editWorkout.exercise.customPrefix') : ''}${[ex.primary, ...ex.secondary].map((m) => MUSCLE_LABEL[m]).join(', ')} · ${ex.equipment}`;
 
   if (loadingWorkout || loadingSets || loadingBlocks) {
     return (
@@ -262,172 +173,45 @@ export function EditWorkoutScreen(): React.JSX.Element {
   }
 
   return (
-    <Screen scroll>
+    <Screen>
       <BackButton />
-      <Text variant="title">{t('sport.editWorkout.title')}</Text>
-      <Input
-        label={t('sport.editWorkout.form.nameLabel')}
-        placeholder={t('sport.editWorkout.form.namePlaceholder')}
-        value={name}
-        onChangeText={setName}
-      />
-
-      {isCircuit ? (
-        <View style={{ gap: spacing[3] }}>
-          {blocks.map((b, i) => (
-            <Pressable key={i} onPress={() => setActiveBlock(i)}>
-              <Card elevated={i === activeBlock} style={i === activeBlock ? { borderColor: colors.primary } : undefined}>
-                <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing[2] }}>
-                    <View style={{ width: 22, height: 22, borderRadius: 11, backgroundColor: colors.primary, alignItems: 'center', justifyContent: 'center' }}>
-                      <Text variant="caption" style={{ color: '#04140b', fontWeight: '700' }}>{i + 1}</Text>
-                    </View>
-                    <Text variant="body" style={{ fontWeight: '700' }}>{formatLabel(b.format, t)}</Text>
-                  </View>
-                  {blocks.length > 1 ? (
-                    <Pressable onPress={() => removeBlock(i)} hitSlop={8}>
-                      <Text variant="body" style={{ color: colors.error }}>×</Text>
-                    </Pressable>
-                  ) : null}
-                </View>
-                {i === activeBlock ? (
-                  <>
-                    <SegmentedControl options={FORMAT_OPTIONS} value={b.format} onChange={(v) => updateActiveBlock({ format: v })} />
-                    {b.format === 'amrap' ? (
-                      <Input label={t('sport.newWorkout.block.timeCapLabel')} keyboardType="numeric" value={b.timeCapSec} onChangeText={(v) => updateActiveBlock({ timeCapSec: v })} />
-                    ) : null}
-                    {b.format === 'emom' ? (
-                      <View style={{ flexDirection: 'row', gap: spacing[3] }}>
-                        <View style={{ flex: 1 }}>
-                          <Input label={t('sport.newWorkout.block.intervalLabel')} keyboardType="numeric" value={b.timeCapSec} onChangeText={(v) => updateActiveBlock({ timeCapSec: v })} />
-                        </View>
-                        <View style={{ flex: 1 }}>
-                          <Input label={t('sport.newWorkout.block.intervalCountLabel')} keyboardType="numeric" value={b.targetRounds} onChangeText={(v) => updateActiveBlock({ targetRounds: v })} />
-                        </View>
-                      </View>
-                    ) : null}
-                    {b.format === 'for_time' ? (
-                      <Input label={t('sport.newWorkout.block.roundsLabel')} keyboardType="numeric" value={b.targetRounds} onChangeText={(v) => updateActiveBlock({ targetRounds: v })} />
-                    ) : null}
-                  </>
-                ) : (
-                  <Text variant="caption" color="textSubtle">
-                    {t('sport.newWorkout.block.exerciseCount', { count: b.order.length })} · {t('sport.newWorkout.block.tapToEdit')}
+      <Text variant="title" style={{ marginBottom: spacing[3] }}>{t('sport.editWorkout.title')}</Text>
+      <View style={{ flex: 1 }}>
+        <SessionBlocksEditor
+          t={t}
+          builder={builder}
+          isCustomExercise={isCustomExercise}
+          onCreateExercise={() => router.push('/sport/exercise/new')}
+          error={error}
+          saving={isSaving}
+          saveLabel={isSaving ? t('sport.sessionBuilder.form.submitPending') : t('sport.editWorkout.form.submit')}
+          onSave={submit}
+          cancelLabel={t('common.cancel')}
+          onCancel={() => router.back()}
+          headerAfterName={
+            <View style={{ gap: spacing[3] }}>
+              <View>
+                <Text variant="label" color="textMuted" style={{ marginBottom: spacing[2] }}>{t('sport.sessionBuilder.visibility.label')}</Text>
+                <SegmentedControl
+                  options={[
+                    { value: 'private', label: t('sport.sessionBuilder.visibility.private') },
+                    { value: 'public', label: t('sport.sessionBuilder.visibility.public') },
+                  ]}
+                  value={visibility}
+                  onChange={setVisibility}
+                />
+              </View>
+              <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', borderWidth: 1, borderColor: colors.border, borderRadius: 12, padding: spacing[3] }}>
+                <View style={{ flex: 1, marginRight: spacing[3] }}>
+                  <Text variant="body" style={{ fontWeight: '700' }}>{t('sport.sessionBuilder.addToLibrary.label')}</Text>
+                  <Text variant="caption" color="textMuted" style={{ marginTop: 2 }}>
+                    {atQuota ? t('sport.sessionBuilder.addToLibrary.quotaReached') : t('sport.sessionBuilder.addToLibrary.editHint')}
                   </Text>
-                )}
-              </Card>
-            </Pressable>
-          ))}
-          <Pressable onPress={addBlock}>
-            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: spacing[2], borderWidth: 1, borderStyle: 'dashed', borderColor: colors.border, borderRadius: radii.lg, padding: spacing[4] }}>
-              <Text variant="body" color="textMuted">{t('sport.newWorkout.block.addBlock')}</Text>
+                </View>
+                <Toggle value={addToLibrary && !atQuota} onValueChange={setAddToLibrary} disabled={atQuota} />
+              </View>
             </View>
-          </Pressable>
-        </View>
-      ) : null}
-
-      <Text variant="heading">{t('sport.editWorkout.addExercise.title')}</Text>
-      {isCircuit && blocks.length > 1 ? (
-        <Text variant="caption" color="primary" style={{ fontWeight: '600' }}>
-          {t('sport.newWorkout.addExercise.activeBlock', { n: activeBlock + 1, format: formatLabel(blocks[activeBlock]!.format, t) })}
-        </Text>
-      ) : null}
-      <Input
-        label={t('sport.editWorkout.addExercise.searchLabel')}
-        placeholder={t('sport.editWorkout.addExercise.searchPlaceholder')}
-        value={query}
-        onChangeText={setQuery}
-      />
-      {q ? (
-        searchResults.length === 0 ? (
-          <Text variant="caption" color="textSubtle">{t('sport.editWorkout.addExercise.noResults', { query })}</Text>
-        ) : (
-          <View style={{ gap: spacing[2] }}>
-            {searchResults.map((ex) => (
-              <Pressable key={ex.id} onPress={() => add(ex.id)} style={({ pressed }) => ({ opacity: pressed ? 0.7 : 1 })}>
-                <Card>
-                  <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <View style={{ flex: 1 }}>
-                      <Text variant="subtitle">{ex.name}</Text>
-                      <Text variant="caption" color="textMuted">{exerciseSubtitle(ex)}</Text>
-                    </View>
-                    <Text variant="heading" style={{ color: colors.primary }}>+</Text>
-                  </View>
-                </Card>
-              </Pressable>
-            ))}
-          </View>
-        )
-      ) : null}
-
-      <Text variant="heading" style={{ marginTop: spacing[3] }}>
-        {activeOrder.length > 0 ? t('sport.editWorkout.session.titleWithCount', { count: activeOrder.length }) : t('sport.editWorkout.session.title')}
-      </Text>
-      {activeOrder.length === 0 ? (
-        <Text variant="caption" color="textSubtle">{t('sport.editWorkout.session.emptyHint')}</Text>
-      ) : (
-        <View style={{ gap: spacing[2] }}>
-          {activeOrder.map((exId) => {
-            const ex = byId.get(exId);
-            if (!ex) return null;
-            const activeFormat = isCircuit ? blocks[activeBlock]!.format : 'strength';
-            return (
-              <Card key={exId} elevated>
-                <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <View style={{ flex: 1 }}>
-                    <Text variant="subtitle">{ex.name}</Text>
-                    <Text variant="caption" color="textMuted">{exerciseSubtitle(ex)}</Text>
-                  </View>
-                  <Pressable onPress={() => remove(exId)} hitSlop={8}>
-                    <Text variant="heading" style={{ color: colors.error }}>×</Text>
-                  </Pressable>
-                </View>
-                <View style={{ flexDirection: 'row', gap: spacing[4], marginTop: spacing[2] }}>
-                  <View style={{ flex: 1 }}>
-                    <Input
-                      label={t('sport.editWorkout.set.repsLabel')}
-                      keyboardType="numeric"
-                      value={activeSelected[exId]!.reps}
-                      onChangeText={(v) => update(exId, { reps: v })}
-                    />
-                  </View>
-                  {activeFormat === 'strength' ? (
-                    <View style={{ flex: 1 }}>
-                      <Input
-                        label={t('sport.editWorkout.set.weightLabel')}
-                        keyboardType="numeric"
-                        value={activeSelected[exId]!.weight}
-                        onChangeText={(v) => update(exId, { weight: v })}
-                      />
-                    </View>
-                  ) : null}
-                </View>
-                {activeFormat === 'strength' ? (
-                  <View style={{ marginTop: spacing[2] }}>
-                    <Input
-                      label={t('sport.editWorkout.set.restLabel')}
-                      placeholder={t('sport.editWorkout.set.restPlaceholder')}
-                      keyboardType="numeric"
-                      value={activeSelected[exId]!.rest}
-                      onChangeText={(v) => update(exId, { rest: v })}
-                    />
-                  </View>
-                ) : null}
-              </Card>
-            );
-          })}
-        </View>
-      )}
-
-      {error ? <Badge label={error} tone="error" /> : null}
-
-      <View style={{ flexDirection: 'row', gap: spacing[2], marginTop: spacing[2] }}>
-        <Button label={t('common.cancel')} variant="secondary" onPress={() => router.back()} />
-        <View style={{ flex: 1 }} />
-        <Button
-          label={isSaving ? '…' : t('sport.editWorkout.form.submit')}
-          onPress={submit}
-          disabled={isSaving}
+          }
         />
       </View>
     </Screen>

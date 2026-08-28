@@ -837,33 +837,7 @@
         "title": "Sesión no encontrada"
       },
       "form": {
-        "nameLabel": "Nombre de la sesión",
-        "namePlaceholder": "Ej.: Push A",
         "submit": "Guardar los cambios"
-      },
-      "addExercise": {
-        "title": "Añadir un ejercicio",
-        "searchLabel": "Buscar un ejercicio",
-        "searchPlaceholder": "Ej.: press, cuádriceps, curl…",
-        "noResults": "Ningún ejercicio coincide con \"{{query}}\"."
-      },
-      "session": {
-        "title": "Tu sesión",
-        "titleWithCount": "Tu sesión ({{count}})",
-        "emptyHint": "Busca un ejercicio arriba para añadirlo a tu sesión."
-      },
-      "set": {
-        "repsLabel": "Repeticiones",
-        "weightLabel": "Carga (kg)",
-        "restLabel": "Descanso entre series (seg)",
-        "restPlaceholder": "Ej.: 90"
-      },
-      "exercise": {
-        "customPrefix": "✨ Personalizado · "
-      },
-      "errors": {
-        "missingFields": "Ponle un nombre y añade al menos un ejercicio.",
-        "saveFailed": "No se ha podido guardar."
       }
     },
     "workoutDetail": {
@@ -907,10 +881,6 @@
     "newWorkout": {
       "title": "Nueva sesión",
       "subtitle": "Encadena varios formatos en la misma sesión — cada bloque tiene su propio cronómetro.",
-      "blockFormat": {
-        "strength": "Musculación",
-        "forTime": "Por tiempo"
-      },
       "import": {
         "openButton": "Importar una sesión ya realizada (ej.: Garmin)",
         "fromScreenshot": "Importar desde una captura de pantalla",
@@ -919,50 +889,7 @@
         "empty": "Aún no hay ninguna sesión para retomar. Importa tu historial de Garmin desde Perfil › Datos & integraciones › Importar un archivo, y vuelve aquí."
       },
       "form": {
-        "nameLabel": "Nombre de la sesión",
-        "namePlaceholder": "Ej.: Push A",
         "submit": "Crear la sesión"
-      },
-      "block": {
-        "timeCapLabel": "Tiempo límite (min)",
-        "intervalLabel": "Intervalo (s)",
-        "intervalCountLabel": "Número de intervalos",
-        "roundsLabel": "Número de rounds",
-        "exerciseCount_one": "{{count}} ejercicio",
-        "exerciseCount_other": "{{count}} ejercicios",
-        "addBlock": "+ Añadir un bloque",
-        "tapToEdit": "toca para editar"
-      },
-      "addExercise": {
-        "title": "Añadir un ejercicio",
-        "searchLabel": "Buscar un ejercicio",
-        "searchPlaceholder": "Ej.: press, cuádriceps, curl…",
-        "noResults": "Ningún ejercicio coincide con \"{{query}}\". Puedes",
-        "createLink": "crear un ejercicio personalizado",
-        "activeBlock": "Añadiendo al bloque {{n}} · {{format}}"
-      },
-      "session": {
-        "title": "Tu sesión",
-        "titleWithCount": "Tu sesión ({{count}})",
-        "emptyHint": "Busca un ejercicio arriba para añadirlo a tu sesión."
-      },
-      "suggestion": {
-        "label": "💡 Sobrecarga progresiva: {{rationale}}",
-        "useButton": "Usar la sugerencia"
-      },
-      "set": {
-        "repsLabel": "Repeticiones",
-        "weightLabel": "Carga (kg)",
-        "restLabel": "Descanso entre series (seg)",
-        "restPlaceholder": "Ej.: 90"
-      },
-      "exercise": {
-        "customPrefix": "✨ Personalizado · "
-      },
-      "errors": {
-        "missingName": "Ponle un nombre a tu sesión.",
-        "missingExercise": "Añade al menos un ejercicio.",
-        "saveFailed": "No se ha podido guardar."
       }
     },
     "muscles": {
@@ -1470,6 +1397,86 @@
       "chronicLabel": "CARGA CRÓNICA",
       "chronicCaption": "media / semana",
       "dailyChartCaption": "Carga diaria — 28 días"
+    },
+    "sessionBuilder": {
+      "title": "Nueva sesión",
+      "quotaCaption": "{{count}}/{{quota}} sesiones en tu biblioteca",
+      "quota": {
+        "title": "Límite de sesiones alcanzado",
+        "message": "Ya tienes {{quota}} sesiones en tu biblioteca. Elimina una para crear otra."
+      },
+      "blockFormat": {
+        "strength": "Musculación",
+        "forTime": "Por tiempo"
+      },
+      "block": {
+        "heading": "Bloques",
+        "summary_one": "{{count}} bloque · {{format}}",
+        "summary_other": "{{count}} bloques · {{format}}",
+        "timeCapLabel": "Tiempo límite (min)",
+        "intervalLabel": "Intervalo (s)",
+        "intervalCountLabel": "Número de intervalos",
+        "roundsLabel": "Número de rounds",
+        "exerciseCount_one": "{{count}} ejercicio",
+        "exerciseCount_other": "{{count}} ejercicios",
+        "addBlock": "+ Añadir un bloque",
+        "tapToEdit": "toca para editar"
+      },
+      "addExercise": {
+        "title": "Añadir un ejercicio",
+        "searchLabel": "Buscar un ejercicio",
+        "searchPlaceholder": "Ej.: press, cuádriceps, curl…",
+        "allMuscles": "Todos",
+        "recentHeading": "Usados recientemente",
+        "resultsHeading": "Resultados",
+        "resultCount_one": "{{count}} resultado",
+        "resultCount_other": "{{count}} resultados",
+        "noResults": "Ningún ejercicio coincide con \"{{query}}\". Puedes",
+        "createLink": "crear un ejercicio personalizado",
+        "activeBlock": "Añadiendo al bloque {{n}} · {{format}}"
+      },
+      "session": {
+        "title": "Tu sesión",
+        "titleWithCount": "Tu sesión ({{count}})",
+        "emptyHint": "Busca un ejercicio arriba para añadirlo a tu sesión."
+      },
+      "set": {
+        "repsLabel": "Repeticiones",
+        "weightLabel": "Carga (kg)",
+        "restLabel": "Descanso entre series (seg)",
+        "restPlaceholder": "Ej.: 90",
+        "lastTime": "Última vez: {{value}}",
+        "repsShort_one": "{{count}} rep",
+        "repsShort_other": "{{count}} reps"
+      },
+      "exercise": {
+        "customPrefix": "✨ Personalizado · "
+      },
+      "errors": {
+        "missingName": "Ponle un nombre a tu sesión.",
+        "missingExercise": "Añade al menos un ejercicio.",
+        "missingFields": "Ponle un nombre y añade al menos un ejercicio.",
+        "saveFailed": "No se ha podido guardar."
+      },
+      "visibility": {
+        "label": "Visibilidad",
+        "private": "Privado",
+        "public": "Público",
+        "privateHint": "Solo visible para ti.",
+        "publicHint": "Otros usuarios podrán copiarla desde Comunidad."
+      },
+      "addToLibrary": {
+        "label": "Añadir a Mis sesiones",
+        "hint": "Reutilizable desde Planificación y Programas.",
+        "editHint": "Guarda una copia de esta sesión en tu biblioteca.",
+        "quotaReached": "Biblioteca llena (50/50) — libera espacio para añadir más."
+      },
+      "form": {
+        "nameLabel": "Nombre de la sesión",
+        "namePlaceholder": "Ej.: Push A",
+        "submitPending": "…",
+        "submitLibrary": "Guardar sesión"
+      }
     }
   },
   "sommeil": {

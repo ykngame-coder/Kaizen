@@ -837,33 +837,7 @@
         "title": "Workout not found"
       },
       "form": {
-        "nameLabel": "Workout name",
-        "namePlaceholder": "E.g.: Push A",
         "submit": "Save changes"
-      },
-      "addExercise": {
-        "title": "Add an exercise",
-        "searchLabel": "Search for an exercise",
-        "searchPlaceholder": "E.g.: bench, quads, curl…",
-        "noResults": "No exercise matches \"{{query}}\"."
-      },
-      "session": {
-        "title": "Your workout",
-        "titleWithCount": "Your workout ({{count}})",
-        "emptyHint": "Search for an exercise above to add it to your workout."
-      },
-      "set": {
-        "repsLabel": "Reps",
-        "weightLabel": "Weight (kg)",
-        "restLabel": "Rest between sets (sec)",
-        "restPlaceholder": "E.g.: 90"
-      },
-      "exercise": {
-        "customPrefix": "✨ Custom · "
-      },
-      "errors": {
-        "missingFields": "Give it a name and add at least one exercise.",
-        "saveFailed": "Couldn't save."
       }
     },
     "workoutDetail": {
@@ -907,10 +881,6 @@
     "newWorkout": {
       "title": "New workout",
       "subtitle": "Chain multiple formats in the same workout — each block has its own timer.",
-      "blockFormat": {
-        "strength": "Strength",
-        "forTime": "For Time"
-      },
       "import": {
         "openButton": "Import a completed workout (e.g.: Garmin)",
         "fromScreenshot": "Import from a screenshot",
@@ -919,50 +889,7 @@
         "empty": "No workout to reuse yet. Import your Garmin history from Profile › Data & integrations › Import a file, then come back here."
       },
       "form": {
-        "nameLabel": "Workout name",
-        "namePlaceholder": "E.g.: Push A",
         "submit": "Create workout"
-      },
-      "block": {
-        "timeCapLabel": "Time cap (min)",
-        "intervalLabel": "Interval (s)",
-        "intervalCountLabel": "Number of intervals",
-        "roundsLabel": "Number of rounds",
-        "exerciseCount_one": "{{count}} exercise",
-        "exerciseCount_other": "{{count}} exercises",
-        "addBlock": "+ Add a block",
-        "tapToEdit": "tap to edit"
-      },
-      "addExercise": {
-        "title": "Add an exercise",
-        "searchLabel": "Search for an exercise",
-        "searchPlaceholder": "E.g.: bench, quads, curl…",
-        "noResults": "No exercise matches \"{{query}}\". You can",
-        "createLink": "create a custom exercise",
-        "activeBlock": "Adding to block {{n}} · {{format}}"
-      },
-      "session": {
-        "title": "Your workout",
-        "titleWithCount": "Your workout ({{count}})",
-        "emptyHint": "Search for an exercise above to add it to your workout."
-      },
-      "suggestion": {
-        "label": "💡 Progressive overload: {{rationale}}",
-        "useButton": "Use suggestion"
-      },
-      "set": {
-        "repsLabel": "Reps",
-        "weightLabel": "Weight (kg)",
-        "restLabel": "Rest between sets (sec)",
-        "restPlaceholder": "E.g.: 90"
-      },
-      "exercise": {
-        "customPrefix": "✨ Custom · "
-      },
-      "errors": {
-        "missingName": "Give your workout a name.",
-        "missingExercise": "Add at least one exercise.",
-        "saveFailed": "Couldn't save."
       }
     },
     "muscles": {
@@ -1470,6 +1397,86 @@
       "chronicLabel": "CHRONIC LOAD",
       "chronicCaption": "average / week",
       "dailyChartCaption": "Daily load — 28 days"
+    },
+    "sessionBuilder": {
+      "title": "New session",
+      "quotaCaption": "{{count}}/{{quota}} sessions in your library",
+      "quota": {
+        "title": "Session limit reached",
+        "message": "You already have {{quota}} sessions in your library. Delete one to create a new one."
+      },
+      "blockFormat": {
+        "strength": "Strength",
+        "forTime": "For Time"
+      },
+      "block": {
+        "heading": "Blocks",
+        "summary_one": "{{count}} block · {{format}}",
+        "summary_other": "{{count}} blocks · {{format}}",
+        "timeCapLabel": "Time cap (min)",
+        "intervalLabel": "Interval (s)",
+        "intervalCountLabel": "Number of intervals",
+        "roundsLabel": "Number of rounds",
+        "exerciseCount_one": "{{count}} exercise",
+        "exerciseCount_other": "{{count}} exercises",
+        "addBlock": "+ Add a block",
+        "tapToEdit": "tap to edit"
+      },
+      "addExercise": {
+        "title": "Add an exercise",
+        "searchLabel": "Search for an exercise",
+        "searchPlaceholder": "E.g.: bench, quads, curl…",
+        "allMuscles": "All",
+        "recentHeading": "Recently used",
+        "resultsHeading": "Results",
+        "resultCount_one": "{{count}} result",
+        "resultCount_other": "{{count}} results",
+        "noResults": "No exercise matches \"{{query}}\". You can",
+        "createLink": "create a custom exercise",
+        "activeBlock": "Adding to block {{n}} · {{format}}"
+      },
+      "session": {
+        "title": "Your workout",
+        "titleWithCount": "Your workout ({{count}})",
+        "emptyHint": "Search for an exercise above to add it to your workout."
+      },
+      "set": {
+        "repsLabel": "Reps",
+        "weightLabel": "Weight (kg)",
+        "restLabel": "Rest between sets (sec)",
+        "restPlaceholder": "E.g.: 90",
+        "lastTime": "Last time: {{value}}",
+        "repsShort_one": "{{count}} rep",
+        "repsShort_other": "{{count}} reps"
+      },
+      "exercise": {
+        "customPrefix": "✨ Custom · "
+      },
+      "errors": {
+        "missingName": "Give your workout a name.",
+        "missingExercise": "Add at least one exercise.",
+        "missingFields": "Give it a name and add at least one exercise.",
+        "saveFailed": "Couldn't save."
+      },
+      "visibility": {
+        "label": "Visibility",
+        "private": "Private",
+        "public": "Public",
+        "privateHint": "Only visible to you.",
+        "publicHint": "Other users will be able to copy it from Community."
+      },
+      "addToLibrary": {
+        "label": "Add to My sessions",
+        "hint": "Reusable from Planning and Programs.",
+        "editHint": "Save a copy of this session to your library.",
+        "quotaReached": "Library full (50/50) — free up space to add more."
+      },
+      "form": {
+        "nameLabel": "Workout name",
+        "namePlaceholder": "E.g.: Push A",
+        "submitPending": "…",
+        "submitLibrary": "Save session"
+      }
     }
   },
   "sommeil": {

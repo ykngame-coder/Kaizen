@@ -837,33 +837,7 @@
         "title": "Training nicht gefunden"
       },
       "form": {
-        "nameLabel": "Name des Trainings",
-        "namePlaceholder": "Bsp.: Push A",
         "submit": "Änderungen speichern"
-      },
-      "addExercise": {
-        "title": "Übung hinzufügen",
-        "searchLabel": "Übung suchen",
-        "searchPlaceholder": "Bsp.: Drücken, Quadrizeps, Curl…",
-        "noResults": "Keine Übung passt zu „{{query}}“."
-      },
-      "session": {
-        "title": "Dein Training",
-        "titleWithCount": "Dein Training ({{count}})",
-        "emptyHint": "Suche oben nach einer Übung, um sie zu deinem Training hinzuzufügen."
-      },
-      "set": {
-        "repsLabel": "Wiederholungen",
-        "weightLabel": "Gewicht (kg)",
-        "restLabel": "Pause zwischen Sätzen (Sek.)",
-        "restPlaceholder": "Bsp.: 90"
-      },
-      "exercise": {
-        "customPrefix": "✨ Eigene · "
-      },
-      "errors": {
-        "missingFields": "Gib einen Namen ein und füge mindestens eine Übung hinzu.",
-        "saveFailed": "Speichern nicht möglich."
       }
     },
     "workoutDetail": {
@@ -907,10 +881,6 @@
     "newWorkout": {
       "title": "Neues Training",
       "subtitle": "Kombiniere mehrere Formate in einem Training — jeder Block hat seine eigene Zeitmessung.",
-      "blockFormat": {
-        "strength": "Krafttraining",
-        "forTime": "Auf Zeit"
-      },
       "import": {
         "openButton": "Bereits absolviertes Training importieren (z. B. Garmin)",
         "fromScreenshot": "Aus Screenshot importieren",
@@ -919,50 +889,7 @@
         "empty": "Derzeit kein Training zum Übernehmen vorhanden. Importiere deinen Garmin-Verlauf über Profil › Daten & Integrationen › Datei importieren und komm dann hierher zurück."
       },
       "form": {
-        "nameLabel": "Name des Trainings",
-        "namePlaceholder": "Bsp.: Push A",
         "submit": "Training erstellen"
-      },
-      "block": {
-        "timeCapLabel": "Zeitlimit (Min)",
-        "intervalLabel": "Intervall (s)",
-        "intervalCountLabel": "Anzahl Intervalle",
-        "roundsLabel": "Anzahl Runden",
-        "exerciseCount_one": "{{count}} Übung",
-        "exerciseCount_other": "{{count}} Übungen",
-        "addBlock": "+ Block hinzufügen",
-        "tapToEdit": "zum Bearbeiten tippen"
-      },
-      "addExercise": {
-        "title": "Übung hinzufügen",
-        "searchLabel": "Übung suchen",
-        "searchPlaceholder": "Bsp.: Drücken, Quadrizeps, Curl…",
-        "noResults": "Keine Übung passt zu „{{query}}“. Du kannst",
-        "createLink": "eine eigene Übung erstellen",
-        "activeBlock": "Hinzufügen zu Block {{n}} · {{format}}"
-      },
-      "session": {
-        "title": "Dein Training",
-        "titleWithCount": "Dein Training ({{count}})",
-        "emptyHint": "Suche oben nach einer Übung, um sie zu deinem Training hinzuzufügen."
-      },
-      "suggestion": {
-        "label": "💡 Progressive Überlastung: {{rationale}}",
-        "useButton": "Vorschlag übernehmen"
-      },
-      "set": {
-        "repsLabel": "Wiederholungen",
-        "weightLabel": "Gewicht (kg)",
-        "restLabel": "Pause zwischen Sätzen (Sek.)",
-        "restPlaceholder": "Bsp.: 90"
-      },
-      "exercise": {
-        "customPrefix": "✨ Eigene · "
-      },
-      "errors": {
-        "missingName": "Gib deinem Training einen Namen.",
-        "missingExercise": "Füge mindestens eine Übung hinzu.",
-        "saveFailed": "Speichern nicht möglich."
       }
     },
     "muscles": {
@@ -1470,6 +1397,86 @@
       "chronicLabel": "CHRONISCHE BELASTUNG",
       "chronicCaption": "Durchschnitt / Woche",
       "dailyChartCaption": "Tägliche Belastung — 28 Tage"
+    },
+    "sessionBuilder": {
+      "title": "Neue Einheit",
+      "quotaCaption": "{{count}}/{{quota}} Einheiten in deiner Bibliothek",
+      "quota": {
+        "title": "Einheiten-Limit erreicht",
+        "message": "Du hast bereits {{quota}} Einheiten in deiner Bibliothek. Lösche eine, um eine neue zu erstellen."
+      },
+      "blockFormat": {
+        "strength": "Krafttraining",
+        "forTime": "Auf Zeit"
+      },
+      "block": {
+        "heading": "Blöcke",
+        "summary_one": "{{count}} Block · {{format}}",
+        "summary_other": "{{count}} Blöcke · {{format}}",
+        "timeCapLabel": "Zeitlimit (Min)",
+        "intervalLabel": "Intervall (s)",
+        "intervalCountLabel": "Anzahl Intervalle",
+        "roundsLabel": "Anzahl Runden",
+        "exerciseCount_one": "{{count}} Übung",
+        "exerciseCount_other": "{{count}} Übungen",
+        "addBlock": "+ Block hinzufügen",
+        "tapToEdit": "zum Bearbeiten tippen"
+      },
+      "addExercise": {
+        "title": "Übung hinzufügen",
+        "searchLabel": "Übung suchen",
+        "searchPlaceholder": "Bsp.: Drücken, Quadrizeps, Curl…",
+        "allMuscles": "Alle",
+        "recentHeading": "Zuletzt verwendet",
+        "resultsHeading": "Ergebnisse",
+        "resultCount_one": "{{count}} Ergebnis",
+        "resultCount_other": "{{count}} Ergebnisse",
+        "noResults": "Keine Übung passt zu „{{query}}“. Du kannst",
+        "createLink": "eine eigene Übung erstellen",
+        "activeBlock": "Hinzufügen zu Block {{n}} · {{format}}"
+      },
+      "session": {
+        "title": "Dein Training",
+        "titleWithCount": "Dein Training ({{count}})",
+        "emptyHint": "Suche oben nach einer Übung, um sie zu deinem Training hinzuzufügen."
+      },
+      "set": {
+        "repsLabel": "Wiederholungen",
+        "weightLabel": "Gewicht (kg)",
+        "restLabel": "Pause zwischen Sätzen (Sek.)",
+        "restPlaceholder": "Bsp.: 90",
+        "lastTime": "Letztes Mal: {{value}}",
+        "repsShort_one": "{{count}} Wdh.",
+        "repsShort_other": "{{count}} Wdh."
+      },
+      "exercise": {
+        "customPrefix": "✨ Eigene · "
+      },
+      "errors": {
+        "missingName": "Gib deinem Training einen Namen.",
+        "missingExercise": "Füge mindestens eine Übung hinzu.",
+        "missingFields": "Gib einen Namen ein und füge mindestens eine Übung hinzu.",
+        "saveFailed": "Speichern nicht möglich."
+      },
+      "visibility": {
+        "label": "Sichtbarkeit",
+        "private": "Privat",
+        "public": "Öffentlich",
+        "privateHint": "Nur für dich sichtbar.",
+        "publicHint": "Andere Nutzer können sie über Community kopieren."
+      },
+      "addToLibrary": {
+        "label": "Zu Meine Einheiten hinzufügen",
+        "hint": "Wiederverwendbar über Planung und Programme.",
+        "editHint": "Speichert eine Kopie dieser Einheit in deiner Bibliothek.",
+        "quotaReached": "Bibliothek voll (50/50) — schaffe Platz, um weitere hinzuzufügen."
+      },
+      "form": {
+        "nameLabel": "Name des Trainings",
+        "namePlaceholder": "Bsp.: Push A",
+        "submitPending": "…",
+        "submitLibrary": "Einheit speichern"
+      }
     }
   },
   "sommeil": {
