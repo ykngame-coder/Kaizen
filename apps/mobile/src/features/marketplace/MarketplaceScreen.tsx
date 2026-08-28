@@ -35,8 +35,9 @@ const FOCUS_LABEL: Record<ProgramFocus, string> = {
 };
 const SESSIONS_QUOTA = 50;
 const PROGRAMS_QUOTA = 2;
+// "Catalogue" (paid/coach-authored programs) is paused — only that tab, not
+// Communauté or Mes créations, which stay fully functional (create/share).
 const TABS = [
-  { value: 'catalogue' as const, label: 'Catalogue' },
   { value: 'communaute' as const, label: 'Communauté' },
   { value: 'mescreations' as const, label: 'Mes créations' },
 ];
@@ -73,9 +74,9 @@ export function MarketplaceScreen(): React.JSX.Element {
   const { t } = useTranslation();
   const router = useRouter();
   const { colors } = useTheme();
-  const [tab, setTab] = useState<'catalogue' | 'communaute' | 'mescreations'>('catalogue');
+  const [tab, setTab] = useState<'communaute' | 'mescreations'>('communaute');
 
-  // --- Catalogue (unchanged) -------------------------------------------------
+  // --- Catalogue (paused — kept for when it comes back, no longer rendered) --
   const { data: programs = [], isLoading } = usePrograms();
   const { data: activities = [] } = useActivities();
   const { data: enrolledIds = [] } = useEnrolledProgramIds();
@@ -143,89 +144,6 @@ export function MarketplaceScreen(): React.JSX.Element {
       </Text>
 
       <SegmentedControl options={TABS} value={tab} onChange={setTab} />
-
-      {tab === 'catalogue' ? (
-        <>
-          <Card>
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing[3] }}>
-              <View style={{ width: 44, height: 44, borderRadius: 22, backgroundColor: colors.surfaceElevated, alignItems: 'center', justifyContent: 'center' }}>
-                <Icon name="yoga" size={20} color={colors.primary} />
-              </View>
-              <View style={{ flex: 1 }}>
-                <Text variant="subtitle">Étirements guidés</Text>
-                <Text variant="caption" color="textMuted">Routine du jour ou par zone, tenue chronométrée.</Text>
-              </View>
-            </View>
-            <View style={{ alignItems: 'flex-start', marginTop: spacing[2] }}>
-              <Button label="Ouvrir" variant="secondary" onPress={() => router.push('/sport/stretching')} />
-            </View>
-          </Card>
-
-          {reco.value ? (
-            <Card>
-              <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-                <Text variant="heading">Recommandé pour toi</Text>
-                <Badge
-                  label={
-                    reco.confidence === 'high'
-                      ? 'Confiance élevée'
-                      : reco.confidence === 'medium'
-                        ? 'Confiance moyenne'
-                        : 'À confirmer'
-                  }
-                  tone={confTone[reco.confidence]}
-                />
-              </View>
-              <Text variant="subtitle">{reco.value.title}</Text>
-              <Text variant="caption" color="textMuted">
-                {reco.explanation?.observation ? t(reco.explanation.observation.key, reco.explanation.observation.params) : ''}
-              </Text>
-              <Text variant="caption" color="textMuted">
-                {reco.explanation?.analysis ? t(reco.explanation.analysis.key, reco.explanation.analysis.params) : ''}
-              </Text>
-              <Text variant="body">{reco.explanation?.action ? t(reco.explanation.action.key, reco.explanation.action.params) : ''}</Text>
-            </Card>
-          ) : null}
-
-          {isLoading ? (
-            <Text variant="body" color="textMuted">Chargement…</Text>
-          ) : (
-            <View style={{ gap: spacing[3] }}>
-              {programs.map((p) => {
-                const enrolled = enrolledSet.has(p.id);
-                return (
-                  <Card key={p.id}>
-                    <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-                      <Text variant="subtitle">{p.title}</Text>
-                      <Badge label={priceLabel(p.priceCents)} tone={p.priceCents === 0 ? 'success' : 'neutral'} />
-                    </View>
-                    <Text variant="caption" color="textMuted">
-                      {p.author} · {FOCUS_LABEL[p.focus]} · niveau {p.level}
-                    </Text>
-                    <Text variant="caption" color="textMuted">
-                      {p.weeks} semaines · {p.sessionsPerWeek} séances/semaine
-                    </Text>
-                    <Text variant="body">{p.description}</Text>
-                    <View style={{ flexDirection: 'row', gap: spacing[2], marginTop: spacing[1] }}>
-                      <Button
-                        label="Voir les séances"
-                        variant="secondary"
-                        onPress={() => router.push({ pathname: '/marketplace/program-catalog/[id]', params: { id: p.id } })}
-                      />
-                      <Button
-                        label={enrolled ? 'Inscrit ✓' : enroll.isPending ? '…' : "S'inscrire"}
-                        variant={enrolled ? 'secondary' : 'primary'}
-                        disabled={enrolled || enroll.isPending}
-                        onPress={() => enroll.mutate(p.id)}
-                      />
-                    </View>
-                  </Card>
-                );
-              })}
-            </View>
-          )}
-        </>
-      ) : null}
 
       {tab === 'communaute' ? (
         <>

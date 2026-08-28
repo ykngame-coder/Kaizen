@@ -1,18 +1,11 @@
 import React from 'react';
-import { useTranslation } from 'react-i18next';
-import { PlaceholderScreen } from '@/components/PlaceholderScreen';
+import { MarketplaceScreen } from '@/features/marketplace/MarketplaceScreen';
 
 /**
- * The program catalog (features/marketplace/*) is paused pre-launch — its
- * code stays in the repo untouched, this route just stops surfacing it.
+ * Only the "Catalogue" (coach-authored) tab is paused, internally to
+ * MarketplaceScreen — Communauté and Mes créations (create/share a session
+ * or program) stay live. See MarketplaceScreen.tsx for the tab-level pause.
  */
 export default function Marketplace(): React.JSX.Element {
-  const { t } = useTranslation();
-  return (
-    <PlaceholderScreen
-      title={t('marketplace.placeholder.title')}
-      subtitle={t('marketplace.placeholder.subtitle')}
-      comingIn={t('marketplace.placeholder.comingIn')}
-    />
-  );
+  return <MarketplaceScreen />;
 }
