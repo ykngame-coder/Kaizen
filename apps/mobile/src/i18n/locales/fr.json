@@ -2085,6 +2085,8 @@
       "descriptionLabel": "Description",
       "kcalLabel": "Calories (kcal)",
       "proteinLabel": "Protéines (g)",
+      "carbLabel": "Glucides (g)",
+      "fatLabel": "Lipides (g)",
       "hydrationLabel": "Eau (ml, optionnel)",
       "cancelButton": "Annuler",
       "saveButton": "Enregistrer",
@@ -2097,6 +2099,10 @@
       "errors": {
         "invalid": "Renseigne au moins une description et des calories valides.",
         "saveFailed": "Enregistrement impossible."
+      },
+      "recent": {
+        "heading": "Repas récents",
+        "kcal": "{{kcal}} kcal"
       }
     },
     "barcodeScan": {

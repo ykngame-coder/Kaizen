@@ -2085,6 +2085,8 @@
       "descriptionLabel": "Beschreibung",
       "kcalLabel": "Kalorien (kcal)",
       "proteinLabel": "Protein (g)",
+      "carbLabel": "Kohlenhydrate (g)",
+      "fatLabel": "Fett (g)",
       "hydrationLabel": "Wasser (ml, optional)",
       "cancelButton": "Abbrechen",
       "saveButton": "Speichern",
@@ -2097,6 +2099,10 @@
       "errors": {
         "invalid": "Gib mindestens eine Beschreibung und gültige Kalorien an.",
         "saveFailed": "Speichern nicht möglich."
+      },
+      "recent": {
+        "heading": "Letzte Mahlzeiten",
+        "kcal": "{{kcal}} kcal"
       }
     },
     "barcodeScan": {
