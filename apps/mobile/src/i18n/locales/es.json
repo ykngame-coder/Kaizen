@@ -930,14 +930,16 @@
         "roundsLabel": "Número de rounds",
         "exerciseCount_one": "{{count}} ejercicio",
         "exerciseCount_other": "{{count}} ejercicios",
-        "addBlock": "+ Añadir un bloque"
+        "addBlock": "+ Añadir un bloque",
+        "tapToEdit": "toca para editar"
       },
       "addExercise": {
         "title": "Añadir un ejercicio",
         "searchLabel": "Buscar un ejercicio",
         "searchPlaceholder": "Ej.: press, cuádriceps, curl…",
         "noResults": "Ningún ejercicio coincide con \"{{query}}\". Puedes",
-        "createLink": "crear un ejercicio personalizado"
+        "createLink": "crear un ejercicio personalizado",
+        "activeBlock": "Añadiendo al bloque {{n}} · {{format}}"
       },
       "session": {
         "title": "Tu sesión",

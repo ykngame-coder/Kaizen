@@ -930,14 +930,16 @@
         "roundsLabel": "Number of rounds",
         "exerciseCount_one": "{{count}} exercise",
         "exerciseCount_other": "{{count}} exercises",
-        "addBlock": "+ Add a block"
+        "addBlock": "+ Add a block",
+        "tapToEdit": "tap to edit"
       },
       "addExercise": {
         "title": "Add an exercise",
         "searchLabel": "Search for an exercise",
         "searchPlaceholder": "E.g.: bench, quads, curl…",
         "noResults": "No exercise matches \"{{query}}\". You can",
-        "createLink": "create a custom exercise"
+        "createLink": "create a custom exercise",
+        "activeBlock": "Adding to block {{n}} · {{format}}"
       },
       "session": {
         "title": "Your workout",

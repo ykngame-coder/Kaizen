@@ -311,7 +311,9 @@ export function EditWorkoutScreen(): React.JSX.Element {
                     ) : null}
                   </>
                 ) : (
-                  <Text variant="caption" color="textSubtle">{t('sport.newWorkout.block.exerciseCount', { count: b.order.length })}</Text>
+                  <Text variant="caption" color="textSubtle">
+                    {t('sport.newWorkout.block.exerciseCount', { count: b.order.length })} · {t('sport.newWorkout.block.tapToEdit')}
+                  </Text>
                 )}
               </Card>
             </Pressable>
@@ -325,6 +327,11 @@ export function EditWorkoutScreen(): React.JSX.Element {
       ) : null}
 
       <Text variant="heading">{t('sport.editWorkout.addExercise.title')}</Text>
+      {isCircuit && blocks.length > 1 ? (
+        <Text variant="caption" color="primary" style={{ fontWeight: '600' }}>
+          {t('sport.newWorkout.addExercise.activeBlock', { n: activeBlock + 1, format: formatLabel(blocks[activeBlock]!.format, t) })}
+        </Text>
+      ) : null}
       <Input
         label={t('sport.editWorkout.addExercise.searchLabel')}
         placeholder={t('sport.editWorkout.addExercise.searchPlaceholder')}

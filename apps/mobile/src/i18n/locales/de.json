@@ -930,14 +930,16 @@
         "roundsLabel": "Anzahl Runden",
         "exerciseCount_one": "{{count}} Übung",
         "exerciseCount_other": "{{count}} Übungen",
-        "addBlock": "+ Block hinzufügen"
+        "addBlock": "+ Block hinzufügen",
+        "tapToEdit": "zum Bearbeiten tippen"
       },
       "addExercise": {
         "title": "Übung hinzufügen",
         "searchLabel": "Übung suchen",
         "searchPlaceholder": "Bsp.: Drücken, Quadrizeps, Curl…",
         "noResults": "Keine Übung passt zu „{{query}}“. Du kannst",
-        "createLink": "eine eigene Übung erstellen"
+        "createLink": "eine eigene Übung erstellen",
+        "activeBlock": "Hinzufügen zu Block {{n}} · {{format}}"
       },
       "session": {
         "title": "Dein Training",
