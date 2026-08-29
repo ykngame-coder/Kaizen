@@ -1,5 +1,5 @@
 import type { ActivityType, HealthMetricType, RecordCategory } from '@supotsu/core';
-import type { ImportedActivity, ImportedHealthMetric, ImportedRecord } from './types';
+import type { ImportedActivity, ImportedHealthMetric, ImportedRecord, ImportedSleepSession } from './types';
 import { parseHealthExport, type ParsedImport } from './healthImport';
 import { parseHealthAutoExport } from './healthAutoExport';
 
@@ -23,10 +23,12 @@ function garminToIso(ts: unknown): string | undefined {
 const asNum = (v: unknown): number => (typeof v === 'number' && Number.isFinite(v) ? v : 0);
 
 export interface GarminSleepRecord {
+  sleepStartTimestampGMT?: string;
   sleepEndTimestampGMT?: string;
   deepSleepSeconds?: number;
   lightSleepSeconds?: number;
   remSleepSeconds?: number;
+  awakeSleepSeconds?: number;
 }
 
 /** DI-Connect-Wellness/*_sleepData.json → nightly sleep-duration metrics. */
@@ -44,6 +46,42 @@ export function parseGarminSleep(records: GarminSleepRecord[]): ImportedHealthMe
       source: 'garmin',
       reliability: 'high',
       measuredAt,
+    });
+  }
+  return out;
+}
+
+/**
+ * DI-Connect-Wellness/*_sleepData.json → one ImportedSleepSession per night
+ * with real stage minutes (TestFlight feedback: sleep data was only ever
+ * turned into a sleep_duration metric, never a session, so imports always
+ * showed "0 night(s)" even when nights were clearly present in the export).
+ * No per-minute segments — Garmin's RGPD export only carries nightly stage
+ * totals, not a timeline, so the hypnogram simply won't render for these
+ * (same "no fabricated timeline" rule as everywhere else).
+ */
+export function parseGarminSleepSessions(records: GarminSleepRecord[]): ImportedSleepSession[] {
+  const out: ImportedSleepSession[] = [];
+  for (const r of records ?? []) {
+    const startedAt = garminToIso(r.sleepStartTimestampGMT);
+    const endedAt = garminToIso(r.sleepEndTimestampGMT);
+    const deepMin = Math.round(asNum(r.deepSleepSeconds) / 60);
+    const lightMin = Math.round(asNum(r.lightSleepSeconds) / 60);
+    const remMin = Math.round(asNum(r.remSleepSeconds) / 60);
+    const awakeMin = Math.round(asNum(r.awakeSleepSeconds) / 60);
+    const asleepMin = deepMin + lightMin + remMin;
+    if (!startedAt || !endedAt || asleepMin <= 0) continue;
+    out.push({
+      source: 'garmin',
+      reliability: 'high',
+      startedAt,
+      endedAt,
+      deepMin,
+      lightMin,
+      remMin,
+      awakeMin,
+      asleepMin,
+      inBedMin: asleepMin + awakeMin,
     });
   }
   return out;
@@ -272,7 +310,10 @@ export function detectAndParseGarminFile(json: unknown): ParsedImport | null {
   });
 
   if (sample.some((x) => has(x, 'sleepStartTimestampGMT') || has(x, 'sleepEndTimestampGMT'))) {
-    return wrap({ healthMetrics: parseGarminSleep(json as GarminSleepRecord[]) });
+    return wrap({
+      healthMetrics: parseGarminSleep(json as GarminSleepRecord[]),
+      sleepSessions: parseGarminSleepSessions(json as GarminSleepRecord[]),
+    });
   }
   if (sample.some((x) => has(x, 'createTimestampUTC') && has(x, 'metrics'))) {
     return wrap({ healthMetrics: parseGarminHealthStatus(json as GarminHealthStatusRecord[]) });

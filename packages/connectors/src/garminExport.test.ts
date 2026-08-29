@@ -8,6 +8,7 @@ import {
   parseGarminHealthStatus,
   parseGarminPersonalRecords,
   parseGarminSleep,
+  parseGarminSleepSessions,
   parseImportFile,
 } from './garminExport';
 
@@ -42,6 +43,24 @@ describe('parseGarminSleep', () => {
     // 1560 + 15780 + 5940 = 23280 s = 6.47 h
     expect(out[0]).toMatchObject({ type: 'sleep_duration', value: 6.47, unit: 'h', source: 'garmin' });
     expect(out[0]?.measuredAt).toBe('2021-08-11T05:46:00.000Z');
+  });
+});
+
+describe('parseGarminSleepSessions', () => {
+  it('builds one session per night with stage minutes, skipping nights with no stage data', () => {
+    const out = parseGarminSleepSessions(SLEEP);
+    expect(out).toHaveLength(1); // first night skipped (no stages → asleepMin 0)
+    expect(out[0]).toMatchObject({
+      source: 'garmin',
+      startedAt: '2021-08-10T22:57:00.000Z',
+      endedAt: '2021-08-11T05:46:00.000Z',
+      deepMin: 26, // 1560 s
+      lightMin: 263, // 15780 s
+      remMin: 99, // 5940 s
+      awakeMin: 0,
+      asleepMin: 388,
+      inBedMin: 388,
+    });
   });
 });
 
@@ -180,7 +199,9 @@ describe('parseGarminPersonalRecords', () => {
 
 describe('detectAndParseGarminFile', () => {
   it('recognizes a sleep file', () => {
-    expect(detectAndParseGarminFile(SLEEP)?.healthMetrics[0]?.type).toBe('sleep_duration');
+    const parsed = detectAndParseGarminFile(SLEEP);
+    expect(parsed?.healthMetrics[0]?.type).toBe('sleep_duration');
+    expect(parsed?.sleepSessions).toHaveLength(1);
   });
   it('recognizes a biometrics file', () => {
     expect(detectAndParseGarminFile(BIO)?.healthMetrics[0]?.type).toBe('weight');
