@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import { View } from 'react-native';
-import { Controller, useForm } from 'react-hook-form';
+import { Pressable, View } from 'react-native';
+import { Controller, useFieldArray, useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import {
   Badge,
@@ -17,8 +17,33 @@ import {
 } from '@supotsu/ui';
 import { radii, spacing } from '@supotsu/design-system';
 import { useAuth } from '@/features/auth/AuthProvider';
+import { useAddHabit } from '@/lib/data/queries';
 import { useOnboarding } from './OnboardingProvider';
 import { onboardingSchema, STEP_FIELDS, type OnboardingForm } from './onboardingSchema';
+
+/** Mirrors AddHabitScreen's presets/pillars/cadence (French, hardcoded — onboarding isn't i18n'd yet, unlike the rest of the app). */
+const HABIT_PRESETS = [
+  { emoji: '💧', name: "Boire de l'eau", pillar: 'nutrition', cadence: 'daily', targetPerPeriod: 1 },
+  { emoji: '🚶', name: 'Marche quotidienne', pillar: 'performance', cadence: 'daily', targetPerPeriod: 1 },
+  { emoji: '😴', name: 'Se coucher tôt', pillar: 'sleep', cadence: 'daily', targetPerPeriod: 1 },
+  { emoji: '🧘', name: 'Étirements', pillar: 'recovery', cadence: 'daily', targetPerPeriod: 1 },
+  { emoji: '📖', name: 'Lecture', pillar: 'habits', cadence: 'daily', targetPerPeriod: 1 },
+  { emoji: '💊', name: 'Médicament', pillar: 'habits', cadence: 'daily', targetPerPeriod: 2 },
+  { emoji: '🏋️', name: 'Séance de sport', pillar: 'performance', cadence: 'weekly', targetPerPeriod: 3 },
+] as const;
+
+const HABIT_PILLARS = [
+  { value: 'habits', label: 'Habitude' },
+  { value: 'nutrition', label: 'Nutrition' },
+  { value: 'recovery', label: 'Récup' },
+  { value: 'sleep', label: 'Sommeil' },
+  { value: 'performance', label: 'Sport' },
+] as const;
+
+const HABIT_CADENCE = [
+  { value: 'daily', label: 'Quotidienne' },
+  { value: 'weekly', label: 'Hebdo' },
+] as const;
 
 const LEVELS = [
   { value: 'beginner', label: 'Débutant' },
@@ -69,16 +94,18 @@ const STEP_TITLES = [
   'Bienvenue',
   'Ton profil sportif',
   'Ton objectif',
+  'Ta disponibilité',
   'Tes habitudes',
   'Tes appareils',
   'Première analyse',
 ];
 
-/** 6-step onboarding stepper backed by a single react-hook-form (P17.2). */
+/** 7-step onboarding stepper backed by a single react-hook-form (P17.2). */
 export function OnboardingFlow(): React.JSX.Element {
   const { user, signOut } = useAuth();
   const { complete } = useOnboarding();
   const { colors } = useTheme();
+  const addHabit = useAddHabit();
   const [step, setStep] = useState(0);
   const [submitError, setSubmitError] = useState<string | null>(null);
   const lastStep = STEP_TITLES.length - 1;
@@ -95,8 +122,10 @@ export function OnboardingFlow(): React.JSX.Element {
       goalTitle: '',
       weeklyAvailability: undefined,
       equipment: [],
+      habits: [],
     },
   });
+  const { fields: habitFields, append: appendHabit, remove: removeHabit } = useFieldArray({ control, name: 'habits' });
 
   const next = async (): Promise<void> => {
     const valid = await trigger(STEP_FIELDS[step]);
@@ -124,6 +153,10 @@ export function OnboardingFlow(): React.JSX.Element {
           priority: 'primary',
         },
       });
+      for (const h of v.habits) {
+        if (!h.name.trim()) continue;
+        await addHabit.mutateAsync(h);
+      }
       // Routing reacts to onboarding status → app tabs.
     } catch (err) {
       // Supabase's PostgrestError isn't an Error instance — fall back to its
@@ -311,11 +344,122 @@ export function OnboardingFlow(): React.JSX.Element {
       ) : null}
 
       {step === 4 ? (
+        <View style={{ gap: spacing[4] }}>
+          <Text variant="body" color="textMuted">
+            Choisis les habitudes que tu veux suivre — rien n'est obligatoire, tu pourras en ajouter ou
+            en retirer plus tard depuis Objectifs & Habitudes.
+          </Text>
+
+          <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: spacing[2] }}>
+            {HABIT_PRESETS.map((p) => {
+              const idx = habitFields.findIndex((f) => f.name === p.name);
+              const active = idx !== -1;
+              return (
+                <Pressable
+                  key={p.name}
+                  onPress={() =>
+                    active
+                      ? removeHabit(idx)
+                      : appendHabit({ name: p.name, pillar: p.pillar, cadence: p.cadence, targetPerPeriod: p.targetPerPeriod })
+                  }
+                  style={{
+                    flexDirection: 'row',
+                    alignItems: 'center',
+                    gap: 6,
+                    paddingVertical: spacing[2],
+                    paddingHorizontal: spacing[3],
+                    borderRadius: radii.full,
+                    backgroundColor: active ? colors.primary : colors.surfaceElevated,
+                    borderWidth: 1,
+                    borderColor: active ? colors.primary : colors.border,
+                  }}
+                >
+                  <Text style={{ fontSize: 15 }}>{p.emoji}</Text>
+                  <Text variant="caption" style={{ color: active ? colors.onPrimary : colors.text, fontWeight: '600' }}>
+                    {p.name}
+                  </Text>
+                </Pressable>
+              );
+            })}
+          </View>
+
+          {habitFields.length > 0 && (
+            <View style={{ gap: spacing[3] }}>
+              {habitFields.map((field, index) => (
+                <Card key={field.id}>
+                  <View style={{ flexDirection: 'row', alignItems: 'flex-end', gap: spacing[2] }}>
+                    <View style={{ flex: 1 }}>
+                      <Controller
+                        control={control}
+                        name={`habits.${index}.name`}
+                        render={({ field: f }) => <Input label="Nom" value={f.value} onChangeText={f.onChange} />}
+                      />
+                    </View>
+                    <Pressable onPress={() => removeHabit(index)} hitSlop={8} style={{ padding: spacing[2] }}>
+                      <Text variant="heading" style={{ color: colors.error }}>×</Text>
+                    </Pressable>
+                  </View>
+
+                  <View style={{ gap: spacing[2], marginTop: spacing[2] }}>
+                    <Text variant="label" color="textMuted">PILIER</Text>
+                    <Controller
+                      control={control}
+                      name={`habits.${index}.pillar`}
+                      render={({ field: f }) => <SegmentedControl options={HABIT_PILLARS} value={f.value} onChange={f.onChange} />}
+                    />
+                  </View>
+
+                  <View style={{ gap: spacing[2], marginTop: spacing[2] }}>
+                    <Text variant="label" color="textMuted">FRÉQUENCE</Text>
+                    <Controller
+                      control={control}
+                      name={`habits.${index}.cadence`}
+                      render={({ field: f }) => <SegmentedControl options={HABIT_CADENCE} value={f.value} onChange={f.onChange} />}
+                    />
+                  </View>
+
+                  <Controller
+                    control={control}
+                    name={`habits.${index}.targetPerPeriod`}
+                    render={({ field: f }) => (
+                      <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing[3], marginTop: spacing[3] }}>
+                        <Text variant="label" color="textMuted">CIBLE</Text>
+                        <Pressable
+                          onPress={() => f.onChange(Math.max(1, f.value - 1))}
+                          style={{ width: 32, height: 32, borderRadius: 16, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.surfaceElevated, borderWidth: 1, borderColor: colors.border }}
+                        >
+                          <Text variant="body" style={{ fontWeight: '700' }}>−</Text>
+                        </Pressable>
+                        <Text variant="subtitle" style={{ minWidth: 24, textAlign: 'center' }}>{f.value}</Text>
+                        <Pressable
+                          onPress={() => f.onChange(Math.min(50, f.value + 1))}
+                          style={{ width: 32, height: 32, borderRadius: 16, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.surfaceElevated, borderWidth: 1, borderColor: colors.border }}
+                        >
+                          <Text variant="body" style={{ fontWeight: '700' }}>+</Text>
+                        </Pressable>
+                        <Text variant="caption" color="textSubtle">fois</Text>
+                      </View>
+                    )}
+                  />
+                </Card>
+              ))}
+            </View>
+          )}
+
+          <Button
+            label="+ Habitude personnalisée"
+            variant="secondary"
+            onPress={() => appendHabit({ name: '', pillar: 'habits', cadence: 'daily', targetPerPeriod: 1 })}
+          />
+        </View>
+      ) : null}
+
+      {step === 5 ? (
         <View style={{ gap: spacing[2] }}>
           <Card>
             <Text variant="body" color="textMuted">
               Connecte tes appareils pour enrichir automatiquement tes données. Disponible à l'Étape
-              5 — tu peux passer pour l'instant.
+              6 — tu peux passer pour l'instant.
             </Text>
           </Card>
           <Button label="Apple Health" variant="secondary" fullWidth disabled />
@@ -324,7 +468,7 @@ export function OnboardingFlow(): React.JSX.Element {
         </View>
       ) : null}
 
-      {step === 5 ? (
+      {step === 6 ? (
         <View style={{ gap: spacing[4] }}>
           <OnboardingSummary getValues={getValues} />
           <KPICard
@@ -376,6 +520,9 @@ function OnboardingSummary({ getValues }: { getValues: () => OnboardingForm }): 
       </Text>
       <Text variant="body" color="textMuted">
         Séances / semaine : {v.weeklyAvailability ?? '—'}
+      </Text>
+      <Text variant="body" color="textMuted">
+        Habitudes : {v.habits.filter((h) => h.name.trim()).length} sélectionnée(s)
       </Text>
     </Card>
   );

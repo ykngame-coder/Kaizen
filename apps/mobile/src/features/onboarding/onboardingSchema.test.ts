@@ -31,10 +31,31 @@ describe('onboardingSchema', () => {
     ).toThrow();
   });
 
-  it('exposes validation fields for each of the 6 steps', () => {
-    expect(STEP_FIELDS).toHaveLength(6);
+  it('exposes validation fields for each of the 7 steps', () => {
+    expect(STEP_FIELDS).toHaveLength(7);
     expect(STEP_FIELDS[1]).toContain('level');
     expect(STEP_FIELDS[2]).toContain('goalTitle');
+  });
+
+  it('defaults habits to an empty array and accepts custom entries', () => {
+    const parsed = onboardingSchema.parse({
+      level: 'beginner',
+      sex: 'unspecified',
+      sports: [],
+      goalType: 'health',
+      goalTitle: 'Dormir plus',
+      equipment: [],
+      habits: [{ name: "Boire de l'eau", pillar: 'nutrition', cadence: 'daily', targetPerPeriod: 1 }],
+    });
+    expect(parsed.habits).toHaveLength(1);
+    expect(onboardingSchema.parse({
+      level: 'beginner',
+      sex: 'unspecified',
+      sports: [],
+      goalType: 'health',
+      goalTitle: 'Dormir plus',
+      equipment: [],
+    }).habits).toEqual([]);
   });
 });
 
