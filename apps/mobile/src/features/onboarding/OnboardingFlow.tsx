@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Pressable, View } from 'react-native';
-import { Controller, useFieldArray, useForm } from 'react-hook-form';
+import { Controller, useFieldArray, useForm, useWatch } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import {
   Badge,
@@ -18,8 +18,22 @@ import {
 import { radii, spacing } from '@supotsu/design-system';
 import { useAuth } from '@/features/auth/AuthProvider';
 import { useAddHabit } from '@/lib/data/queries';
+import { usePreferences } from '@/lib/preferences';
 import { useOnboarding } from './OnboardingProvider';
 import { onboardingSchema, STEP_FIELDS, type OnboardingForm } from './onboardingSchema';
+
+/** Primary-goal archetypes — mirrors GoalsSection's tiles. Picking one prefills
+ * the objective type/title below (still editable) and feeds preferences.primaryGoal. */
+const ARCHETYPES = [
+  { key: 'fat_loss', emoji: '🔥', name: 'Perte de gras', goalType: 'body_composition', goalTitle: 'Perte de gras / recomposition' },
+  { key: 'muscle', emoji: '💪', name: 'Muscle', goalType: 'strength', goalTitle: 'Gagner en force / masse musculaire' },
+  { key: 'hyrox', emoji: '🏃', name: 'Hyrox', goalType: 'performance', goalTitle: 'Préparer un Hyrox' },
+  { key: 'marathon', emoji: '🏅', name: 'Marathon', goalType: 'endurance', goalTitle: 'Préparer un marathon' },
+  { key: 'sleep', emoji: '😴', name: 'Sommeil', goalType: 'health', goalTitle: 'Améliorer mon sommeil' },
+  { key: 'stress', emoji: '🧘', name: 'Stress', goalType: 'health', goalTitle: 'Réduire mon stress' },
+] as const;
+/** Archetypes for which a target weight makes sense — the created goal becomes body_composition when one is given. */
+const WEIGHT_ARCHETYPES = new Set(['fat_loss', 'muscle']);
 
 /** Mirrors AddHabitScreen's presets/pillars/cadence (French, hardcoded — onboarding isn't i18n'd yet, unlike the rest of the app). */
 const HABIT_PRESETS = [
@@ -105,12 +119,13 @@ export function OnboardingFlow(): React.JSX.Element {
   const { user, signOut } = useAuth();
   const { complete } = useOnboarding();
   const { colors } = useTheme();
+  const { setPreference } = usePreferences();
   const addHabit = useAddHabit();
   const [step, setStep] = useState(0);
   const [submitError, setSubmitError] = useState<string | null>(null);
   const lastStep = STEP_TITLES.length - 1;
 
-  const { control, trigger, getValues, formState } = useForm<OnboardingForm>({
+  const { control, trigger, getValues, setValue, formState } = useForm<OnboardingForm>({
     resolver: zodResolver(onboardingSchema),
     defaultValues: {
       level: 'beginner',
@@ -118,14 +133,23 @@ export function OnboardingFlow(): React.JSX.Element {
       heightCm: undefined,
       weightKg: undefined,
       sports: [],
-      goalType: 'health',
+      primaryGoal: 'fat_loss',
+      goalType: 'body_composition',
       goalTitle: '',
+      goalTargetValue: undefined,
       weeklyAvailability: undefined,
       equipment: [],
       habits: [],
     },
   });
   const { fields: habitFields, append: appendHabit, remove: removeHabit } = useFieldArray({ control, name: 'habits' });
+  const primaryGoal = useWatch({ control, name: 'primaryGoal' });
+
+  const selectArchetype = (a: (typeof ARCHETYPES)[number]): void => {
+    setValue('primaryGoal', a.key);
+    setValue('goalType', a.goalType);
+    setValue('goalTitle', a.goalTitle);
+  };
 
   const next = async (): Promise<void> => {
     const valid = await trigger(STEP_FIELDS[step]);
@@ -136,6 +160,10 @@ export function OnboardingFlow(): React.JSX.Element {
   const finish = async (): Promise<void> => {
     setSubmitError(null);
     const v = getValues();
+    // A target weight on a weight-relevant archetype makes this a tracked
+    // body-composition goal (weight-trend projection on Objectifs &
+    // Habitudes) rather than a plain titled goal.
+    const isBodyGoal = WEIGHT_ARCHETYPES.has(v.primaryGoal) && v.goalTargetValue !== undefined;
     try {
       await complete({
         profile: {
@@ -148,11 +176,15 @@ export function OnboardingFlow(): React.JSX.Element {
           equipment: v.equipment,
         },
         goal: {
-          type: v.goalType,
+          type: isBodyGoal ? 'body_composition' : v.goalType,
           title: v.goalTitle,
           priority: 'primary',
+          targetValue: isBodyGoal ? v.goalTargetValue : undefined,
+          targetUnit: isBodyGoal ? 'kg' : undefined,
+          currentValue: isBodyGoal ? v.weightKg : undefined,
         },
       });
+      setPreference('primaryGoal', v.primaryGoal);
       for (const h of v.habits) {
         if (!h.name.trim()) continue;
         await addHabit.mutateAsync(h);
@@ -278,6 +310,32 @@ export function OnboardingFlow(): React.JSX.Element {
 
       {step === 2 ? (
         <View style={{ gap: spacing[4] }}>
+          <View style={{ gap: spacing[2] }}>
+            <Text variant="label" color="textMuted">OBJECTIF PRINCIPAL</Text>
+            <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: spacing[3] }}>
+              {ARCHETYPES.map((a) => {
+                const active = primaryGoal === a.key;
+                return (
+                  <Pressable key={a.key} onPress={() => selectArchetype(a)} style={{ width: '47%' }}>
+                    {active ? (
+                      <Gradient style={{ borderRadius: radii.lg, padding: 1.5 }}>
+                        <View style={{ backgroundColor: colors.surface, borderRadius: radii.lg - 1.5, padding: spacing[4], minHeight: 92 }}>
+                          <Text style={{ fontSize: 22 }}>{a.emoji}</Text>
+                          <Text variant="body" style={{ fontWeight: '700', marginTop: spacing[2] }}>{a.name}</Text>
+                        </View>
+                      </Gradient>
+                    ) : (
+                      <View style={{ borderRadius: radii.lg, borderWidth: 1, borderColor: colors.border, padding: spacing[4], minHeight: 92 }}>
+                        <Text style={{ fontSize: 22 }}>{a.emoji}</Text>
+                        <Text variant="body" style={{ fontWeight: '700', marginTop: spacing[2] }}>{a.name}</Text>
+                      </View>
+                    )}
+                  </Pressable>
+                );
+              })}
+            </View>
+          </View>
+
           <Controller
             control={control}
             name="goalType"
@@ -303,6 +361,20 @@ export function OnboardingFlow(): React.JSX.Element {
               />
             )}
           />
+          {WEIGHT_ARCHETYPES.has(primaryGoal) ? (
+            <Controller
+              control={control}
+              name="goalTargetValue"
+              render={({ field }) => (
+                <Input
+                  label="Poids cible (kg, optionnel)"
+                  keyboardType="numeric"
+                  value={field.value ? String(field.value) : ''}
+                  onChangeText={field.onChange}
+                />
+              )}
+            />
+          ) : null}
         </View>
       ) : null}
 
@@ -509,6 +581,7 @@ function OnboardingSummary({ getValues }: { getValues: () => OnboardingForm }): 
   const v = getValues();
   const levelLabel = LEVELS.find((l) => l.value === v.level)?.label ?? v.level;
   const goalLabel = GOALS.find((g) => g.value === v.goalType)?.label ?? v.goalType;
+  const archetypeLabel = ARCHETYPES.find((a) => a.key === v.primaryGoal)?.name ?? v.primaryGoal;
   return (
     <Card>
       <Text variant="heading">Ton profil Kaizen</Text>
@@ -516,7 +589,10 @@ function OnboardingSummary({ getValues }: { getValues: () => OnboardingForm }): 
         Niveau : {levelLabel}
       </Text>
       <Text variant="body" color="textMuted">
-        Objectif : {goalLabel}
+        Objectif principal : {archetypeLabel}
+      </Text>
+      <Text variant="body" color="textMuted">
+        Objectif : {goalLabel} — {v.goalTitle}{v.goalTargetValue ? ` (${v.goalTargetValue} kg)` : ''}
       </Text>
       <Text variant="body" color="textMuted">
         Séances / semaine : {v.weeklyAvailability ?? '—'}

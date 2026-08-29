@@ -19,8 +19,10 @@ export const onboardingSchema = z.object({
   weightKg: optionalNumber,
   sports: z.array(z.string()).default([]),
   // Step 3 — objective
+  primaryGoal: z.enum(['fat_loss', 'muscle', 'hyrox', 'marathon', 'sleep', 'stress']).default('fat_loss'),
   goalType: goalTypeSchema,
   goalTitle: z.string().min(1, 'Donne un titre à ton objectif').max(120),
+  goalTargetValue: optionalNumber,
   // Step 4 — availability
   weeklyAvailability: z.number().int().min(0).max(21).optional(),
   equipment: z.array(z.string()).default([]),
