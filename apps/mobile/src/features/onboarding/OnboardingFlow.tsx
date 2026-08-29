@@ -13,6 +13,7 @@ import {
   Screen,
   SegmentedControl,
   Text,
+  Toggle,
   useTheme,
 } from '@supotsu/ui';
 import { radii, spacing } from '@supotsu/design-system';
@@ -34,6 +35,23 @@ const ARCHETYPES = [
 ] as const;
 /** Archetypes for which a target weight makes sense — the created goal becomes body_composition when one is given. */
 const WEIGHT_ARCHETYPES = new Set(['fat_loss', 'muscle']);
+
+const UNIT_OPTIONS = [
+  { value: 'metric', label: 'Métrique (kg, km)' },
+  { value: 'imperial', label: 'Impérial (lb, mi)' },
+] as const;
+const TIME_FORMAT_OPTIONS = [
+  { value: '24h', label: '24 h' },
+  { value: '12h', label: '12 h' },
+] as const;
+const LANGUAGE_OPTIONS = [
+  { value: 'auto', label: 'Automatique (téléphone)' },
+  { value: 'fr', label: 'Français' },
+  { value: 'en', label: 'English' },
+  { value: 'es', label: 'Español' },
+  { value: 'pt', label: 'Português' },
+  { value: 'de', label: 'Deutsch' },
+] as const;
 
 /** Mirrors AddHabitScreen's presets/pillars/cadence (French, hardcoded — onboarding isn't i18n'd yet, unlike the rest of the app). */
 const HABIT_PRESETS = [
@@ -110,16 +128,17 @@ const STEP_TITLES = [
   'Ton objectif',
   'Ta disponibilité',
   'Tes habitudes',
+  'Réglages',
   'Tes appareils',
   'Première analyse',
 ];
 
-/** 7-step onboarding stepper backed by a single react-hook-form (P17.2). */
+/** 8-step onboarding stepper backed by a single react-hook-form (P17.2). */
 export function OnboardingFlow(): React.JSX.Element {
   const { user, signOut } = useAuth();
   const { complete } = useOnboarding();
   const { colors } = useTheme();
-  const { setPreference } = usePreferences();
+  const { preferences, setPreference } = usePreferences();
   const addHabit = useAddHabit();
   const [step, setStep] = useState(0);
   const [submitError, setSubmitError] = useState<string | null>(null);
@@ -527,11 +546,45 @@ export function OnboardingFlow(): React.JSX.Element {
       ) : null}
 
       {step === 5 ? (
+        <View style={{ gap: spacing[4] }}>
+          <View style={{ gap: spacing[2] }}>
+            <Text variant="label" color="textMuted">UNITÉS</Text>
+            <SegmentedControl options={UNIT_OPTIONS} value={preferences.units} onChange={(v) => setPreference('units', v)} />
+          </View>
+          <View style={{ gap: spacing[2] }}>
+            <Text variant="label" color="textMuted">FORMAT HORAIRE</Text>
+            <SegmentedControl options={TIME_FORMAT_OPTIONS} value={preferences.timeFormat} onChange={(v) => setPreference('timeFormat', v)} />
+          </View>
+          <View style={{ gap: spacing[2] }}>
+            <Text variant="label" color="textMuted">LANGUE</Text>
+            <SegmentedControl vertical options={LANGUAGE_OPTIONS} value={preferences.language} onChange={(v) => setPreference('language', v)} />
+          </View>
+          <Input
+            label="Objectif de pas quotidien"
+            keyboardType="numeric"
+            value={String(preferences.dailyStepsGoal)}
+            onChangeText={(text) => {
+              const n = Number(text);
+              if (Number.isFinite(n)) setPreference('dailyStepsGoal', n);
+            }}
+          />
+          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+            <Text variant="body">Bilan du jour</Text>
+            <Toggle value={preferences.dailyBriefing} onValueChange={(v) => setPreference('dailyBriefing', v)} />
+          </View>
+          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+            <Text variant="body">Rappels (habitudes, check-in)</Text>
+            <Toggle value={preferences.reminders} onValueChange={(v) => setPreference('reminders', v)} />
+          </View>
+        </View>
+      ) : null}
+
+      {step === 6 ? (
         <View style={{ gap: spacing[2] }}>
           <Card>
             <Text variant="body" color="textMuted">
               Connecte tes appareils pour enrichir automatiquement tes données. Disponible à l'Étape
-              6 — tu peux passer pour l'instant.
+              7 — tu peux passer pour l'instant.
             </Text>
           </Card>
           <Button label="Apple Health" variant="secondary" fullWidth disabled />
@@ -540,7 +593,7 @@ export function OnboardingFlow(): React.JSX.Element {
         </View>
       ) : null}
 
-      {step === 6 ? (
+      {step === 7 ? (
         <View style={{ gap: spacing[4] }}>
           <OnboardingSummary getValues={getValues} />
           <KPICard

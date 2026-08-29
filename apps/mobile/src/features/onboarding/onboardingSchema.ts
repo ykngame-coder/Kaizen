@@ -39,6 +39,7 @@ export const STEP_FIELDS: (keyof OnboardingForm)[][] = [
   ['goalType', 'goalTitle'], // 2 objective
   ['weeklyAvailability', 'equipment'], // 3 availability
   [], // 4 habits
-  [], // 5 connections
-  [], // 6 summary
+  [], // 5 settings
+  [], // 6 connections
+  [], // 7 summary
 ];
