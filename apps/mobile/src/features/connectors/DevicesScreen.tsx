@@ -368,8 +368,8 @@ function RenphoCard(): React.JSX.Element {
 }
 
 /** "Mes appareils connectés" (Master Prompt P9.13, P22.14). */
-/** Native Apple HealthKit (iOS build only) — reads Health directly on-device. */
-function HealthKitCard(): React.JSX.Element {
+/** Native Apple HealthKit (iOS build only) — reads Health directly on-device. Exported: also reused by the onboarding "Tes appareils" step. */
+export function HealthKitCard(): React.JSX.Element {
   const { t } = useTranslation();
   const importHealth = useImportHealth();
   const isIos = Platform.OS === 'ios';

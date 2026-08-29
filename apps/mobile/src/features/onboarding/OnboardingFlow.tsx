@@ -18,6 +18,7 @@ import {
 } from '@supotsu/ui';
 import { radii, spacing } from '@supotsu/design-system';
 import { useAuth } from '@/features/auth/AuthProvider';
+import { HealthKitCard } from '@/features/connectors/DevicesScreen';
 import { useAddHabit } from '@/lib/data/queries';
 import { usePreferences } from '@/lib/preferences';
 import { useOnboarding } from './OnboardingProvider';
@@ -583,13 +584,15 @@ export function OnboardingFlow(): React.JSX.Element {
         <View style={{ gap: spacing[2] }}>
           <Card>
             <Text variant="body" color="textMuted">
-              Connecte tes appareils pour enrichir automatiquement tes données. Disponible à l'Étape
-              7 — tu peux passer pour l'instant.
+              Connecte tes appareils pour enrichir automatiquement tes données — tu peux passer pour
+              l'instant.
             </Text>
           </Card>
-          <Button label="Apple Health" variant="secondary" fullWidth disabled />
-          <Button label="Garmin Connect" variant="secondary" fullWidth disabled />
-          <Button label="Strava" variant="secondary" fullWidth disabled />
+          <HealthKitCard />
+          <Text variant="caption" color="textSubtle">
+            D'autres connexions (Garmin, Strava, balances connectées) sont disponibles depuis Profil ›
+            Appareils.
+          </Text>
         </View>
       ) : null}
 
