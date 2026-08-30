@@ -2228,6 +2228,32 @@
         "muscleMass": "Massa muscular",
         "source": "Gordura e massa muscular vêm da sua balança conectada (Renpho via Apple Saúde)."
       }
+    },
+    "steps": {
+      "title": "Passos",
+      "subtitle": "Sua caminhada diária ao longo do tempo.",
+      "add": "+ Adicionar passos",
+      "inputLabel": "Passos",
+      "inputPlaceholder": "Ex. 8000",
+      "saving": "Salvando…",
+      "emptyState": {
+        "title": "Sem dados de passos",
+        "message": "Conecte a Saúde da Apple (Perfil › Dispositivos), ou adicione seus passos manualmente acima."
+      },
+      "today": {
+        "goalSuffix": "/ {{goal}} passos"
+      },
+      "singlePoint": "Apenas um dia neste período — volte mais tarde para ver a curva.",
+      "stats": {
+        "min": "Mín",
+        "max": "Máx",
+        "avg": "Média"
+      },
+      "baseline": {
+        "heading": "Sua média de 60 dias",
+        "note": "Essa média alimenta o pilar Ativo do seu Score Kaizen."
+      },
+      "goalLink": "Alterar o objetivo nas Configurações"
     }
   },
   "community": {

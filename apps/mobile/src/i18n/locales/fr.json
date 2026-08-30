@@ -2228,6 +2228,32 @@
         "muscleMass": "Masse musculaire",
         "source": "Masse grasse et musculaire proviennent de ta balance connectée (Renpho via Apple Santé)."
       }
+    },
+    "steps": {
+      "title": "Pas",
+      "subtitle": "Ta marche quotidienne dans le temps.",
+      "add": "+ Ajouter des pas",
+      "inputLabel": "Pas",
+      "inputPlaceholder": "Ex. 8000",
+      "saving": "Enregistrement…",
+      "emptyState": {
+        "title": "Aucune donnée de pas",
+        "message": "Connecte Apple Santé (Profil › Appareils), ou ajoute tes pas manuellement ci-dessus."
+      },
+      "today": {
+        "goalSuffix": "/ {{goal}} pas"
+      },
+      "singlePoint": "Une seule journée sur la période — reviens plus tard pour voir la courbe.",
+      "stats": {
+        "min": "Min",
+        "max": "Max",
+        "avg": "Moyenne"
+      },
+      "baseline": {
+        "heading": "Ta moyenne sur 60 jours",
+        "note": "Cette moyenne alimente le pilier Actif de ton Score Kaizen."
+      },
+      "goalLink": "Modifier l'objectif dans Réglages"
     }
   },
   "community": {

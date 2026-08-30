@@ -2228,6 +2228,32 @@
         "muscleMass": "Muscle mass",
         "source": "Body fat and muscle mass come from your connected scale (Renpho via Apple Health)."
       }
+    },
+    "steps": {
+      "title": "Steps",
+      "subtitle": "Your daily walking over time.",
+      "add": "+ Add steps",
+      "inputLabel": "Steps",
+      "inputPlaceholder": "E.g. 8000",
+      "saving": "Saving…",
+      "emptyState": {
+        "title": "No steps data",
+        "message": "Connect Apple Health (Profile › Devices), or add your steps manually above."
+      },
+      "today": {
+        "goalSuffix": "/ {{goal}} steps"
+      },
+      "singlePoint": "Only one day in this period — check back later to see the trend.",
+      "stats": {
+        "min": "Min",
+        "max": "Max",
+        "avg": "Average"
+      },
+      "baseline": {
+        "heading": "Your 60-day average",
+        "note": "This average feeds the Active pillar of your Score Kaizen."
+      },
+      "goalLink": "Change the goal in Settings"
     }
   },
   "community": {

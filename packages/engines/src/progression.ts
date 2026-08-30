@@ -66,6 +66,28 @@ export function weightTrend(
 }
 
 /**
+ * Daily steps series from health metrics over the last `days`, oldest →
+ * newest — one point per calendar day (the max reading that day, since a
+ * device can sync several cumulative totals across the day; never summed).
+ */
+export function stepsTrend(
+  metrics: HealthMetric[],
+  asOf: ISODateString,
+  days = 90,
+): TrendPoint[] {
+  const now = new Date(asOf).getTime();
+  const byDay = new Map<string, number>();
+  for (const m of metrics) {
+    if (m.type !== 'steps' || (now - new Date(m.measuredAt).getTime()) / DAY_MS >= days) continue;
+    const key = m.measuredAt.slice(0, 10);
+    byDay.set(key, Math.max(byDay.get(key) ?? 0, m.value));
+  }
+  return [...byDay.entries()]
+    .map(([date, value]) => ({ date: `${date}T12:00:00.000Z`, value }))
+    .sort((a, b) => a.date.localeCompare(b.date));
+}
+
+/**
  * Goal progress 0-1. Uses current vs target relative to a start when both are
  * known (so "lose 5 kg" reads correctly); otherwise falls back to the stored
  * progress. `startValue` defaults to the target's opposite side of current.

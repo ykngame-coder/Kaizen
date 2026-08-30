@@ -2228,6 +2228,32 @@
         "muscleMass": "Muskelmasse",
         "source": "Körperfett und Muskelmasse stammen von deiner verbundenen Waage (Renpho über Apple Health)."
       }
+    },
+    "steps": {
+      "title": "Schritte",
+      "subtitle": "Dein tägliches Gehen im Zeitverlauf.",
+      "add": "+ Schritte hinzufügen",
+      "inputLabel": "Schritte",
+      "inputPlaceholder": "Z. B. 8000",
+      "saving": "Wird gespeichert…",
+      "emptyState": {
+        "title": "Keine Schrittdaten",
+        "message": "Verbinde Apple Health (Profil › Geräte) oder füge deine Schritte oben manuell hinzu."
+      },
+      "today": {
+        "goalSuffix": "/ {{goal}} Schritte"
+      },
+      "singlePoint": "Nur ein Tag in diesem Zeitraum — schau später wieder vorbei, um den Verlauf zu sehen.",
+      "stats": {
+        "min": "Min",
+        "max": "Max",
+        "avg": "Durchschnitt"
+      },
+      "baseline": {
+        "heading": "Dein 60-Tage-Durchschnitt",
+        "note": "Dieser Durchschnitt fließt in die Säule Aktiv deines Score Kaizen ein."
+      },
+      "goalLink": "Ziel in den Einstellungen ändern"
     }
   },
   "community": {
