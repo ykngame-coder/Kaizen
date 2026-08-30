@@ -147,10 +147,10 @@ function TapCard({ onPress, children }: { onPress: () => void; children: React.R
 }
 
 /** Fills whatever width its container gives it (Carousel page or a fixed chip) — measures itself so the sparkline scales to fit instead of guessing a width. */
-function TrendCard({ label, value, up, series, color }: { label: string; value: string; up: boolean; series: number[]; color: string }): React.JSX.Element {
+function TrendCard({ label, value, up, series, color, onPress }: { label: string; value: string; up: boolean; series: number[]; color: string; onPress?: () => void }): React.JSX.Element {
   const { colors } = useTheme();
   const [width, setWidth] = useState(0);
-  return (
+  const content = (
     <View
       onLayout={(e) => setWidth(e.nativeEvent.layout.width)}
       style={{ backgroundColor: colors.surfaceElevated, borderWidth: 1, borderColor: colors.border, borderRadius: radii.lg, padding: spacing[3] }}
@@ -160,6 +160,8 @@ function TrendCard({ label, value, up, series, color }: { label: string; value: 
       {series.length >= 2 && width > 0 ? <View style={{ marginTop: spacing[2] }}><Sparkline values={series} width={width - spacing[3] * 2} height={56} color={color} /></View> : null}
     </View>
   );
+  if (!onPress) return content;
+  return <Pressable onPress={onPress} style={({ pressed }) => ({ opacity: pressed ? 0.8 : 1 })}>{content}</Pressable>;
 }
 
 /* ---------- screen ---------- */
@@ -376,7 +378,7 @@ export function DashboardScreen(): React.JSX.Element {
             <KpiTile icon={<Icon name="water" size={16} color={colors.info} />} value={`${(totals.hydrationMl / 1000).toFixed(1)}`} label={`/ ${(targets.hydrationMl / 1000).toFixed(1)} L`} onPress={() => router.push('/nutrition')} />
           </View>,
           <View style={{ flexDirection: 'row', gap: spacing[3] }}>
-            <KpiTile icon={<Icon name="footsteps" size={16} color={colors.accentData} />} value={stepsToday > 0 ? stepsToday.toLocaleString('fr-FR') : '—'} label={t('dashboard.screen.kpis.stepsGoal', { goal: preferences.dailyStepsGoal.toLocaleString('fr-FR') })} />
+            <KpiTile icon={<Icon name="footsteps" size={16} color={colors.accentData} />} value={stepsToday > 0 ? stepsToday.toLocaleString('fr-FR') : '—'} label={t('dashboard.screen.kpis.stepsGoal', { goal: preferences.dailyStepsGoal.toLocaleString('fr-FR') })} onPress={() => router.push('/sport/steps')} />
           </View>,
         ]}
         keyExtractor={(_, i) => `kpi-page-${i}`}
@@ -482,13 +484,13 @@ export function DashboardScreen(): React.JSX.Element {
         <SectionTitle right={<Text variant="caption" color="textSubtle">{t('dashboard.screen.trends.last30Days')}</Text>}>{t('dashboard.screen.trends.title')}</SectionTitle>
         <Carousel
           data={[
-            { key: 'poids', label: t('dashboard.screen.trends.weight'), value: weightSeries.length >= 2 ? `${(weightSeries.at(-1)! - weightSeries[0]!).toFixed(1)}` : '—', up: weightSeries.length >= 2 ? weightSeries.at(-1)! <= weightSeries[0]! : true, series: weightSeries, color: '#ff7a8a' },
-            { key: 'recovery', label: t('dashboard.screen.trends.recovery'), value: recoverySeries.length >= 2 ? `${recoverySeries.at(-1)! - recoverySeries[0]! >= 0 ? '+' : ''}${recoverySeries.at(-1)! - recoverySeries[0]!}` : '—', up: recoverySeries.length >= 2 ? recoverySeries.at(-1)! >= recoverySeries[0]! : true, series: recoverySeries, color: colors.accentData },
-            { key: 'hrv', label: t('dashboard.screen.trends.hrv'), value: hrvSeries.length >= 2 ? `${Math.round(hrvSeries.at(-1)! - hrvSeries[0]!)}` : '—', up: hrvSeries.length >= 2 ? hrvSeries.at(-1)! >= hrvSeries[0]! : true, series: hrvSeries, color: colors.accentEndurance },
+            { key: 'poids', label: t('dashboard.screen.trends.weight'), value: weightSeries.length >= 2 ? `${(weightSeries.at(-1)! - weightSeries[0]!).toFixed(1)}` : weight != null ? `${weight.toFixed(1)} kg` : '—', up: weightSeries.length >= 2 ? weightSeries.at(-1)! <= weightSeries[0]! : true, series: weightSeries, color: '#ff7a8a', onPress: () => router.push('/nutrition/weight') },
+            { key: 'recovery', label: t('dashboard.screen.trends.recovery'), value: recoverySeries.length >= 2 ? `${recoverySeries.at(-1)! - recoverySeries[0]! >= 0 ? '+' : ''}${recoverySeries.at(-1)! - recoverySeries[0]!}` : '—', up: recoverySeries.length >= 2 ? recoverySeries.at(-1)! >= recoverySeries[0]! : true, series: recoverySeries, color: colors.accentData, onPress: undefined },
+            { key: 'hrv', label: t('dashboard.screen.trends.hrv'), value: hrvSeries.length >= 2 ? `${Math.round(hrvSeries.at(-1)! - hrvSeries[0]!)}` : '—', up: hrvSeries.length >= 2 ? hrvSeries.at(-1)! >= hrvSeries[0]! : true, series: hrvSeries, color: colors.accentEndurance, onPress: undefined },
           ]}
           keyExtractor={(item) => item.key}
           peek={36}
-          renderItem={(item) => <TrendCard label={item.label} value={item.value} up={item.up} series={item.series} color={item.color} />}
+          renderItem={(item) => <TrendCard label={item.label} value={item.value} up={item.up} series={item.series} color={item.color} onPress={item.onPress} />}
         />
       </View>
     ),
