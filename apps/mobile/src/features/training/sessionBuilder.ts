@@ -55,6 +55,7 @@ export function useSessionBlocks(options: UseSessionBlocksOptions = {}) {
   const [activeBlock, setActiveBlock] = useState(0);
   const [query, setQuery] = useState('');
   const [muscleFilter, setMuscleFilter] = useState<MuscleGroup | 'all'>('all');
+  const [equipmentFilter, setEquipmentFilter] = useState<string | 'all'>('all');
 
   const allExercises = useMemo(
     () => [...(options.customExercises ?? []), ...EXERCISES],
@@ -106,9 +107,10 @@ export function useSessionBlocks(options: UseSessionBlocksOptions = {}) {
     () => allExercises
       .filter((ex) => !activeSelected[ex.id])
       .filter((ex) => muscleFilter === 'all' || ex.primary === muscleFilter || ex.secondary.includes(muscleFilter))
+      .filter((ex) => equipmentFilter === 'all' || ex.equipment === equipmentFilter)
       .filter((ex) => !q || ex.name.toLowerCase().includes(q) || MUSCLE_LABEL[ex.primary].toLowerCase().includes(q) || ex.equipment.toLowerCase().includes(q))
       .slice(0, RESULTS_LIMIT),
-    [allExercises, activeSelected, muscleFilter, q],
+    [allExercises, activeSelected, muscleFilter, equipmentFilter, q],
   );
 
   const recentExercises = useMemo(() => {
@@ -133,7 +135,7 @@ export function useSessionBlocks(options: UseSessionBlocksOptions = {}) {
     name, setName,
     blocks, setBlocks, activeBlock, setActiveBlock, updateActiveBlock, addBlock, removeBlock,
     activeOrder, activeSelected,
-    query, setQuery, muscleFilter, setMuscleFilter,
+    query, setQuery, muscleFilter, setMuscleFilter, equipmentFilter, setEquipmentFilter,
     allExercises, byId, searchResults, recentExercises,
     addExercise, removeExercise, updateExercise, reorderExercise,
     isSingleStrength, hasAnyExercise,

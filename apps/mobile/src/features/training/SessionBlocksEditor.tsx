@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Image, Pressable, View } from 'react-native';
+import { Image, Pressable, ScrollView, View } from 'react-native';
 import DraggableFlatList, { type RenderItemParams } from 'react-native-draggable-flatlist';
 import type { TFunction } from 'i18next';
 import { Badge, Button, Card, Input, SegmentedControl, Text, useTheme } from '@supotsu/ui';
@@ -9,6 +9,8 @@ import { exerciseImageUrl, MUSCLE_ICON, MUSCLE_LABEL, type Exercise } from '@/fe
 import { formatLabel, type SessionBlocksBuilder } from './sessionBuilder';
 
 const MUSCLE_ORDER: MuscleGroup[] = ['chest', 'back', 'shoulders', 'biceps', 'triceps', 'quads', 'hamstrings', 'glutes', 'calves', 'core', 'full_body'];
+/** Real equipment values present in the exercise catalogue, most common first. */
+const EQUIPMENT_ORDER = ['Barre', 'Haltères', 'Poids du corps', 'Poulie', 'Machine', 'Kettlebell', 'Élastique', 'Medicine ball', 'Swiss ball', 'Rouleau', 'Barre EZ', 'Autre'];
 
 interface LastKnown {
   reps?: number;
@@ -111,6 +113,22 @@ function Thumb({ exercise, size = 34 }: { exercise: Exercise; size?: number }): 
         <Text style={{ fontSize: size * 0.45 }}>{MUSCLE_ICON[exercise.primary]}</Text>
       )}
     </View>
+  );
+}
+
+function FilterChip({ label, active, onPress }: { label: string; active: boolean; onPress: () => void }): React.JSX.Element {
+  const { colors } = useTheme();
+  return (
+    <Pressable
+      onPress={onPress}
+      style={{
+        paddingHorizontal: 12, paddingVertical: 7, borderRadius: radii.full,
+        backgroundColor: active ? colors.primary : colors.surfaceElevated,
+        borderWidth: 1, borderColor: active ? colors.primary : colors.border,
+      }}
+    >
+      <Text variant="caption" style={{ color: active ? colors.onPrimary : colors.text, fontWeight: '700' }}>{label}</Text>
+    </Pressable>
   );
 }
 
@@ -239,38 +257,18 @@ export function SessionBlocksEditor({
           onChangeText={builder.setQuery}
         />
 
-        <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: spacing[2], marginTop: spacing[3] }}>
-          <Pressable
-            onPress={() => builder.setMuscleFilter('all')}
-            style={{
-              paddingHorizontal: 12, paddingVertical: 7, borderRadius: radii.full,
-              backgroundColor: builder.muscleFilter === 'all' ? colors.primary : colors.surfaceElevated,
-              borderWidth: 1, borderColor: builder.muscleFilter === 'all' ? colors.primary : colors.border,
-            }}
-          >
-            <Text variant="caption" style={{ color: builder.muscleFilter === 'all' ? colors.onPrimary : colors.text, fontWeight: '700' }}>
-              {t('sport.sessionBuilder.addExercise.allMuscles')}
-            </Text>
-          </Pressable>
-          {MUSCLE_ORDER.map((m) => {
-            const active = builder.muscleFilter === m;
-            return (
-              <Pressable
-                key={m}
-                onPress={() => builder.setMuscleFilter(m)}
-                style={{
-                  paddingHorizontal: 12, paddingVertical: 7, borderRadius: radii.full,
-                  backgroundColor: active ? colors.primary : colors.surfaceElevated,
-                  borderWidth: 1, borderColor: active ? colors.primary : colors.border,
-                }}
-              >
-                <Text variant="caption" style={{ color: active ? colors.onPrimary : colors.text, fontWeight: '700' }}>
-                  {MUSCLE_LABEL[m]}
-                </Text>
-              </Pressable>
-            );
-          })}
-        </View>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ flexDirection: 'row', gap: spacing[2], marginTop: spacing[3] }}>
+          <FilterChip label={t('sport.sessionBuilder.addExercise.allMuscles')} active={builder.muscleFilter === 'all'} onPress={() => builder.setMuscleFilter('all')} />
+          {MUSCLE_ORDER.map((m) => (
+            <FilterChip key={m} label={MUSCLE_LABEL[m]} active={builder.muscleFilter === m} onPress={() => builder.setMuscleFilter(m)} />
+          ))}
+        </ScrollView>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ flexDirection: 'row', gap: spacing[2], marginTop: spacing[2] }}>
+          <FilterChip label={t('sport.sessionBuilder.addExercise.allEquipment')} active={builder.equipmentFilter === 'all'} onPress={() => builder.setEquipmentFilter('all')} />
+          {EQUIPMENT_ORDER.map((eq) => (
+            <FilterChip key={eq} label={eq} active={builder.equipmentFilter === eq} onPress={() => builder.setEquipmentFilter(eq)} />
+          ))}
+        </ScrollView>
 
         {builder.recentExercises.length > 0 ? (
           <>

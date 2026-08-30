@@ -1428,6 +1428,7 @@
         "searchLabel": "Search for an exercise",
         "searchPlaceholder": "E.g.: bench, quads, curl…",
         "allMuscles": "All",
+        "allEquipment": "All",
         "recentHeading": "Recently used",
         "resultsHeading": "Results",
         "resultCount_one": "{{count}} result",

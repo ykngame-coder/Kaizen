@@ -1428,6 +1428,7 @@
         "searchLabel": "Buscar um exercício",
         "searchPlaceholder": "Ex.: supino, quadríceps, rosca…",
         "allMuscles": "Todos",
+        "allEquipment": "Todos",
         "recentHeading": "Usados recentemente",
         "resultsHeading": "Resultados",
         "resultCount_one": "{{count}} resultado",

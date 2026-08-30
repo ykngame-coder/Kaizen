@@ -1428,6 +1428,7 @@
         "searchLabel": "Buscar un ejercicio",
         "searchPlaceholder": "Ej.: press, cuádriceps, curl…",
         "allMuscles": "Todos",
+        "allEquipment": "Todos",
         "recentHeading": "Usados recientemente",
         "resultsHeading": "Resultados",
         "resultCount_one": "{{count}} resultado",

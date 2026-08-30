@@ -1428,6 +1428,7 @@
         "searchLabel": "Übung suchen",
         "searchPlaceholder": "Bsp.: Drücken, Quadrizeps, Curl…",
         "allMuscles": "Alle",
+        "allEquipment": "Alle",
         "recentHeading": "Zuletzt verwendet",
         "resultsHeading": "Ergebnisse",
         "resultCount_one": "{{count}} Ergebnis",

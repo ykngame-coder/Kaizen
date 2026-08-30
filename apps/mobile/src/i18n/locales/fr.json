@@ -1428,6 +1428,7 @@
         "searchLabel": "Rechercher un exercice",
         "searchPlaceholder": "Ex : développé, quads, curl…",
         "allMuscles": "Tous",
+        "allEquipment": "Tous",
         "recentHeading": "Récemment utilisés",
         "resultsHeading": "Résultats",
         "resultCount_one": "{{count}} résultat",
