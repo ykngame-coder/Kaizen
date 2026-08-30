@@ -11,9 +11,12 @@ export async function insertSleepSessions(
   rows: SleepSessionInsertRow[],
 ): Promise<void> {
   if (rows.length === 0) return;
+  // Re-syncing the same night from the same source (e.g. after a parser fix
+  // like adding hypnogram segments) should refresh the row, not silently
+  // no-op forever — full upsert (update on conflict) instead of ignoring it.
   const { error } = await client
     .from('sleep_sessions')
-    .upsert(rows, { onConflict: 'user_id,started_at,source', ignoreDuplicates: true });
+    .upsert(rows, { onConflict: 'user_id,started_at,source' });
   if (error) throw error;
 }
 

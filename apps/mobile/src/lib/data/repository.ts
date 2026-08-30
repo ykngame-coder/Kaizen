@@ -1731,17 +1731,16 @@ function createDemoRepository(): DataRepository {
         });
       await writeJson(recKey(userId), [...newR, ...existingR]);
 
+      // Re-syncing the same night from the same source (e.g. after a parser
+      // fix like adding hypnogram segments) should refresh it, not silently
+      // no-op forever — upsert by (source, startedAt) instead of skipping.
       const existingS = await readJson<SleepSession>(sleepKey(userId));
-      const seenS = new Set(existingS.map((s) => `${s.source}|${s.startedAt}`));
-      const newS = payload.sleepSessions
-        .map((s) => importedToSleepSession(userId, s))
-        .filter((s) => {
-          const key = `${s.source}|${s.startedAt}`;
-          if (seenS.has(key)) return false;
-          seenS.add(key);
-          return true;
-        });
-      await writeJson(sleepKey(userId), [...newS, ...existingS]);
+      const byKeyS = new Map(existingS.map((s) => [`${s.source}|${s.startedAt}`, s]));
+      for (const s of payload.sleepSessions) {
+        const mapped = importedToSleepSession(userId, s);
+        byKeyS.set(`${mapped.source}|${mapped.startedAt}`, mapped);
+      }
+      await writeJson(sleepKey(userId), [...byKeyS.values()]);
 
       const importedIdsKey = `supotsu.importedWorkoutIds.${userId}`;
       const importedIds = new Set(await readJson<string>(importedIdsKey));
@@ -1779,7 +1778,7 @@ function createDemoRepository(): DataRepository {
         await writeJson(importedIdsKey, [...importedIds]);
       }
 
-      return { activities: newA.length, health: newH.length, sleep: newS.length, workouts: newWorkouts.length };
+      return { activities: newA.length, health: newH.length, sleep: payload.sleepSessions.length, workouts: newWorkouts.length };
     },
   };
 }
