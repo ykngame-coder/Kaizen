@@ -1,4 +1,4 @@
-import type { ActivityType, HealthMetricType } from '@supotsu/core';
+import type { ActivityType, HealthMetricType, SleepSegment, SleepStage } from '@supotsu/core';
 import type { ImportedActivity, ImportedHealthMetric, ImportedSleepSession } from './types';
 
 /**
@@ -108,7 +108,11 @@ interface NightAccumulator {
   awakeMin: number;
   inBedMin: number;
   hasInBed: boolean;
+  segments: SleepSegment[];
 }
+
+/** HealthKit sleep-analysis sample value → our stage; `undefined` for values that aren't a specific stage (in-bed, unknown). */
+const STAGE_FOR_VALUE: Record<number, SleepStage> = { 4: 'deep', 5: 'rem', 3: 'light', 1: 'light', 2: 'awake' };
 
 /**
  * Aggregate sleep-stage samples into one `ImportedSleepSession` per night —
@@ -117,9 +121,10 @@ interface NightAccumulator {
  * duration, so the native HealthKit sync path can feed the same
  * Phases-de-sommeil card the file-import path (Health Auto Export) already
  * does. `asleepUnspecified` (value 1) — sources that don't report stage
- * detail — folds into `lightMin`, the least specific default stage; no
- * `segments` (minute-by-minute hypnogram), matching the file-import path's
- * "never fabricate what the source didn't provide" rule.
+ * detail — folds into `lightMin`, the least specific default stage.
+ * Each sample IS a real per-interval reading (not an aggregate we'd be
+ * fabricating), so it doubles as a `segments` entry — this is what feeds
+ * the hypnogram timeline on Sommeil.
  */
 export function aggregateHealthKitSleepSessions(samples: HKSleepSample[]): ImportedSleepSession[] {
   const perNight = new Map<string, NightAccumulator>();
@@ -136,6 +141,7 @@ export function aggregateHealthKitSleepSessions(samples: HKSleepSample[]): Impor
       awakeMin: 0,
       inBedMin: 0,
       hasInBed: false,
+      segments: [],
     };
     acc.start = s.startDate < acc.start ? s.startDate : acc.start;
     acc.end = s.endDate > acc.end ? s.endDate : acc.end;
@@ -146,6 +152,10 @@ export function aggregateHealthKitSleepSessions(samples: HKSleepSample[]): Impor
       case 2: acc.awakeMin += minutes; break;
       case 0: acc.inBedMin += minutes; acc.hasInBed = true; break;
       default: break;
+    }
+    const stage = STAGE_FOR_VALUE[s.value];
+    if (stage) {
+      acc.segments.push({ stage, startedAt: new Date(s.startDate).toISOString(), endedAt: new Date(s.endDate).toISOString() });
     }
     perNight.set(key, acc);
   }
@@ -162,6 +172,7 @@ export function aggregateHealthKitSleepSessions(samples: HKSleepSample[]): Impor
       deepMin: Math.round(n.deepMin),
       lightMin: Math.round(n.lightMin),
       remMin: Math.round(n.remMin),
+      segments: n.segments.sort((a, b) => a.startedAt.localeCompare(b.startedAt)),
       awakeMin: Math.round(n.awakeMin),
       asleepMin: Math.round(asleepMin),
       inBedMin: Math.round(n.hasInBed ? n.inBedMin : asleepMin + n.awakeMin),

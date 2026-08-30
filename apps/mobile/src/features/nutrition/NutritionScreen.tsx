@@ -409,7 +409,7 @@ export function NutritionScreen(): React.JSX.Element {
 
         <ComprendreCard pillars={['nutrition']} />
       </Screen>
-      <Fab icon="+" accessibilityLabel={t('nutrition.screen.fab.addFood')} onPress={() => router.push('/nutrition/food/search')} />
+      <Fab icon="+" accessibilityLabel={t('nutrition.screen.fab.addFood')} onPress={() => router.push('/nutrition/meal/new')} />
     </View>
   );
 }

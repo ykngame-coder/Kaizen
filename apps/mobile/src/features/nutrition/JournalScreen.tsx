@@ -207,7 +207,7 @@ export function JournalScreen(): React.JSX.Element {
           </View>
         </Card>
       </Screen>
-      <Fab icon="+" accessibilityLabel={t('nutrition.journal.fab.addFood')} onPress={() => router.push('/nutrition/food/search')} />
+      <Fab icon="+" accessibilityLabel={t('nutrition.journal.fab.addFood')} onPress={() => router.push('/nutrition/meal/new')} />
     </View>
   );
 }

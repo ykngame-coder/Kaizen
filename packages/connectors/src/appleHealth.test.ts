@@ -85,7 +85,23 @@ describe('aggregateHealthKitSleepSessions', () => {
     expect(night?.inBedMin).toBe(180 + 150 + 90 + 30);
     expect(night?.startedAt).toBe('2026-07-20T23:00:00.000Z');
     expect(night?.endedAt).toBe('2026-07-21T06:30:00.000Z');
-    expect(night?.segments).toBeUndefined();
+    // Each real sample doubles as a segment — this feeds the hypnogram.
+    expect(night?.segments).toEqual([
+      { stage: 'light', startedAt: '2026-07-20T23:00:00.000Z', endedAt: '2026-07-21T02:00:00.000Z' },
+      { stage: 'awake', startedAt: '2026-07-21T02:00:00.000Z', endedAt: '2026-07-21T02:30:00.000Z' },
+      { stage: 'rem', startedAt: '2026-07-21T02:30:00.000Z', endedAt: '2026-07-21T05:00:00.000Z' },
+      { stage: 'deep', startedAt: '2026-07-21T05:00:00.000Z', endedAt: '2026-07-21T06:30:00.000Z' },
+    ]);
+  });
+
+  it('excludes inBed (value 0) samples from segments — not a specific stage', () => {
+    const [night] = aggregateHealthKitSleepSessions([
+      { value: 0, startDate: '2026-07-20T22:30:00Z', endDate: '2026-07-21T06:30:00Z' },
+      { value: 4, startDate: '2026-07-20T23:00:00Z', endDate: '2026-07-21T06:00:00Z' },
+    ]);
+    expect(night?.segments).toEqual([
+      { stage: 'deep', startedAt: '2026-07-20T23:00:00.000Z', endedAt: '2026-07-21T06:00:00.000Z' },
+    ]);
   });
 
   it('folds asleepUnspecified (value 1) into lightMin — sources without stage detail', () => {
