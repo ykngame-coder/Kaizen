@@ -387,7 +387,7 @@ export function HealthKitCard(): React.JSX.Element {
         setNote(t('connectors.devices.healthKit.noNewData'));
       } else {
         await importHealth.mutateAsync({ activities, healthMetrics, records: [], sleepSessions, workouts: [] });
-        setNote(t('connectors.devices.healthKit.imported', { activitiesCount: activities.length, healthCount: healthMetrics.length }));
+        setNote(t('connectors.devices.healthKit.imported', { activitiesCount: activities.length, healthCount: healthMetrics.length, sleepCount: sleepSessions.length }));
       }
     } catch (e) {
       const detail = errorMessage(e, '');

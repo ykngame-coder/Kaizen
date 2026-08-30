@@ -2399,7 +2399,7 @@
       },
       "healthKit": {
         "noNewData": "No new data (allow access to the categories in Settings → Health).",
-        "imported": "Imported: {{activitiesCount}} activity(ies), {{healthCount}} health data point(s).",
+        "imported": "Imported: {{activitiesCount}} activity(ies), {{healthCount}} health data point(s), {{sleepCount}} night(s).",
         "syncErrorWithDetail": "Sync isn't possible right now. Technical detail (useful if you report it): {{detail}}",
         "syncError": "Sync isn't possible right now. Try again later.",
         "title": "Apple Health (HealthKit)",
