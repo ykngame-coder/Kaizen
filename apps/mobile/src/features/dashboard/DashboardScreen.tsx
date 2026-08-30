@@ -110,7 +110,7 @@ function KpiTile({ icon, value, delta, deltaTone, label, onPress }: { icon: Reac
   );
 }
 
-/** One pillar of the Score Kaizen breakdown (Sport / Récup / Sommeil / Nutrition). */
+/** One pillar of the Score Kaizen breakdown (Sport / Récup / Sommeil / Nutrition / Actif). */
 function PillarCell({ label, value }: { label: string; value: number | null }): React.JSX.Element {
   return (
     <View style={{ flex: 1, alignItems: 'center', backgroundColor: 'rgba(0,0,0,0.10)', borderRadius: radii.md, paddingVertical: spacing[2] }}>
@@ -224,8 +224,9 @@ export function DashboardScreen(): React.JSX.Element {
         nutritionEntries: nutrition,
         nutritionTargets: targets,
         sleepSessions,
+        dailyStepsGoal: preferences.dailyStepsGoal,
       }),
-    [activities, health, asOf, nutrition, targets, sleepSessions],
+    [activities, health, asOf, nutrition, targets, sleepSessions, preferences.dailyStepsGoal],
   );
   const { data: leaderboardPrefs } = useLeaderboardPrefs();
   const recordDailyScore = useRecordDailyScore();
@@ -596,6 +597,7 @@ export function DashboardScreen(): React.JSX.Element {
               <PillarCell label={t('dashboard.screen.score.pillars.recovery')} value={snapshot.value.recovery} />
               <PillarCell label={t('dashboard.screen.score.pillars.sleep')} value={snapshot.value.sleep} />
               <PillarCell label={t('dashboard.screen.score.pillars.nutrition')} value={snapshot.value.nutrition} />
+              <PillarCell label={t('dashboard.screen.score.pillars.active')} value={snapshot.value.active} />
             </View>
           </Gradient>
         </View>

@@ -2674,7 +2674,8 @@
           "sport": "Sport",
           "recovery": "Récup",
           "sleep": "Sommeil",
-          "nutrition": "Nutrition"
+          "nutrition": "Nutrition",
+          "active": "Actif"
         }
       }
     },
@@ -2902,7 +2903,8 @@
         },
         "languageLabel": "Langue",
         "dailyStepsGoal": {
-          "label": "Objectif de pas quotidien"
+          "label": "Objectif de pas quotidien",
+          "suggestion": "Ta moyenne : {{steps}} pas — utiliser comme objectif ?"
         },
         "haptics": "Retour haptique"
       },

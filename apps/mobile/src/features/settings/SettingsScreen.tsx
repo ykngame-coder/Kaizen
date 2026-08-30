@@ -1,12 +1,14 @@
-import React, { useEffect, useState } from 'react';
-import { Alert, Platform, Share, View } from 'react-native';
+import React, { useEffect, useMemo, useState } from 'react';
+import { Alert, Platform, Pressable, Share, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { Badge, Button, Card, Icon, Input, ListRow, Screen, SegmentedControl, Text, Toggle, useTheme } from '@supotsu/ui';
 import { spacing } from '@supotsu/design-system';
+import { computeStepsBaseline } from '@supotsu/engines';
 import { useAuth } from '@/features/auth/AuthProvider';
 import { usePreferences, type LanguagePreference, type TimeFormat, type UnitSystem } from '@/lib/preferences';
 import { createDataRepository, exportUserData } from '@/lib/data/repository';
+import { useHealthMetrics } from '@/lib/data/queries';
 import { deleteAccount } from '@/features/auth/accountClient';
 import { isBiometricSupported } from '@/lib/biometric-lock';
 import { errorMessage } from '@/lib/errors';
@@ -28,7 +30,14 @@ export function SettingsScreen(): React.JSX.Element {
   const { name, preference, setPreference: setThemePref, colors } = useTheme();
   const { preferences, setPreference } = usePreferences();
   const { user, mode, signOut } = useAuth();
+  const { data: health = [] } = useHealthMetrics();
   const [exportState, setExportState] = useState<'idle' | 'working' | 'done' | 'error'>('idle');
+
+  // Suggests the user's own real walking average as a step goal — same
+  // 60-day baseline as the Actif pillar — instead of leaving them to guess
+  // at an arbitrary number.
+  const stepsBaseline = useMemo(() => computeStepsBaseline(health, new Date().toISOString()), [health]);
+  const suggestedStepsGoal = stepsBaseline ? Math.round(stepsBaseline.averagePerDay / 500) * 500 : undefined;
 
   const UNIT_OPTIONS: { value: UnitSystem; label: string }[] = [
     { value: 'metric', label: t('settings.screen.preferences.units.options.metric') },
@@ -173,6 +182,13 @@ export function SettingsScreen(): React.JSX.Element {
           keyboardType="number-pad"
           placeholder="10000"
         />
+        {suggestedStepsGoal !== undefined && suggestedStepsGoal !== preferences.dailyStepsGoal ? (
+          <Pressable onPress={() => setPreference('dailyStepsGoal', suggestedStepsGoal)} hitSlop={6} style={{ marginTop: spacing[2] }}>
+            <Text variant="caption" color="primary">
+              {t('settings.screen.preferences.dailyStepsGoal.suggestion', { steps: suggestedStepsGoal.toLocaleString('fr-FR') })}
+            </Text>
+          </Pressable>
+        ) : null}
       </Card>
       <Group>
         <ListRow icon={<Icon name="language" color={colors.textSubtle} />} iconColor="rgba(116,128,146,0.22)" title={t('settings.screen.preferences.languageLabel')} value={currentLanguageLabel} divider />

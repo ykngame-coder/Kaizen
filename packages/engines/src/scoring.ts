@@ -280,6 +280,23 @@ export function computeSportScore(
     progression: progression.value,
   };
 
+  // A user with an established training history (has logged an activity at
+  // least once) who trained zero days in the last 7 gets a hard floor
+  // instead of a diluted or omitted pillar — "no session this week" should
+  // always show up as a real penalty, however long ago their last session
+  // was (TestFlight feedback: the pillar was silently excluded instead).
+  // A brand-new account with no activity ever logged is unaffected — see
+  // the neutral-50 fallback below.
+  if (activities.length > 0 && activeDays(activities, asOf, 7) === 0) {
+    return {
+      value: 0,
+      confidence: 'high',
+      breakdown,
+      sourcesUsed: ['supotsu'],
+      generatedAt: asOf,
+    };
+  }
+
   const parts = [
     { result: performance, weight: SPORT_SCORE_WEIGHTS.performance, label: 'performance' as const },
     { result: regularity, weight: SPORT_SCORE_WEIGHTS.regularity, label: 'régularité' as const },
@@ -323,6 +340,58 @@ export function computeSportScore(
   return { value, confidence, breakdown, explanation, sourcesUsed: ['supotsu'], generatedAt: asOf };
 }
 
+/** Baseline window for the Actif pillar — long enough that a couple of unusual days don't swing it, same convention as the Recovery pillar's HRV/RHR baseline. */
+const ACTIVITY_BASELINE_DAYS = 60;
+
+export interface StepsBaseline {
+  averagePerDay: number;
+  daysWithData: number;
+}
+
+/**
+ * Average daily steps over the trailing `days` window — one reading per day
+ * (max, in case of multiple syncs same day, never summed) — or undefined
+ * with no steps data in the window. Also powers the "use my average" step
+ * goal suggestion in Réglages, not just the score.
+ */
+export function computeStepsBaseline(
+  metrics: HealthMetric[],
+  asOf: ISODateString,
+  days = ACTIVITY_BASELINE_DAYS,
+): StepsBaseline | undefined {
+  const byDay = new Map<string, number>();
+  for (const m of metrics) {
+    if (m.type !== 'steps') continue;
+    const age = daysBetween(m.measuredAt, asOf);
+    if (age < 0 || age >= days) continue;
+    const key = m.measuredAt.slice(0, 10);
+    byDay.set(key, Math.max(byDay.get(key) ?? 0, m.value));
+  }
+  if (byDay.size === 0) return undefined;
+  const total = [...byDay.values()].reduce((s, v) => s + v, 0);
+  return { averagePerDay: total / byDay.size, daysWithData: byDay.size };
+}
+
+/**
+ * Actif (NEAT) pillar: daily steps vs the user's own goal, averaged over a
+ * 60-day baseline so it reflects general walking habits rather than a
+ * recent trend (Master Prompt: distinct signal from structured Sport —
+ * mirrors Apple's own separate Move/Exercise rings).
+ */
+export function computeActivityScore(
+  metrics: HealthMetric[],
+  asOf: ISODateString,
+  dailyStepsGoal: number,
+): EngineResult<number> {
+  const baseline = computeStepsBaseline(metrics, asOf);
+  if (!baseline || dailyStepsGoal <= 0) {
+    return { value: 0, confidence: 'to_confirm', sourcesUsed: ['supotsu'], generatedAt: asOf };
+  }
+  const value = clamp(Math.round((baseline.averagePerDay / dailyStepsGoal) * 100));
+  const confidence: Confidence = baseline.daysWithData >= 14 ? 'high' : baseline.daysWithData >= 4 ? 'medium' : 'to_confirm';
+  return { value, confidence, sourcesUsed: ['supotsu'], generatedAt: asOf };
+}
+
 export interface DailySnapshot {
   overall: number;
   /** Sport pillar (performance + regularity + progression), null without enough activity data. */
@@ -334,6 +403,8 @@ export interface DailySnapshot {
   sleep: number | null;
   /** Null without any nutrition entry logged today. */
   nutrition: number | null;
+  /** Actif (NEAT — daily steps vs goal, 60-day baseline), null without any steps data yet. */
+  active: number | null;
   /** Legacy sub-scores, still used for the recommendation and displayed as standalone metrics. */
   performance: number;
   consistency: number;
@@ -401,14 +472,16 @@ export interface DailySnapshotExtras {
   nutritionTargets?: NutritionTargets;
   sleepSessions?: SleepSession[];
   strengthVolume?: StrengthVolumePoint[];
+  /** The user's own daily step target (Réglages) — defaults to 10 000, the app-wide default. */
+  dailyStepsGoal?: number;
 }
 
 /**
- * Aggregates the four pillars (Sport, Récupération, Sommeil, Nutrition) into
- * the dashboard snapshot. Each pillar is null when its own confidence is
- * `to_confirm` (no usable data yet), and the overall score re-normalizes
- * over whichever pillars actually have data — never inflating a score for a
- * missing one (P1 "aucune boîte noire").
+ * Aggregates the five pillars (Sport, Récupération, Sommeil, Nutrition,
+ * Actif) into the dashboard snapshot. Each pillar is null when its own
+ * confidence is `to_confirm` (no usable data yet), and the overall score
+ * re-normalizes over whichever pillars actually have data — never inflating
+ * a score for a missing one (P1 "aucune boîte noire").
  */
 export function buildDailySnapshot(
   activities: Activity[],
@@ -440,12 +513,17 @@ export function buildDailySnapshot(
   const hasNutrition = nutritionResult.confidence !== 'to_confirm';
   const nutrition = hasNutrition ? nutritionResult.value : null;
 
+  const activityResult = computeActivityScore(healthMetrics, asOf, extras.dailyStepsGoal ?? 10_000);
+  const hasActivity = activityResult.confidence !== 'to_confirm';
+  const active = hasActivity ? activityResult.value : null;
+
   // Weighted overall over the pillars actually available (renormalized).
   const pillars: { value: number; weight: number }[] = [];
   if (sport !== null) pillars.push({ value: sport, weight: OVERALL_SCORE_WEIGHTS.sport });
   if (recovery !== null) pillars.push({ value: recovery, weight: OVERALL_SCORE_WEIGHTS.recovery });
   if (sleep !== null) pillars.push({ value: sleep, weight: OVERALL_SCORE_WEIGHTS.sleep });
   if (nutrition !== null) pillars.push({ value: nutrition, weight: OVERALL_SCORE_WEIGHTS.nutrition });
+  if (active !== null) pillars.push({ value: active, weight: OVERALL_SCORE_WEIGHTS.active });
   const totalWeight = pillars.reduce((s, p) => s + p.weight, 0);
   const overall =
     totalWeight > 0
@@ -463,6 +541,7 @@ export function buildDailySnapshot(
       recovery,
       sleep,
       nutrition,
+      active,
       performance,
       consistency,
       trainingLoad,

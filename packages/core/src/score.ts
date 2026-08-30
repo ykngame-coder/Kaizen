@@ -25,15 +25,20 @@ export interface ScoreFactor {
 }
 
 /**
- * Default weighting for the overall Supotsu Score's four pillars (Master
+ * Default weighting for the overall Supotsu Score's five pillars (Master
  * Prompt P34.4). Weights are adjustable per user profile. Renormalized over
- * whichever pillars actually have data — see buildDailySnapshot.
+ * whichever pillars actually have data — see buildDailySnapshot. "active"
+ * (NEAT — daily steps vs the user's goal) is deliberately the smallest
+ * weight: a real, distinct signal from structured training (Sport), but a
+ * secondary one — same rationale as Apple's own separate Move/Exercise
+ * rings.
  */
 export const OVERALL_SCORE_WEIGHTS = {
-  sport: 0.3,
-  recovery: 0.25,
-  sleep: 0.25,
+  sport: 0.25,
+  recovery: 0.2,
+  sleep: 0.2,
   nutrition: 0.2,
+  active: 0.15,
 } as const;
 
 /**

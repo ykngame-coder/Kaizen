@@ -2,9 +2,11 @@ import { describe, expect, it } from 'vitest';
 import type { Activity, HealthMetric, NutritionEntry, NutritionTargets, SleepSession } from '@supotsu/core';
 import {
   buildDailySnapshot,
+  computeActivityScore,
   computeConsistencyScore,
   computeProgressionScore,
   computeSportScore,
+  computeStepsBaseline,
   computeWorkload,
   type StrengthVolumePoint,
 } from './scoring';
@@ -27,6 +29,21 @@ function activity(
     intensity,
     createdAt: started,
     updatedAt: started,
+  };
+}
+
+function steps(daysAgo: number, value: number): HealthMetric {
+  const measuredAt = new Date(new Date(ASOF).getTime() - daysAgo * 86_400_000).toISOString();
+  return {
+    id: `steps-${daysAgo}-${Math.random()}`,
+    userId: 'u1',
+    type: 'steps',
+    value,
+    unit: 'steps',
+    source: 'apple_health',
+    measuredAt,
+    createdAt: measuredAt,
+    updatedAt: measuredAt,
   };
 }
 
@@ -73,7 +90,16 @@ describe('buildDailySnapshot', () => {
     expect(snap.value.recovery).toBeNull();
     expect(snap.value.sleep).toBeNull();
     expect(snap.value.nutrition).toBeNull();
+    expect(snap.value.active).toBeNull();
     expect(snap.value.overall).toBe(0);
+  });
+
+  it('wires the Actif pillar through when given steps data and a goal', () => {
+    const metrics: HealthMetric[] = [steps(1, 10000), steps(2, 10000), steps(3, 10000), steps(4, 10000)];
+    const snap = buildDailySnapshot([], [], ASOF, metrics, { dailyStepsGoal: 10000 });
+    expect(snap.value.active).toBe(100);
+    // Present alongside recovery's HealthMetric-based null → still renormalizes correctly.
+    expect(snap.value.overall).toBe(snap.value.active);
   });
 
   it('renormalizes overall on recovery alone when it is the only pillar available', () => {
@@ -163,5 +189,72 @@ describe('computeSportScore', () => {
     // Progression excluded (to_confirm) → weighted only over 0.4 + 0.3, renormalized.
     expect(r.value).toBe(43);
     expect(r.confidence).toBe('medium');
+  });
+
+  it('floors the score at 0 with high confidence when an established user trained zero days this week', () => {
+    // Last (only) session was 3 weeks ago — well outside the 7-day window.
+    const r = computeSportScore([activity(21, 3600, 'moderate')], ASOF);
+    expect(r.value).toBe(0);
+    expect(r.confidence).toBe('high');
+  });
+
+  it('does not floor a brand-new account with no activity ever logged', () => {
+    const r = computeSportScore([], ASOF);
+    expect(r.value).toBe(50);
+    expect(r.confidence).toBe('to_confirm');
+  });
+
+  it('does not floor when there was a session within the last 7 days', () => {
+    const r = computeSportScore([activity(2, 3600, 'moderate')], ASOF);
+    expect(r.value).not.toBe(0);
+  });
+});
+
+describe('computeStepsBaseline', () => {
+  it('averages one reading per day over the trailing window', () => {
+    const b = computeStepsBaseline([steps(1, 8000), steps(2, 6000), steps(3, 10000)], ASOF);
+    expect(b?.daysWithData).toBe(3);
+    expect(b?.averagePerDay).toBe(8000);
+  });
+
+  it('keeps the max, not the sum, for multiple readings the same day', () => {
+    const b = computeStepsBaseline([steps(1, 8000), steps(1, 500)], ASOF);
+    expect(b?.daysWithData).toBe(1);
+    expect(b?.averagePerDay).toBe(8000);
+  });
+
+  it('excludes readings outside the window', () => {
+    const b = computeStepsBaseline([steps(1, 8000), steps(90, 12000)], ASOF, 60);
+    expect(b?.daysWithData).toBe(1);
+    expect(b?.averagePerDay).toBe(8000);
+  });
+
+  it('is undefined with no steps data', () => {
+    expect(computeStepsBaseline([], ASOF)).toBeUndefined();
+  });
+});
+
+describe('computeActivityScore', () => {
+  it('scores 100 when the 60-day average meets the goal, capped even when it exceeds it', () => {
+    const metrics = [steps(1, 12000), steps(2, 12000), steps(3, 12000), steps(4, 12000)];
+    const r = computeActivityScore(metrics, ASOF, 10000);
+    expect(r.value).toBe(100);
+  });
+
+  it('scores proportionally below the goal', () => {
+    const metrics = [steps(1, 5000), steps(2, 5000)];
+    const r = computeActivityScore(metrics, ASOF, 10000);
+    expect(r.value).toBe(50);
+  });
+
+  it('is to_confirm with no steps data', () => {
+    const r = computeActivityScore([], ASOF, 10000);
+    expect(r.confidence).toBe('to_confirm');
+  });
+
+  it('reaches high confidence with 14+ days of data in the window', () => {
+    const metrics = Array.from({ length: 14 }, (_, i) => steps(i + 1, 9000));
+    const r = computeActivityScore(metrics, ASOF, 10000);
+    expect(r.confidence).toBe('high');
   });
 });
