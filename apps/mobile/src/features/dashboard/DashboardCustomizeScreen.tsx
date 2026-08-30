@@ -43,6 +43,7 @@ export function DashboardCustomizeScreen(): React.JSX.Element {
 
       <View style={{ flex: 1, marginTop: spacing[4] }}>
         <DraggableFlatList
+          containerStyle={{ flex: 1 }}
           data={cards}
           keyExtractor={(item) => item.id}
           onDragEnd={({ data }) => persist(data)}

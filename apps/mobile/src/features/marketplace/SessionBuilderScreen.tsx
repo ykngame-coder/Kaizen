@@ -71,36 +71,34 @@ export function SessionBuilderScreen(): React.JSX.Element {
       <Text variant="caption" color="textSubtle" style={{ marginBottom: spacing[3] }}>
         {t('sport.sessionBuilder.quotaCaption', { count: sessions.length, quota: SESSIONS_QUOTA })}
       </Text>
-      <View style={{ flex: 1 }}>
-        <SessionBlocksEditor
-          t={t}
-          builder={builder}
-          isCustomExercise={isCustomExercise}
-          onCreateExercise={() => router.push('/sport/exercise/new')}
-          error={error}
-          saving={addSession.isPending}
-          saveLabel={addSession.isPending ? t('sport.sessionBuilder.form.submitPending') : t('sport.sessionBuilder.form.submitLibrary')}
-          onSave={submit}
-          cancelLabel={t('common.cancel')}
-          onCancel={() => router.back()}
-          headerAfterName={
-            <View>
-              <Text variant="label" color="textMuted" style={{ marginBottom: spacing[2] }}>{t('sport.sessionBuilder.visibility.label')}</Text>
-              <SegmentedControl
-                options={[
-                  { value: 'private', label: t('sport.sessionBuilder.visibility.private') },
-                  { value: 'public', label: t('sport.sessionBuilder.visibility.public') },
-                ]}
-                value={visibility}
-                onChange={setVisibility}
-              />
-              <Text variant="caption" color="textSubtle" style={{ marginTop: spacing[1] }}>
-                {visibility === 'private' ? t('sport.sessionBuilder.visibility.privateHint') : t('sport.sessionBuilder.visibility.publicHint')}
-              </Text>
-            </View>
-          }
-        />
-      </View>
+      <SessionBlocksEditor
+        t={t}
+        builder={builder}
+        isCustomExercise={isCustomExercise}
+        onCreateExercise={() => router.push('/sport/exercise/new')}
+        error={error}
+        saving={addSession.isPending}
+        saveLabel={addSession.isPending ? t('sport.sessionBuilder.form.submitPending') : t('sport.sessionBuilder.form.submitLibrary')}
+        onSave={submit}
+        cancelLabel={t('common.cancel')}
+        onCancel={() => router.back()}
+        headerAfterName={
+          <View>
+            <Text variant="label" color="textMuted" style={{ marginBottom: spacing[2] }}>{t('sport.sessionBuilder.visibility.label')}</Text>
+            <SegmentedControl
+              options={[
+                { value: 'private', label: t('sport.sessionBuilder.visibility.private') },
+                { value: 'public', label: t('sport.sessionBuilder.visibility.public') },
+              ]}
+              value={visibility}
+              onChange={setVisibility}
+            />
+            <Text variant="caption" color="textSubtle" style={{ marginTop: spacing[1] }}>
+              {visibility === 'private' ? t('sport.sessionBuilder.visibility.privateHint') : t('sport.sessionBuilder.visibility.publicHint')}
+            </Text>
+          </View>
+        }
+      />
     </Screen>
   );
 }

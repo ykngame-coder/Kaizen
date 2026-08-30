@@ -166,48 +166,46 @@ export function NewWorkoutScreen(): React.JSX.Element {
       <Text variant="caption" color="textMuted" style={{ marginBottom: spacing[3] }}>
         {t('sport.newWorkout.subtitle')}
       </Text>
-      <View style={{ flex: 1 }}>
-        <SessionBlocksEditor
-          t={t}
-          builder={builder}
-          isCustomExercise={isCustomExercise}
-          onCreateExercise={() => router.push('/sport/exercise/new')}
-          lastKnownFor={lastKnownFor}
-          error={error}
-          saving={isPending}
-          saveLabel={isPending ? t('sport.sessionBuilder.form.submitPending') : t('sport.newWorkout.form.submit')}
-          onSave={submit}
-          cancelLabel={t('common.cancel')}
-          onCancel={() => router.back()}
-          headerTop={
-            <Button label={t('sport.newWorkout.import.fromScreenshot')} variant="secondary" onPress={() => router.push('/sport/workout/import')} />
-          }
-          headerAfterName={
-            <View style={{ gap: spacing[3] }}>
-              <View>
-                <Text variant="label" color="textMuted" style={{ marginBottom: spacing[2] }}>{t('sport.sessionBuilder.visibility.label')}</Text>
-                <SegmentedControl
-                  options={[
-                    { value: 'private', label: t('sport.sessionBuilder.visibility.private') },
-                    { value: 'public', label: t('sport.sessionBuilder.visibility.public') },
-                  ]}
-                  value={visibility}
-                  onChange={setVisibility}
-                />
-              </View>
-              <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', borderWidth: 1, borderColor: colors.border, borderRadius: 12, padding: spacing[3] }}>
-                <View style={{ flex: 1, marginRight: spacing[3] }}>
-                  <Text variant="body" style={{ fontWeight: '700' }}>{t('sport.sessionBuilder.addToLibrary.label')}</Text>
-                  <Text variant="caption" color="textMuted" style={{ marginTop: 2 }}>
-                    {atQuota ? t('sport.sessionBuilder.addToLibrary.quotaReached') : t('sport.sessionBuilder.addToLibrary.hint')}
-                  </Text>
-                </View>
-                <Toggle value={addToLibrary && !atQuota} onValueChange={setAddToLibrary} disabled={atQuota} />
-              </View>
+      <SessionBlocksEditor
+        t={t}
+        builder={builder}
+        isCustomExercise={isCustomExercise}
+        onCreateExercise={() => router.push('/sport/exercise/new')}
+        lastKnownFor={lastKnownFor}
+        error={error}
+        saving={isPending}
+        saveLabel={isPending ? t('sport.sessionBuilder.form.submitPending') : t('sport.newWorkout.form.submit')}
+        onSave={submit}
+        cancelLabel={t('common.cancel')}
+        onCancel={() => router.back()}
+        headerTop={
+          <Button label={t('sport.newWorkout.import.fromScreenshot')} variant="secondary" onPress={() => router.push('/sport/workout/import')} />
+        }
+        headerAfterName={
+          <View style={{ gap: spacing[3] }}>
+            <View>
+              <Text variant="label" color="textMuted" style={{ marginBottom: spacing[2] }}>{t('sport.sessionBuilder.visibility.label')}</Text>
+              <SegmentedControl
+                options={[
+                  { value: 'private', label: t('sport.sessionBuilder.visibility.private') },
+                  { value: 'public', label: t('sport.sessionBuilder.visibility.public') },
+                ]}
+                value={visibility}
+                onChange={setVisibility}
+              />
             </View>
-          }
-        />
-      </View>
+            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', borderWidth: 1, borderColor: colors.border, borderRadius: 12, padding: spacing[3] }}>
+              <View style={{ flex: 1, marginRight: spacing[3] }}>
+                <Text variant="body" style={{ fontWeight: '700' }}>{t('sport.sessionBuilder.addToLibrary.label')}</Text>
+                <Text variant="caption" color="textMuted" style={{ marginTop: 2 }}>
+                  {atQuota ? t('sport.sessionBuilder.addToLibrary.quotaReached') : t('sport.sessionBuilder.addToLibrary.hint')}
+                </Text>
+              </View>
+              <Toggle value={addToLibrary && !atQuota} onValueChange={setAddToLibrary} disabled={atQuota} />
+            </View>
+          </View>
+        }
+      />
     </Screen>
   );
 }

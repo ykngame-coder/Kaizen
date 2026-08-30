@@ -398,6 +398,7 @@ export function SessionBlocksEditor({
     <View style={{ flex: 1 }}>
       <DraggableFlatList
         style={{ flex: 1 }}
+        containerStyle={{ flex: 1 }}
         data={selectedOpen ? builder.activeOrder : []}
         keyExtractor={(id) => id}
         renderItem={renderSelectedRow}
