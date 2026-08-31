@@ -1,11 +1,11 @@
 import React, { useMemo } from 'react';
-import { View } from 'react-native';
+import { Pressable, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { Badge, Button, Card, Fab, Icon, ProgressRing, Screen, Sparkline, Text, useTheme } from '@supotsu/ui';
 import { radii, spacing } from '@supotsu/design-system';
 import { dailySums, entriesForDay, estimateTargets, sumDay, type TrendPoint } from '@supotsu/engines';
-import { useAddNutritionEntry, useHealthMetrics, useNutritionEntries } from '@/lib/data/queries';
+import { useAddNutritionEntry, useDeleteNutritionEntry, useHealthMetrics, useNutritionEntries } from '@/lib/data/queries';
 import { formatClockFromIso, usePreferences } from '@/lib/preferences';
 
 const DAY_MS = 86_400_000;
@@ -51,6 +51,7 @@ export function JournalScreen(): React.JSX.Element {
   const { data: entries = [] } = useNutritionEntries();
   const { data: health = [] } = useHealthMetrics();
   const addEntry = useAddNutritionEntry();
+  const deleteEntry = useDeleteNutritionEntry();
   const now = useMemo(() => new Date(), []);
   const asOf = useMemo(() => now.toISOString(), [now]);
 
@@ -180,6 +181,14 @@ export function JournalScreen(): React.JSX.Element {
                   <Text variant="body" style={{ fontWeight: '700' }}>{Math.round(e.kcal)}</Text>
                   <Text variant="caption" color="textSubtle">{formatClockFromIso(e.loggedAt, preferences.timeFormat)}</Text>
                 </View>
+                <Pressable
+                  onPress={() => deleteEntry.mutate(e.id)}
+                  disabled={deleteEntry.isPending && deleteEntry.variables === e.id}
+                  hitSlop={8}
+                  style={{ opacity: deleteEntry.isPending && deleteEntry.variables === e.id ? 0.4 : 1 }}
+                >
+                  <Icon name="trash" size={18} color={colors.textSubtle} />
+                </Pressable>
               </View>
             ))}
           </Card>

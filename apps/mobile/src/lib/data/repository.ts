@@ -82,6 +82,7 @@ import {
   listSleepSessions as listSleepSessionsDb,
   insertNutritionEntry,
   listNutritionEntries as listNutritionEntriesDb,
+  deleteNutritionEntry as deleteNutritionEntryDb,
   insertHabit,
   listHabits as listHabitsDb,
   insertHabitLog,
@@ -283,6 +284,7 @@ export interface DataRepository {
   saveAthleteProfile(userId: string, input: AthleteProfileInput): Promise<void>;
   listNutritionEntries(userId: string): Promise<NutritionEntry[]>;
   addNutritionEntry(userId: string, input: NutritionEntryInput): Promise<NutritionEntry>;
+  deleteNutritionEntry(userId: string, entryId: string): Promise<void>;
   listHabits(userId: string): Promise<Habit[]>;
   addHabit(userId: string, input: HabitInput): Promise<Habit>;
   listHabitLogs(userId: string): Promise<HabitLog[]>;
@@ -1329,6 +1331,10 @@ function createDemoRepository(): DataRepository {
       await writeJson(nutKey(userId), [entry, ...items]);
       return entry;
     },
+    async deleteNutritionEntry(userId, entryId) {
+      const items = await readJson<NutritionEntry>(nutKey(userId));
+      await writeJson(nutKey(userId), items.filter((e) => e.id !== entryId));
+    },
     async listHabits(userId) {
       const items = await readJson<Habit>(habKey(userId));
       return items.filter((h) => !h.archivedAt).sort((a, b) => a.createdAt.localeCompare(b.createdAt));
@@ -1983,6 +1989,9 @@ function createSupabaseRepository(
         logged_at: input.loggedAt,
       });
       return rowToNutrition(row);
+    },
+    async deleteNutritionEntry(_userId, entryId) {
+      await deleteNutritionEntryDb(client, entryId);
     },
     async listHabits(userId) {
       return (await listHabitsDb(client, userId)).map(rowToHabit);

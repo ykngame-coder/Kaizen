@@ -187,13 +187,23 @@ export function CalendarScreen(): React.JSX.Element {
         ) : (
           <Text variant="body" color="textMuted">{t('sport.calendar.timelineEmpty')}</Text>
         )}
-        <View style={{ marginTop: spacing[3] }}>
-          <Button
-            label={t('sport.calendar.planSession')}
-            variant="secondary"
-            onPress={() => router.push({ pathname: '/sport/planning', params: { date: selectedKey } })}
-            fullWidth
-          />
+        <View style={{ flexDirection: 'row', gap: spacing[2], marginTop: spacing[3] }}>
+          <View style={{ flex: 1 }}>
+            <Button
+              label={t('sport.calendar.planSession')}
+              variant="secondary"
+              onPress={() => router.push({ pathname: '/sport/planning', params: { date: selectedKey } })}
+              fullWidth
+            />
+          </View>
+          <View style={{ flex: 1 }}>
+            <Button
+              label={t('sport.calendar.planMeal')}
+              variant="secondary"
+              onPress={() => router.push({ pathname: '/nutrition/meal/new', params: { date: selectedKey } })}
+              fullWidth
+            />
+          </View>
         </View>
       </Card>
 

@@ -1235,7 +1235,8 @@
         "crossTraining": "Cross-training",
         "other": "Activity"
       },
-      "planSession": "Schedule a session"
+      "planSession": "Schedule a session",
+      "planMeal": "Plan a meal"
     },
     "progress": {
       "progression": {
@@ -2082,6 +2083,8 @@
     "addMeal": {
       "title": "New meal",
       "searchButton": "Search Open Food Facts",
+      "dateLabel": "Date",
+      "dateToday": "Today",
       "momentLabel": "MEAL",
       "descriptionLabel": "Description",
       "kcalLabel": "Calories (kcal)",

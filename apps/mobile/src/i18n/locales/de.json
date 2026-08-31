@@ -1235,7 +1235,8 @@
         "crossTraining": "Cross-Training",
         "other": "Aktivität"
       },
-      "planSession": "Einheit planen"
+      "planSession": "Einheit planen",
+      "planMeal": "Mahlzeit planen"
     },
     "progress": {
       "progression": {
@@ -2082,6 +2083,8 @@
     "addMeal": {
       "title": "Neue Mahlzeit",
       "searchButton": "In Open Food Facts suchen",
+      "dateLabel": "Datum",
+      "dateToday": "Heute",
       "momentLabel": "ZEITPUNKT",
       "descriptionLabel": "Beschreibung",
       "kcalLabel": "Kalorien (kcal)",

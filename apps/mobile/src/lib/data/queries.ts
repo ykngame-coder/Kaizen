@@ -167,6 +167,18 @@ export function useAddNutritionEntry() {
   });
 }
 
+export function useDeleteNutritionEntry() {
+  const { user } = useAuth();
+  const repo = useRepository();
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (entryId: string) => repo.deleteNutritionEntry(user!.id, entryId),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['nutrition', user?.id] });
+    },
+  });
+}
+
 export function useHabits() {
   const { user } = useAuth();
   const repo = useRepository();

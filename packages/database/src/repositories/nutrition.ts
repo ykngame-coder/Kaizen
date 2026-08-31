@@ -31,3 +31,9 @@ export async function listNutritionEntries(
   if (error) throw error;
   return data ?? [];
 }
+
+/** Delete a single logged intake (e.g. a mislogged or duplicate meal). */
+export async function deleteNutritionEntry(client: SupotsuClient, entryId: string): Promise<void> {
+  const { error } = await client.from('nutrition_entries').delete().eq('id', entryId);
+  if (error) throw error;
+}

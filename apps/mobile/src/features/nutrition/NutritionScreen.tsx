@@ -24,6 +24,10 @@ import { ComprendreCard } from '@/features/knowledge/ComprendreCard';
 import { isTodayLocal } from '@/features/community/leaderboardHelpers';
 
 const DAY_MS = 86_400_000;
+const dayKey = (iso: string): string => {
+  const d = new Date(iso);
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+};
 
 function latestMetric(m: { type: HealthMetricType; value: number; measuredAt: string }[], type: HealthMetricType): number | undefined {
   return m.filter((x) => x.type === type).sort((a, b) => a.measuredAt.localeCompare(b.measuredAt)).at(-1)?.value;
@@ -226,9 +230,14 @@ export function NutritionScreen(): React.JSX.Element {
             <Text variant="title">{t('common.tab.nutrition')}</Text>
             <Text variant="caption" color="textSubtle">{t('nutrition.screen.subtitle')}</Text>
           </View>
-          <Pressable onPress={() => router.push('/search')} style={({ pressed }) => ({ opacity: pressed ? 0.6 : 1, position: 'absolute', right: 0, top: 0 })}>
-            <View style={{ width: 38, height: 38, borderRadius: 19, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border, alignItems: 'center', justifyContent: 'center' }}><Icon name="search" size={16} color={colors.text} /></View>
-          </Pressable>
+          <View style={{ position: 'absolute', right: 0, top: 0, flexDirection: 'row', gap: spacing[2] }}>
+            <Pressable onPress={() => router.push('/sport/calendar')} style={({ pressed }) => ({ opacity: pressed ? 0.6 : 1 })}>
+              <View style={{ width: 38, height: 38, borderRadius: 19, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border, alignItems: 'center', justifyContent: 'center' }}><Icon name="calendar" size={16} color={colors.text} /></View>
+            </Pressable>
+            <Pressable onPress={() => router.push('/search')} style={({ pressed }) => ({ opacity: pressed ? 0.6 : 1 })}>
+              <View style={{ width: 38, height: 38, borderRadius: 19, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border, alignItems: 'center', justifyContent: 'center' }}><Icon name="search" size={16} color={colors.text} /></View>
+            </Pressable>
+          </View>
         </View>
         <DayNav value={selectedDate} onChange={setSelectedDate} />
 
@@ -311,7 +320,7 @@ export function NutritionScreen(): React.JSX.Element {
               <Button label={t('nutrition.screen.meals.searchFood')} onPress={() => router.push('/nutrition/food/search')} fullWidth />
             </View>
             <View style={{ flex: 1 }}>
-              <Button label={t('nutrition.screen.meals.manualEntry')} variant="secondary" onPress={() => router.push('/nutrition/meal/new')} fullWidth />
+              <Button label={t('nutrition.screen.meals.manualEntry')} variant="secondary" onPress={() => router.push({ pathname: '/nutrition/meal/new', params: { date: dayKey(selectedDate) } })} fullWidth />
             </View>
           </View>
         </Card>
@@ -409,7 +418,7 @@ export function NutritionScreen(): React.JSX.Element {
 
         <ComprendreCard pillars={['nutrition']} />
       </Screen>
-      <Fab icon="+" accessibilityLabel={t('nutrition.screen.fab.addFood')} onPress={() => router.push('/nutrition/meal/new')} />
+      <Fab icon="+" accessibilityLabel={t('nutrition.screen.fab.addFood')} onPress={() => router.push({ pathname: '/nutrition/meal/new', params: { date: dayKey(selectedDate) } })} />
     </View>
   );
 }
