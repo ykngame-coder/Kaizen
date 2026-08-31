@@ -2109,6 +2109,20 @@
         "kcal": "{{kcal}} kcal"
       }
     },
+    "mealDetail": {
+      "notFound": {
+        "title": "Mahlzeit nicht gefunden",
+        "message": "Diese Mahlzeit existiert nicht mehr."
+      },
+      "kcal": "Kalorien",
+      "protein": "Eiweiß",
+      "carbs": "Kohlenhydrate",
+      "fat": "Fett",
+      "hydration": "Wasser",
+      "source": "Quelle",
+      "confirmDelete": "Diese Mahlzeit endgültig löschen?",
+      "delete": "Löschen"
+    },
     "barcodeScan": {
       "webTitle": "Barcode scannen",
       "webBody": "Der Kamera-Scan ist auf Mobilgeräten verfügbar (Expo Go). Gib die Nummer im Web in der Lebensmittelsuche ein.",

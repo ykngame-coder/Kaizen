@@ -98,11 +98,11 @@ export function CalendarScreen(): React.JSX.Element {
 
   // Timeline for the currently selected day (defaults to today).
   const timeline = useMemo(() => {
-    const items: { time: string; icon: string; label: string; sort: number }[] = [];
+    const items: { time: string; icon: string; label: string; sort: number; onPress?: () => void }[] = [];
     for (const a of activities) if (dayKey(new Date(a.startedAt)) === selectedKey) items.push({ time: formatClockFromIso(a.startedAt, preferences.timeFormat), icon: ACT_ICON[a.type], label: t('sport.calendar.timelineActivity', { label: ACT_LABEL[a.type], minutes: Math.round(a.durationSec / 60) }), sort: new Date(a.startedAt).getTime() });
-    for (const e of nutrition) if (dayKey(new Date(e.loggedAt)) === selectedKey) items.push({ time: formatClockFromIso(e.loggedAt, preferences.timeFormat), icon: MEAL_ICON[e.mealType] ?? '🍽', label: t('sport.calendar.timelineMeal', { description: e.description, kcal: Math.round(e.kcal) }), sort: new Date(e.loggedAt).getTime() });
+    for (const e of nutrition) if (dayKey(new Date(e.loggedAt)) === selectedKey) items.push({ time: formatClockFromIso(e.loggedAt, preferences.timeFormat), icon: MEAL_ICON[e.mealType] ?? '🍽', label: t('sport.calendar.timelineMeal', { description: e.description, kcal: Math.round(e.kcal) }), sort: new Date(e.loggedAt).getTime(), onPress: () => router.push({ pathname: '/nutrition/meal/[id]', params: { id: e.id } }) });
     return items.sort((a, b) => a.sort - b.sort);
-  }, [activities, nutrition, selectedKey, preferences.timeFormat, t]);
+  }, [activities, nutrition, selectedKey, preferences.timeFormat, t, router]);
 
   const deadlines = useMemo(() => {
     const items: { icon: string; label: string; date: string }[] = [];
@@ -177,13 +177,22 @@ export function CalendarScreen(): React.JSX.Element {
       <Card>
         <SectionTitle>{selectedKey === dayKey(now) ? t('sport.calendar.today') : formatDate(`${selectedKey}T12:00:00`)}</SectionTitle>
         {timeline.length > 0 ? (
-          timeline.map((it, i) => (
-            <View key={i} style={{ flexDirection: 'row', gap: spacing[3], alignItems: 'center', paddingVertical: spacing[2] }}>
-              <Text variant="caption" color="textSubtle" style={{ width: 44 }}>{it.time}</Text>
-              <View style={{ width: 34, height: 34, borderRadius: 10, backgroundColor: colors.surfaceElevated, alignItems: 'center', justifyContent: 'center' }}><Text style={{ fontSize: 16 }}>{it.icon}</Text></View>
-              <Text variant="body" style={{ flex: 1 }}>{it.label}</Text>
-            </View>
-          ))
+          timeline.map((it, i) => {
+            const row = (
+              <View style={{ flexDirection: 'row', gap: spacing[3], alignItems: 'center', paddingVertical: spacing[2] }}>
+                <Text variant="caption" color="textSubtle" style={{ width: 44 }}>{it.time}</Text>
+                <View style={{ width: 34, height: 34, borderRadius: 10, backgroundColor: colors.surfaceElevated, alignItems: 'center', justifyContent: 'center' }}><Text style={{ fontSize: 16 }}>{it.icon}</Text></View>
+                <Text variant="body" style={{ flex: 1 }}>{it.label}</Text>
+              </View>
+            );
+            return it.onPress ? (
+              <Pressable key={i} onPress={it.onPress} style={({ pressed }) => ({ opacity: pressed ? 0.6 : 1 })}>
+                {row}
+              </Pressable>
+            ) : (
+              <View key={i}>{row}</View>
+            );
+          })
         ) : (
           <Text variant="body" color="textMuted">{t('sport.calendar.timelineEmpty')}</Text>
         )}

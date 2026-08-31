@@ -171,7 +171,11 @@ export function JournalScreen(): React.JSX.Element {
           <Card>
             <SectionTitle>{t('nutrition.journal.recentMeals.title')}</SectionTitle>
             {[...today].sort((a, b) => b.loggedAt.localeCompare(a.loggedAt)).slice(0, 6).map((e) => (
-              <View key={e.id} style={{ flexDirection: 'row', alignItems: 'center', gap: spacing[3], paddingVertical: spacing[3], borderBottomWidth: 1, borderBottomColor: colors.border }}>
+              <Pressable
+                key={e.id}
+                onPress={() => router.push({ pathname: '/nutrition/meal/[id]', params: { id: e.id } })}
+                style={({ pressed }) => ({ flexDirection: 'row', alignItems: 'center', gap: spacing[3], paddingVertical: spacing[3], borderBottomWidth: 1, borderBottomColor: colors.border, opacity: pressed ? 0.6 : 1 })}
+              >
                 <View style={{ width: 44, height: 44, borderRadius: 12, backgroundColor: colors.surfaceElevated, alignItems: 'center', justifyContent: 'center' }}><Text style={{ fontSize: 19 }}>{MEAL_ICON[e.mealType] ?? '🍽'}</Text></View>
                 <View style={{ flex: 1 }}>
                   <Text variant="body" style={{ fontWeight: '600' }}>{e.description || t(`nutrition.journal.meal.${e.mealType}`)}</Text>
@@ -189,7 +193,7 @@ export function JournalScreen(): React.JSX.Element {
                 >
                   <Icon name="trash" size={18} color={colors.textSubtle} />
                 </Pressable>
-              </View>
+              </Pressable>
             ))}
           </Card>
         ) : (

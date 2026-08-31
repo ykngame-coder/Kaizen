@@ -2109,6 +2109,20 @@
         "kcal": "{{kcal}} kcal"
       }
     },
+    "mealDetail": {
+      "notFound": {
+        "title": "Refeição não encontrada",
+        "message": "Essa refeição não existe mais."
+      },
+      "kcal": "Calorias",
+      "protein": "Proteínas",
+      "carbs": "Carboidratos",
+      "fat": "Gorduras",
+      "hydration": "Água",
+      "source": "Fonte",
+      "confirmDelete": "Excluir definitivamente esta refeição?",
+      "delete": "Excluir"
+    },
     "barcodeScan": {
       "webTitle": "Escanear um código de barras",
       "webBody": "O escaneamento pela câmera está disponível no celular (Expo Go). Na web, digite o número na busca de alimentos.",

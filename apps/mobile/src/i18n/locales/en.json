@@ -2109,6 +2109,20 @@
         "kcal": "{{kcal}} kcal"
       }
     },
+    "mealDetail": {
+      "notFound": {
+        "title": "Meal not found",
+        "message": "This meal no longer exists."
+      },
+      "kcal": "Calories",
+      "protein": "Protein",
+      "carbs": "Carbs",
+      "fat": "Fat",
+      "hydration": "Water",
+      "source": "Source",
+      "confirmDelete": "Permanently delete this meal?",
+      "delete": "Delete"
+    },
     "barcodeScan": {
       "webTitle": "Scan a barcode",
       "webBody": "Camera scanning is available on mobile (Expo Go). On web, enter the number in the food search.",

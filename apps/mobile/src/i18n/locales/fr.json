@@ -2109,6 +2109,20 @@
         "kcal": "{{kcal}} kcal"
       }
     },
+    "mealDetail": {
+      "notFound": {
+        "title": "Repas introuvable",
+        "message": "Ce repas n'existe plus."
+      },
+      "kcal": "Calories",
+      "protein": "Protéines",
+      "carbs": "Glucides",
+      "fat": "Lipides",
+      "hydration": "Eau",
+      "source": "Source",
+      "confirmDelete": "Supprimer définitivement ce repas ?",
+      "delete": "Supprimer"
+    },
     "barcodeScan": {
       "webTitle": "Scanner un code-barres",
       "webBody": "Le scan caméra est disponible sur mobile (Expo Go). Sur le web, saisis le numéro dans la recherche d'aliments.",
