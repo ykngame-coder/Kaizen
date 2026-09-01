@@ -48,3 +48,15 @@ export function formatClock(totalSec: number): string {
   const s = totalSec % 60;
   return `${m}:${String(s).padStart(2, '0')}`;
 }
+
+/** The *other* exercise ids sharing `sets[index]`'s superset group, in order, deduplicated. Empty if that set isn't grouped. */
+export function supersetPartners<T extends { exerciseId: string; supersetGroup?: number }>(sets: T[], index: number): string[] {
+  const group = sets[index]?.supersetGroup;
+  if (group == null) return [];
+  const selfId = sets[index]!.exerciseId;
+  const ids = new Set<string>();
+  for (const s of sets) {
+    if (s.supersetGroup === group && s.exerciseId !== selfId) ids.add(s.exerciseId);
+  }
+  return [...ids];
+}

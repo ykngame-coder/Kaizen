@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { computeAmrapState, computeEmomState, computeForTimeState, formatClock } from './blockRunnerEngine';
+import { computeAmrapState, computeEmomState, computeForTimeState, formatClock, supersetPartners } from './blockRunnerEngine';
 
 describe('computeAmrapState', () => {
   it('counts down from the time cap', () => {
@@ -49,5 +49,27 @@ describe('formatClock', () => {
     expect(formatClock(0)).toBe('0:00');
     expect(formatClock(38)).toBe('0:38');
     expect(formatClock(452)).toBe('7:32');
+  });
+});
+
+describe('supersetPartners', () => {
+  it('returns the other exercise ids sharing the same group', () => {
+    const sets = [
+      { exerciseId: 'a', supersetGroup: 1 },
+      { exerciseId: 'b', supersetGroup: 1 },
+      { exerciseId: 'c', supersetGroup: undefined },
+    ];
+    expect(supersetPartners(sets, 0)).toEqual(['b']);
+    expect(supersetPartners(sets, 1)).toEqual(['a']);
+    expect(supersetPartners(sets, 2)).toEqual([]);
+  });
+
+  it('deduplicates and excludes the set at index itself even if the id repeats', () => {
+    const sets = [
+      { exerciseId: 'a', supersetGroup: 1 },
+      { exerciseId: 'a', supersetGroup: 1 },
+      { exerciseId: 'b', supersetGroup: 1 },
+    ];
+    expect(supersetPartners(sets, 0)).toEqual(['b']);
   });
 });
