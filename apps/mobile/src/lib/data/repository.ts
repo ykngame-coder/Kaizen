@@ -756,6 +756,7 @@ interface LoggedSetRow {
   reps: number | null;
   weightKg: number | null;
   restSec?: number | null;
+  supersetGroup?: number | null;
 }
 
 /** For each exercise, the sets of the most recent workout that contains it. */
@@ -1042,6 +1043,7 @@ function createDemoRepository(): DataRepository {
           reps: r.reps ?? undefined,
           weightKg: r.weightKg ?? undefined,
           restSec: r.restSec ?? undefined,
+          supersetGroup: r.supersetGroup ?? undefined,
         }));
     },
     async addCircuitWorkout(userId, workout) {
@@ -1081,6 +1083,7 @@ function createDemoRepository(): DataRepository {
             reps: s.reps ?? null,
             weightKg: s.weightKg ?? null,
             restSec: s.restSec ?? null,
+            supersetGroup: s.supersetGroup ?? null,
             date: now,
           });
         });
@@ -1107,6 +1110,7 @@ function createDemoRepository(): DataRepository {
           reps: r.reps ?? undefined,
           weightKg: r.weightKg ?? undefined,
           restSec: r.restSec ?? undefined,
+          supersetGroup: r.supersetGroup ?? undefined,
         }));
     },
     async completeBlock(userId, blockId, result) {
@@ -1151,7 +1155,7 @@ function createDemoRepository(): DataRepository {
         const block: WorkoutBlock = { id: randomId(), workoutId, order: i, format: b.format, timeCapSec: b.timeCapSec, targetRounds: b.targetRounds };
         newBlocks.push(block);
         b.sets.forEach((s) => {
-          newSets.push({ workoutId, blockId: block.id, exerciseId: s.exerciseId, order: s.order, reps: s.reps ?? null, weightKg: s.weightKg ?? null, restSec: s.restSec ?? null, date: now });
+          newSets.push({ workoutId, blockId: block.id, exerciseId: s.exerciseId, order: s.order, reps: s.reps ?? null, weightKg: s.weightKg ?? null, restSec: s.restSec ?? null, supersetGroup: s.supersetGroup ?? null, date: now });
         });
       });
       await writeJson(blockKey(userId), [...newBlocks, ...keptBlocks]);
@@ -2434,6 +2438,7 @@ function createSupabaseRepository(
         durationSec: r.duration_sec ?? undefined,
         restSec: r.rest_sec ?? undefined,
         rpe: r.rpe ?? undefined,
+        supersetGroup: r.superset_group ?? undefined,
       }));
     },
     async addCircuitWorkout(userId, workout) {
@@ -2451,6 +2456,7 @@ function createSupabaseRepository(
             weight_kg: s.weightKg ?? null,
             duration_sec: s.durationSec ?? null,
             rest_sec: s.restSec ?? null,
+            superset_group: s.supersetGroup ?? null,
           })),
         })),
       );
@@ -2472,6 +2478,7 @@ function createSupabaseRepository(
         durationSec: r.duration_sec ?? undefined,
         restSec: r.rest_sec ?? undefined,
         rpe: r.rpe ?? undefined,
+        supersetGroup: r.superset_group ?? undefined,
       }));
     },
     async completeBlock(_userId, blockId, result) {
@@ -2501,6 +2508,7 @@ function createSupabaseRepository(
             weight_kg: s.weightKg ?? null,
             duration_sec: s.durationSec ?? null,
             rest_sec: s.restSec ?? null,
+            superset_group: s.supersetGroup ?? null,
           })),
         })),
       );
