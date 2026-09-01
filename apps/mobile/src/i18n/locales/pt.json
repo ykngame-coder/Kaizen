@@ -555,7 +555,10 @@
         "noSets": "Adicione pelo menos uma série antes de salvar.",
         "saveFailed": "Não foi possível salvar."
       },
-      "defaultSessionName": "Treino importado"
+      "defaultSessionName": "Treino importado",
+      "superset": {
+        "badge": "Superserie"
+      }
     },
     "circuitRunner": {
       "format": {

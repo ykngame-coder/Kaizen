@@ -555,7 +555,10 @@
         "noSets": "Füge mindestens einen Satz hinzu, bevor du speicherst.",
         "saveFailed": "Speichern nicht möglich."
       },
-      "defaultSessionName": "Importiertes Training"
+      "defaultSessionName": "Importiertes Training",
+      "superset": {
+        "badge": "Superset"
+      }
     },
     "circuitRunner": {
       "format": {

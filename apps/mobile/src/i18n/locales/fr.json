@@ -555,7 +555,10 @@
         "noSets": "Ajoute au moins une série avant d’enregistrer.",
         "saveFailed": "Enregistrement impossible."
       },
-      "defaultSessionName": "Séance importée"
+      "defaultSessionName": "Séance importée",
+      "superset": {
+        "badge": "Superset"
+      }
     },
     "circuitRunner": {
       "format": {

@@ -555,7 +555,10 @@
         "noSets": "Añade al menos una serie antes de guardar.",
         "saveFailed": "No se ha podido guardar."
       },
-      "defaultSessionName": "Sesión importada"
+      "defaultSessionName": "Sesión importada",
+      "superset": {
+        "badge": "Superserie"
+      }
     },
     "circuitRunner": {
       "format": {

@@ -9,7 +9,7 @@ import { parseWorkoutText, resolveExerciseByName, type ParsedExercise } from '@s
 import { EXERCISE_LIBRARY } from '@supotsu/shared';
 import { EXERCISES } from '@/features/exercises/catalog';
 import { ocrAvailable, ocrImageToText, pickScreenshot } from '@/features/connectors/ocrClient';
-import { useAddWorkout, useCustomExercises } from '@/lib/data/queries';
+import { useAddCircuitWorkout, useAddWorkout, useCustomExercises } from '@/lib/data/queries';
 
 const CONFIDENCE_TONE: Record<ParsedExercise['confidence'], BadgeTone> = {
   high: 'success',
@@ -30,6 +30,7 @@ interface ExerciseDraft {
   matchName?: string;
   pickerOpen: boolean;
   pickerQuery: string;
+  supersetGroup?: number;
 }
 
 function toSetDraft(sets: ParsedExercise['sets']): SetDraft[] {
@@ -47,6 +48,7 @@ function toDraft(ex: ParsedExercise): ExerciseDraft {
     matchName: match.matchName,
     pickerOpen: false,
     pickerQuery: '',
+    supersetGroup: ex.supersetGroup,
   };
 }
 
@@ -68,6 +70,7 @@ export function OcrImportScreen(): React.JSX.Element {
   const router = useRouter();
   const { colors } = useTheme();
   const addWorkout = useAddWorkout();
+  const addCircuitWorkout = useAddCircuitWorkout();
   const { data: customExercises = [] } = useCustomExercises();
 
   const CONFIDENCE_LABEL: Record<ParsedExercise['confidence'], string> = {
@@ -157,14 +160,20 @@ export function OcrImportScreen(): React.JSX.Element {
           order: order++,
           reps: s.reps.trim() ? Number(s.reps) : undefined,
           weightKg: s.weight.trim() ? Number(s.weight) : undefined,
+          supersetGroup: d.supersetGroup,
         })),
     );
     if (sets.length === 0) {
       setSaveError(t('sport.ocrImport.errors.noSets'));
       return;
     }
+    const sessionName = name.trim() || t('sport.ocrImport.defaultSessionName');
     try {
-      await addWorkout.mutateAsync({ name: name.trim() || t('sport.ocrImport.defaultSessionName'), sets });
+      if (drafts.some((d) => d.supersetGroup != null)) {
+        await addCircuitWorkout.mutateAsync({ name: sessionName, blocks: [{ format: 'strength', sets }] });
+      } else {
+        await addWorkout.mutateAsync({ name: sessionName, sets });
+      }
       router.back();
     } catch {
       setSaveError(t('sport.ocrImport.errors.saveFailed'));
@@ -223,7 +232,10 @@ export function OcrImportScreen(): React.JSX.Element {
                   <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                     <View style={{ flex: 1, gap: spacing[1] }}>
                       <Input value={d.rawName} onChangeText={(v) => updateDraft(exIndex, { rawName: v })} />
-                      <Badge label={CONFIDENCE_LABEL[d.confidence]} tone={CONFIDENCE_TONE[d.confidence]} />
+                      <View style={{ flexDirection: 'row', gap: spacing[2] }}>
+                        <Badge label={CONFIDENCE_LABEL[d.confidence]} tone={CONFIDENCE_TONE[d.confidence]} />
+                        {d.supersetGroup != null ? <Badge label={t('sport.ocrImport.superset.badge')} tone="info" /> : null}
+                      </View>
                     </View>
                     <Pressable onPress={() => removeExercise(exIndex)} hitSlop={8} style={{ marginLeft: spacing[2] }}>
                       <Text variant="heading" style={{ color: colors.error }}>×</Text>
@@ -302,7 +314,7 @@ export function OcrImportScreen(): React.JSX.Element {
           <View style={{ flexDirection: 'row', gap: spacing[2], marginTop: spacing[2] }}>
             <Button label={t('common.cancel')} variant="secondary" onPress={() => router.back()} />
             <View style={{ flex: 1 }} />
-            <Button label={addWorkout.isPending ? t('sport.ocrImport.saving') : t('sport.ocrImport.save')} onPress={submit} disabled={addWorkout.isPending} />
+            <Button label={addWorkout.isPending || addCircuitWorkout.isPending ? t('sport.ocrImport.saving') : t('sport.ocrImport.save')} onPress={submit} disabled={addWorkout.isPending || addCircuitWorkout.isPending} />
           </View>
         </>
       )}

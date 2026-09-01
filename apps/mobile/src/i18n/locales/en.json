@@ -555,7 +555,10 @@
         "noSets": "Add at least one set before saving.",
         "saveFailed": "Couldn't save."
       },
-      "defaultSessionName": "Imported workout"
+      "defaultSessionName": "Imported workout",
+      "superset": {
+        "badge": "Superset"
+      }
     },
     "circuitRunner": {
       "format": {
