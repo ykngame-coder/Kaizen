@@ -75,14 +75,20 @@ export async function updateActivityMuscles(
 
 ## 5. Engine integration
 
-New pure function, colocated with `buildMuscleSessions` in `apps/mobile/src/lib/data/repository.ts` (same file, same reasoning: it needs the exercise-catalogue-free "is there a matched structured workout" check that already lives in `ActivityDetailScreen`, restated here so the exclusion rule can't drift between the two places that need it):
+**Correction from the first pass of this design:** `repository.ts` imports React Native/Expo modules transitively (`@/lib/secure-storage` → `expo-secure-store`, `@/lib/supabase` → `react-native-url-polyfill/auto`) and uses the `@/` tsconfig path alias, neither of which the repo's root-level `vitest run` resolves (verified empirically: importing `repository.ts` from a test file fails to resolve `@/...` before RN modules are even reached). A function meant to be unit-tested cannot live in that file. It goes in a new, dependency-light sibling module instead:
+
+`apps/mobile/src/lib/data/muscleSessions.ts` — new file, relative imports only (no `@/` alias), so it stays importable from a plain `vitest run` the same way `apps/mobile/src/features/community/leaderboardHelpers.ts` already is:
 
 ```ts
+import type { Activity, Workout } from '@supotsu/core';
+import type { MuscleSession } from '@supotsu/engines';
+import { localDateKey } from '../../features/community/leaderboardHelpers';
+
 /** Same "does this activity already have a matched structured workout" check ActivityDetailScreen uses to decide whether to show its own exercise breakdown — reused here so a tagged activity is never double-counted against the workout that already feeds buildMuscleSessions. */
 function hasMatchedWorkout(activity: Activity, workouts: Workout[]): boolean {
   if (activity.type !== 'strength') return false;
-  const key = dayKey(activity.startedAt);
-  return workouts.some((w) => w.status === 'completed' && w.completedAt && dayKey(w.completedAt) === key);
+  const key = localDateKey(new Date(activity.startedAt));
+  return workouts.some((w) => w.status === 'completed' && w.completedAt && localDateKey(new Date(w.completedAt)) === key);
 }
 
 /** One MuscleSession per tagged activity that isn't already covered by a matched structured workout. Mobility/yoga activities ease fatigue instead of adding it, same treatment structured mobility exercises already get. */
@@ -102,16 +108,16 @@ export function buildActivityMuscleSessions(activities: Activity[], workouts: Wo
 }
 ```
 
-`dayKey` here is a small local helper (`` `${d.getFullYear()}-${...}` ``) — `repository.ts` doesn't currently have one at module scope; add it once and reuse it in both `hasMatchedWorkout` and here.
+`localDateKey` is already imported into `repository.ts` (from `@/features/community/leaderboardHelpers`, used elsewhere in that file) — `muscleSessions.ts` reaches the same function via a relative import instead, since it can't use the `@/` alias.
 
-Both `listMuscleSessions` implementations (demo at repository.ts:~1226, Supabase at repository.ts:~1929) already read the sets needed for `buildMuscleSessions`; they now additionally call `listActivities`/`listWorkouts` (both already implemented, already used elsewhere in the same file) and concatenate `buildMuscleSessions(...)` with `buildActivityMuscleSessions(activities, workouts)` before returning.
+`repository.ts` imports `buildActivityMuscleSessions` from `./muscleSessions` (plain relative import — this direction is safe; `repository.ts` already depends on RN/Expo, so importing one more dependency-light sibling changes nothing about its own testability, which was never in question). Both `listMuscleSessions` implementations (demo at repository.ts:~1226, Supabase at repository.ts:~1929) already read the sets needed for `buildMuscleSessions`; they now additionally read activities and workouts (via the same storage keys/`listWorkoutsDb`+`rowToWorkout` already used elsewhere in the file) and concatenate `buildMuscleSessions(...)` with `buildActivityMuscleSessions(activities, workouts)` before returning.
 
 ## 6. UI
 
 `ActivityDetailScreen.tsx` — new card, inserted after the existing Stat grid / Notes card and before the `matchedWorkout` block, shown only when `!matchedWorkout` (the identical gate that already decides whether the exercise-breakdown card renders — an activity either shows its structured breakdown or offers a muscle tag, never neither, never both):
 
 - Heading + one-line hint (new i18n keys — see below).
-- The existing 11-entry muscle chip row, reused from `AddCustomExerciseScreen.tsx`'s pattern: `MUSCLE_LABEL`/`MUSCLES` from `apps/mobile/src/features/exercises/catalog.ts`, rendered as `FilterChip` (`@supotsu/ui`), each toggling membership in local `selected: MuscleGroup[]` state seeded from `activity.muscles ?? []`.
+- The existing 11-entry muscle chip row, reused from `AddCustomExerciseScreen.tsx`'s pattern: `MUSCLE_LABEL` (exported from `apps/mobile/src/features/exercises/catalog.ts`) plus a local `MUSCLES: MuscleGroup[]` const (that file only exports the label map — `AddCustomExerciseScreen.tsx` itself declares its own local `MUSCLES` array too, so redeclaring the same 11-entry literal in `ActivityDetailScreen.tsx` matches existing precedent rather than introducing a new export for a two-call-site constant). Rendered as `FilterChip` (`@supotsu/ui`), each toggling membership in local `selected: MuscleGroup[]` state seeded from `activity.muscles ?? []`.
 - A "Enregistrer" button, disabled while `updateActivityMuscles.isPending`, calling `useUpdateActivityMuscles().mutateAsync({ activityId: activity.id, muscles: selected })`.
 - No confirmation dialog, no separate route — this is a same-screen inline edit, consistent with the screen's existing single-page layout.
 
@@ -126,7 +132,7 @@ New i18n keys (5 locales, additive): a small namespace, e.g. `sport.activityDeta
 
 ## 8. Testing
 
-- `buildActivityMuscleSessions` gets a dedicated unit test alongside wherever `buildMuscleSessions`-equivalent logic is tested today. `apps/mobile/src/lib/data/repository.ts` currently has no direct unit tests for its buildX helpers (confirmed: this session's engine work is tested in `packages/engines`, connector work in `packages/connectors`; the demo/Supabase repository glue itself has no existing test suite to extend) — this function is deliberately kept pure and file-local specifically so it *can* be tested; add `apps/mobile/src/lib/data/repository.test.ts` (new file) covering: tagged activity with no matched workout → one session; tagged activity with a matched same-day completed strength workout → excluded; untagged activity → excluded; `mobility`/`yoga` type → `recovery: true`.
+- `buildActivityMuscleSessions` gets a dedicated unit test in `apps/mobile/src/lib/data/muscleSessions.test.ts` (new file, sibling of `muscleSessions.ts`, relative import — the same layout `leaderboardHelpers.ts`/`leaderboardHelpers.test.ts` already use, verified to run cleanly under the repo's root `vitest run`) covering: tagged activity with no matched workout → one session; tagged activity with a matched same-day completed strength workout → excluded; untagged activity → excluded; empty `muscles: []` → excluded; `mobility`/`yoga` type → `recovery: true`.
 - No new coverage needed for `computeMuscleStates` itself — it already treats every `MuscleSession` uniformly regardless of source, and is already tested in `packages/engines/src/muscles.test.ts`.
 
 ## 9. Known limitation (carried forward)
