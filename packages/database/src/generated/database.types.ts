@@ -179,6 +179,7 @@ export interface Database {
           rest_sec: number | null;
           rpe: number | null;
           block_id: string | null;
+          superset_group: number | null;
         };
         Insert: {
           workout_id: string;
@@ -190,6 +191,7 @@ export interface Database {
           rest_sec?: number | null;
           rpe?: number | null;
           block_id?: string | null;
+          superset_group?: number | null;
         };
         Update: Partial<Database['public']['Tables']['workout_sets']['Insert']>;
         Relationships: [];

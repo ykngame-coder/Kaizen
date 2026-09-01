@@ -86,4 +86,6 @@ export interface SetEntry {
   restSec?: number;
   /** Set-level RPE. */
   rpe?: number;
+  /** Sets sharing this number, within the same block and adjacent in order, form one superset — alternated live, no rest between members. */
+  supersetGroup?: number;
 }
