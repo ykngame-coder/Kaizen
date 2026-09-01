@@ -6,7 +6,7 @@ import { Badge, Button, Card, EmptyState, Icon, Screen, Text, triggerHaptic, use
 import { radii, spacing } from '@supotsu/design-system';
 import { EXERCISE_LIBRARY } from '@supotsu/shared';
 import { useSetWorkoutStatus, useWorkoutBlocks, useBlockSets, useCompleteBlock, useCustomExercises } from '@/lib/data/queries';
-import { computeAmrapState, computeEmomState, computeForTimeState, formatClock } from './blockRunnerEngine';
+import { computeAmrapState, computeEmomState, computeForTimeState, formatClock, supersetPartners } from './blockRunnerEngine';
 
 const FORMAT_COLOR_KEY: Record<string, 'accentStrength' | 'accentEndurance' | 'accentLime'> = {
   amrap: 'accentStrength',
@@ -42,6 +42,8 @@ export function CircuitRunnerScreen(): React.JSX.Element {
   const [activeIndex, setActiveIndex] = useState(0);
   const [elapsedSec, setElapsedSec] = useState(0);
   const [roundsCompleted, setRoundsCompleted] = useState(0);
+  const [stepIndex, setStepIndex] = useState(0);
+  const [restCountdown, setRestCountdown] = useState<number | null>(null);
   const tick = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const active = blocks[activeIndex];
@@ -50,6 +52,8 @@ export function CircuitRunnerScreen(): React.JSX.Element {
   useEffect(() => {
     setElapsedSec(0);
     setRoundsCompleted(0);
+    setStepIndex(0);
+    setRestCountdown(null);
   }, [activeIndex]);
 
   useEffect(() => {
@@ -73,7 +77,37 @@ export function CircuitRunnerScreen(): React.JSX.Element {
   // (strength has none), just a manual round counter like Pour le temps.
   const repeatRounds = active?.format === 'strength' ? active.targetRounds ?? 1 : undefined;
   const isRepeatingStrength = active?.format === 'strength' && (repeatRounds ?? 1) > 1;
-  const isFinished = state?.isFinished || (isRepeatingStrength && roundsCompleted >= (repeatRounds ?? 1));
+  // A block with any superset-tagged sets steps through its round one
+  // exercise at a time (A -> B, no pause) instead of showing every exercise
+  // at once — rounds still come from the same targetRounds/roundsCompleted
+  // state the plain repeat feature already maintains.
+  const hasSuperset = active?.format === 'strength' && sets.some((s) => s.supersetGroup != null);
+  const isFinished = state?.isFinished || ((isRepeatingStrength || hasSuperset) && roundsCompleted >= (repeatRounds ?? 1));
+
+  useEffect(() => {
+    if (restCountdown == null || restCountdown <= 0) return;
+    const timerId = setInterval(() => setRestCountdown((s) => (s == null ? null : Math.max(0, s - 1))), 1000);
+    return () => clearInterval(timerId);
+  }, [restCountdown != null]);
+
+  useEffect(() => {
+    if (restCountdown === 0) setRestCountdown(null);
+  }, [restCountdown]);
+
+  const advanceSupersetStep = (): void => {
+    if (!active) return;
+    if (stepIndex + 1 < sets.length) {
+      setStepIndex(stepIndex + 1);
+      return;
+    }
+    const nextRounds = roundsCompleted + 1;
+    setRoundsCompleted(nextRounds);
+    setStepIndex(0);
+    const target = repeatRounds ?? 1;
+    if (nextRounds < target) {
+      setRestCountdown(sets.at(-1)?.restSec ?? 90);
+    }
+  };
 
   const finishActiveBlock = async (): Promise<void> => {
     if (!active) return;
@@ -139,7 +173,7 @@ export function CircuitRunnerScreen(): React.JSX.Element {
         {blocks.length > 1 ? <Badge label={t('sport.circuitRunner.blockCounter', { current: activeIndex + 1, total: blocks.length })} tone="info" /> : null}
       </View>
 
-      {active.format === 'strength' && !isRepeatingStrength ? (
+      {active.format === 'strength' && !isRepeatingStrength && !hasSuperset ? (
         <View style={{ flex: 1, gap: spacing[3] }}>
           <View style={{ gap: spacing[2] }}>
             {sets.map((s) => (
@@ -153,7 +187,7 @@ export function CircuitRunnerScreen(): React.JSX.Element {
           </View>
           <Button label={t('sport.circuitRunner.nextBlock')} onPress={() => void finishActiveBlock()} />
         </View>
-      ) : active.format === 'strength' && isRepeatingStrength ? (
+      ) : active.format === 'strength' && isRepeatingStrength && !hasSuperset ? (
         <View style={{ flex: 1, gap: spacing[4] }}>
           <View style={{ alignItems: 'center', gap: spacing[3] }}>
             <Text variant="caption" color="textSubtle">
@@ -178,6 +212,42 @@ export function CircuitRunnerScreen(): React.JSX.Element {
             <Button label={t('sport.circuitRunner.roundDone')} onPress={() => setRoundsCompleted((r) => r + 1)} />
           </View>
         </View>
+      ) : active.format === 'strength' && hasSuperset ? (
+        restCountdown != null ? (
+          <View style={{ flex: 1, gap: spacing[4], alignItems: 'center', justifyContent: 'center' }}>
+            <Text variant="caption" color="textSubtle">{t('sport.circuitRunner.superset.resting')}</Text>
+            <View style={{ width: 224, height: 224, borderRadius: radii.full, borderWidth: 3, borderColor: accent, backgroundColor: `${accent}22`, alignItems: 'center', justifyContent: 'center' }}>
+              <Text variant="display">{formatClock(restCountdown)}</Text>
+            </View>
+            <Button label={t('sport.circuitRunner.superset.skipRest')} variant="secondary" onPress={() => setRestCountdown(0)} />
+          </View>
+        ) : (
+          <View style={{ flex: 1, gap: spacing[4] }}>
+            <View style={{ alignItems: 'center', gap: spacing[3] }}>
+              <Text variant="caption" color="textSubtle">
+                {t('sport.circuitRunner.round', { current: Math.min(roundsCompleted + 1, repeatRounds ?? 1) })}
+              </Text>
+              {(() => {
+                const s = sets[stepIndex];
+                if (!s) return null;
+                const partners = supersetPartners(sets, stepIndex);
+                return (
+                  <Card style={{ width: '100%' }}>
+                    {partners.length > 0 ? <Badge label={t('sport.circuitRunner.superset.withPartner', { name: exerciseName(partners[0]!) })} tone="info" /> : null}
+                    <Text variant="heading" style={{ marginTop: spacing[2] }}>{exerciseName(s.exerciseId)}</Text>
+                    <Text variant="caption" color="textSubtle">
+                      {s.reps != null ? t('sport.circuitRunner.reps', { reps: s.reps }) : '—'}{s.weightKg != null ? t('sport.circuitRunner.weightSuffix', { weight: s.weightKg }) : ''}
+                    </Text>
+                  </Card>
+                );
+              })()}
+            </View>
+            <View style={{ flexDirection: 'row', gap: spacing[3] }}>
+              <Button label={t('sport.circuitRunner.stop')} variant="secondary" onPress={() => router.back()} />
+              <Button label={t('sport.circuitRunner.superset.itemDone')} onPress={advanceSupersetStep} />
+            </View>
+          </View>
+        )
       ) : (
         <View style={{ flex: 1, gap: spacing[4] }}>
           <View style={{ alignItems: 'center', gap: spacing[3] }}>

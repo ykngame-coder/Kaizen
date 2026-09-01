@@ -576,7 +576,13 @@
       "weightSuffix": " · {{weight}} kg",
       "durationSec": "{{sec}} s",
       "stop": "Detener",
-      "roundDone": "Round terminado"
+      "roundDone": "Round terminado",
+      "superset": {
+        "itemDone": "Hecho",
+        "resting": "Descanso",
+        "skipRest": "Saltar",
+        "withPartner": "Superserie con {{name}}"
+      }
     },
     "intervalTimer": {
       "title": "Temporizador de intervalos",
