@@ -130,6 +130,136 @@ describe('parseWorkoutText', () => {
   });
 });
 
+describe('parseWorkoutText — noise filtering (Garmin/Hevy screenshots)', () => {
+  it('drops Garmin chrome and group-count headers', () => {
+    const text = [
+      '17:11',
+      'Les exercices physiques',
+      'Squat arrière avec poids',
+      '8 répét. • 45,0 kg',
+      'Repos',
+      '1:00',
+      '3 sessions',
+      'Échauffement',
+      'Course tapis',
+      '2:00',
+      'Étapes',
+      'Appui sur touche Lap',
+    ].join('\n');
+    const result = parseWorkoutText(text);
+    const names = result.exercises.map((e) => e.rawName);
+    expect(names).toEqual(['Squat arrière avec poids', 'Course tapis']);
+  });
+
+  it('drops Hevy chrome (column headers, nav labels, badges)', () => {
+    const text = [
+      '17:12',
+      'HEVY',
+      "Détails de l'Entraînement",
+      'Développé Militaire (Barre)',
+      'SÉRIE',
+      'POIDS ET RÉPÉTITIONS',
+      '1',
+      '50 kg x 8',
+      '60 kg x 4',
+      'Poids',
+      '1RM',
+      'Voir plus',
+      'Accueil',
+    ].join('\n');
+    const result = parseWorkoutText(text);
+    expect(result.exercises).toHaveLength(1);
+    expect(result.exercises[0]!.rawName).toBe('Développé Militaire (Barre)');
+    expect(result.exercises[0]!.sets).toEqual([
+      { reps: 8, weightKg: 50 },
+      { reps: 4, weightKg: 60 },
+    ]);
+  });
+
+  it('drops a bare clock/duration line without treating it as a rep count', () => {
+    // Regression: "2:30" used to false-match as name="2:", reps=30.
+    const result = parseWorkoutText(['Rameur', '2:30'].join('\n'));
+    expect(result.exercises).toHaveLength(1);
+    expect(result.exercises[0]!.rawName).toBe('Rameur');
+    expect(result.exercises[0]!.sets).toEqual([]);
+    expect(result.exercises[0]!.confidence).toBe('to_confirm');
+  });
+
+  it('collapses a consecutive duplicate line (scroll-ghosting artifact)', () => {
+    const result = parseWorkoutText(['Rowing Penché (Barre)', 'Rowing Penché (Barre)', '50 kg x 8'].join('\n'));
+    expect(result.exercises).toHaveLength(1);
+    expect(result.exercises[0]!.sets).toEqual([{ reps: 8, weightKg: 50 }]);
+  });
+
+  it('parses the Garmin reps-then-weight format', () => {
+    const result = parseWorkoutText(['Squat arrière avec poids', '8 répét. • 45,0 kg', '6 répét. • 65,0 kg'].join('\n'));
+    expect(result.exercises).toHaveLength(1);
+    expect(result.exercises[0]!.sets).toEqual([
+      { reps: 8, weightKg: 45 },
+      { reps: 6, weightKg: 65 },
+    ]);
+    expect(result.exercises[0]!.confidence).toBe('high');
+  });
+
+  it('drops a Hevy set-index line that is immediately followed by a self-contained value', () => {
+    const result = parseWorkoutText(['Développé Couché (Barre)', '1', '75 kg x 8', '2', '75 kg x 8', 'W', '40 kg x 8'].join('\n'));
+    expect(result.exercises).toHaveLength(1);
+    expect(result.exercises[0]!.sets).toEqual([
+      { reps: 8, weightKg: 75 },
+      { reps: 8, weightKg: 75 },
+      { reps: 8, weightKg: 40 },
+    ]);
+  });
+
+  it('still treats a bare number as a continuation rep count when nothing self-contained follows it', () => {
+    // Not a Hevy index line: no self-contained value on the next line, so the
+    // existing "bare number = reps" continuation behavior must be preserved.
+    const result = parseWorkoutText(['Pompes', '12'].join('\n'));
+    expect(result.exercises).toHaveLength(1);
+    expect(result.exercises[0]!.sets).toEqual([{ reps: 12, weightKg: undefined }]);
+  });
+});
+
+describe('parseWorkoutText — superset grouping', () => {
+  it('groups two exercises tagged by a "Superset" marker into the same group', () => {
+    const text = ['Rowing Penché (Barre)', '50 kg x 8', 'Superset', 'Développé Militaire (Barre)', '25 kg x 6'].join('\n');
+    const result = parseWorkoutText(text);
+    expect(result.exercises).toHaveLength(2);
+    const [a, b] = result.exercises;
+    expect(a!.supersetGroup).toBeDefined();
+    expect(a!.supersetGroup).toBe(b!.supersetGroup);
+  });
+
+  it('chains a third exercise into the same group instead of starting a new one', () => {
+    const text = [
+      'Rowing Penché (Barre)', '50 kg x 8',
+      'Superset', 'Développé Militaire (Barre)', '25 kg x 6',
+      'Superset', 'Traction', '0 kg x 6',
+    ].join('\n');
+    const result = parseWorkoutText(text);
+    const groups = new Set(result.exercises.map((e) => e.supersetGroup));
+    expect(groups.size).toBe(1);
+    expect([...groups][0]).toBeDefined();
+  });
+
+  it('leaves ungrouped exercises without a supersetGroup', () => {
+    const result = parseWorkoutText(['Squat arrière avec poids', '8 répét. • 45,0 kg'].join('\n'));
+    expect(result.exercises[0]!.supersetGroup).toBeUndefined();
+  });
+
+  it('assigns a fresh group number to a second, unrelated superset pair', () => {
+    const text = [
+      'Rowing', '10 kg x 5', 'Superset', 'Presse', '10 kg x 5',
+      'Fentes', '10 kg x 5', 'Superset', 'Traction', '10 kg x 5',
+    ].join('\n');
+    const result = parseWorkoutText(text);
+    const byName = new Map(result.exercises.map((e) => [e.rawName, e.supersetGroup]));
+    expect(byName.get('Rowing')).toBe(byName.get('Presse'));
+    expect(byName.get('Fentes')).toBe(byName.get('Traction'));
+    expect(byName.get('Rowing')).not.toBe(byName.get('Fentes'));
+  });
+});
+
 describe('resolveExerciseByName', () => {
   it('resolves an exact name to its exercise id with score 1', () => {
     const r = resolveExerciseByName('Développé couché');

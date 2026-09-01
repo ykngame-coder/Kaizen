@@ -18,6 +18,8 @@ export interface ParsedExercise {
   rawName: string;
   sets: ParsedSet[];
   confidence: 'high' | 'medium' | 'to_confirm';
+  /** Sets sharing this number were tagged as a Hevy superset — same meaning as SetEntry.supersetGroup once saved. */
+  supersetGroup?: number;
 }
 
 export interface ParsedWorkout {
@@ -59,6 +61,84 @@ const PATTERN_SETS_FIRST = new RegExp(
 const PATTERN_WEIGHT_FIRST = new RegExp(`^(.*?)\\s*(\\d+(?:[.,]\\d+)?)\\s*(${UNIT})\\s*${MULT}\\s*(\\d+)\\s*$`, 'i');
 // "Name 45" / "Name 60kg" — a single bare number, no × sign: could be reps or weight, genuinely ambiguous.
 const PATTERN_AMBIGUOUS = new RegExp(`^(.*?)\\s*(\\d+(?:[.,]\\d+)?)\\s*(${UNIT})?\\s*$`, 'i');
+// Garmin: "8 répét. • 45,0 kg" — reps first, then weight, joined by a middle dot. Always a continuation (Garmin's exercise name is its own preceding line).
+const PATTERN_GARMIN_REPS_WEIGHT = new RegExp(`^(\\d+)\\s*répét\\.?\\s*[•·]\\s*(\\d+(?:[.,]\\d+)?)\\s*(${UNIT})?\\s*$`, 'i');
+
+/** Exact-match chrome from Garmin Connect and Hevy screenshots — never exercise data. */
+const NOISE_LINES = new Set([
+  'Les exercices physiques',
+  'Échauffement',
+  'Étapes',
+  'Repos',
+  'Appui sur touche Lap',
+  'SÉRIE',
+  'POIDS ET RÉPÉTITIONS',
+  "Détails de l'Entraînement",
+  "Modifier l'Entraînement",
+  'Voir plus',
+  'Entraînement',
+  'Accueil',
+  'Profil',
+  'HEVY',
+  'Poids',
+  '1RM',
+]);
+// Garmin's "3 sessions" / "1 série" repeat-count headers.
+const GROUP_COUNT_LINE = /^\d+\s+(sessions?|séries?)$/i;
+// A bare clock/duration value: status-bar clock, Garmin rest, or a cardio
+// block's duration. Also fixes a real bug: "2:30" used to false-match the
+// ambiguous pattern as name="2:", reps=30.
+const BARE_CLOCK_LINE = /^\d{1,2}:\d{2}$/;
+// Hevy's set-index/marker column ("1", "2", "W" for warm-up).
+const BARE_MARKER_LINE = /^(?:[A-Za-z]{1,2}|\d{1,3})$/;
+
+function isNoiseLine(line: string): boolean {
+  if (NOISE_LINES.has(line)) return true;
+  if (GROUP_COUNT_LINE.test(line)) return true;
+  if (BARE_CLOCK_LINE.test(line)) return true;
+  // Long, digit-free paragraph — safety net for footer disclaimers.
+  if (line.length > 80 && !/\d/.test(line)) return true;
+  return false;
+}
+
+/** True if `line` already carries both reps and weight on its own (no name needed). */
+function isFullySelfContained(line: string): boolean {
+  if (PATTERN_WEIGHT_FIRST.test(line)) return true;
+  const m = PATTERN_SETS_FIRST.exec(line);
+  return m != null && m[4] != null;
+}
+
+/**
+ * Strips prefixes, drops chrome noise, collapses consecutive duplicate
+ * lines (Hevy's scroll-ghosting artifact), and drops a bare set-index/marker
+ * line when the very next line already fully explains itself (Hevy's
+ * two-column set table) — without touching a bare number that legitimately
+ * stands alone as a rep count.
+ */
+function preprocessLines(raw: string[]): string[] {
+  // Noise-check first, on the untouched line: stripPrefix's numbered-list
+  // marker removal (e.g. "2." / "2)") also matches "2:" at the start of a
+  // clock/duration value like "2:30" — checking noise beforehand keeps that
+  // value intact for BARE_CLOCK_LINE to actually catch.
+  const stripped = raw
+    .map((l) => l.trim())
+    .filter((l) => l.length > 0 && !isNoiseLine(l))
+    .map((l) => stripPrefix(l))
+    .filter((l) => l.length > 0);
+  const deduped: string[] = [];
+  for (const l of stripped) {
+    if (deduped.length > 0 && deduped[deduped.length - 1]!.toLowerCase() === l.toLowerCase()) continue;
+    deduped.push(l);
+  }
+  const out: string[] = [];
+  for (let i = 0; i < deduped.length; i += 1) {
+    const line = deduped[i]!;
+    const next = deduped[i + 1];
+    if (BARE_MARKER_LINE.test(line) && next && isFullySelfContained(next)) continue;
+    out.push(line);
+  }
+  return out;
+}
 
 function matchLine(line: string): LineMatch | null {
   let m = PATTERN_WEIGHT_FIRST.exec(line);
@@ -76,6 +156,11 @@ function matchLine(line: string): LineMatch | null {
       weightKg: weightStr ? toKg(parseNum(weightStr), unit) : undefined,
       confidence: 'high',
     };
+  }
+  m = PATTERN_GARMIN_REPS_WEIGHT.exec(line);
+  if (m) {
+    const [, repsStr, weightStr, unit] = m;
+    return { name: '', sets: 1, reps: parseNum(repsStr!), weightKg: toKg(parseNum(weightStr!), unit), confidence: 'high' };
   }
   m = PATTERN_AMBIGUOUS.exec(line);
   if (m) {
@@ -100,10 +185,7 @@ const worseOf = (a: ParsedExercise['confidence'], b: ParsedExercise['confidence'
  * show for every line the OCR produced.
  */
 export function parseWorkoutText(rawText: string): ParsedWorkout {
-  const lines = rawText
-    .split(/\r?\n/)
-    .map((l) => stripPrefix(l))
-    .filter((l) => l.length > 0);
+  const lines = preprocessLines(rawText.split(/\r?\n/));
   if (lines.length === 0) return { exercises: [] };
 
   // A first line with no digits at all *usually* reads as the session title
@@ -126,15 +208,33 @@ export function parseWorkoutText(rawText: string): ParsedWorkout {
   }
 
   const exercises: ParsedExercise[] = [];
+  let pendingSuperset = false;
+  let nextGroupId = 1;
+  const tagSuperset = (newEx: ParsedExercise): void => {
+    const prev = exercises.at(-1);
+    const group = prev?.supersetGroup ?? nextGroupId++;
+    if (prev && prev.supersetGroup == null) prev.supersetGroup = group;
+    newEx.supersetGroup = group;
+  };
   for (const line of rest) {
+    if (line === 'Superset') {
+      pendingSuperset = true;
+      continue;
+    }
     const match = matchLine(line);
     if (!match) {
-      exercises.push({ rawName: line, sets: [], confidence: 'to_confirm' });
+      const newEx: ParsedExercise = { rawName: line, sets: [], confidence: 'to_confirm' };
+      if (pendingSuperset) tagSuperset(newEx);
+      pendingSuperset = false;
+      exercises.push(newEx);
       continue;
     }
     const newSets: ParsedSet[] = Array.from({ length: match.sets }, () => ({ reps: match.reps, weightKg: match.weightKg }));
     if (match.name) {
-      exercises.push({ rawName: match.name, sets: newSets, confidence: match.confidence });
+      const newEx: ParsedExercise = { rawName: match.name, sets: newSets, confidence: match.confidence };
+      if (pendingSuperset) tagSuperset(newEx);
+      pendingSuperset = false;
+      exercises.push(newEx);
     } else {
       // No name captured — a continuation line (extra sets logged on their
       // own row) belonging to the exercise just above it. If `last` is
