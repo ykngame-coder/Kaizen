@@ -8,7 +8,7 @@ import type { Habit, HealthMetricType } from '@supotsu/core';
 import { estimateTargets, sumDay } from '@supotsu/engines';
 import { BackButton } from '@/features/navigation/BackButton';
 import { DayNav, useSelectedDay } from '@/features/navigation/DayNav';
-import { useHabitLogs, useHabits, useHealthMetrics, useLogHabit, useNutritionEntries } from '@/lib/data/queries';
+import { useActivities, useHabitLogs, useHabits, useHealthMetrics, useLogHabit, useNutritionEntries, useUnlogHabit, useWorkouts } from '@/lib/data/queries';
 import { usePreferences } from '@/lib/preferences';
 import { GoalsSection } from '@/features/goals/GoalsSection';
 import { linkedKindFor, type LinkedKind } from './linkedHabits';
@@ -80,7 +80,10 @@ export function HabitsScreen(): React.JSX.Element {
   const { data: logs = [], isLoading: logsLoading } = useHabitLogs();
   const { data: health = [] } = useHealthMetrics();
   const { data: nutrition = [] } = useNutritionEntries();
+  const { data: workouts = [] } = useWorkouts();
+  const { data: activities = [] } = useActivities();
   const logHabit = useLogHabit();
+  const unlogHabit = useUnlogHabit();
   const [selectedDate, setSelectedDate] = useSelectedDay();
   const [showGoalForm, setShowGoalForm] = useState(false);
   const now = new Date();
@@ -90,21 +93,28 @@ export function HabitsScreen(): React.JSX.Element {
 
   const active = habits.filter((h) => !h.archivedAt);
 
-  // Logs indexed by day, per-habit day-sets (for streaks), and per-habit
-  // completion counts on the viewed day (for multi-per-day targets).
-  const { byDay, perHabitDays, countsOnViewedDay } = useMemo(() => {
+  // Logs indexed by day, per-habit day-sets (for streaks), per-habit
+  // completion counts on the viewed day (for multi-per-day targets), and the
+  // most recent log id per habit on the viewed day (so unchecking removes
+  // exactly the last completion instead of every log for that habit).
+  const { byDay, perHabitDays, countsOnViewedDay, latestLogIdOnViewedDay } = useMemo(() => {
     const day = new Map<string, Set<string>>();
     const perHabit = new Map<string, Set<string>>();
     const counts = new Map<string, number>();
+    const latest = new Map<string, { id: string; completedAt: string }>();
     for (const l of logs) {
       const k = dayKey(new Date(l.completedAt));
       if (!day.has(k)) day.set(k, new Set());
       day.get(k)!.add(l.habitId);
       if (!perHabit.has(l.habitId)) perHabit.set(l.habitId, new Set());
       perHabit.get(l.habitId)!.add(k);
-      if (k === viewedK) counts.set(l.habitId, (counts.get(l.habitId) ?? 0) + 1);
+      if (k === viewedK) {
+        counts.set(l.habitId, (counts.get(l.habitId) ?? 0) + 1);
+        const current = latest.get(l.habitId);
+        if (!current || l.completedAt > current.completedAt) latest.set(l.habitId, { id: l.id, completedAt: l.completedAt });
+      }
     }
-    return { byDay: day, perHabitDays: perHabit, countsOnViewedDay: counts };
+    return { byDay: day, perHabitDays: perHabit, countsOnViewedDay: counts, latestLogIdOnViewedDay: latest };
   }, [logs, viewedK]);
 
   // Real progress for linked habits — today only, no history backfill for past days.
@@ -115,9 +125,19 @@ export function HabitsScreen(): React.JSX.Element {
     const todays = health.filter((m) => m.type === 'steps' && dayKey(new Date(m.measuredAt)) === todayK);
     return [...todays].sort((a, b) => a.measuredAt.localeCompare(b.measuredAt)).at(-1)?.value ?? 0;
   }, [health, todayK]);
+  // A completed strength/circuit session OR any imported activity (Apple
+  // Santé/Garmin cardio included) counts as "séance faite" for today.
+  const workoutDoneToday = useMemo(() => {
+    const structured = workouts.some((w) => w.status === 'completed' && w.completedAt && dayKey(new Date(w.completedAt)) === todayK);
+    if (structured) return true;
+    return activities.some((a) => dayKey(new Date(a.startedAt)) === todayK);
+  }, [workouts, activities, todayK]);
 
-  const liveProgress = (kind: LinkedKind): { value: number; target: number } =>
-    kind === 'hydration' ? { value: hydrationToday, target: hydrationTarget } : { value: stepsToday, target: preferences.dailyStepsGoal };
+  const liveProgress = (kind: LinkedKind): { value: number; target: number } => {
+    if (kind === 'hydration') return { value: hydrationToday, target: hydrationTarget };
+    if (kind === 'steps') return { value: stepsToday, target: preferences.dailyStepsGoal };
+    return { value: workoutDoneToday ? 1 : 0, target: 1 };
+  };
 
   /** count/target/done for a habit on the viewed day — live data for linked habits, else manual log count. */
   const progressFor = (h: Habit): { count: number; target: number; done: boolean; live?: { value: number; target: number } } => {
@@ -148,7 +168,7 @@ export function HabitsScreen(): React.JSX.Element {
       if ((perHabitDays.get(h.id) ?? new Set()).has(todayK)) continue;
       logHabit.mutate(h.id);
     }
-  }, [isToday, habitsLoading, logsLoading, active, hydrationToday, hydrationTarget, stepsToday, preferences.dailyStepsGoal, perHabitDays, todayK]);
+  }, [isToday, habitsLoading, logsLoading, active, hydrationToday, hydrationTarget, stepsToday, preferences.dailyStepsGoal, workoutDoneToday, perHabitDays, todayK]);
 
   const denom = Math.max(1, active.length);
 
@@ -235,6 +255,11 @@ export function HabitsScreen(): React.JSX.Element {
                 const isLast = i === active.length - 1;
                 return (
                   <View key={h.id} style={{ flexDirection: 'row', alignItems: 'center', gap: spacing[3], paddingVertical: spacing[3], borderBottomWidth: isLast ? 0 : 1, borderBottomColor: colors.border }}>
+                    <Pressable
+                      onPress={() => router.push({ pathname: '/profile/habit/[id]/edit', params: { id: h.id } })}
+                      accessibilityLabel={t('sport.gamification.habitsScreen.checklist.editA11y', { name: h.name })}
+                      style={{ flexDirection: 'row', alignItems: 'center', gap: spacing[3], flex: 1 }}
+                    >
                     <View style={{ width: 36, height: 36, borderRadius: 11, backgroundColor: colors.surfaceElevated, alignItems: 'center', justifyContent: 'center' }}><Text style={{ fontSize: 17 }}>{iconFor(h.pillar, h.name)}</Text></View>
                     <View style={{ flex: 1 }}>
                       <Text variant="body" style={{ color: p.done ? colors.textMuted : colors.text }}>{h.name}</Text>
@@ -243,7 +268,9 @@ export function HabitsScreen(): React.JSX.Element {
                           <Text variant="caption" color="textSubtle">
                             {kind === 'hydration'
                               ? t('sport.gamification.habitsScreen.checklist.hydrationProgress', { value: (p.live.value / 1000).toFixed(1), target: (p.live.target / 1000).toFixed(1) })
-                              : t('sport.gamification.habitsScreen.checklist.stepsProgress', { value: p.live.value.toLocaleString('fr-FR'), target: p.live.target.toLocaleString('fr-FR') })}
+                              : kind === 'steps'
+                                ? t('sport.gamification.habitsScreen.checklist.stepsProgress', { value: p.live.value.toLocaleString('fr-FR'), target: p.live.target.toLocaleString('fr-FR') })
+                                : p.done ? t('sport.gamification.habitsScreen.checklist.done') : t('sport.gamification.habitsScreen.checklist.notDone')}
                           </Text>
                           <MiniBar pct={(p.live.value / Math.max(1, p.live.target)) * 100} color={p.done ? colors.accentData : colors.warning} />
                         </>
@@ -256,13 +283,24 @@ export function HabitsScreen(): React.JSX.Element {
                         <Text variant="caption" style={{ color: p.done ? colors.accentData : colors.textSubtle, fontWeight: '600' }}>{p.done ? t('sport.gamification.habitsScreen.checklist.done') : t('sport.gamification.habitsScreen.checklist.notDone')}</Text>
                       )}
                     </View>
+                    </Pressable>
                     {p.live ? null : (
                       <Pressable
-                        onPress={() => { if (!p.done && isToday) logHabit.mutate(h.id); }}
-                        disabled={p.done || !isToday || logHabit.isPending}
-                        hitSlop={8}
+                        onPress={() => {
+                          if (!isToday) return;
+                          if (p.done) {
+                            const logId = latestLogIdOnViewedDay.get(h.id)?.id;
+                            if (logId) unlogHabit.mutate(logId);
+                          } else {
+                            logHabit.mutate(h.id);
+                          }
+                        }}
+                        disabled={!isToday || logHabit.isPending || unlogHabit.isPending}
+                        hitSlop={16}
+                        accessibilityLabel={p.done ? t('sport.gamification.habitsScreen.checklist.uncheckA11y', { name: h.name }) : t('sport.gamification.habitsScreen.checklist.checkA11y', { name: h.name })}
+                        style={{ padding: 6 }}
                       >
-                        <View style={{ width: 28, height: 28, borderRadius: 14, alignItems: 'center', justifyContent: 'center', backgroundColor: p.done ? colors.accentData : 'transparent', borderWidth: p.done ? 0 : 2, borderColor: colors.textSubtle, opacity: isToday ? 1 : 0.4 }}>
+                        <View style={{ width: 32, height: 32, borderRadius: 16, alignItems: 'center', justifyContent: 'center', backgroundColor: p.done ? colors.accentData : 'transparent', borderWidth: p.done ? 0 : 2, borderColor: colors.textSubtle, opacity: isToday ? 1 : 0.4 }}>
                           {p.done ? <Text style={{ color: '#04140b', fontSize: 14, fontWeight: '800' }}>✓</Text> : null}
                         </View>
                       </Pressable>

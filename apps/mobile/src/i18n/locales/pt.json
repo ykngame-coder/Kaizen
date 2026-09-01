@@ -828,7 +828,10 @@
           "hydrationProgress": "{{value}} / {{target}} L · acompanhamento automático",
           "stepsProgress": "{{value}} / {{target}} passos · acompanhamento automático",
           "done": "Feito",
-          "notDone": "A fazer"
+          "notDone": "A fazer",
+          "editA11y": "Editar o hábito {{name}}",
+          "checkA11y": "Marcar {{name}}",
+          "uncheckA11y": "Desmarcar {{name}}"
         },
         "disciplineScore": {
           "heading": "Pontuação de disciplina",
@@ -838,6 +841,24 @@
         },
         "streaks": {
           "heading": "Sequências em andamento"
+        }
+      },
+      "editHabit": {
+        "title": "Editar hábito",
+        "subtitle": "Altera o nome, o pilar, a frequência ou a meta.",
+        "saveButton": "Guardar",
+        "dangerZone": {
+          "heading": "Zona de perigo",
+          "hint": "O hábito desaparece da tua lista, mas o histórico e as sequências ficam guardados."
+        },
+        "archiveButton": "Arquivar este hábito",
+        "archiveConfirm": {
+          "title": "Arquivar \"{{name}}\"?",
+          "message": "Vai desaparecer da tua lista diária. O histórico fica guardado.",
+          "confirmButton": "Arquivar"
+        },
+        "notFound": {
+          "title": "Hábito não encontrado"
         }
       }
     },
@@ -942,7 +963,10 @@
           "title": "Estado global"
         },
         "muscleGroups": {
-          "title": "Grupos musculares"
+          "title": "Grupos musculares",
+          "lastTrainedToday": "Última sessão: hoje",
+          "lastTrainedYesterday": "Última sessão: ontem",
+          "lastTrainedDaysAgo": "Última sessão: há {{count}} d"
         },
         "emptyState": {
           "message": "Nenhum treino recente. Registre um treino de musculação para colorir os músculos trabalhados e ver os que estão em repouso.",

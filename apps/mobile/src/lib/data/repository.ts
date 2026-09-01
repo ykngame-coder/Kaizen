@@ -86,8 +86,11 @@ import {
   updateNutritionEntry as updateNutritionEntryDb,
   insertHabit,
   listHabits as listHabitsDb,
+  updateHabit as updateHabitDb,
+  archiveHabit as archiveHabitDb,
   insertHabitLog,
   listHabitLogs as listHabitLogsDb,
+  deleteHabitLog as deleteHabitLogDb,
   insertCustomExercise as insertCustomExerciseDb,
   listCustomExercises as listCustomExercisesDb,
   insertChallenge,
@@ -290,8 +293,14 @@ export interface DataRepository {
   updateNutritionEntry(userId: string, entryId: string, patch: { kcal: number; proteinG?: number; carbG?: number; fatG?: number }): Promise<NutritionEntry>;
   listHabits(userId: string): Promise<Habit[]>;
   addHabit(userId: string, input: HabitInput): Promise<Habit>;
+  /** Rename/retarget an existing habit. */
+  updateHabit(userId: string, habitId: string, patch: { name: string; pillar: Habit['pillar']; cadence: Habit['cadence']; targetPerPeriod: number }): Promise<Habit>;
+  /** Soft-delete: hides the habit from the active list, keeps its log history and streaks. */
+  archiveHabit(userId: string, habitId: string): Promise<void>;
   listHabitLogs(userId: string): Promise<HabitLog[]>;
   logHabit(userId: string, habitId: string): Promise<HabitLog>;
+  /** Undo one completion (e.g. unchecking a habit that's already logged today). */
+  deleteHabitLog(userId: string, logId: string): Promise<void>;
   /** The caller's own exercises added on top of the bundled catalogue (e.g. home-gym equipment). */
   listCustomExercises(userId: string): Promise<Exercise[]>;
   addCustomExercise(userId: string, input: CustomExerciseInput): Promise<Exercise>;
@@ -1374,6 +1383,23 @@ function createDemoRepository(): DataRepository {
       await writeJson(habKey(userId), [...items, habit]);
       return habit;
     },
+    async updateHabit(userId, habitId, patch) {
+      const items = await readJson<Habit>(habKey(userId));
+      let updated: Habit | undefined;
+      const next = items.map((h) => {
+        if (h.id !== habitId) return h;
+        updated = { ...h, ...patch, updatedAt: new Date().toISOString() };
+        return updated;
+      });
+      if (!updated) throw new Error('Habitude introuvable.');
+      await writeJson(habKey(userId), next);
+      return updated;
+    },
+    async archiveHabit(userId, habitId) {
+      const items = await readJson<Habit>(habKey(userId));
+      const now = new Date().toISOString();
+      await writeJson(habKey(userId), items.map((h) => (h.id === habitId ? { ...h, archivedAt: now, updatedAt: now } : h)));
+    },
     async listCustomExercises(userId) {
       return readJson<Exercise>(customExKey(userId));
     },
@@ -1408,6 +1434,10 @@ function createDemoRepository(): DataRepository {
       const items = await readJson<HabitLog>(hlogKey(userId));
       await writeJson(hlogKey(userId), [log, ...items]);
       return log;
+    },
+    async deleteHabitLog(userId, logId) {
+      const items = await readJson<HabitLog>(hlogKey(userId));
+      await writeJson(hlogKey(userId), items.filter((l) => l.id !== logId));
     },
     async listChallenges() {
       // Demo mode is single-user: all challenges live under one local list.
@@ -2034,6 +2064,19 @@ function createSupabaseRepository(
       });
       return rowToHabit(row);
     },
+    async updateHabit(_userId, habitId, patch) {
+      return rowToHabit(
+        await updateHabitDb(client, habitId, {
+          name: patch.name,
+          pillar: patch.pillar,
+          cadence: patch.cadence,
+          target_per_period: patch.targetPerPeriod,
+        }),
+      );
+    },
+    async archiveHabit(_userId, habitId) {
+      await archiveHabitDb(client, habitId);
+    },
     async listCustomExercises(userId) {
       return (await listCustomExercisesDb(client, userId)).map(rowToExercise);
     },
@@ -2055,6 +2098,9 @@ function createSupabaseRepository(
     async logHabit(userId, habitId) {
       const row = await insertHabitLog(client, userId, habitId, new Date().toISOString());
       return rowToHabitLog(row);
+    },
+    async deleteHabitLog(_userId, logId) {
+      await deleteHabitLogDb(client, logId);
     },
     async listChallenges() {
       return (await listChallengesDb(client)).map(rowToChallenge);

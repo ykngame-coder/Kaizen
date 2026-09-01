@@ -828,7 +828,10 @@
           "hydrationProgress": "{{value}} / {{target}} L · autom. erfasst",
           "stepsProgress": "{{value}} / {{target}} Schritte · autom. erfasst",
           "done": "Erledigt",
-          "notDone": "Offen"
+          "notDone": "Offen",
+          "editA11y": "Gewohnheit {{name}} bearbeiten",
+          "checkA11y": "{{name}} abhaken",
+          "uncheckA11y": "Haken bei {{name}} entfernen"
         },
         "disciplineScore": {
           "heading": "Disziplin-Score",
@@ -838,6 +841,24 @@
         },
         "streaks": {
           "heading": "Laufende Serien"
+        }
+      },
+      "editHabit": {
+        "title": "Gewohnheit bearbeiten",
+        "subtitle": "Name, Bereich, Häufigkeit oder Ziel ändern.",
+        "saveButton": "Speichern",
+        "dangerZone": {
+          "heading": "Gefahrenzone",
+          "hint": "Die Gewohnheit verschwindet aus deiner Checkliste, Verlauf und Serien bleiben erhalten."
+        },
+        "archiveButton": "Diese Gewohnheit archivieren",
+        "archiveConfirm": {
+          "title": "„{{name}}“ archivieren?",
+          "message": "Sie verschwindet aus deiner täglichen Checkliste. Der Verlauf bleibt erhalten.",
+          "confirmButton": "Archivieren"
+        },
+        "notFound": {
+          "title": "Gewohnheit nicht gefunden"
         }
       }
     },
@@ -942,7 +963,10 @@
           "title": "Gesamtzustand"
         },
         "muscleGroups": {
-          "title": "Muskelgruppen"
+          "title": "Muskelgruppen",
+          "lastTrainedToday": "Letzte Einheit: heute",
+          "lastTrainedYesterday": "Letzte Einheit: gestern",
+          "lastTrainedDaysAgo": "Letzte Einheit: vor {{count}} T"
         },
         "emptyState": {
           "message": "Kein aktuelles Training. Erfasse ein Krafttraining, um deine trainierten Muskeln einzufärben und zu sehen, welche sich erholen.",

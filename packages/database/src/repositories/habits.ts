@@ -53,6 +53,29 @@ export async function listHabitLogs(client: SupotsuClient, userId: string): Prom
   return data ?? [];
 }
 
+/** Edit a habit's definition (name/pillar/cadence/target) — RLS scopes it to the owner. */
+export async function updateHabit(
+  client: SupotsuClient,
+  habitId: string,
+  patch: Pick<HabitInsertRow, 'name' | 'pillar' | 'cadence' | 'target_per_period'>,
+): Promise<HabitRow> {
+  const { data, error } = await client.from('habits').update(patch).eq('id', habitId).select('*').single();
+  if (error) throw error;
+  return data;
+}
+
+/** Soft-delete: hides the habit from `listHabits` while keeping its log history and streaks. */
+export async function archiveHabit(client: SupotsuClient, habitId: string): Promise<void> {
+  const { error } = await client.from('habits').update({ archived_at: new Date().toISOString() }).eq('id', habitId);
+  if (error) throw error;
+}
+
+/** Undo one habit completion (e.g. unchecking today's box). */
+export async function deleteHabitLog(client: SupotsuClient, logId: string): Promise<void> {
+  const { error } = await client.from('habit_logs').delete().eq('id', logId);
+  if (error) throw error;
+}
+
 /**
  * Persist newly earned badges. Idempotent via the (user_id, badge_id) unique
  * constraint so re-evaluating the same badge never duplicates it.

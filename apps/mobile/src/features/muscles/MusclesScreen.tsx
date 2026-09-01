@@ -179,6 +179,13 @@ export function MusclesScreen(): React.JSX.Element {
                     </Text>
                   </View>
                   <Meter value={s.freshness} color={stateColor(s.state)} height={6} />
+                  <Text variant="caption" color="textSubtle">
+                    {s.lastTrainedDaysAgo === 0
+                      ? t('sport.muscles.screen.muscleGroups.lastTrainedToday')
+                      : s.lastTrainedDaysAgo === 1
+                        ? t('sport.muscles.screen.muscleGroups.lastTrainedYesterday')
+                        : t('sport.muscles.screen.muscleGroups.lastTrainedDaysAgo', { count: s.lastTrainedDaysAgo })}
+                  </Text>
                 </View>
               ))}
             </View>

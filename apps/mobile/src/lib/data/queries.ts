@@ -214,6 +214,31 @@ export function useAddHabit() {
   });
 }
 
+export function useUpdateHabit() {
+  const { user } = useAuth();
+  const repo = useRepository();
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (input: { habitId: string; name: string; pillar: HabitInput['pillar']; cadence: HabitInput['cadence']; targetPerPeriod: number }) =>
+      repo.updateHabit(user!.id, input.habitId, input),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['habits', user?.id] });
+    },
+  });
+}
+
+export function useArchiveHabit() {
+  const { user } = useAuth();
+  const repo = useRepository();
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (habitId: string) => repo.archiveHabit(user!.id, habitId),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['habits', user?.id] });
+    },
+  });
+}
+
 export function useCustomExercises() {
   const { user } = useAuth();
   const repo = useRepository();
@@ -252,6 +277,19 @@ export function useLogHabit() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (habitId: string) => repo.logHabit(user!.id, habitId),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['habitLogs', user?.id] });
+    },
+  });
+}
+
+/** Undo one completion — e.g. unchecking a habit that's already logged today. */
+export function useUnlogHabit() {
+  const { user } = useAuth();
+  const repo = useRepository();
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (logId: string) => repo.deleteHabitLog(user!.id, logId),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['habitLogs', user?.id] });
     },

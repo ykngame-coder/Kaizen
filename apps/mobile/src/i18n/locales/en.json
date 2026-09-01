@@ -828,7 +828,10 @@
           "hydrationProgress": "{{value}} / {{target}} L · auto-tracked",
           "stepsProgress": "{{value}} / {{target}} steps · auto-tracked",
           "done": "Done",
-          "notDone": "To do"
+          "notDone": "To do",
+          "editA11y": "Edit habit {{name}}",
+          "checkA11y": "Check {{name}}",
+          "uncheckA11y": "Uncheck {{name}}"
         },
         "disciplineScore": {
           "heading": "Discipline score",
@@ -838,6 +841,24 @@
         },
         "streaks": {
           "heading": "Current streaks"
+        }
+      },
+      "editHabit": {
+        "title": "Edit habit",
+        "subtitle": "Change the name, pillar, frequency or target.",
+        "saveButton": "Save",
+        "dangerZone": {
+          "heading": "Danger zone",
+          "hint": "The habit disappears from your checklist, but its history and streaks stay intact."
+        },
+        "archiveButton": "Archive this habit",
+        "archiveConfirm": {
+          "title": "Archive \"{{name}}\"?",
+          "message": "It will disappear from your daily checklist. Its history stays saved.",
+          "confirmButton": "Archive"
+        },
+        "notFound": {
+          "title": "Habit not found"
         }
       }
     },
@@ -942,7 +963,10 @@
           "title": "Overall status"
         },
         "muscleGroups": {
-          "title": "Muscle groups"
+          "title": "Muscle groups",
+          "lastTrainedToday": "Last session: today",
+          "lastTrainedYesterday": "Last session: yesterday",
+          "lastTrainedDaysAgo": "Last session: {{count}}d ago"
         },
         "emptyState": {
           "message": "No recent workouts. Log a strength session to highlight the muscles you've trained and see which ones are resting.",
