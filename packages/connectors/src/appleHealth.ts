@@ -69,8 +69,18 @@ export interface HKSleepSample {
 }
 
 const ASLEEP_VALUES = new Set([1, 3, 4, 5]);
-/** A night's sleep is keyed by the calendar day it *ends* on. */
-const nightKey = (endDate: string): string => endDate.slice(0, 10);
+/**
+ * A night's sleep is keyed by the calendar day it *ends* on, in the
+ * device's local timezone — not a raw slice of the ISO string, which reads
+ * as UTC and silently splits one real night into two buckets for any user
+ * whose local midnight doesn't line up with UTC midnight (e.g. a night
+ * that runs ~23h00-07h00 local in UTC+2 crosses UTC midnight around 2h00
+ * local, well before the night is over).
+ */
+const nightKey = (endDate: string): string => {
+  const d = new Date(endDate);
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+};
 
 /**
  * Aggregate sleep-stage samples into one sleep_duration metric per night (hours

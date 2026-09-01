@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it } from 'vitest';
 import {
   aggregateHealthKitSleep,
   aggregateHealthKitSleepSessions,
@@ -128,6 +128,30 @@ describe('aggregateHealthKitSleepSessions', () => {
       { value: 2, startDate: '2026-07-21T02:00:00Z', endDate: '2026-07-21T02:30:00Z' },
     ]);
     expect(out).toHaveLength(0);
+  });
+});
+
+describe('nightKey timezone handling (regression: UTC-sliced date used to split one local night in two)', () => {
+  const originalTz = process.env.TZ;
+  afterEach(() => {
+    process.env.TZ = originalTz;
+  });
+
+  it('keeps a full night together in a UTC+2 timezone even though it crosses UTC midnight', () => {
+    process.env.TZ = 'Europe/Paris';
+    const samples = [
+      { value: 3, startDate: '2026-07-20T21:00:00Z', endDate: '2026-07-20T23:00:00Z' }, // 23h00-01h00 local (light)
+      { value: 4, startDate: '2026-07-20T23:00:00Z', endDate: '2026-07-21T02:00:00Z' }, // 01h00-04h00 local, crosses UTC midnight (deep)
+      { value: 5, startDate: '2026-07-21T02:00:00Z', endDate: '2026-07-21T05:00:00Z' }, // 04h00-07h00 local (rem)
+    ];
+
+    const durationOut = aggregateHealthKitSleep(samples);
+    expect(durationOut).toHaveLength(1);
+    expect(durationOut[0]?.value).toBe(8);
+
+    const sessionOut = aggregateHealthKitSleepSessions(samples);
+    expect(sessionOut).toHaveLength(1);
+    expect(sessionOut[0]?.asleepMin).toBe(8 * 60);
   });
 });
 
