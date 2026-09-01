@@ -377,15 +377,16 @@ export function SessionBlocksEditor({
     </View>
   );
 
-  const renderSelectedRow = ({ item: exerciseId, drag, isActive }: RenderItemParams<string>): React.JSX.Element | null => {
-    const ex = builder.byId.get(exerciseId);
+  const renderSelectedRow = ({ item: slotId, drag, isActive }: RenderItemParams<string>): React.JSX.Element | null => {
+    const draft = builder.activeSelected[slotId];
+    if (!draft) return null;
+    const ex = builder.byId.get(draft.exerciseId);
     if (!ex) return null;
-    const draft = builder.activeSelected[exerciseId]!;
-    const known = lastKnownFor?.(exerciseId);
+    const known = lastKnownFor?.(draft.exerciseId);
     const isStrength = activeFormat === 'strength';
     const activeBlockDraft = builder.blocks[builder.activeBlock];
-    const groupId = activeBlockDraft?.supersetGroups[exerciseId];
-    const isPendingSelected = pendingSuperset.includes(exerciseId);
+    const groupId = activeBlockDraft?.supersetGroups[slotId];
+    const isPendingSelected = pendingSuperset.includes(slotId);
     return (
       <View style={{ opacity: isActive ? 0.6 : 1, backgroundColor: isActive ? colors.surfaceElevated : 'transparent', borderRadius: radii.lg, paddingHorizontal: spacing[1] }}>
         <Card style={{ marginBottom: spacing[2], borderColor: groupId != null ? colors.accentData : undefined, borderWidth: groupId != null ? 1.5 : undefined }} elevated>
@@ -400,7 +401,7 @@ export function SessionBlocksEditor({
               {groupId != null && !selectingSuperset ? (
                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing[2], marginTop: 2 }}>
                   <Badge label={t('sport.sessionBuilder.superset.badge')} tone="info" />
-                  <Pressable onPress={() => builder.ungroup(exerciseId)}>
+                  <Pressable onPress={() => builder.ungroup(slotId)}>
                     <Text variant="caption" color="primary">{t('sport.sessionBuilder.superset.ungroup')}</Text>
                   </Pressable>
                 </View>
@@ -408,14 +409,14 @@ export function SessionBlocksEditor({
             </View>
             {selectingSuperset ? (
               <Pressable
-                onPress={() => setPendingSuperset((prev) => (isPendingSelected ? prev.filter((id) => id !== exerciseId) : [...prev, exerciseId]))}
+                onPress={() => setPendingSuperset((prev) => (isPendingSelected ? prev.filter((id) => id !== slotId) : [...prev, slotId]))}
                 hitSlop={8}
                 style={{ width: 22, height: 22, borderRadius: 6, borderWidth: 1.5, borderColor: isPendingSelected ? colors.accentData : colors.border, backgroundColor: isPendingSelected ? colors.accentData : 'transparent', alignItems: 'center', justifyContent: 'center' }}
               >
                 {isPendingSelected ? <Text style={{ color: '#04140b', fontWeight: '800', fontSize: 13 }}>✓</Text> : null}
               </Pressable>
             ) : (
-              <Pressable onPress={() => builder.removeExercise(exerciseId)} hitSlop={8}>
+              <Pressable onPress={() => builder.removeExercise(slotId)} hitSlop={8}>
                 <Text variant="heading" style={{ color: colors.error }}>×</Text>
               </Pressable>
             )}
@@ -423,7 +424,7 @@ export function SessionBlocksEditor({
 
           {known && (known.reps != null || known.weightKg != null) ? (
             <Pressable
-              onPress={() => builder.updateExercise(exerciseId, {
+              onPress={() => builder.updateExercise(slotId, {
                 reps: known.reps != null ? String(known.reps) : draft.reps,
                 weight: known.weightKg != null ? String(known.weightKg) : draft.weight,
               })}
@@ -441,14 +442,14 @@ export function SessionBlocksEditor({
           ) : null}
 
           <View style={{ flexDirection: 'row', gap: spacing[3], marginTop: spacing[2] }}>
-            <Stepper label={t('sport.sessionBuilder.set.repsLabel')} value={draft.reps} step={1} onChange={(v) => builder.updateExercise(exerciseId, { reps: v })} />
+            <Stepper label={t('sport.sessionBuilder.set.repsLabel')} value={draft.reps} step={1} onChange={(v) => builder.updateExercise(slotId, { reps: v })} />
             {isStrength ? (
-              <Stepper label={t('sport.sessionBuilder.set.weightLabel')} value={draft.weight} step={2.5} unit="kg" onChange={(v) => builder.updateExercise(exerciseId, { weight: v })} />
+              <Stepper label={t('sport.sessionBuilder.set.weightLabel')} value={draft.weight} step={2.5} unit="kg" onChange={(v) => builder.updateExercise(slotId, { weight: v })} />
             ) : null}
           </View>
           {isStrength ? (
             <View style={{ marginTop: spacing[2] }}>
-              <Stepper label={t('sport.sessionBuilder.set.restLabel')} value={draft.rest} step={15} unit="s" onChange={(v) => builder.updateExercise(exerciseId, { rest: v })} />
+              <Stepper label={t('sport.sessionBuilder.set.restLabel')} value={draft.rest} step={15} unit="s" onChange={(v) => builder.updateExercise(slotId, { rest: v })} />
             </View>
           ) : null}
         </Card>

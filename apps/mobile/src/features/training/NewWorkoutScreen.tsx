@@ -16,7 +16,7 @@ import {
   useWorkouts,
   useWorkoutSets,
 } from '@/lib/data/queries';
-import { flattenBlocksToExercises, useSessionBlocks, type SetDraft } from './sessionBuilder';
+import { flattenBlocksToExercises, newSlotId, useSessionBlocks, type SetDraft } from './sessionBuilder';
 import { SessionBlocksEditor } from './SessionBlocksEditor';
 
 const SESSIONS_QUOTA = 50;
@@ -73,14 +73,14 @@ export function NewWorkoutScreen(): React.JSX.Element {
     const nextOrder: string[] = [];
     const nextSelected: Record<string, SetDraft> = {};
     for (const s of [...importSets].sort((a, b) => a.order - b.order)) {
-      if (!nextSelected[s.exerciseId]) {
-        nextOrder.push(s.exerciseId);
-        nextSelected[s.exerciseId] = {
-          reps: s.reps != null ? String(s.reps) : '',
-          weight: s.weightKg != null ? String(s.weightKg) : '',
-          rest: s.restSec != null ? String(s.restSec) : '',
-        };
-      }
+      const slotId = newSlotId(s.exerciseId);
+      nextOrder.push(slotId);
+      nextSelected[slotId] = {
+        exerciseId: s.exerciseId,
+        reps: s.reps != null ? String(s.reps) : '',
+        weight: s.weightKg != null ? String(s.weightKg) : '',
+        rest: s.restSec != null ? String(s.restSec) : '',
+      };
     }
     if (source && source.name !== GARMIN_IMPORT_NAME) {
       builder.setName((prev) => (prev.trim() ? prev : source.name));
@@ -114,10 +114,10 @@ export function NewWorkoutScreen(): React.JSX.Element {
       if (builder.isSingleStrength) {
         await addWorkout.mutateAsync({
           name: builder.name.trim(),
-          sets: builder.blocks[0]!.order.map((id, i) => {
-            const s = builder.blocks[0]!.selected[id]!;
+          sets: builder.blocks[0]!.order.map((slotId, i) => {
+            const s = builder.blocks[0]!.selected[slotId]!;
             return {
-              exerciseId: id,
+              exerciseId: s.exerciseId,
               order: i,
               reps: s.reps ? Number(s.reps) : undefined,
               weightKg: s.weight ? Number(s.weight) : undefined,
@@ -132,15 +132,15 @@ export function NewWorkoutScreen(): React.JSX.Element {
             format: b.format,
             timeCapSec: b.format === 'amrap' ? (Number(b.timeCapSec) || 0) * 60 || undefined : b.format === 'emom' ? Number(b.timeCapSec) || undefined : undefined,
             targetRounds: b.format === 'emom' || b.format === 'for_time' || b.format === 'strength' ? Number(b.targetRounds) || undefined : undefined,
-            sets: b.order.map((id, i) => {
-              const s = b.selected[id]!;
+            sets: b.order.map((slotId, i) => {
+              const s = b.selected[slotId]!;
               return {
-                exerciseId: id,
+                exerciseId: s.exerciseId,
                 order: i,
                 reps: s.reps ? Number(s.reps) : undefined,
                 weightKg: b.format === 'strength' && s.weight ? Number(s.weight) : undefined,
                 restSec: b.format === 'strength' && s.rest ? Number(s.rest) : undefined,
-                supersetGroup: b.supersetGroups[id],
+                supersetGroup: b.supersetGroups[slotId],
               };
             }),
           })),

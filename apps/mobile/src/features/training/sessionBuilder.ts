@@ -4,6 +4,8 @@ import type { BlockFormat, MuscleGroup } from '@supotsu/core';
 import { EXERCISES, MUSCLE_LABEL, type Exercise } from '@/features/exercises/catalog';
 
 export interface SetDraft {
+  /** The real exercise this slot references — `order`/`selected` are keyed by a synthetic slot id, not this, so the same exercise can appear more than once in a block. */
+  exerciseId: string;
   reps: string;
   weight: string;
   rest: string;
@@ -13,13 +15,21 @@ export interface BlockDraft {
   format: BlockFormat;
   timeCapSec: string;
   targetRounds: string;
+  /** Slot ids, in display/execution order — not exercise ids (an exercise can have more than one slot). */
   order: string[];
   selected: Record<string, SetDraft>;
-  /** exerciseId -> group number. Members are only an active superset when also adjacent in `order`. */
+  /** slotId -> group number. Members are only an active superset when also adjacent in `order`. */
   supersetGroups: Record<string, number>;
 }
 
-export const emptySet = (): SetDraft => ({ reps: '', weight: '', rest: '' });
+let slotSeq = 0;
+/** A fresh per-slot key, distinct from the exercise id, so adding the same exercise twice creates two independent slots instead of overwriting one. */
+export function newSlotId(exerciseId: string): string {
+  slotSeq += 1;
+  return `${exerciseId}::${slotSeq}`;
+}
+
+export const emptySet = (exerciseId: string): SetDraft => ({ exerciseId, reps: '', weight: '', rest: '' });
 // targetRounds starts blank: a plain strength block now also exposes this
 // field (to repeat as a circuit), and a pre-filled "10" would silently turn
 // every new block's live run into a 10-round circuit before the user ever
@@ -100,31 +110,33 @@ export function useSessionBlocks(options: UseSessionBlocksOptions = {}) {
     });
     setActiveBlock(index + 1);
   };
-  const groupAsSuperset = (exerciseIds: string[]): void => {
-    if (exerciseIds.length < 2) return;
+  const groupAsSuperset = (slotIds: string[]): void => {
+    if (slotIds.length < 2) return;
     const current = blocks[activeBlock]?.supersetGroups ?? {};
     const nextId = 1 + Math.max(0, ...Object.values(current));
     const patch: Record<string, number> = {};
-    for (const id of exerciseIds) patch[id] = nextId;
+    for (const id of slotIds) patch[id] = nextId;
     updateActiveBlock({ supersetGroups: { ...current, ...patch } });
   };
-  const ungroup = (exerciseId: string): void => {
+  const ungroup = (slotId: string): void => {
     const current = { ...(blocks[activeBlock]?.supersetGroups ?? {}) };
-    delete current[exerciseId];
+    delete current[slotId];
     updateActiveBlock({ supersetGroups: current });
   };
 
+  /** Adds a new slot for this exercise — a fresh slot every call, so adding the same exercise again doesn't overwrite its earlier slot. */
   const addExercise = (exerciseId: string): void => {
-    updateActiveBlock({ selected: { ...activeSelected, [exerciseId]: emptySet() }, order: [...activeOrder, exerciseId] });
+    const slotId = newSlotId(exerciseId);
+    updateActiveBlock({ selected: { ...activeSelected, [slotId]: emptySet(exerciseId) }, order: [...activeOrder, slotId] });
     setQuery('');
   };
-  const removeExercise = (exerciseId: string): void => {
+  const removeExercise = (slotId: string): void => {
     const nextSelected = { ...activeSelected };
-    delete nextSelected[exerciseId];
-    updateActiveBlock({ selected: nextSelected, order: activeOrder.filter((id) => id !== exerciseId) });
+    delete nextSelected[slotId];
+    updateActiveBlock({ selected: nextSelected, order: activeOrder.filter((id) => id !== slotId) });
   };
-  const updateExercise = (exerciseId: string, patch: Partial<SetDraft>): void => {
-    updateActiveBlock({ selected: { ...activeSelected, [exerciseId]: { ...activeSelected[exerciseId]!, ...patch } } });
+  const updateExercise = (slotId: string, patch: Partial<SetDraft>): void => {
+    updateActiveBlock({ selected: { ...activeSelected, [slotId]: { ...activeSelected[slotId]!, ...patch } } });
   };
   const reorderExercise = (fromIndex: number, toIndex: number): void => {
     const next = [...activeOrder];
@@ -134,15 +146,17 @@ export function useSessionBlocks(options: UseSessionBlocksOptions = {}) {
     updateActiveBlock({ order: next });
   };
 
+  // No longer excludes exercises already in the block — the same exercise
+  // can now get a second slot (e.g. a second superset pair, or just logging
+  // it twice with different reps/charge).
   const q = query.trim().toLowerCase();
   const searchResults = useMemo(
     () => allExercises
-      .filter((ex) => !activeSelected[ex.id])
       .filter((ex) => muscleFilter === 'all' || ex.primary === muscleFilter || ex.secondary.includes(muscleFilter))
       .filter((ex) => equipmentFilter === 'all' || ex.equipment === equipmentFilter)
       .filter((ex) => !q || ex.name.toLowerCase().includes(q) || MUSCLE_LABEL[ex.primary].toLowerCase().includes(q) || ex.equipment.toLowerCase().includes(q))
       .slice(0, RESULTS_LIMIT),
-    [allExercises, activeSelected, muscleFilter, equipmentFilter, q],
+    [allExercises, muscleFilter, equipmentFilter, q],
   );
 
   const recentExercises = useMemo(() => {
@@ -150,7 +164,7 @@ export function useSessionBlocks(options: UseSessionBlocksOptions = {}) {
     const seen = new Set<string>();
     const out: Exercise[] = [];
     for (const id of ids) {
-      if (seen.has(id) || activeSelected[id]) continue;
+      if (seen.has(id)) continue;
       const ex = byId.get(id);
       if (!ex) continue;
       seen.add(id);
@@ -158,7 +172,7 @@ export function useSessionBlocks(options: UseSessionBlocksOptions = {}) {
       if (out.length >= 8) break;
     }
     return out;
-  }, [options.recentExerciseIds, byId, activeSelected]);
+  }, [options.recentExerciseIds, byId]);
 
   // A single strength block with no repeat count and no superset grouping is
   // still the plain flat-sets flow (no block/round concept needed); as soon
@@ -196,11 +210,11 @@ export interface FlatSessionExercise {
 export function flattenBlocksToExercises(blocks: BlockDraft[]): FlatSessionExercise[] {
   const out: FlatSessionExercise[] = [];
   for (const block of blocks) {
-    for (const exerciseId of block.order) {
-      const draft = block.selected[exerciseId];
+    for (const slotId of block.order) {
+      const draft = block.selected[slotId];
       if (!draft) continue;
       out.push({
-        exerciseId,
+        exerciseId: draft.exerciseId,
         order: out.length,
         reps: draft.reps ? Number(draft.reps) : undefined,
         weightKg: block.format === 'strength' && draft.weight ? Number(draft.weight) : undefined,

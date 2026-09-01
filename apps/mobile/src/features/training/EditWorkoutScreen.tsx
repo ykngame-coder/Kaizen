@@ -16,7 +16,7 @@ import {
   useWorkoutSets,
   useWorkouts,
 } from '@/lib/data/queries';
-import { emptyBlock, flattenBlocksToExercises, useSessionBlocks, type BlockDraft, type SetDraft } from './sessionBuilder';
+import { emptyBlock, flattenBlocksToExercises, newSlotId, useSessionBlocks, type BlockDraft, type SetDraft } from './sessionBuilder';
 import { SessionBlocksEditor } from './SessionBlocksEditor';
 
 const SESSIONS_QUOTA = 50;
@@ -62,15 +62,15 @@ export function EditWorkoutScreen(): React.JSX.Element {
           const nextSelected: Record<string, SetDraft> = {};
           const nextSupersetGroups: Record<string, number> = {};
           for (const s of blockSets) {
-            if (!nextSelected[s.exerciseId]) {
-              nextOrder.push(s.exerciseId);
-              nextSelected[s.exerciseId] = {
-                reps: s.reps != null ? String(s.reps) : '',
-                weight: s.weightKg != null ? String(s.weightKg) : '',
-                rest: s.restSec != null ? String(s.restSec) : '',
-              };
-              if (s.supersetGroup != null) nextSupersetGroups[s.exerciseId] = s.supersetGroup;
-            }
+            const slotId = newSlotId(s.exerciseId);
+            nextOrder.push(slotId);
+            nextSelected[slotId] = {
+              exerciseId: s.exerciseId,
+              reps: s.reps != null ? String(s.reps) : '',
+              weight: s.weightKg != null ? String(s.weightKg) : '',
+              rest: s.restSec != null ? String(s.restSec) : '',
+            };
+            if (s.supersetGroup != null) nextSupersetGroups[slotId] = s.supersetGroup;
           }
           const block: BlockDraft = {
             format: b.format,
@@ -87,14 +87,14 @@ export function EditWorkoutScreen(): React.JSX.Element {
       const nextOrder: string[] = [];
       const nextSelected: Record<string, SetDraft> = {};
       for (const s of existingSets) {
-        if (!nextSelected[s.exerciseId]) {
-          nextOrder.push(s.exerciseId);
-          nextSelected[s.exerciseId] = {
-            reps: s.reps != null ? String(s.reps) : '',
-            weight: s.weightKg != null ? String(s.weightKg) : '',
-            rest: s.restSec != null ? String(s.restSec) : '',
-          };
-        }
+        const slotId = newSlotId(s.exerciseId);
+        nextOrder.push(slotId);
+        nextSelected[slotId] = {
+          exerciseId: s.exerciseId,
+          reps: s.reps != null ? String(s.reps) : '',
+          weight: s.weightKg != null ? String(s.weightKg) : '',
+          rest: s.restSec != null ? String(s.restSec) : '',
+        };
       }
       builder.setBlocks([{ ...emptyBlock(), order: nextOrder, selected: nextSelected }]);
     }
@@ -113,10 +113,10 @@ export function EditWorkoutScreen(): React.JSX.Element {
     }
     try {
       if (builder.isSingleStrength) {
-        const sets = builder.blocks[0]!.order.map((exerciseId, index) => {
-          const s = builder.blocks[0]!.selected[exerciseId]!;
+        const sets = builder.blocks[0]!.order.map((slotId, index) => {
+          const s = builder.blocks[0]!.selected[slotId]!;
           return {
-            exerciseId,
+            exerciseId: s.exerciseId,
             order: index,
             reps: s.reps ? Number(s.reps) : undefined,
             weightKg: s.weight ? Number(s.weight) : undefined,
@@ -133,15 +133,15 @@ export function EditWorkoutScreen(): React.JSX.Element {
             format: b.format,
             timeCapSec: b.format === 'amrap' ? (Number(b.timeCapSec) || 0) * 60 || undefined : b.format === 'emom' ? Number(b.timeCapSec) || undefined : undefined,
             targetRounds: b.format === 'emom' || b.format === 'for_time' || b.format === 'strength' ? Number(b.targetRounds) || undefined : undefined,
-            sets: b.order.map((exerciseId, index) => {
-              const s = b.selected[exerciseId]!;
+            sets: b.order.map((slotId, index) => {
+              const s = b.selected[slotId]!;
               return {
-                exerciseId,
+                exerciseId: s.exerciseId,
                 order: index,
                 reps: s.reps ? Number(s.reps) : undefined,
                 weightKg: b.format === 'strength' && s.weight ? Number(s.weight) : undefined,
                 restSec: b.format === 'strength' && s.rest ? Number(s.rest) : undefined,
-                supersetGroup: b.supersetGroups[exerciseId],
+                supersetGroup: b.supersetGroups[slotId],
               };
             }),
           })),
