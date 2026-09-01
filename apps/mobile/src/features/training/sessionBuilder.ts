@@ -18,7 +18,12 @@ export interface BlockDraft {
 }
 
 export const emptySet = (): SetDraft => ({ reps: '', weight: '', rest: '' });
-export const emptyBlock = (): BlockDraft => ({ format: 'strength', timeCapSec: '12', targetRounds: '10', order: [], selected: {} });
+// targetRounds starts blank: a plain strength block now also exposes this
+// field (to repeat as a circuit), and a pre-filled "10" would silently turn
+// every new block's live run into a 10-round circuit before the user ever
+// touched it. AMRAP/EMOM/Pour le temps still work fine with an empty value —
+// their own compute functions already fall back to `?? 1`/`?? 0`.
+export const emptyBlock = (): BlockDraft => ({ format: 'strength', timeCapSec: '12', targetRounds: '', order: [], selected: {} });
 
 export function formatLabel(format: BlockFormat, t: TFunction): string {
   if (format === 'strength') return t('sport.sessionBuilder.blockFormat.strength');
@@ -81,6 +86,18 @@ export function useSessionBlocks(options: UseSessionBlocksOptions = {}) {
     setBlocks((prev) => prev.filter((_, i) => i !== index));
     setActiveBlock(0);
   };
+  /** Copies a block's format, rounds/cap and full exercise list into a new block right after it. */
+  const duplicateBlock = (index: number): void => {
+    setBlocks((prev) => {
+      const source = prev[index];
+      if (!source) return prev;
+      const copy: BlockDraft = { ...source, order: [...source.order], selected: { ...source.selected } };
+      const next = [...prev];
+      next.splice(index + 1, 0, copy);
+      return next;
+    });
+    setActiveBlock(index + 1);
+  };
 
   const addExercise = (exerciseId: string): void => {
     updateActiveBlock({ selected: { ...activeSelected, [exerciseId]: emptySet() }, order: [...activeOrder, exerciseId] });
@@ -128,12 +145,15 @@ export function useSessionBlocks(options: UseSessionBlocksOptions = {}) {
     return out;
   }, [options.recentExerciseIds, byId, activeSelected]);
 
-  const isSingleStrength = blocks.length === 1 && blocks[0]!.format === 'strength';
+  // A single strength block with no repeat count is still the plain
+  // flat-sets flow (no block/round concept needed); as soon as it has a
+  // repeat count, it needs the real block path so that count is saved.
+  const isSingleStrength = blocks.length === 1 && blocks[0]!.format === 'strength' && !blocks[0]!.targetRounds;
   const hasAnyExercise = blocks.some((b) => b.order.length > 0);
 
   return {
     name, setName,
-    blocks, setBlocks, activeBlock, setActiveBlock, updateActiveBlock, addBlock, removeBlock,
+    blocks, setBlocks, activeBlock, setActiveBlock, updateActiveBlock, addBlock, removeBlock, duplicateBlock,
     activeOrder, activeSelected,
     query, setQuery, muscleFilter, setMuscleFilter, equipmentFilter, setEquipmentFilter,
     allExercises, byId, searchResults, recentExercises,

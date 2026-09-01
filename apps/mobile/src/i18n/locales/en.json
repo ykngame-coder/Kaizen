@@ -868,6 +868,7 @@
       "blockLabel": "Block {{n}}",
       "blockFormat": {
         "strength": "Strength",
+        "strengthRepeated": "Strength — {{rounds}} rounds",
         "forTime": "For Time"
       },
       "actions": {
@@ -1413,12 +1414,15 @@
       },
       "block": {
         "heading": "Blocks",
+        "duplicate": "Duplicate",
         "summary_one": "{{count}} block · {{format}}",
         "summary_other": "{{count}} blocks · {{format}}",
         "timeCapLabel": "Time cap (min)",
         "intervalLabel": "Interval (s)",
         "intervalCountLabel": "Number of intervals",
         "roundsLabel": "Number of rounds",
+        "repeatLabel": "Repeat this block (rounds)",
+        "repeatPlaceholder": "Optional",
         "exerciseCount_one": "{{count}} exercise",
         "exerciseCount_other": "{{count}} exercises",
         "addBlock": "+ Add a block",

@@ -85,7 +85,7 @@ export function NewWorkoutScreen(): React.JSX.Element {
     if (source && source.name !== GARMIN_IMPORT_NAME) {
       builder.setName((prev) => (prev.trim() ? prev : source.name));
     }
-    builder.setBlocks([{ format: 'strength', timeCapSec: '12', targetRounds: '10', order: nextOrder, selected: nextSelected }]);
+    builder.setBlocks([{ format: 'strength', timeCapSec: '12', targetRounds: '', order: nextOrder, selected: nextSelected }]);
     builder.setActiveBlock(0);
     setImportSourceId(undefined);
     setPickerOpen(false);
@@ -131,7 +131,7 @@ export function NewWorkoutScreen(): React.JSX.Element {
           blocks: builder.blocks.map((b) => ({
             format: b.format,
             timeCapSec: b.format === 'amrap' ? (Number(b.timeCapSec) || 0) * 60 || undefined : b.format === 'emom' ? Number(b.timeCapSec) || undefined : undefined,
-            targetRounds: b.format === 'emom' || b.format === 'for_time' ? Number(b.targetRounds) || undefined : undefined,
+            targetRounds: b.format === 'emom' || b.format === 'for_time' || b.format === 'strength' ? Number(b.targetRounds) || undefined : undefined,
             sets: b.order.map((id, i) => {
               const s = b.selected[id]!;
               return {

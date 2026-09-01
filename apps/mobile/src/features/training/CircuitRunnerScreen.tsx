@@ -69,10 +69,16 @@ export function CircuitRunnerScreen(): React.JSX.Element {
           ? computeForTimeState(elapsedSec, roundsCompleted, active.targetRounds ?? 1)
           : null;
 
+  // A "Musculation" block can optionally repeat as a circuit — no timer
+  // (strength has none), just a manual round counter like Pour le temps.
+  const repeatRounds = active?.format === 'strength' ? active.targetRounds ?? 1 : undefined;
+  const isRepeatingStrength = active?.format === 'strength' && (repeatRounds ?? 1) > 1;
+  const isFinished = state?.isFinished || (isRepeatingStrength && roundsCompleted >= (repeatRounds ?? 1));
+
   const finishActiveBlock = async (): Promise<void> => {
     if (!active) return;
     if (tick.current) clearInterval(tick.current);
-    if (active.format !== 'strength') {
+    if (active.format !== 'strength' || isRepeatingStrength) {
       await completeBlock.mutateAsync({
         blockId: active.id,
         workoutId: active.workoutId,
@@ -82,7 +88,9 @@ export function CircuitRunnerScreen(): React.JSX.Element {
             ? elapsedSec
             : active.format === 'amrap'
               ? (active.timeCapSec ?? 0)
-              : (active.timeCapSec ?? 0) * (active.targetRounds ?? 0),
+              : active.format === 'emom'
+                ? (active.timeCapSec ?? 0) * (active.targetRounds ?? 0)
+                : undefined,
       });
     }
     if (activeIndex + 1 < blocks.length) {
@@ -94,11 +102,11 @@ export function CircuitRunnerScreen(): React.JSX.Element {
   };
 
   useEffect(() => {
-    if (state?.isFinished) {
+    if (isFinished) {
       triggerHaptic();
       void finishActiveBlock();
     }
-  }, [state?.isFinished]);
+  }, [isFinished]);
 
   if (isLoading) {
     return (
@@ -131,7 +139,7 @@ export function CircuitRunnerScreen(): React.JSX.Element {
         {blocks.length > 1 ? <Badge label={t('sport.circuitRunner.blockCounter', { current: activeIndex + 1, total: blocks.length })} tone="info" /> : null}
       </View>
 
-      {active.format === 'strength' ? (
+      {active.format === 'strength' && !isRepeatingStrength ? (
         <View style={{ flex: 1, gap: spacing[3] }}>
           <View style={{ gap: spacing[2] }}>
             {sets.map((s) => (
@@ -144,6 +152,31 @@ export function CircuitRunnerScreen(): React.JSX.Element {
             ))}
           </View>
           <Button label={t('sport.circuitRunner.nextBlock')} onPress={() => void finishActiveBlock()} />
+        </View>
+      ) : active.format === 'strength' && isRepeatingStrength ? (
+        <View style={{ flex: 1, gap: spacing[4] }}>
+          <View style={{ alignItems: 'center', gap: spacing[3] }}>
+            <Text variant="caption" color="textSubtle">
+              {t('sport.circuitRunner.round', { current: Math.min(roundsCompleted + 1, repeatRounds ?? 1) })}
+            </Text>
+            <View style={{ width: 224, height: 224, borderRadius: radii.full, borderWidth: 3, borderColor: accent, backgroundColor: `${accent}22`, alignItems: 'center', justifyContent: 'center' }}>
+              <Text variant="display">{roundsCompleted}/{repeatRounds}</Text>
+            </View>
+          </View>
+          <View style={{ gap: spacing[2] }}>
+            {sets.map((s) => (
+              <Card key={s.id}>
+                <Text variant="body" style={{ fontWeight: '700' }}>{exerciseName(s.exerciseId)}</Text>
+                <Text variant="caption" color="textSubtle">
+                  {s.reps != null ? t('sport.circuitRunner.reps', { reps: s.reps }) : '—'}{s.weightKg != null ? t('sport.circuitRunner.weightSuffix', { weight: s.weightKg }) : ''}
+                </Text>
+              </Card>
+            ))}
+          </View>
+          <View style={{ flexDirection: 'row', gap: spacing[3] }}>
+            <Button label={t('sport.circuitRunner.stop')} variant="secondary" onPress={() => router.back()} />
+            <Button label={t('sport.circuitRunner.roundDone')} onPress={() => setRoundsCompleted((r) => r + 1)} />
+          </View>
         </View>
       ) : (
         <View style={{ flex: 1, gap: spacing[4] }}>

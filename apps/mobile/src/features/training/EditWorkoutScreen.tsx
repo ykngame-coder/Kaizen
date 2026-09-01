@@ -73,7 +73,7 @@ export function EditWorkoutScreen(): React.JSX.Element {
           const block: BlockDraft = {
             format: b.format,
             timeCapSec: b.timeCapSec != null ? String(b.format === 'amrap' ? Math.round(b.timeCapSec / 60) : b.timeCapSec) : '12',
-            targetRounds: b.targetRounds != null ? String(b.targetRounds) : '10',
+            targetRounds: b.targetRounds != null ? String(b.targetRounds) : '',
             order: nextOrder,
             selected: nextSelected,
           };
@@ -129,7 +129,7 @@ export function EditWorkoutScreen(): React.JSX.Element {
           blocks: builder.blocks.map((b) => ({
             format: b.format,
             timeCapSec: b.format === 'amrap' ? (Number(b.timeCapSec) || 0) * 60 || undefined : b.format === 'emom' ? Number(b.timeCapSec) || undefined : undefined,
-            targetRounds: b.format === 'emom' || b.format === 'for_time' ? Number(b.targetRounds) || undefined : undefined,
+            targetRounds: b.format === 'emom' || b.format === 'for_time' || b.format === 'strength' ? Number(b.targetRounds) || undefined : undefined,
             sets: b.order.map((exerciseId, index) => {
               const s = b.selected[exerciseId]!;
               return {

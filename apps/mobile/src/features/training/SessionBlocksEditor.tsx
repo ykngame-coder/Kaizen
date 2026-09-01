@@ -202,11 +202,16 @@ export function SessionBlocksEditor({
                     </View>
                     <Text variant="body" style={{ fontWeight: '700' }}>{formatLabel(b.format, t)}</Text>
                   </View>
-                  {builder.blocks.length > 1 ? (
-                    <Pressable onPress={() => builder.removeBlock(i)} hitSlop={8}>
-                      <Text variant="body" style={{ color: colors.error }}>×</Text>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing[4] }}>
+                    <Pressable onPress={() => builder.duplicateBlock(i)} hitSlop={8}>
+                      <Text variant="caption" color="primary">{t('sport.sessionBuilder.block.duplicate')}</Text>
                     </Pressable>
-                  ) : null}
+                    {builder.blocks.length > 1 ? (
+                      <Pressable onPress={() => builder.removeBlock(i)} hitSlop={8}>
+                        <Text variant="body" style={{ color: colors.error }}>×</Text>
+                      </Pressable>
+                    ) : null}
+                  </View>
                 </View>
                 {i === builder.activeBlock ? (
                   <>
@@ -226,6 +231,15 @@ export function SessionBlocksEditor({
                     ) : null}
                     {b.format === 'for_time' ? (
                       <Input label={t('sport.sessionBuilder.block.roundsLabel')} keyboardType="numeric" value={b.targetRounds} onChangeText={(v) => builder.updateActiveBlock({ targetRounds: v })} />
+                    ) : null}
+                    {b.format === 'strength' ? (
+                      <Input
+                        label={t('sport.sessionBuilder.block.repeatLabel')}
+                        placeholder={t('sport.sessionBuilder.block.repeatPlaceholder')}
+                        keyboardType="numeric"
+                        value={b.targetRounds}
+                        onChangeText={(v) => builder.updateActiveBlock({ targetRounds: v })}
+                      />
                     ) : null}
                   </>
                 ) : (

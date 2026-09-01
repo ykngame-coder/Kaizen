@@ -868,6 +868,7 @@
       "blockLabel": "Block {{n}}",
       "blockFormat": {
         "strength": "Krafttraining",
+        "strengthRepeated": "Krafttraining — {{rounds}} Runden",
         "forTime": "Auf Zeit"
       },
       "actions": {
@@ -1413,12 +1414,15 @@
       },
       "block": {
         "heading": "Blöcke",
+        "duplicate": "Duplizieren",
         "summary_one": "{{count}} Block · {{format}}",
         "summary_other": "{{count}} Blöcke · {{format}}",
         "timeCapLabel": "Zeitlimit (Min)",
         "intervalLabel": "Intervall (s)",
         "intervalCountLabel": "Anzahl Intervalle",
         "roundsLabel": "Anzahl Runden",
+        "repeatLabel": "Diesen Block wiederholen (Runden)",
+        "repeatPlaceholder": "Optional",
         "exerciseCount_one": "{{count}} Übung",
         "exerciseCount_other": "{{count}} Übungen",
         "addBlock": "+ Block hinzufügen",

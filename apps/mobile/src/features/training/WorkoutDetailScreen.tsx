@@ -225,7 +225,8 @@ function blockResultLine(b: WorkoutBlock, t: TFunction): string {
   if (b.format === 'amrap') return `AMRAP ${b.timeCapSec ? Math.round(b.timeCapSec / 60) : '?'} min${b.completedRounds != null ? ` — ${b.completedRounds} rounds` : ''}`;
   if (b.format === 'emom') return `EMOM ${b.targetRounds ?? '?'}×${b.timeCapSec ?? '?'} s`;
   if (b.format === 'for_time') return `${t('sport.workoutDetail.blockFormat.forTime')}${b.resultTimeSec != null ? ` — ${Math.floor(b.resultTimeSec / 60)} min ${b.resultTimeSec % 60}` : ''}`;
-  return t('sport.workoutDetail.blockFormat.strength');
+  const rounds = b.completedRounds ?? b.targetRounds;
+  return rounds ? t('sport.workoutDetail.blockFormat.strengthRepeated', { rounds }) : t('sport.workoutDetail.blockFormat.strength');
 }
 
 /** One block's summary + exercises — reused by ActivityDetailScreen for a matched Garmin/circuit workout. */

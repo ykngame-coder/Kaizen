@@ -868,6 +868,7 @@
       "blockLabel": "Bloque {{n}}",
       "blockFormat": {
         "strength": "Musculación",
+        "strengthRepeated": "Musculación — {{rounds}} rounds",
         "forTime": "Por tiempo"
       },
       "actions": {
@@ -1413,12 +1414,15 @@
       },
       "block": {
         "heading": "Bloques",
+        "duplicate": "Duplicar",
         "summary_one": "{{count}} bloque · {{format}}",
         "summary_other": "{{count}} bloques · {{format}}",
         "timeCapLabel": "Tiempo límite (min)",
         "intervalLabel": "Intervalo (s)",
         "intervalCountLabel": "Número de intervalos",
         "roundsLabel": "Número de rounds",
+        "repeatLabel": "Repetir este bloque (rounds)",
+        "repeatPlaceholder": "Opcional",
         "exerciseCount_one": "{{count}} ejercicio",
         "exerciseCount_other": "{{count}} ejercicios",
         "addBlock": "+ Añadir un bloque",
