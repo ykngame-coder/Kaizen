@@ -60,6 +60,7 @@ export function EditWorkoutScreen(): React.JSX.Element {
           const blockSets = existingSets.filter((s) => s.blockId === b.id).sort((a, c) => a.order - c.order);
           const nextOrder: string[] = [];
           const nextSelected: Record<string, SetDraft> = {};
+          const nextSupersetGroups: Record<string, number> = {};
           for (const s of blockSets) {
             if (!nextSelected[s.exerciseId]) {
               nextOrder.push(s.exerciseId);
@@ -68,6 +69,7 @@ export function EditWorkoutScreen(): React.JSX.Element {
                 weight: s.weightKg != null ? String(s.weightKg) : '',
                 rest: s.restSec != null ? String(s.restSec) : '',
               };
+              if (s.supersetGroup != null) nextSupersetGroups[s.exerciseId] = s.supersetGroup;
             }
           }
           const block: BlockDraft = {
@@ -76,6 +78,7 @@ export function EditWorkoutScreen(): React.JSX.Element {
             targetRounds: b.targetRounds != null ? String(b.targetRounds) : '',
             order: nextOrder,
             selected: nextSelected,
+            supersetGroups: nextSupersetGroups,
           };
           return block;
         }),

@@ -1428,6 +1428,14 @@
         "addBlock": "+ Ajouter un bloc",
         "tapToEdit": "toucher pour modifier"
       },
+      "superset": {
+        "startSelect": "Grouper des exercices",
+        "cancelSelect": "Annuler",
+        "confirm_one": "Grouper {{count}} exercice",
+        "confirm_other": "Grouper {{count}} exercices",
+        "badge": "Superset",
+        "ungroup": "Dissocier"
+      },
       "addExercise": {
         "title": "Ajouter un exercice",
         "searchLabel": "Rechercher un exercice",

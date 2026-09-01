@@ -1428,6 +1428,14 @@
         "addBlock": "+ Add a block",
         "tapToEdit": "tap to edit"
       },
+      "superset": {
+        "startSelect": "Group exercises",
+        "cancelSelect": "Cancel",
+        "confirm_one": "Group {{count}} exercise",
+        "confirm_other": "Group {{count}} exercises",
+        "badge": "Superset",
+        "ungroup": "Ungroup"
+      },
       "addExercise": {
         "title": "Add an exercise",
         "searchLabel": "Search for an exercise",

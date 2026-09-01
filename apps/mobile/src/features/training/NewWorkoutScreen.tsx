@@ -85,7 +85,7 @@ export function NewWorkoutScreen(): React.JSX.Element {
     if (source && source.name !== GARMIN_IMPORT_NAME) {
       builder.setName((prev) => (prev.trim() ? prev : source.name));
     }
-    builder.setBlocks([{ format: 'strength', timeCapSec: '12', targetRounds: '', order: nextOrder, selected: nextSelected }]);
+    builder.setBlocks([{ format: 'strength', timeCapSec: '12', targetRounds: '', order: nextOrder, selected: nextSelected, supersetGroups: {} }]);
     builder.setActiveBlock(0);
     setImportSourceId(undefined);
     setPickerOpen(false);

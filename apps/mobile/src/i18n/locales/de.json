@@ -1428,6 +1428,14 @@
         "addBlock": "+ Block hinzufügen",
         "tapToEdit": "zum Bearbeiten tippen"
       },
+      "superset": {
+        "startSelect": "Übungen gruppieren",
+        "cancelSelect": "Abbrechen",
+        "confirm_one": "{{count}} Übung gruppieren",
+        "confirm_other": "{{count}} Übungen gruppieren",
+        "badge": "Superset",
+        "ungroup": "Trennen"
+      },
       "addExercise": {
         "title": "Übung hinzufügen",
         "searchLabel": "Übung suchen",

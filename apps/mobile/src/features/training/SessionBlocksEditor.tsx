@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Image, Pressable, ScrollView, View } from 'react-native';
 import DraggableFlatList, { type RenderItemParams } from 'react-native-draggable-flatlist';
 import type { TFunction } from 'i18next';
@@ -159,6 +159,13 @@ export function SessionBlocksEditor({
   const [blocksOpen, setBlocksOpen] = useState(!builder.isSingleStrength);
   const [addOpen, setAddOpen] = useState(true);
   const [selectedOpen, setSelectedOpen] = useState(true);
+  const [selectingSuperset, setSelectingSuperset] = useState(false);
+  const [pendingSuperset, setPendingSuperset] = useState<string[]>([]);
+
+  useEffect(() => {
+    setSelectingSuperset(false);
+    setPendingSuperset([]);
+  }, [builder.activeBlock]);
 
   const FORMAT_OPTIONS: { value: BlockFormat; label: string }[] = [
     { value: 'strength', label: formatLabel('strength', t) },
@@ -345,6 +352,28 @@ export function SessionBlocksEditor({
       {!selectedOpen ? null : builder.activeOrder.length === 0 ? (
         <Text variant="caption" color="textSubtle">{t('sport.sessionBuilder.session.emptyHint')}</Text>
       ) : null}
+      {selectedOpen && builder.activeOrder.length >= 2 ? (
+        <View style={{ flexDirection: 'row', gap: spacing[2], alignItems: 'center', marginTop: spacing[2] }}>
+          <Pressable onPress={() => { setSelectingSuperset((v) => !v); setPendingSuperset([]); }}>
+            <Text variant="caption" color="primary">
+              {selectingSuperset ? t('sport.sessionBuilder.superset.cancelSelect') : t('sport.sessionBuilder.superset.startSelect')}
+            </Text>
+          </Pressable>
+          {selectingSuperset && pendingSuperset.length >= 2 ? (
+            <Pressable
+              onPress={() => {
+                builder.groupAsSuperset(pendingSuperset);
+                setSelectingSuperset(false);
+                setPendingSuperset([]);
+              }}
+            >
+              <Text variant="caption" style={{ color: colors.accentData, fontWeight: '700' }}>
+                {t('sport.sessionBuilder.superset.confirm', { count: pendingSuperset.length })}
+              </Text>
+            </Pressable>
+          ) : null}
+        </View>
+      ) : null}
     </View>
   );
 
@@ -354,21 +383,42 @@ export function SessionBlocksEditor({
     const draft = builder.activeSelected[exerciseId]!;
     const known = lastKnownFor?.(exerciseId);
     const isStrength = activeFormat === 'strength';
+    const activeBlockDraft = builder.blocks[builder.activeBlock];
+    const groupId = activeBlockDraft?.supersetGroups[exerciseId];
+    const isPendingSelected = pendingSuperset.includes(exerciseId);
     return (
       <View style={{ opacity: isActive ? 0.6 : 1, backgroundColor: isActive ? colors.surfaceElevated : 'transparent', borderRadius: radii.lg, paddingHorizontal: spacing[1] }}>
-        <Card style={{ marginBottom: spacing[2] }} elevated>
+        <Card style={{ marginBottom: spacing[2], borderColor: groupId != null ? colors.accentData : undefined, borderWidth: groupId != null ? 1.5 : undefined }} elevated>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing[2] }}>
-            <Pressable onLongPress={drag} disabled={isActive} hitSlop={10} style={{ padding: 2 }}>
+            <Pressable onLongPress={drag} disabled={isActive || selectingSuperset} hitSlop={10} style={{ padding: 2 }}>
               <Text style={{ fontSize: 16 }} color="textSubtle">☰</Text>
             </Pressable>
             <Thumb exercise={ex} />
             <View style={{ flex: 1 }}>
               <Text variant="subtitle">{ex.name}</Text>
               <Text variant="caption" color="textMuted">{exerciseSubtitle(ex)}</Text>
+              {groupId != null && !selectingSuperset ? (
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing[2], marginTop: 2 }}>
+                  <Badge label={t('sport.sessionBuilder.superset.badge')} tone="info" />
+                  <Pressable onPress={() => builder.ungroup(exerciseId)}>
+                    <Text variant="caption" color="primary">{t('sport.sessionBuilder.superset.ungroup')}</Text>
+                  </Pressable>
+                </View>
+              ) : null}
             </View>
-            <Pressable onPress={() => builder.removeExercise(exerciseId)} hitSlop={8}>
-              <Text variant="heading" style={{ color: colors.error }}>×</Text>
-            </Pressable>
+            {selectingSuperset ? (
+              <Pressable
+                onPress={() => setPendingSuperset((prev) => (isPendingSelected ? prev.filter((id) => id !== exerciseId) : [...prev, exerciseId]))}
+                hitSlop={8}
+                style={{ width: 22, height: 22, borderRadius: 6, borderWidth: 1.5, borderColor: isPendingSelected ? colors.accentData : colors.border, backgroundColor: isPendingSelected ? colors.accentData : 'transparent', alignItems: 'center', justifyContent: 'center' }}
+              >
+                {isPendingSelected ? <Text style={{ color: '#04140b', fontWeight: '800', fontSize: 13 }}>✓</Text> : null}
+              </Pressable>
+            ) : (
+              <Pressable onPress={() => builder.removeExercise(exerciseId)} hitSlop={8}>
+                <Text variant="heading" style={{ color: colors.error }}>×</Text>
+              </Pressable>
+            )}
           </View>
 
           {known && (known.reps != null || known.weightKg != null) ? (
