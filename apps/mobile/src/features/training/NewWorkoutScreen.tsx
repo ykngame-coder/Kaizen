@@ -140,6 +140,7 @@ export function NewWorkoutScreen(): React.JSX.Element {
                 reps: s.reps ? Number(s.reps) : undefined,
                 weightKg: b.format === 'strength' && s.weight ? Number(s.weight) : undefined,
                 restSec: b.format === 'strength' && s.rest ? Number(s.rest) : undefined,
+                supersetGroup: b.supersetGroups[id],
               };
             }),
           })),
