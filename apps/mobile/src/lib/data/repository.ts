@@ -51,6 +51,7 @@ import type { MuscleSession } from '@supotsu/engines';
 import { EXERCISE_LIBRARY } from '@supotsu/shared';
 import { EXERCISES as FULL_EXERCISE_CATALOG } from '@/features/exercises/catalog';
 import { categoryToColumn, defaultDisplayName, localDateKey, type DailyScoreColumn, type LeaderboardCategory } from '@/features/community/leaderboardHelpers';
+import { buildActivityMuscleSessions } from './muscleSessions';
 import {
   insertActivity,
   upsertActivities,
@@ -1243,7 +1244,9 @@ function createDemoRepository(): DataRepository {
     async listMuscleSessions(userId) {
       const rows = await readJson<LoggedSetRow & { date: string }>(setKey(userId));
       const dates = new Map(rows.map((r) => [r.workoutId, r.date]));
-      return buildMuscleSessions(dates, rows);
+      const activities = await readJson<Activity>(actKey(userId));
+      const workouts = await readJson<Workout>(wkKey(userId));
+      return [...buildMuscleSessions(dates, rows), ...buildActivityMuscleSessions(activities, workouts)];
     },
     async listMuscleWork(userId) {
       const rows = await readJson<LoggedSetRow & { date: string }>(setKey(userId));
@@ -1947,10 +1950,12 @@ function createSupabaseRepository(
       return (await listRecordsDb(client, userId)).map(rowToRecord);
     },
     async listMuscleSessions(userId) {
-      const workouts = await listWorkoutsDb(client, userId);
-      const dates = new Map(workouts.map((w) => [w.id, w.completed_at ?? w.created_at]));
+      const workoutRows = await listWorkoutsDb(client, userId);
+      const dates = new Map(workoutRows.map((w) => [w.id, w.completed_at ?? w.created_at]));
       const sets = await listWorkoutSetsForUser(client, userId);
-      return buildMuscleSessions(dates, sets);
+      const activities = (await listActivitiesDb(client, userId)).map(rowToActivity);
+      const workouts = workoutRows.map(rowToWorkout);
+      return [...buildMuscleSessions(dates, sets), ...buildActivityMuscleSessions(activities, workouts)];
     },
     async listMuscleWork(userId) {
       const workouts = await listWorkoutsDb(client, userId);
