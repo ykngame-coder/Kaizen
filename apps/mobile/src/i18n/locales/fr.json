@@ -1528,6 +1528,14 @@
         "submitPending": "…",
         "submitLibrary": "Enregistrer la séance"
       }
+    },
+    "activityDetail": {
+      "muscles": {
+        "heading": "Muscles travaillés",
+        "hint": "Indique quels muscles cette activité a sollicités pour qu'elle compte dans ta récupération.",
+        "save": "Enregistrer",
+        "saved": "Enregistré"
+      }
     }
   },
   "sommeil": {

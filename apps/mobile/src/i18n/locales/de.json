@@ -1528,6 +1528,14 @@
         "submitPending": "…",
         "submitLibrary": "Einheit speichern"
       }
+    },
+    "activityDetail": {
+      "muscles": {
+        "heading": "Beanspruchte Muskeln",
+        "hint": "Gib an, welche Muskeln diese Aktivität beansprucht hat, damit sie in deiner Erholung zählt.",
+        "save": "Speichern",
+        "saved": "Gespeichert"
+      }
     }
   },
   "sommeil": {

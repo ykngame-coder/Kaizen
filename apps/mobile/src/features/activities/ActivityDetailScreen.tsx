@@ -1,14 +1,18 @@
 import React, { useMemo, useState } from 'react';
 import { View } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { Button, Card, EmptyState, Icon, Screen, Text, useTheme } from '@supotsu/ui';
+import { useTranslation } from 'react-i18next';
+import { Button, Card, EmptyState, FilterChip, Icon, Screen, Text, useTheme } from '@supotsu/ui';
 import { radii, spacing } from '@supotsu/design-system';
+import type { MuscleGroup } from '@supotsu/core';
 import { EXERCISE_LIBRARY } from '@supotsu/shared';
-import { EXERCISES } from '@/features/exercises/catalog';
+import { EXERCISES, MUSCLE_LABEL } from '@/features/exercises/catalog';
 import { BackButton } from '@/features/navigation/BackButton';
-import { useActivities, useCustomExercises, useDeleteActivity, useWorkoutBlocks, useWorkoutSets, useWorkouts } from '@/lib/data/queries';
+import { useActivities, useCustomExercises, useDeleteActivity, useUpdateActivityMuscles, useWorkoutBlocks, useWorkoutSets, useWorkouts } from '@/lib/data/queries';
 import { activityLabel, formatDate, formatDistance, formatDuration } from '@/lib/format';
 import { BlockSummaryCard } from '@/features/training/WorkoutDetailScreen';
+
+const MUSCLES: MuscleGroup[] = ['chest', 'back', 'shoulders', 'biceps', 'triceps', 'quads', 'hamstrings', 'glutes', 'calves', 'core', 'full_body'];
 
 const formatTime = (iso: string): string =>
   new Date(iso).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
@@ -49,6 +53,7 @@ function Stat({ label, value }: { label: string; value: string | null | undefine
  * breakdown) — the exercise-by-exercise detail via a link to that workout.
  */
 export function ActivityDetailScreen(): React.JSX.Element {
+  const { t } = useTranslation();
   const router = useRouter();
   const { colors } = useTheme();
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -57,8 +62,12 @@ export function ActivityDetailScreen(): React.JSX.Element {
   const { data: customExercises = [] } = useCustomExercises();
   const deleteActivity = useDeleteActivity();
   const [confirmingDelete, setConfirmingDelete] = useState(false);
+  const updateActivityMuscles = useUpdateActivityMuscles();
+  const [selectedMuscles, setSelectedMuscles] = useState<MuscleGroup[] | null>(null);
+  const [musclesSaved, setMusclesSaved] = useState(false);
 
   const activity = useMemo(() => activities.find((a) => a.id === id), [activities, id]);
+  const musclesValue = selectedMuscles ?? activity?.muscles ?? [];
 
   const matchedWorkout = useMemo(() => {
     if (!activity || activity.type !== 'strength') return undefined;
@@ -114,6 +123,18 @@ export function ActivityDetailScreen(): React.JSX.Element {
     router.back();
   };
 
+  const toggleMuscle = (m: MuscleGroup): void => {
+    const current = musclesValue;
+    setSelectedMuscles(current.includes(m) ? current.filter((x) => x !== m) : [...current, m]);
+    setMusclesSaved(false);
+  };
+
+  const onSaveMuscles = async (): Promise<void> => {
+    if (!activity) return;
+    await updateActivityMuscles.mutateAsync({ activityId: activity.id, muscles: musclesValue });
+    setMusclesSaved(true);
+  };
+
   return (
     <Screen scroll>
       <BackButton />
@@ -140,6 +161,27 @@ export function ActivityDetailScreen(): React.JSX.Element {
           <Text variant="body" color="textMuted" style={{ marginTop: spacing[1], lineHeight: 21 }}>
             {activity.notes}
           </Text>
+        </Card>
+      ) : null}
+
+      {!matchedWorkout ? (
+        <Card>
+          <Text variant="heading">{t('sport.activityDetail.muscles.heading')}</Text>
+          <Text variant="caption" color="textMuted" style={{ marginTop: spacing[1] }}>
+            {t('sport.activityDetail.muscles.hint')}
+          </Text>
+          <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: spacing[2], marginTop: spacing[3] }}>
+            {MUSCLES.map((m) => (
+              <FilterChip key={m} label={MUSCLE_LABEL[m]} active={musclesValue.includes(m)} onPress={() => toggleMuscle(m)} />
+            ))}
+          </View>
+          <View style={{ alignItems: 'flex-start', marginTop: spacing[3] }}>
+            <Button
+              label={updateActivityMuscles.isPending ? '…' : musclesSaved ? t('sport.activityDetail.muscles.saved') : t('sport.activityDetail.muscles.save')}
+              onPress={onSaveMuscles}
+              disabled={updateActivityMuscles.isPending}
+            />
+          </View>
         </Card>
       ) : null}
 

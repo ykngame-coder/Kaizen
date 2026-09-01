@@ -1528,6 +1528,14 @@
         "submitPending": "…",
         "submitLibrary": "Guardar sessão"
       }
+    },
+    "activityDetail": {
+      "muscles": {
+        "heading": "Músculos trabalhados",
+        "hint": "Indica que músculos esta atividade trabalhou para que conte na tua recuperação.",
+        "save": "Guardar",
+        "saved": "Guardado"
+      }
     }
   },
   "sommeil": {

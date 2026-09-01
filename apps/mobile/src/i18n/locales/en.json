@@ -1528,6 +1528,14 @@
         "submitPending": "…",
         "submitLibrary": "Save session"
       }
+    },
+    "activityDetail": {
+      "muscles": {
+        "heading": "Muscles worked",
+        "hint": "Tell us which muscles this activity worked so it counts toward your recovery.",
+        "save": "Save",
+        "saved": "Saved"
+      }
     }
   },
   "sommeil": {
