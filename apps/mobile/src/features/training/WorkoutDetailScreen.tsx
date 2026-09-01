@@ -11,6 +11,7 @@ import { EXERCISES } from '@/features/exercises/catalog';
 import { BackButton } from '@/features/navigation/BackButton';
 import { useBlockSets, useCustomExercises, useDeletePlannedWorkout, useWorkoutBlocks, useWorkoutSets, useWorkouts } from '@/lib/data/queries';
 import { formatDate } from '@/lib/format';
+import { supersetPartners } from './blockRunnerEngine';
 
 const STATUS_TONE: Record<WorkoutStatus, BadgeTone> = {
   planned: 'info',
@@ -246,10 +247,13 @@ export function BlockSummaryCard({
       <Text variant="heading">{t('sport.workoutDetail.blockLabel', { n: index + 1 })} · {blockFormatLabel(block.format, t)}</Text>
       <Text variant="caption" color="textMuted">{blockResultLine(block, t)}</Text>
       <View style={{ marginTop: spacing[2], gap: spacing[1] }}>
-        {sets.map((s) => (
-          <Text key={s.id} variant="caption" color="textSubtle">
-            {exerciseName(s.exerciseId)}{s.reps != null ? ` · ${s.reps} reps` : ''}{block.format === 'strength' && s.weightKg != null ? ` · ${s.weightKg} kg` : ''}
-          </Text>
+        {sets.map((s, i) => (
+          <View key={s.id} style={{ flexDirection: 'row', alignItems: 'center', gap: spacing[2] }}>
+            <Text variant="caption" color="textSubtle">
+              {exerciseName(s.exerciseId)}{s.reps != null ? ` · ${s.reps} reps` : ''}{block.format === 'strength' && s.weightKg != null ? ` · ${s.weightKg} kg` : ''}
+            </Text>
+            {supersetPartners(sets, i).length > 0 ? <Badge label={t('sport.workoutDetail.superset.badge')} tone="info" /> : null}
+          </View>
         ))}
       </View>
     </Card>

@@ -887,6 +887,9 @@
       },
       "deleteConfirm": {
         "message": "Excluir este treino definitivamente?"
+      },
+      "superset": {
+        "badge": "Superserie"
       }
     },
     "newWorkout": {

@@ -887,6 +887,9 @@
       },
       "deleteConfirm": {
         "message": "Permanently delete this workout?"
+      },
+      "superset": {
+        "badge": "Superset"
       }
     },
     "newWorkout": {
