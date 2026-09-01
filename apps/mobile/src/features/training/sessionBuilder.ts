@@ -15,6 +15,8 @@ export interface BlockDraft {
   targetRounds: string;
   order: string[];
   selected: Record<string, SetDraft>;
+  /** exerciseId -> group number. Members are only an active superset when also adjacent in `order`. */
+  supersetGroups: Record<string, number>;
 }
 
 export const emptySet = (): SetDraft => ({ reps: '', weight: '', rest: '' });
@@ -23,7 +25,7 @@ export const emptySet = (): SetDraft => ({ reps: '', weight: '', rest: '' });
 // every new block's live run into a 10-round circuit before the user ever
 // touched it. AMRAP/EMOM/Pour le temps still work fine with an empty value —
 // their own compute functions already fall back to `?? 1`/`?? 0`.
-export const emptyBlock = (): BlockDraft => ({ format: 'strength', timeCapSec: '12', targetRounds: '', order: [], selected: {} });
+export const emptyBlock = (): BlockDraft => ({ format: 'strength', timeCapSec: '12', targetRounds: '', order: [], selected: {}, supersetGroups: {} });
 
 export function formatLabel(format: BlockFormat, t: TFunction): string {
   if (format === 'strength') return t('sport.sessionBuilder.blockFormat.strength');
@@ -98,6 +100,19 @@ export function useSessionBlocks(options: UseSessionBlocksOptions = {}) {
     });
     setActiveBlock(index + 1);
   };
+  const groupAsSuperset = (exerciseIds: string[]): void => {
+    if (exerciseIds.length < 2) return;
+    const current = blocks[activeBlock]?.supersetGroups ?? {};
+    const nextId = 1 + Math.max(0, ...Object.values(current));
+    const patch: Record<string, number> = {};
+    for (const id of exerciseIds) patch[id] = nextId;
+    updateActiveBlock({ supersetGroups: { ...current, ...patch } });
+  };
+  const ungroup = (exerciseId: string): void => {
+    const current = { ...(blocks[activeBlock]?.supersetGroups ?? {}) };
+    delete current[exerciseId];
+    updateActiveBlock({ supersetGroups: current });
+  };
 
   const addExercise = (exerciseId: string): void => {
     updateActiveBlock({ selected: { ...activeSelected, [exerciseId]: emptySet() }, order: [...activeOrder, exerciseId] });
@@ -145,15 +160,15 @@ export function useSessionBlocks(options: UseSessionBlocksOptions = {}) {
     return out;
   }, [options.recentExerciseIds, byId, activeSelected]);
 
-  // A single strength block with no repeat count is still the plain
-  // flat-sets flow (no block/round concept needed); as soon as it has a
-  // repeat count, it needs the real block path so that count is saved.
-  const isSingleStrength = blocks.length === 1 && blocks[0]!.format === 'strength' && !blocks[0]!.targetRounds;
+  // A single strength block with no repeat count and no superset grouping is
+  // still the plain flat-sets flow (no block/round concept needed); as soon
+  // as either is set, it needs the real block path so they get saved.
+  const isSingleStrength = blocks.length === 1 && blocks[0]!.format === 'strength' && !blocks[0]!.targetRounds && Object.keys(blocks[0]!.supersetGroups).length === 0;
   const hasAnyExercise = blocks.some((b) => b.order.length > 0);
 
   return {
     name, setName,
-    blocks, setBlocks, activeBlock, setActiveBlock, updateActiveBlock, addBlock, removeBlock, duplicateBlock,
+    blocks, setBlocks, activeBlock, setActiveBlock, updateActiveBlock, addBlock, removeBlock, duplicateBlock, groupAsSuperset, ungroup,
     activeOrder, activeSelected,
     query, setQuery, muscleFilter, setMuscleFilter, equipmentFilter, setEquipmentFilter,
     allExercises, byId, searchResults, recentExercises,
