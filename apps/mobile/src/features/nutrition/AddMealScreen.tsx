@@ -10,7 +10,11 @@ import { useAddNutritionEntry, useNutritionEntries } from '@/lib/data/queries';
 import { formatDate } from '@/lib/format';
 import { DatePickerModal } from '@/features/navigation/DatePickerModal';
 
-const numOrUndef = (s: string): number | undefined => (s ? Number(s) : undefined);
+// "numeric" on iOS has no decimal-point key at all — decimal-pad does, but
+// a French keyboard's decimal key types a comma, which Number() can't
+// parse, so every macro value is normalized through this first.
+const parseDecimal = (s: string): number => Number(s.trim().replace(',', '.'));
+const numOrUndef = (s: string): number | undefined => (s.trim() ? parseDecimal(s) : undefined);
 const dayKey = (d: Date): string => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 const todayKey = (): string => dayKey(new Date());
 
@@ -81,7 +85,7 @@ export function AddMealScreen(): React.JSX.Element {
     const candidate = {
       mealType,
       description,
-      kcal: Number(kcal),
+      kcal: parseDecimal(kcal),
       proteinG: numOrUndef(proteinG),
       carbG: numOrUndef(carbG),
       fatG: numOrUndef(fatG),
@@ -154,13 +158,13 @@ export function AddMealScreen(): React.JSX.Element {
 
       <Input label={t('nutrition.addMeal.descriptionLabel')} value={description} onChangeText={setDescription} />
 
-      <Input label={t('nutrition.addMeal.kcalLabel')} keyboardType="numeric" value={kcal} onChangeText={setKcal} />
+      <Input label={t('nutrition.addMeal.kcalLabel')} keyboardType="decimal-pad" value={kcal} onChangeText={setKcal} />
 
       <View style={{ flexDirection: 'row', gap: spacing[3] }}>
         <View style={{ flex: 1 }}>
           <Input
             label={t('nutrition.addMeal.proteinLabel')}
-            keyboardType="numeric"
+            keyboardType="decimal-pad"
             value={proteinG}
             onChangeText={setProteinG}
           />
@@ -168,7 +172,7 @@ export function AddMealScreen(): React.JSX.Element {
         <View style={{ flex: 1 }}>
           <Input
             label={t('nutrition.addMeal.carbLabel')}
-            keyboardType="numeric"
+            keyboardType="decimal-pad"
             value={carbG}
             onChangeText={setCarbG}
           />
@@ -176,7 +180,7 @@ export function AddMealScreen(): React.JSX.Element {
         <View style={{ flex: 1 }}>
           <Input
             label={t('nutrition.addMeal.fatLabel')}
-            keyboardType="numeric"
+            keyboardType="decimal-pad"
             value={fatG}
             onChangeText={setFatG}
           />
@@ -185,7 +189,7 @@ export function AddMealScreen(): React.JSX.Element {
 
       <Input
         label={t('nutrition.addMeal.hydrationLabel')}
-        keyboardType="numeric"
+        keyboardType="decimal-pad"
         value={hydrationMl}
         onChangeText={setHydrationMl}
       />

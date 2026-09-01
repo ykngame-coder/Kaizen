@@ -107,16 +107,16 @@ export function MealDetailScreen(): React.JSX.Element {
 
       {editing ? (
         <Card>
-          <Input label={t('nutrition.mealDetail.kcal')} keyboardType="numeric" value={kcalInput} onChangeText={setKcalInput} />
+          <Input label={t('nutrition.mealDetail.kcal')} keyboardType="decimal-pad" value={kcalInput} onChangeText={setKcalInput} />
           <View style={{ flexDirection: 'row', gap: spacing[3] }}>
             <View style={{ flex: 1 }}>
-              <Input label={t('nutrition.mealDetail.protein')} keyboardType="numeric" value={proteinInput} onChangeText={setProteinInput} />
+              <Input label={t('nutrition.mealDetail.protein')} keyboardType="decimal-pad" value={proteinInput} onChangeText={setProteinInput} />
             </View>
             <View style={{ flex: 1 }}>
-              <Input label={t('nutrition.mealDetail.carbs')} keyboardType="numeric" value={carbInput} onChangeText={setCarbInput} />
+              <Input label={t('nutrition.mealDetail.carbs')} keyboardType="decimal-pad" value={carbInput} onChangeText={setCarbInput} />
             </View>
             <View style={{ flex: 1 }}>
-              <Input label={t('nutrition.mealDetail.fat')} keyboardType="numeric" value={fatInput} onChangeText={setFatInput} />
+              <Input label={t('nutrition.mealDetail.fat')} keyboardType="decimal-pad" value={fatInput} onChangeText={setFatInput} />
             </View>
           </View>
           {editError ? <Badge label={editError} tone="error" /> : null}
