@@ -2111,6 +2111,16 @@
       "dateToday": "Hoy",
       "momentLabel": "MOMENTO",
       "descriptionLabel": "Descripción",
+      "calc": {
+        "heading": "Calcular desde una etiqueta nutricional (/100 g)",
+        "hint": "Indica los valores por 100 g y luego la cantidad comida — los campos de abajo se rellenarán automáticamente.",
+        "kcalPer100": "Calorías /100 g",
+        "proteinPer100": "Proteínas /100 g",
+        "carbPer100": "Carbohidratos /100 g",
+        "fatPer100": "Grasas /100 g",
+        "quantityLabel": "Cantidad comida (g)",
+        "apply": "Aplicar"
+      },
       "kcalLabel": "Calorías (kcal)",
       "proteinLabel": "Proteínas (g)",
       "carbLabel": "Carbohidratos (g)",

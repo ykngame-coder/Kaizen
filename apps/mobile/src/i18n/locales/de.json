@@ -2111,6 +2111,16 @@
       "dateToday": "Heute",
       "momentLabel": "ZEITPUNKT",
       "descriptionLabel": "Beschreibung",
+      "calc": {
+        "heading": "Aus einer Nährwerttabelle berechnen (/100 g)",
+        "hint": "Gib die Werte pro 100 g und die gegessene Menge ein — die Felder unten werden automatisch ausgefüllt.",
+        "kcalPer100": "Kalorien /100 g",
+        "proteinPer100": "Eiweiß /100 g",
+        "carbPer100": "Kohlenhydrate /100 g",
+        "fatPer100": "Fett /100 g",
+        "quantityLabel": "Gegessene Menge (g)",
+        "apply": "Anwenden"
+      },
       "kcalLabel": "Kalorien (kcal)",
       "proteinLabel": "Protein (g)",
       "carbLabel": "Kohlenhydrate (g)",

@@ -2111,6 +2111,16 @@
       "dateToday": "Aujourd'hui",
       "momentLabel": "MOMENT",
       "descriptionLabel": "Description",
+      "calc": {
+        "heading": "Calculer depuis un tableau nutritionnel (/100 g)",
+        "hint": "Renseigne les valeurs pour 100 g, puis la quantité mangée — les champs ci-dessous seront remplis automatiquement.",
+        "kcalPer100": "Calories /100 g",
+        "proteinPer100": "Protéines /100 g",
+        "carbPer100": "Glucides /100 g",
+        "fatPer100": "Lipides /100 g",
+        "quantityLabel": "Quantité mangée (g)",
+        "apply": "Appliquer"
+      },
       "kcalLabel": "Calories (kcal)",
       "proteinLabel": "Protéines (g)",
       "carbLabel": "Glucides (g)",

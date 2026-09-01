@@ -45,6 +45,12 @@ export function AddMealScreen(): React.JSX.Element {
   const [showRecent, setShowRecent] = useState(false);
   const [dateKey, setDateKey] = useState(todayKey());
   const [showDatePicker, setShowDatePicker] = useState(false);
+  const [showCalc, setShowCalc] = useState(false);
+  const [calcKcal, setCalcKcal] = useState('');
+  const [calcProtein, setCalcProtein] = useState('');
+  const [calcCarb, setCalcCarb] = useState('');
+  const [calcFat, setCalcFat] = useState('');
+  const [calcQty, setCalcQty] = useState('');
 
   // Arriving from the Calendar's "Planifier un repas" button — pre-fill the picked day.
   useEffect(() => {
@@ -76,6 +82,24 @@ export function AddMealScreen(): React.JSX.Element {
     setFatG(entry.fatG != null ? String(entry.fatG) : '');
     setHydrationMl(entry.hydrationMl != null ? String(entry.hydrationMl) : '');
     setShowRecent(false);
+  };
+
+  // Nutrition labels are almost always per 100 g; the tester's own portion is
+  // rarely 100 g, so scale each value by qty/100 into the real total fields
+  // instead of asking for mental math.
+  const applyCalc = (): void => {
+    const qty = parseDecimal(calcQty);
+    if (!Number.isFinite(qty) || qty <= 0) return;
+    const factor = qty / 100;
+    const scale = (per100: string): string => {
+      const v = numOrUndef(per100);
+      return v != null ? String(Math.round(v * factor * 10) / 10) : '';
+    };
+    setKcal(scale(calcKcal));
+    setProteinG(scale(calcProtein));
+    setCarbG(scale(calcCarb));
+    setFatG(scale(calcFat));
+    setShowCalc(false);
   };
 
   const isToday = dateKey === todayKey();
@@ -157,6 +181,34 @@ export function AddMealScreen(): React.JSX.Element {
       </View>
 
       <Input label={t('nutrition.addMeal.descriptionLabel')} value={description} onChangeText={setDescription} />
+
+      <Card>
+        <Pressable onPress={() => setShowCalc((v) => !v)} style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+          <Text variant="heading">{t('nutrition.addMeal.calc.heading')}</Text>
+          <Text variant="heading" style={{ color: colors.textSubtle, transform: [{ rotate: showCalc ? '180deg' : '0deg' }] }}>⌄</Text>
+        </Pressable>
+        {showCalc && (
+          <View style={{ gap: spacing[2], marginTop: spacing[3] }}>
+            <Text variant="caption" color="textSubtle">{t('nutrition.addMeal.calc.hint')}</Text>
+            <Input label={t('nutrition.addMeal.calc.kcalPer100')} keyboardType="decimal-pad" value={calcKcal} onChangeText={setCalcKcal} />
+            <View style={{ flexDirection: 'row', gap: spacing[3] }}>
+              <View style={{ flex: 1 }}>
+                <Input label={t('nutrition.addMeal.calc.proteinPer100')} keyboardType="decimal-pad" value={calcProtein} onChangeText={setCalcProtein} />
+              </View>
+              <View style={{ flex: 1 }}>
+                <Input label={t('nutrition.addMeal.calc.carbPer100')} keyboardType="decimal-pad" value={calcCarb} onChangeText={setCalcCarb} />
+              </View>
+              <View style={{ flex: 1 }}>
+                <Input label={t('nutrition.addMeal.calc.fatPer100')} keyboardType="decimal-pad" value={calcFat} onChangeText={setCalcFat} />
+              </View>
+            </View>
+            <Input label={t('nutrition.addMeal.calc.quantityLabel')} keyboardType="decimal-pad" value={calcQty} onChangeText={setCalcQty} />
+            <View style={{ alignItems: 'flex-start', marginTop: spacing[1] }}>
+              <Button label={t('nutrition.addMeal.calc.apply')} variant="secondary" onPress={applyCalc} disabled={!calcQty.trim()} />
+            </View>
+          </View>
+        )}
+      </Card>
 
       <Input label={t('nutrition.addMeal.kcalLabel')} keyboardType="decimal-pad" value={kcal} onChangeText={setKcal} />
 

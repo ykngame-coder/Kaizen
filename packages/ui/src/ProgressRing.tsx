@@ -138,7 +138,14 @@ export function ProgressRing({
         <Circle cx={cx} cy={cx} r={r} stroke={colors.surfaceElevated} strokeWidth={thickness} fill="none" />
         {ring}
       </Svg>
-      <Text variant="data">{centerLabel ?? String(Math.round(pct))}</Text>
+      <Text
+        variant="data"
+        numberOfLines={1}
+        adjustsFontSizeToFit
+        style={{ fontSize: Math.max(12, Math.round(size * 0.24)), maxWidth: size - thickness * 2 }}
+      >
+        {centerLabel ?? String(Math.round(pct))}
+      </Text>
       {caption ? (
         <Text variant="caption" color="textMuted">
           {caption}

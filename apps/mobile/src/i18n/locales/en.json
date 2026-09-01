@@ -2111,6 +2111,16 @@
       "dateToday": "Today",
       "momentLabel": "MEAL",
       "descriptionLabel": "Description",
+      "calc": {
+        "heading": "Calculate from a nutrition label (/100 g)",
+        "hint": "Enter the values per 100 g, then the amount you ate — the fields below will fill in automatically.",
+        "kcalPer100": "Calories /100 g",
+        "proteinPer100": "Protein /100 g",
+        "carbPer100": "Carbs /100 g",
+        "fatPer100": "Fat /100 g",
+        "quantityLabel": "Amount eaten (g)",
+        "apply": "Apply"
+      },
       "kcalLabel": "Calories (kcal)",
       "proteinLabel": "Protein (g)",
       "carbLabel": "Carbs (g)",
