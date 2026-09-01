@@ -137,31 +137,42 @@ continuation behavior for that case is correct and must not regress.
 
 ## 4. Live execution — `CircuitRunnerScreen.tsx`
 
+**Correction from the first pass of this design:** a manually-built block's
+`workout_sets` rows are one row *per exercise*, not one row per physical set
+— `BlockDraft.selected` in the session builder holds a single target
+reps/weight/rest per exercise, and "do 3 rounds" already comes entirely from
+the block-level `targetRounds` (the "Répéter ce bloc" feature shipped
+earlier this session), not from multiple stored rows. So a superset's round
+count is not a new, separate thing to compute — it's the same
+`targetRounds`/`roundsCompleted` state the repeat-rounds feature already
+maintains. Superset changes *how a round is displayed and stepped through*,
+not how many rounds there are.
+
 A `'strength'`-format block's sets (from `useBlockSets`) are grouped: entries
-sharing a `supersetGroup` value are a group; everything else stays a
-standalone item, in original order. The block is walked item by item, in
-order, same as today's single pass through `sets.map(...)`.
+sharing a `supersetGroup` value form a group; everything else is a standalone
+item. Items keep the block's `order` sequence.
 
-For a standalone item: unchanged (today's plain read-only card).
-
-For a superset group, a new guided sub-flow:
-
-- Round count = the group's largest per-exercise set count. Round `n` shows
-  only the exercises that still have a set defined at index `n` (handles
-  mismatched counts without fabricating data).
-- State machine per round: show exercise A's card (name, target reps/weight)
-  with a "Terminé" button → advance to exercise B's card, "Terminé" → if more
-  rounds remain, start a rest countdown from that round's last set's
-  `restSec` (falls back to a fixed default, e.g. 90 s, if unset), with a
-  "Passer" button to skip it early → next round. After the last round,
-  advance to the block's next item (or finish the block, same
-  `finishActiveBlock` exit as today).
-- No timer during the exercise steps themselves (matches the plain-strength
-  block: there's no live rep/weight entry anywhere in the app, targets are
-  shown, the lifter goes and does them) — only the between-round rest is a
-  countdown.
-- `completeBlock` call at the end: `completedRounds` = rounds actually
-  finished, same field already used for EMOM/for_time/repeated-strength.
+- If the block has **no** superset-tagged sets: unchanged — both the
+  existing plain (`!isRepeatingStrength`) and repeated
+  (`isRepeatingStrength`) branches behave exactly as they do today.
+- If the block **has** at least one superset-tagged set (`hasSuperset =
+  sets.some((s) => s.supersetGroup != null)`), the per-round display changes
+  from "show every exercise at once, one 'Round terminé' button" to
+  **stepping through items one at a time**: a `stepIndex` walks the ordered
+  item list (standalone exercises and superset-group members, each group's
+  members listed individually in order); each item shows its card with a
+  "Terminé" button advancing `stepIndex`. No pause between two members of
+  the same group. When `stepIndex` reaches the end of the item list, that's
+  a completed round — same effect as today's "Round terminé" tap
+  (`roundsCompleted += 1`, `stepIndex` resets to 0) — except: if more rounds
+  remain, first show a rest countdown seeded from the *last item's*
+  `restSec` (default 90 s if unset) with a "Passer" button, then advance.
+  This works whether or not `targetRounds` was actually set above 1 — a
+  block with an untouched (empty/1) round count and a superset just steps
+  through the group once, A then B, no rest screen (`roundsCompleted >=
+  repeatRounds` immediately) — a harmless degenerate case, not blocked.
+- `completeBlock`'s `completedRounds` is unchanged — same `roundsCompleted`
+  value already used for the plain repeated-strength case.
 
 ## 5. OCR → superset detection
 
@@ -174,11 +185,18 @@ For a superset group, a new guided sub-flow:
     fragmenting pairs);
   - otherwise allocate a fresh group number and tag both the preceding and
     the new exercise with it.
-- `OcrImportScreen.tsx`: grouped exercises in the review list render inside
-  one bracketed card with a "Superset" badge (visually the same treatment
-  `SessionBlocksEditor` uses, §3), and on confirm the mapping folds into
-  `BlockDraft.supersetGroups` — the OCR review hands off into the exact same
-  save path as manual creation, no parallel save logic.
+- `OcrImportScreen.tsx`: this screen keeps its own lightweight `ExerciseDraft`
+  state (it does not build on `useSessionBlocks`/`BlockDraft` today, and
+  this spec doesn't merge the two screens) — grouped exercises get their own
+  `supersetGroup?: number` field, set the same way §3's "Grouper en
+  superset" affordance works, and render inside one bracketed card with a
+  "Superset" badge. On save: if no exercise carries a `supersetGroup`, the
+  existing flat `useAddWorkout` path is unchanged; if at least one does, the
+  screen switches to `useAddCircuitWorkout` with a single `'strength'`
+  block containing every exercise's sets (tagged with `supersetGroup` where
+  set), instead of the flat path — same branching idea as
+  `isSingleStrength` in §3, applied locally since this screen doesn't share
+  that hook.
 
 ## 6. Display
 
