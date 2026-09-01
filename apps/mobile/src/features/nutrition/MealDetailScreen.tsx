@@ -2,9 +2,9 @@ import React, { useMemo, useState } from 'react';
 import { View } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
-import { Button, Card, EmptyState, Icon, Screen, Text, useTheme } from '@supotsu/ui';
+import { Badge, Button, Card, EmptyState, Icon, Input, Screen, Text, useTheme } from '@supotsu/ui';
 import { radii, spacing } from '@supotsu/design-system';
-import { useDeleteNutritionEntry, useNutritionEntries } from '@/lib/data/queries';
+import { useDeleteNutritionEntry, useNutritionEntries, useUpdateNutritionEntry } from '@/lib/data/queries';
 import { formatDate } from '@/lib/format';
 import { formatClockFromIso, usePreferences } from '@/lib/preferences';
 import { BackButton } from '@/features/navigation/BackButton';
@@ -32,9 +32,26 @@ export function MealDetailScreen(): React.JSX.Element {
   const { id } = useLocalSearchParams<{ id: string }>();
   const { data: entries = [], isLoading } = useNutritionEntries();
   const deleteEntry = useDeleteNutritionEntry();
+  const updateEntry = useUpdateNutritionEntry();
   const [confirmingDelete, setConfirmingDelete] = useState(false);
+  const [editing, setEditing] = useState(false);
+  const [kcalInput, setKcalInput] = useState('');
+  const [proteinInput, setProteinInput] = useState('');
+  const [carbInput, setCarbInput] = useState('');
+  const [fatInput, setFatInput] = useState('');
+  const [editError, setEditError] = useState<string | null>(null);
 
   const entry = useMemo(() => entries.find((e) => e.id === id), [entries, id]);
+
+  const startEditing = (): void => {
+    if (!entry) return;
+    setKcalInput(String(entry.kcal));
+    setProteinInput(entry.proteinG != null ? String(entry.proteinG) : '');
+    setCarbInput(entry.carbG != null ? String(entry.carbG) : '');
+    setFatInput(entry.fatG != null ? String(entry.fatG) : '');
+    setEditError(null);
+    setEditing(true);
+  };
 
   if (isLoading) {
     return (
@@ -57,6 +74,22 @@ export function MealDetailScreen(): React.JSX.Element {
     router.back();
   };
 
+  const saveEdits = async (): Promise<void> => {
+    setEditError(null);
+    const kcal = Number(kcalInput.trim().replace(',', '.'));
+    if (!Number.isFinite(kcal) || kcal < 0) {
+      setEditError(t('nutrition.mealDetail.editErrorInvalid'));
+      return;
+    }
+    const toNum = (s: string): number | undefined => (s.trim() ? Number(s.trim().replace(',', '.')) : undefined);
+    try {
+      await updateEntry.mutateAsync({ entryId: entry.id, kcal, proteinG: toNum(proteinInput), carbG: toNum(carbInput), fatG: toNum(fatInput) });
+      setEditing(false);
+    } catch {
+      setEditError(t('nutrition.mealDetail.editErrorSaveFailed'));
+    }
+  };
+
   return (
     <Screen scroll>
       <BackButton />
@@ -72,14 +105,40 @@ export function MealDetailScreen(): React.JSX.Element {
         </View>
       </View>
 
-      <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: spacing[3] }}>
-        <Stat label={t('nutrition.mealDetail.kcal')} value={`${Math.round(entry.kcal)} kcal`} />
-        <Stat label={t('nutrition.mealDetail.protein')} value={entry.proteinG != null ? `${Math.round(entry.proteinG)} g` : null} />
-        <Stat label={t('nutrition.mealDetail.carbs')} value={entry.carbG != null ? `${Math.round(entry.carbG)} g` : null} />
-        <Stat label={t('nutrition.mealDetail.fat')} value={entry.fatG != null ? `${Math.round(entry.fatG)} g` : null} />
-        <Stat label={t('nutrition.mealDetail.hydration')} value={entry.hydrationMl ? `${entry.hydrationMl} ml` : null} />
-        <Stat label={t('nutrition.mealDetail.source')} value={entry.source} />
-      </View>
+      {editing ? (
+        <Card>
+          <Input label={t('nutrition.mealDetail.kcal')} keyboardType="numeric" value={kcalInput} onChangeText={setKcalInput} />
+          <View style={{ flexDirection: 'row', gap: spacing[3] }}>
+            <View style={{ flex: 1 }}>
+              <Input label={t('nutrition.mealDetail.protein')} keyboardType="numeric" value={proteinInput} onChangeText={setProteinInput} />
+            </View>
+            <View style={{ flex: 1 }}>
+              <Input label={t('nutrition.mealDetail.carbs')} keyboardType="numeric" value={carbInput} onChangeText={setCarbInput} />
+            </View>
+            <View style={{ flex: 1 }}>
+              <Input label={t('nutrition.mealDetail.fat')} keyboardType="numeric" value={fatInput} onChangeText={setFatInput} />
+            </View>
+          </View>
+          {editError ? <Badge label={editError} tone="error" /> : null}
+          <View style={{ flexDirection: 'row', gap: spacing[2], marginTop: spacing[3] }}>
+            <Button label={t('common.cancel')} variant="secondary" onPress={() => setEditing(false)} />
+            <Button
+              label={updateEntry.isPending ? '…' : t('common.save')}
+              onPress={saveEdits}
+              disabled={updateEntry.isPending}
+            />
+          </View>
+        </Card>
+      ) : (
+        <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: spacing[3] }}>
+          <Stat label={t('nutrition.mealDetail.kcal')} value={`${Math.round(entry.kcal)} kcal`} />
+          <Stat label={t('nutrition.mealDetail.protein')} value={entry.proteinG != null ? `${Math.round(entry.proteinG)} g` : null} />
+          <Stat label={t('nutrition.mealDetail.carbs')} value={entry.carbG != null ? `${Math.round(entry.carbG)} g` : null} />
+          <Stat label={t('nutrition.mealDetail.fat')} value={entry.fatG != null ? `${Math.round(entry.fatG)} g` : null} />
+          <Stat label={t('nutrition.mealDetail.hydration')} value={entry.hydrationMl ? `${entry.hydrationMl} ml` : null} />
+          <Stat label={t('nutrition.mealDetail.source')} value={entry.source} />
+        </View>
+      )}
 
       {confirmingDelete ? (
         <Card>
@@ -94,12 +153,13 @@ export function MealDetailScreen(): React.JSX.Element {
             />
           </View>
         </Card>
-      ) : (
+      ) : !editing ? (
         <View style={{ flexDirection: 'row', gap: spacing[3] }}>
           <Button label={t('common.back')} variant="secondary" onPress={() => router.back()} />
+          <Button label={t('nutrition.mealDetail.edit')} variant="secondary" onPress={startEditing} />
           <Button label={t('nutrition.mealDetail.delete')} variant="secondary" onPress={() => setConfirmingDelete(true)} />
         </View>
-      )}
+      ) : null}
     </Screen>
   );
 }

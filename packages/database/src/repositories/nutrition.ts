@@ -37,3 +37,14 @@ export async function deleteNutritionEntry(client: SupotsuClient, entryId: strin
   const { error } = await client.from('nutrition_entries').delete().eq('id', entryId);
   if (error) throw error;
 }
+
+/** Adjust a logged intake's calories/macros (e.g. a portion estimate corrected after the fact). */
+export async function updateNutritionEntry(
+  client: SupotsuClient,
+  entryId: string,
+  patch: Pick<NutritionEntryInsertRow, 'kcal' | 'protein_g' | 'carb_g' | 'fat_g'>,
+): Promise<NutritionEntryRow> {
+  const { data, error } = await client.from('nutrition_entries').update(patch).eq('id', entryId).select('*').single();
+  if (error) throw error;
+  return data;
+}

@@ -2124,6 +2124,9 @@
       "fat": "Lipides",
       "hydration": "Eau",
       "source": "Source",
+      "edit": "Modifier",
+      "editErrorInvalid": "Indique des calories valides.",
+      "editErrorSaveFailed": "Modification impossible.",
       "confirmDelete": "Supprimer définitivement ce repas ?",
       "delete": "Supprimer"
     },

@@ -83,6 +83,7 @@ import {
   insertNutritionEntry,
   listNutritionEntries as listNutritionEntriesDb,
   deleteNutritionEntry as deleteNutritionEntryDb,
+  updateNutritionEntry as updateNutritionEntryDb,
   insertHabit,
   listHabits as listHabitsDb,
   insertHabitLog,
@@ -285,6 +286,8 @@ export interface DataRepository {
   listNutritionEntries(userId: string): Promise<NutritionEntry[]>;
   addNutritionEntry(userId: string, input: NutritionEntryInput): Promise<NutritionEntry>;
   deleteNutritionEntry(userId: string, entryId: string): Promise<void>;
+  /** Adjust a logged entry's calories/macros (e.g. a portion estimate corrected after the fact). */
+  updateNutritionEntry(userId: string, entryId: string, patch: { kcal: number; proteinG?: number; carbG?: number; fatG?: number }): Promise<NutritionEntry>;
   listHabits(userId: string): Promise<Habit[]>;
   addHabit(userId: string, input: HabitInput): Promise<Habit>;
   listHabitLogs(userId: string): Promise<HabitLog[]>;
@@ -1335,6 +1338,18 @@ function createDemoRepository(): DataRepository {
       const items = await readJson<NutritionEntry>(nutKey(userId));
       await writeJson(nutKey(userId), items.filter((e) => e.id !== entryId));
     },
+    async updateNutritionEntry(userId, entryId, patch) {
+      const items = await readJson<NutritionEntry>(nutKey(userId));
+      let updated: NutritionEntry | undefined;
+      const next = items.map((e) => {
+        if (e.id !== entryId) return e;
+        updated = { ...e, ...patch, updatedAt: new Date().toISOString() };
+        return updated;
+      });
+      if (!updated) throw new Error('Nutrition entry not found');
+      await writeJson(nutKey(userId), next);
+      return updated;
+    },
     async listHabits(userId) {
       const items = await readJson<Habit>(habKey(userId));
       return items.filter((h) => !h.archivedAt).sort((a, b) => a.createdAt.localeCompare(b.createdAt));
@@ -1992,6 +2007,15 @@ function createSupabaseRepository(
     },
     async deleteNutritionEntry(_userId, entryId) {
       await deleteNutritionEntryDb(client, entryId);
+    },
+    async updateNutritionEntry(_userId, entryId, patch) {
+      const row = await updateNutritionEntryDb(client, entryId, {
+        kcal: patch.kcal,
+        protein_g: patch.proteinG ?? null,
+        carb_g: patch.carbG ?? null,
+        fat_g: patch.fatG ?? null,
+      });
+      return rowToNutrition(row);
     },
     async listHabits(userId) {
       return (await listHabitsDb(client, userId)).map(rowToHabit);

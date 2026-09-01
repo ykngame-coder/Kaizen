@@ -179,6 +179,19 @@ export function useDeleteNutritionEntry() {
   });
 }
 
+export function useUpdateNutritionEntry() {
+  const { user } = useAuth();
+  const repo = useRepository();
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (input: { entryId: string; kcal: number; proteinG?: number; carbG?: number; fatG?: number }) =>
+      repo.updateNutritionEntry(user!.id, input.entryId, input),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['nutrition', user?.id] });
+    },
+  });
+}
+
 export function useHabits() {
   const { user } = useAuth();
   const repo = useRepository();

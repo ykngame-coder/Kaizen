@@ -2124,6 +2124,9 @@
       "fat": "Fat",
       "hydration": "Water",
       "source": "Source",
+      "edit": "Edit",
+      "editErrorInvalid": "Enter valid calories.",
+      "editErrorSaveFailed": "Couldn't save the changes.",
       "confirmDelete": "Permanently delete this meal?",
       "delete": "Delete"
     },

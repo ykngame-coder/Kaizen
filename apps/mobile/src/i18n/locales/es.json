@@ -2124,6 +2124,9 @@
       "fat": "Grasas",
       "hydration": "Agua",
       "source": "Fuente",
+      "edit": "Editar",
+      "editErrorInvalid": "Indica calorías válidas.",
+      "editErrorSaveFailed": "No se pudo guardar.",
       "confirmDelete": "¿Eliminar definitivamente esta comida?",
       "delete": "Eliminar"
     },

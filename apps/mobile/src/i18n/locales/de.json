@@ -2124,6 +2124,9 @@
       "fat": "Fett",
       "hydration": "Wasser",
       "source": "Quelle",
+      "edit": "Bearbeiten",
+      "editErrorInvalid": "Gib gültige Kalorien an.",
+      "editErrorSaveFailed": "Speichern nicht möglich.",
       "confirmDelete": "Diese Mahlzeit endgültig löschen?",
       "delete": "Löschen"
     },
