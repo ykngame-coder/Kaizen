@@ -122,6 +122,7 @@ export interface Database {
           raw: Json | null;
           notes: string | null;
           external_id: string | null;
+          muscles: string[] | null;
         } & Timestamps;
         Insert: {
           user_id: string;
@@ -135,6 +136,7 @@ export interface Database {
           avg_heart_rate?: number | null;
           notes?: string | null;
           external_id?: string | null;
+          muscles?: string[] | null;
         };
         Update: Partial<Database['public']['Tables']['activities']['Insert']>;
         Relationships: [];
