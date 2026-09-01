@@ -14,7 +14,7 @@ import type {
   UserSessionInput,
   WellnessCheckinInput,
 } from '@supotsu/shared';
-import type { Challenge, GoalType, SetEntry, Visibility, Workout } from '@supotsu/core';
+import type { Challenge, GoalType, MuscleGroup, SetEntry, Visibility, Workout } from '@supotsu/core';
 import type {
   ImportedActivity,
   ImportedHealthMetric,
@@ -68,6 +68,19 @@ export function useAddActivity() {
     onSuccess: (_data, input) => {
       qc.invalidateQueries({ queryKey: ['activities', user?.id] });
       void mirrorToHealthKit(() => saveActivityToHealthKit(input));
+    },
+  });
+}
+
+/** Set (or clear) an activity's self-reported worked muscles. */
+export function useUpdateActivityMuscles() {
+  const { user } = useAuth();
+  const repo = useRepository();
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (input: { activityId: string; muscles: MuscleGroup[] }) => repo.updateActivityMuscles(user!.id, input.activityId, input.muscles),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['activities', user?.id] });
     },
   });
 }

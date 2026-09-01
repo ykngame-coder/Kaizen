@@ -15,6 +15,22 @@ export async function insertActivity(
   return data;
 }
 
+/** Set (or clear) an activity's self-reported worked muscles — RLS scopes it to the owner. */
+export async function updateActivityMuscles(
+  client: SupotsuClient,
+  activityId: string,
+  muscles: string[],
+): Promise<ActivityRow> {
+  const { data, error } = await client
+    .from('activities')
+    .update({ muscles })
+    .eq('id', activityId)
+    .select('*')
+    .single();
+  if (error) throw error;
+  return data;
+}
+
 /**
  * Bulk upsert activities (bulk import). Idempotent via the
  * (user_id, source, external_id) unique index, so re-importing the same export

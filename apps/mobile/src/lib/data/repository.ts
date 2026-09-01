@@ -55,6 +55,7 @@ import {
   insertActivity,
   upsertActivities,
   listActivities as listActivitiesDb,
+  updateActivityMuscles as updateActivityMusclesDb,
   deleteActivity as deleteActivityDb,
   insertWorkout,
   insertWorkoutWithBlocks as insertWorkoutWithBlocksDb,
@@ -222,6 +223,8 @@ export interface ImportPayload {
 export interface DataRepository {
   listActivities(userId: string): Promise<Activity[]>;
   addActivity(userId: string, input: ActivityInput): Promise<Activity>;
+  /** Set (or clear) an activity's self-reported worked muscles. */
+  updateActivityMuscles(userId: string, activityId: string, muscles: MuscleGroup[]): Promise<Activity>;
   /** Remove a logged/imported activity (e.g. a duplicate or unwanted import). */
   deleteActivity(userId: string, activityId: string): Promise<void>;
   listWorkouts(userId: string): Promise<Workout[]>;
@@ -369,6 +372,7 @@ function rowToActivity(r: ActivityRow): Activity {
     avgHeartRate: r.avg_heart_rate ?? undefined,
     maxHeartRate: r.max_heart_rate ?? undefined,
     notes: r.notes ?? undefined,
+    muscles: (r.muscles as MuscleGroup[] | null) ?? undefined,
     createdAt: r.created_at,
     updatedAt: r.updated_at,
   };
@@ -937,6 +941,19 @@ function createDemoRepository(): DataRepository {
       const items = await readJson<Activity>(actKey(userId));
       await writeJson(actKey(userId), [activity, ...items]);
       return activity;
+    },
+    async updateActivityMuscles(userId, activityId, muscles) {
+      const items = await readJson<Activity>(actKey(userId));
+      let updated: Activity | undefined;
+      const now = new Date().toISOString();
+      const next = items.map((a) => {
+        if (a.id !== activityId) return a;
+        updated = { ...a, muscles, updatedAt: now };
+        return updated;
+      });
+      if (!updated) throw new Error('Activité introuvable.');
+      await writeJson(actKey(userId), next);
+      return updated;
     },
     async deleteActivity(userId, activityId) {
       const items = await readJson<Activity>(actKey(userId));
@@ -1860,6 +1877,9 @@ function createSupabaseRepository(
         notes: input.notes ?? null,
       });
       return rowToActivity(row);
+    },
+    async updateActivityMuscles(_userId, activityId, muscles) {
+      return rowToActivity(await updateActivityMusclesDb(client, activityId, muscles));
     },
     async deleteActivity(_userId, activityId) {
       await deleteActivityDb(client, activityId);
