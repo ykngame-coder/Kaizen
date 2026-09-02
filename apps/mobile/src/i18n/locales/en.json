@@ -1973,7 +1973,8 @@
         "toPlan": "to plan",
         "pending": "Pending",
         "searchFood": "Search for food",
-        "manualEntry": "Manual entry"
+        "manualEntry": "Manual entry",
+        "summary": "{{name}} and {{count}} more"
       },
       "score": {
         "title": "Nutrition Score",
@@ -2223,6 +2224,13 @@
     },
     "customize": {
       "title": "Customize Nutrition"
+    },
+    "mealDay": {
+      "empty": {
+        "title": "Nothing logged",
+        "message": "Add a food to this meal to see it here."
+      },
+      "addButton": "Add"
     }
   },
   "analytics": {

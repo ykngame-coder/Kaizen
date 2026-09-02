@@ -24,7 +24,7 @@ export function AddMealScreen(): React.JSX.Element {
   const { t } = useTranslation();
   const { colors } = useTheme();
   const router = useRouter();
-  const params = useLocalSearchParams<{ date?: string }>();
+  const params = useLocalSearchParams<{ date?: string; mealType?: string }>();
   const addMeal = useAddNutritionEntry();
   const { data: entries = [] } = useNutritionEntries();
 
@@ -58,6 +58,12 @@ export function AddMealScreen(): React.JSX.Element {
     const d = params.date;
     if (typeof d === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(d)) setDateKey(d);
   }, [params.date]);
+
+  // Arriving from a meal-type's own "+" on the Nutrition hub — pre-select that meal type.
+  useEffect(() => {
+    const mt = params.mealType;
+    if (typeof mt === 'string' && MEALS.some((m) => m.value === mt)) setMealType(mt as (typeof MEALS)[number]['value']);
+  }, [params.mealType]);
 
   // Distinct recent meals (most recent occurrence of each description), so
   // "copier un repas" doesn't just repeat the same entry N times.

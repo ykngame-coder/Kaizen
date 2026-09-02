@@ -1973,7 +1973,8 @@
         "toPlan": "a planejar",
         "pending": "Pendente",
         "searchFood": "Buscar um alimento",
-        "manualEntry": "Entrada manual"
+        "manualEntry": "Entrada manual",
+        "summary": "{{name}} e mais {{count}}"
       },
       "score": {
         "title": "Pontuação Nutricional",
@@ -2223,6 +2224,13 @@
     },
     "customize": {
       "title": "Personalizar Nutrição"
+    },
+    "mealDay": {
+      "empty": {
+        "title": "Nada registado",
+        "message": "Adiciona um alimento a esta refeição para o veres aqui."
+      },
+      "addButton": "Adicionar"
     }
   },
   "analytics": {

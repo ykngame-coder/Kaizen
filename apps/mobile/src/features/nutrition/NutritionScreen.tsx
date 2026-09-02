@@ -4,7 +4,7 @@ import { Pressable, ScrollView, TextInput, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { Button, Card, Fab, FilterChip, Icon, Input, ProgressRing, Screen, Sparkline, Text, useTheme, type IconName } from '@supotsu/ui';
-import { radii, spacing } from '@supotsu/design-system';
+import { spacing } from '@supotsu/design-system';
 import {
   computeNutritionScore,
   dailySums,
@@ -16,7 +16,7 @@ import {
 } from '@supotsu/engines';
 import type { TrendPoint } from '@supotsu/engines';
 import type { HealthMetricType } from '@supotsu/core';
-import { useAddNutritionEntry, useDeleteNutritionEntry, useHealthMetrics, useLeaderboardPrefs, useNutritionEntries, useRecordDailyScore } from '@/lib/data/queries';
+import { useAddNutritionEntry, useHealthMetrics, useLeaderboardPrefs, useNutritionEntries, useRecordDailyScore } from '@/lib/data/queries';
 import { useManualHealthKitSync } from '@/features/connectors/useHealthKitAutoSync';
 import { CalorieCalculatorForm } from './CalorieCalculatorForm';
 import { usePreferences } from '@/lib/preferences';
@@ -140,7 +140,6 @@ export function NutritionScreen(): React.JSX.Element {
   const { data: entries = [] } = useNutritionEntries();
   const { data: health = [] } = useHealthMetrics();
   const addEntry = useAddNutritionEntry();
-  const deleteEntry = useDeleteNutritionEntry();
   const [selectedDate, setSelectedDate] = useSelectedDay();
   const asOf = selectedDate;
 
@@ -283,49 +282,37 @@ export function NutritionScreen(): React.JSX.Element {
     meals: (
       <Card>
         <SectionTitle>{t('nutrition.screen.meals.title')}</SectionTitle>
-        {meals.map((m, i) => (
-          <View key={m.type} style={{ paddingVertical: spacing[2], borderBottomWidth: i < meals.length - 1 ? 1 : 0, borderBottomColor: colors.border }}>
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing[2] }}>
-              <Text variant="caption" color="textSubtle" style={{ flex: 1, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 0.6 }}>{t(`nutrition.screen.meal.${m.type}`)}</Text>
-              {m.count > 0 ? <Text variant="caption" color="textSubtle">{Math.round(m.kcal)} kcal</Text> : null}
-            </View>
-            {m.count > 0 ? (
-              <View style={{ gap: spacing[2], marginTop: spacing[1] }}>
-                {m.entries.map((e) => (
-                  <Pressable
-                    key={e.id}
-                    onPress={() => router.push({ pathname: '/nutrition/meal/[id]', params: { id: e.id } })}
-                    style={({ pressed }) => ({ flexDirection: 'row', alignItems: 'center', gap: spacing[3], padding: spacing[3], borderRadius: radii.md, backgroundColor: colors.surfaceElevated, opacity: pressed ? 0.6 : 1 })}
-                  >
-                    <View style={{ width: 40, height: 40, borderRadius: 12, backgroundColor: colors.surface, alignItems: 'center', justifyContent: 'center' }}><Icon name={MEAL_ICON[m.type] ?? 'bowl'} size={19} color={colors.text} /></View>
-                    <View style={{ flex: 1, minWidth: 0 }}>
-                      <Text variant="body" style={{ fontWeight: '600' }} numberOfLines={1}>{e.description || t(`nutrition.screen.meal.${m.type}`)}</Text>
-                      <Text variant="caption" color="textSubtle" style={{ marginTop: 2 }} numberOfLines={1}>P {Math.round(e.proteinG ?? 0)} · G {Math.round(e.carbG ?? 0)} · L {Math.round(e.fatG ?? 0)}</Text>
-                    </View>
-                    <View style={{ alignItems: 'flex-end' }}>
-                      <Text variant="body" style={{ fontWeight: '700' }}>{Math.round(e.kcal)}</Text>
-                      <Text variant="caption" color="textSubtle">kcal</Text>
-                    </View>
-                    <Pressable
-                      onPress={() => deleteEntry.mutate(e.id)}
-                      disabled={deleteEntry.isPending && deleteEntry.variables === e.id}
-                      hitSlop={8}
-                      style={{ opacity: deleteEntry.isPending && deleteEntry.variables === e.id ? 0.4 : 1 }}
-                    >
-                      <Icon name="trash" size={18} color={colors.textSubtle} />
-                    </Pressable>
-                  </Pressable>
-                ))}
+        {meals.map((m, i) => {
+          const first = m.entries[0];
+          const summary = first
+            ? m.entries.length > 1
+              ? t('nutrition.screen.meals.summary', { name: first.description || t(`nutrition.screen.meal.${m.type}`), count: m.entries.length - 1 })
+              : (first.description || t(`nutrition.screen.meal.${m.type}`))
+            : t('nutrition.screen.meals.toPlan');
+          return (
+            <View key={m.type} style={{ paddingVertical: spacing[2], borderBottomWidth: i < meals.length - 1 ? 1 : 0, borderBottomColor: colors.border }}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing[2] }}>
+                <Text variant="caption" color="textSubtle" style={{ flex: 1, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 0.6 }}>{t(`nutrition.screen.meal.${m.type}`)}</Text>
+                {m.count > 0 ? <Text variant="caption" color="textSubtle">{Math.round(m.kcal)} kcal</Text> : null}
               </View>
-            ) : (
-              <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing[3], paddingVertical: spacing[2] }}>
+              <Pressable
+                onPress={() => router.push({ pathname: '/nutrition/meal/day', params: { type: m.type, date: dayKey(selectedDate) } })}
+                style={({ pressed }) => ({ flexDirection: 'row', alignItems: 'center', gap: spacing[3], paddingVertical: spacing[2], opacity: pressed ? 0.6 : 1 })}
+              >
                 <View style={{ width: 40, height: 40, borderRadius: 12, backgroundColor: colors.surfaceElevated, alignItems: 'center', justifyContent: 'center' }}><Icon name={MEAL_ICON[m.type] ?? 'bowl'} size={19} color={colors.text} /></View>
-                <Text variant="caption" color="textSubtle" style={{ flex: 1 }}>{t('nutrition.screen.meals.toPlan')}</Text>
-                <Text variant="caption" color="textSubtle">{t('nutrition.screen.meals.pending')}</Text>
-              </View>
-            )}
-          </View>
-        ))}
+                <Text variant="body" color={m.count > 0 ? 'text' : 'textSubtle'} style={{ flex: 1 }} numberOfLines={1}>{summary}</Text>
+                <Pressable
+                  onPress={() => router.push({ pathname: '/nutrition/meal/new', params: { date: dayKey(selectedDate), mealType: m.type } })}
+                  accessibilityLabel={t('nutrition.mealDay.addButton')}
+                  hitSlop={8}
+                  style={{ width: 28, height: 28, borderRadius: 14, backgroundColor: colors.surfaceElevated, alignItems: 'center', justifyContent: 'center' }}
+                >
+                  <Text variant="body" style={{ fontWeight: '800' }}>+</Text>
+                </Pressable>
+              </Pressable>
+            </View>
+          );
+        })}
         <View style={{ flexDirection: 'row', gap: spacing[2], marginTop: spacing[3] }}>
           <View style={{ flex: 1 }}>
             <Button label={t('nutrition.screen.meals.searchFood')} onPress={() => router.push('/nutrition/food/search')} fullWidth />

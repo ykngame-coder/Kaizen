@@ -1973,7 +1973,8 @@
         "toPlan": "à planifier",
         "pending": "En attente",
         "searchFood": "Chercher un aliment",
-        "manualEntry": "Saisie manuelle"
+        "manualEntry": "Saisie manuelle",
+        "summary": "{{name}} et {{count}} de plus"
       },
       "score": {
         "title": "Nutrition Score",
@@ -2223,6 +2224,13 @@
     },
     "customize": {
       "title": "Personnaliser la Nutrition"
+    },
+    "mealDay": {
+      "empty": {
+        "title": "Rien enregistré",
+        "message": "Ajoute un aliment à ce repas pour le voir apparaître ici."
+      },
+      "addButton": "Ajouter"
     }
   },
   "analytics": {
