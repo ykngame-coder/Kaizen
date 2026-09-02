@@ -60,11 +60,15 @@ export interface Preferences {
   /** User-chosen daily step target (steps have no auto-estimated goal, unlike nutrition). */
   dailyStepsGoal: number;
   /**
-   * Dashboard card order + visibility. Undefined until the user customizes
-   * it — DashboardScreen falls back to its own default order/visibility, so
-   * this only needs writing when the user actually changes something.
+   * Per-hub card order + visibility. Undefined until the user customizes
+   * that hub — each hub screen falls back to its own default order/
+   * visibility, so a field only needs writing when the user actually
+   * changes something on that hub's customize screen.
    */
   dashboardCards?: DashboardCardPref[];
+  sportCards?: DashboardCardPref[];
+  nutritionCards?: DashboardCardPref[];
+  sommeilCards?: DashboardCardPref[];
   /** Undefined until the user configures the phone-tracking smart alarm. */
   sleepAlarm?: SleepAlarmSettings;
   /** 'auto' follows the phone's language (expo-localization); otherwise a specific choice. */
