@@ -3,6 +3,7 @@ import type { NutritionEntry, NutritionTargets } from '@supotsu/core';
 import {
   computeNutritionScore,
   estimateTargets,
+  isHydrationOnlyEntry,
   nutritionExplanation,
   sumDay,
 } from './nutrition';
@@ -28,6 +29,24 @@ function entry(partial: Partial<NutritionEntry> & { kcal: number }): NutritionEn
     updatedAt: loggedAt,
   };
 }
+
+describe('isHydrationOnlyEntry', () => {
+  it('recognizes a pure water log', () => {
+    expect(isHydrationOnlyEntry(entry({ kcal: 0, hydrationMl: 250 }))).toBe(true);
+  });
+
+  it('rejects a real food entry, even one that also logs hydration', () => {
+    expect(isHydrationOnlyEntry(entry({ kcal: 450, hydrationMl: 200 }))).toBe(false);
+  });
+
+  it('rejects a 0-kcal entry with no hydration (e.g. an empty manual entry)', () => {
+    expect(isHydrationOnlyEntry(entry({ kcal: 0 }))).toBe(false);
+  });
+
+  it('rejects a 0-kcal, hydration-bearing entry that also has protein logged', () => {
+    expect(isHydrationOnlyEntry(entry({ kcal: 0, hydrationMl: 250, proteinG: 5 }))).toBe(false);
+  });
+});
 
 describe('estimateTargets', () => {
   it('is always to_confirm (estimates, never prescriptions)', () => {

@@ -4,7 +4,7 @@ import { useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { Badge, Button, Card, Fab, Icon, ProgressRing, Screen, Sparkline, Text, useTheme } from '@supotsu/ui';
 import { radii, spacing } from '@supotsu/design-system';
-import { dailySums, entriesForDay, estimateTargets, sumDay, type TrendPoint } from '@supotsu/engines';
+import { dailySums, entriesForDay, estimateTargets, isHydrationOnlyEntry, sumDay, type TrendPoint } from '@supotsu/engines';
 import { useAddNutritionEntry, useDeleteNutritionEntry, useHealthMetrics, useNutritionEntries } from '@/lib/data/queries';
 import { formatClockFromIso, usePreferences } from '@/lib/preferences';
 
@@ -170,7 +170,7 @@ export function JournalScreen(): React.JSX.Element {
         {hasData ? (
           <Card>
             <SectionTitle>{t('nutrition.journal.recentMeals.title')}</SectionTitle>
-            {[...today].sort((a, b) => b.loggedAt.localeCompare(a.loggedAt)).slice(0, 6).map((e) => (
+            {[...today].filter((e) => !isHydrationOnlyEntry(e)).sort((a, b) => b.loggedAt.localeCompare(a.loggedAt)).slice(0, 6).map((e) => (
               <Pressable
                 key={e.id}
                 onPress={() => router.push({ pathname: '/nutrition/meal/[id]', params: { id: e.id } })}

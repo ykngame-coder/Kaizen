@@ -33,6 +33,17 @@ export function entriesForDay(entries: NutritionEntry[], asOf: ISODateString): N
   });
 }
 
+/**
+ * A pure water log (the "+250 ml" etc. buttons on the hydration card) — 0
+ * kcal, no macros, some hydrationMl. These are already represented by the
+ * hydration card's own total; the meal list (grouped by mealType) should
+ * skip them instead of piling up a fresh "Eau" row under Collation for
+ * every tap.
+ */
+export function isHydrationOnlyEntry(e: NutritionEntry): boolean {
+  return e.kcal === 0 && (e.hydrationMl ?? 0) > 0 && !e.proteinG && !e.carbG && !e.fatG;
+}
+
 export interface DailyNutritionTotals {
   kcal: number;
   proteinG: number;

@@ -5,6 +5,7 @@ import { useTranslation } from 'react-i18next';
 import { Badge, Button, Card, Input, Screen, SegmentedControl, Text, useTheme } from '@supotsu/ui';
 import { radii, spacing } from '@supotsu/design-system';
 import type { NutritionEntry } from '@supotsu/core';
+import { isHydrationOnlyEntry } from '@supotsu/engines';
 import { nutritionEntryInputSchema, type NutritionEntryInput } from '@supotsu/shared';
 import { useAddNutritionEntry, useNutritionEntries } from '@/lib/data/queries';
 import { formatDate } from '@/lib/format';
@@ -65,6 +66,7 @@ export function AddMealScreen(): React.JSX.Element {
     const seen = new Set<string>();
     const out: NutritionEntry[] = [];
     for (const e of sorted) {
+      if (isHydrationOnlyEntry(e)) continue;
       const key = e.description.trim().toLowerCase();
       if (!key || seen.has(key)) continue;
       seen.add(key);

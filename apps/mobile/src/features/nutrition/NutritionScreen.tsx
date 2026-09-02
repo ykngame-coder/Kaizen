@@ -10,6 +10,7 @@ import {
   dailySums,
   entriesForDay,
   estimateTargets,
+  isHydrationOnlyEntry,
   nutritionExplanation,
   sumDay,
 } from '@supotsu/engines';
@@ -212,7 +213,10 @@ export function NutritionScreen(): React.JSX.Element {
   // just shown as a single summed row.
   const meals = useMemo(() => {
     return MEAL_ORDER.map((type) => {
-      const es = today.filter((e) => e.mealType === type);
+      // Pure water logs (the hydration card's +250 ml etc. buttons) already
+      // show up in that card's own total — they shouldn't also pile up a
+      // fresh "Eau" row here for every tap.
+      const es = today.filter((e) => e.mealType === type && !isHydrationOnlyEntry(e));
       const kcal = es.reduce((s, e) => s + e.kcal, 0);
       return { type, count: es.length, kcal, entries: es };
     });
