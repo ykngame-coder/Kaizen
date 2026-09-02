@@ -26,6 +26,8 @@ import { muscleColorFor, muscleStatesFor } from '@/features/muscles/muscleColor'
 import { ComprendreCard } from '@/features/knowledge/ComprendreCard';
 import { ObjectifsCard } from '@/features/goals/ObjectifsCard';
 import { isTodayLocal } from '@/features/community/leaderboardHelpers';
+import { usePreferences } from '@/lib/preferences';
+import { resolveSportCardOrder } from './sportCards';
 
 const DAY_MS = 86_400_000;
 
@@ -109,6 +111,8 @@ export function SportScreen(): React.JSX.Element {
   const { data: planned = [] } = usePlannedWorkouts();
   const [selectedDate, setSelectedDate] = useSelectedDay();
   const asOf = selectedDate;
+  const { preferences } = usePreferences();
+  const cardOrder = useMemo(() => resolveSportCardOrder(preferences.sportCards), [preferences.sportCards]);
 
   const qc = useQueryClient();
   const syncHealth = useManualHealthKitSync();
@@ -205,6 +209,88 @@ export function SportScreen(): React.JSX.Element {
     return [...w, ...a].sort((x, y) => y.date.localeCompare(x.date)).slice(0, 3);
   }, [workouts, activities]);
 
+  const cardNodes: Record<string, React.ReactNode> = {
+    recent: (
+      <>
+        <Text variant="heading" style={{ marginTop: spacing[2] }}>
+          {t('sport.screen.recent.heading')}
+        </Text>
+        {isLoading ? (
+          <Text variant="body" color="textMuted">
+            {t('common.loading')}
+          </Text>
+        ) : recent.length === 0 ? (
+          <Card>
+            <Text variant="body" color="textMuted">
+              {t('sport.screen.recent.empty')}
+            </Text>
+          </Card>
+        ) : (
+          <Card>
+            {recent.map((r, i) => {
+              const row = (
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing[3], paddingVertical: spacing[3], borderBottomWidth: i < recent.length - 1 ? 1 : 0, borderBottomColor: colors.border }}>
+                  <View style={{ width: 34, height: 34, borderRadius: radii.md, backgroundColor: colors.surfaceElevated, alignItems: 'center', justifyContent: 'center' }}>
+                    <Icon name={r.kind === 'workout' ? 'tshirt' : 'run'} size={16} color={colors.text} />
+                  </View>
+                  <View style={{ flex: 1 }}>
+                    <Text variant="body">{r.name}</Text>
+                    <Text variant="caption" color="textSubtle" style={{ marginTop: 1 }}>
+                      {formatDate(r.date)}
+                      {r.durationSec ? ` · ${fmtDur(r.durationSec, t)}` : ''}
+                      {r.rpe ? ` · ${t('sport.screen.recent.rpe', { rpe: r.rpe })}` : ''}
+                    </Text>
+                  </View>
+                  {r.kind === 'workout' ? (
+                    <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: colors.accentData }} />
+                  ) : null}
+                </View>
+              );
+              return r.kind === 'workout' ? (
+                <Pressable key={r.id} onPress={() => router.push({ pathname: '/sport/workout/[id]', params: { id: r.id } })} style={({ pressed }) => ({ opacity: pressed ? 0.6 : 1 })}>
+                  {row}
+                </Pressable>
+              ) : (
+                <View key={r.id}>{row}</View>
+              );
+            })}
+          </Card>
+        )}
+        <View style={{ alignItems: 'flex-start' }}>
+          <Pressable onPress={() => router.push('/sport/activities')}>
+            <Text variant="caption" color="primary">{t('sport.screen.recent.viewAllHistory')}</Text>
+          </Pressable>
+        </View>
+      </>
+    ),
+    week: (
+      <>
+        <Text variant="heading" style={{ marginTop: spacing[2] }}>
+          {t('sport.screen.week.heading')}
+        </Text>
+        <View style={{ gap: spacing[3] }}>
+          <View style={{ flexDirection: 'row', gap: spacing[3] }}>
+            <StatTile icon={<Icon name="armFlex" size={18} color={colors.accentStrength} />} value={`${week.sessions}`} label={t('sport.screen.week.sessions')} />
+            <StatTile icon={<Icon name="timer" size={18} color={colors.info} />} value={week.totalSec > 0 ? fmtDur(week.totalSec, t) : '—'} label={t('sport.screen.week.totalTime')} />
+          </View>
+          <View style={{ flexDirection: 'row', gap: spacing[3] }}>
+            <StatTile icon={<Icon name="fire" size={18} color={colors.warning} />} value={week.cals > 0 ? `${Math.round(week.cals)}` : '—'} label={t('sport.screen.week.calories')} />
+            <StatTile icon={<Icon name="target" size={18} color={colors.accentData} />} value={week.rpe != null ? week.rpe.toFixed(1) : '—'} label={t('sport.screen.week.avgRpe')} />
+          </View>
+        </View>
+      </>
+    ),
+    sections: (
+      <View style={{ gap: spacing[2], marginTop: spacing[2] }}>
+        {NAV.map((n) => (
+          <HubRow key={n.title} title={n.title} subtitle={n.subtitle} icon={<Icon name={n.icon} size={20} color={colors.text} />} soon={n.soon} onPress={n.path ? () => router.push(n.path!) : undefined} />
+        ))}
+      </View>
+    ),
+    comprendre: <ComprendreCard pillars={['performance']} />,
+    objectifs: <ObjectifsCard types={['performance', 'strength', 'endurance']} />,
+  };
+
   return (
     <View style={{ flex: 1 }}>
       <Screen scroll onRefresh={onRefresh} refreshing={refreshing}>
@@ -215,15 +301,26 @@ export function SportScreen(): React.JSX.Element {
               {t('sport.screen.subtitle')}
             </Text>
           </View>
-          <Pressable
-            onPress={() => router.push('/sport/exercises')}
-            accessibilityLabel={t('sport.screen.searchExercise')}
-            style={({ pressed }) => ({ opacity: pressed ? 0.6 : 1, position: 'absolute', right: 0, top: 0 })}
-          >
-            <View style={{ width: 38, height: 38, borderRadius: 19, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border, alignItems: 'center', justifyContent: 'center' }}>
-              <Icon name="search" size={16} color={colors.text} />
-            </View>
-          </Pressable>
+          <View style={{ position: 'absolute', right: 0, top: 0, flexDirection: 'row', gap: spacing[2] }}>
+            <Pressable
+              onPress={() => router.push('/sport-customize')}
+              accessibilityLabel={t('sport.customize.title')}
+              style={({ pressed }) => ({ opacity: pressed ? 0.6 : 1 })}
+            >
+              <View style={{ width: 38, height: 38, borderRadius: 19, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border, alignItems: 'center', justifyContent: 'center' }}>
+                <Icon name="tune" size={16} color={colors.text} />
+              </View>
+            </Pressable>
+            <Pressable
+              onPress={() => router.push('/sport/exercises')}
+              accessibilityLabel={t('sport.screen.searchExercise')}
+              style={({ pressed }) => ({ opacity: pressed ? 0.6 : 1 })}
+            >
+              <View style={{ width: 38, height: 38, borderRadius: 19, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border, alignItems: 'center', justifyContent: 'center' }}>
+                <Icon name="search" size={16} color={colors.text} />
+              </View>
+            </Pressable>
+          </View>
         </View>
         <DayNav value={selectedDate} onChange={setSelectedDate} />
 
@@ -349,81 +446,9 @@ export function SportScreen(): React.JSX.Element {
           }}
         />
 
-        {/* 3 dernières activités */}
-        <Text variant="heading" style={{ marginTop: spacing[2] }}>
-          {t('sport.screen.recent.heading')}
-        </Text>
-        {isLoading ? (
-          <Text variant="body" color="textMuted">
-            {t('common.loading')}
-          </Text>
-        ) : recent.length === 0 ? (
-          <Card>
-            <Text variant="body" color="textMuted">
-              {t('sport.screen.recent.empty')}
-            </Text>
-          </Card>
-        ) : (
-          <Card>
-            {recent.map((r, i) => {
-              const row = (
-                <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing[3], paddingVertical: spacing[3], borderBottomWidth: i < recent.length - 1 ? 1 : 0, borderBottomColor: colors.border }}>
-                  <View style={{ width: 34, height: 34, borderRadius: radii.md, backgroundColor: colors.surfaceElevated, alignItems: 'center', justifyContent: 'center' }}>
-                    <Icon name={r.kind === 'workout' ? 'tshirt' : 'run'} size={16} color={colors.text} />
-                  </View>
-                  <View style={{ flex: 1 }}>
-                    <Text variant="body">{r.name}</Text>
-                    <Text variant="caption" color="textSubtle" style={{ marginTop: 1 }}>
-                      {formatDate(r.date)}
-                      {r.durationSec ? ` · ${fmtDur(r.durationSec, t)}` : ''}
-                      {r.rpe ? ` · ${t('sport.screen.recent.rpe', { rpe: r.rpe })}` : ''}
-                    </Text>
-                  </View>
-                  {r.kind === 'workout' ? (
-                    <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: colors.accentData }} />
-                  ) : null}
-                </View>
-              );
-              return r.kind === 'workout' ? (
-                <Pressable key={r.id} onPress={() => router.push({ pathname: '/sport/workout/[id]', params: { id: r.id } })} style={({ pressed }) => ({ opacity: pressed ? 0.6 : 1 })}>
-                  {row}
-                </Pressable>
-              ) : (
-                <View key={r.id}>{row}</View>
-              );
-            })}
-          </Card>
-        )}
-        <View style={{ alignItems: 'flex-start' }}>
-          <Pressable onPress={() => router.push('/sport/activities')}>
-            <Text variant="caption" color="primary">{t('sport.screen.recent.viewAllHistory')}</Text>
-          </Pressable>
-        </View>
-
-        {/* Cette semaine */}
-        <Text variant="heading" style={{ marginTop: spacing[2] }}>
-          {t('sport.screen.week.heading')}
-        </Text>
-        <View style={{ gap: spacing[3] }}>
-          <View style={{ flexDirection: 'row', gap: spacing[3] }}>
-            <StatTile icon={<Icon name="armFlex" size={18} color={colors.accentStrength} />} value={`${week.sessions}`} label={t('sport.screen.week.sessions')} />
-            <StatTile icon={<Icon name="timer" size={18} color={colors.info} />} value={week.totalSec > 0 ? fmtDur(week.totalSec, t) : '—'} label={t('sport.screen.week.totalTime')} />
-          </View>
-          <View style={{ flexDirection: 'row', gap: spacing[3] }}>
-            <StatTile icon={<Icon name="fire" size={18} color={colors.warning} />} value={week.cals > 0 ? `${Math.round(week.cals)}` : '—'} label={t('sport.screen.week.calories')} />
-            <StatTile icon={<Icon name="target" size={18} color={colors.accentData} />} value={week.rpe != null ? week.rpe.toFixed(1) : '—'} label={t('sport.screen.week.avgRpe')} />
-          </View>
-        </View>
-
-        {/* Sections */}
-        <View style={{ gap: spacing[2], marginTop: spacing[2] }}>
-          {NAV.map((n) => (
-            <HubRow key={n.title} title={n.title} subtitle={n.subtitle} icon={<Icon name={n.icon} size={20} color={colors.text} />} soon={n.soon} onPress={n.path ? () => router.push(n.path!) : undefined} />
-          ))}
-        </View>
-
-        <ComprendreCard pillars={['performance']} />
-        <ObjectifsCard types={['performance', 'strength', 'endurance']} />
+        {cardOrder.filter((c) => c.visible).map((c) => (
+          <React.Fragment key={c.id}>{cardNodes[c.id]}</React.Fragment>
+        ))}
       </Screen>
       <Fab icon="+" accessibilityLabel={t('sport.screen.newSession')} onPress={() => router.push('/sport/workout/new')} />
     </View>

@@ -1539,6 +1539,9 @@
         "save": "Save",
         "saved": "Saved"
       }
+    },
+    "customize": {
+      "title": "Customize Sport"
     }
   },
   "sommeil": {

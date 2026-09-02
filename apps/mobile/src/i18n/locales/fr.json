@@ -1539,6 +1539,9 @@
         "save": "Enregistrer",
         "saved": "Enregistré"
       }
+    },
+    "customize": {
+      "title": "Personnaliser le Sport"
     }
   },
   "sommeil": {
