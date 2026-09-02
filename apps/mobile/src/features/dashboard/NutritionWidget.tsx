@@ -7,6 +7,7 @@ import { spacing } from '@supotsu/design-system';
 import { estimateTargets, sumDay } from '@supotsu/engines';
 import type { HealthMetric } from '@supotsu/core';
 import { useHealthMetrics, useNutritionEntries } from '@/lib/data/queries';
+import { usePreferences } from '@/lib/preferences';
 
 function latestWeight(metrics: HealthMetric[]): number | undefined {
   return metrics
@@ -45,6 +46,7 @@ export function NutritionWidget(): React.JSX.Element {
   const { colors } = useTheme();
   const { data: entries = [] } = useNutritionEntries();
   const { data: health = [] } = useHealthMetrics();
+  const { preferences } = usePreferences();
   const asOf = new Date().toISOString();
 
   const totals = useMemo(() => sumDay(entries, asOf), [entries, asOf]);
@@ -53,12 +55,13 @@ export function NutritionWidget(): React.JSX.Element {
     [health, asOf],
   );
 
-  const kcalTarget = targets.value.kcal;
-  const proteinTarget = targets.value.proteinG;
-  // Carb/fat targets derived from the remaining calories (transparent split).
+  const kcalTarget = preferences.nutritionGoals?.kcal ?? targets.value.kcal;
+  const proteinTarget = preferences.nutritionGoals?.proteinG ?? targets.value.proteinG;
+  // Same 55/45 auto split NutritionScreen seeds its "linked" macros with —
+  // read the real customized carbG/fatG once the user has set them there.
   const remainingKcal = Math.max(0, kcalTarget - proteinTarget * 4);
-  const carbTarget = Math.round((remainingKcal * 0.55) / 4);
-  const fatTarget = Math.round((remainingKcal * 0.45) / 9);
+  const carbTarget = preferences.nutritionGoals?.carbG ?? Math.round((remainingKcal * 0.55) / 4);
+  const fatTarget = preferences.nutritionGoals?.fatG ?? Math.round((remainingKcal * 0.45) / 9);
   const remainingKcalToday = kcalTarget - totals.kcal;
 
   return (

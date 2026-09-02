@@ -57,15 +57,23 @@ export function JournalScreen(): React.JSX.Element {
 
   const weight = useMemo(() => health.filter((m) => m.type === 'weight').sort((a, b) => b.measuredAt.localeCompare(a.measuredAt))[0]?.value, [health]);
   const { preferences } = usePreferences();
-  const targets = useMemo(() => preferences.nutritionGoals ?? estimateTargets({ weightKg: weight }, asOf).value, [preferences.nutritionGoals, weight, asOf]);
+  const estimated = useMemo(() => estimateTargets({ weightKg: weight }, asOf).value, [weight, asOf]);
+  // Same 55/45 auto split NutritionScreen seeds its "linked" macros with —
+  // read the real customized carbG/fatG once the user has set them there.
+  const targets = useMemo(() => {
+    if (preferences.nutritionGoals) return preferences.nutritionGoals;
+    const remainingKcal = Math.max(0, estimated.kcal - estimated.proteinG * 4);
+    return {
+      ...estimated,
+      carbG: Math.round((remainingKcal * 0.55) / 4),
+      fatG: Math.round((remainingKcal * 0.45) / 9),
+    };
+  }, [preferences.nutritionGoals, estimated]);
   const totals = useMemo(() => sumDay(entries, asOf), [entries, asOf]);
   const today = useMemo(() => entriesForDay(entries, asOf), [entries, asOf]);
   const hasData = today.length > 0;
 
   const kcalTarget = targets.kcal;
-  const remainingKcal = Math.max(0, kcalTarget - targets.proteinG * 4);
-  const carbTarget = Math.round((remainingKcal * 0.55) / 4);
-  const fatTarget = Math.round((remainingKcal * 0.45) / 9);
   const kcalPct = hasData && kcalTarget > 0 ? Math.min(100, (totals.kcal / kcalTarget) * 100) : 0;
   const deficit = Math.round(kcalTarget - totals.kcal);
 
@@ -116,8 +124,8 @@ export function JournalScreen(): React.JSX.Element {
             <ProgressRing value={kcalPct} size={128} thickness={11} gradient centerLabel={hasData ? `${Math.round(totals.kcal)}` : '—'} caption={`/ ${Math.round(kcalTarget)}`} />
             <View style={{ flex: 1 }}>
               <MacroBar label={t('nutrition.journal.macros.protein')} current={totals.proteinG} target={targets.proteinG} color={colors.accentData} />
-              <MacroBar label={t('nutrition.journal.macros.carbs')} current={totals.carbG} target={carbTarget} color={colors.warning} />
-              <MacroBar label={t('nutrition.journal.macros.fat')} current={totals.fatG} target={fatTarget} color={colors.accentStrength} />
+              <MacroBar label={t('nutrition.journal.macros.carbs')} current={totals.carbG} target={targets.carbG} color={colors.warning} />
+              <MacroBar label={t('nutrition.journal.macros.fat')} current={totals.fatG} target={targets.fatG} color={colors.accentStrength} />
             </View>
           </View>
         </Card>

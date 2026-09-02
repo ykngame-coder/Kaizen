@@ -12,7 +12,9 @@ import {
   estimateTargets,
   isHydrationOnlyEntry,
   nutritionExplanation,
+  rebalanceMacros,
   sumDay,
+  type MacroGoals,
 } from '@supotsu/engines';
 import type { TrendPoint } from '@supotsu/engines';
 import type { HealthMetricType } from '@supotsu/core';
@@ -166,23 +168,44 @@ export function NutritionScreen(): React.JSX.Element {
   const { preferences, setPreference } = usePreferences();
   const cardOrder = useMemo(() => resolveNutritionCardOrder(preferences.nutritionCards), [preferences.nutritionCards]);
   const targets = useMemo(() => estimateTargets({ weightKg: latestWeight }, asOf), [latestWeight, asOf]);
-  const goals = preferences.nutritionGoals ?? targets.value;
+  // Auto (non-customized) baseline: protein comes straight from the
+  // estimate, carbs/fat split the rest 55/45 — same ratio this screen has
+  // always used, now just the seed for the linked macros below instead of
+  // a fixed re-derivation on every render.
+  const autoGoals = useMemo(() => {
+    const kcal = targets.value.kcal;
+    const proteinG = targets.value.proteinG;
+    const remainingKcal = Math.max(0, kcal - proteinG * 4);
+    return {
+      kcal,
+      proteinG,
+      carbG: Math.round((remainingKcal * 0.55) / 4),
+      fatG: Math.round((remainingKcal * 0.45) / 9),
+      hydrationMl: targets.value.hydrationMl,
+    };
+  }, [targets]);
+  const goals = preferences.nutritionGoals ?? autoGoals;
   const customized = preferences.nutritionGoals != null;
-  const adjust = (patch: Partial<{ kcal: number; proteinG: number; hydrationMl: number }>): void => {
-    const base = preferences.nutritionGoals ?? { kcal: Math.round(goals.kcal), proteinG: Math.round(goals.proteinG), hydrationMl: Math.round(goals.hydrationMl) };
-    setPreference('nutritionGoals', {
-      kcal: Math.max(800, base.kcal + (patch.kcal ?? 0)),
-      proteinG: Math.max(0, base.proteinG + (patch.proteinG ?? 0)),
-      hydrationMl: Math.max(0, base.hydrationMl + (patch.hydrationMl ?? 0)),
-    });
+  // Protein/carbs/fat are "linked": every macro edit runs through
+  // rebalanceMacros so their calories always sum back to the kcal target
+  // instead of drifting apart into three independent numbers.
+  const adjust = (patch: Partial<{ kcal: number; proteinG: number; carbG: number; fatG: number; hydrationMl: number }>): void => {
+    const base = preferences.nutritionGoals ?? autoGoals;
+    let macros: MacroGoals = { kcal: base.kcal, proteinG: base.proteinG, carbG: base.carbG, fatG: base.fatG };
+    if (patch.kcal != null) macros = rebalanceMacros(macros, 'kcal', macros.kcal + patch.kcal);
+    if (patch.proteinG != null) macros = rebalanceMacros(macros, 'proteinG', macros.proteinG + patch.proteinG);
+    if (patch.carbG != null) macros = rebalanceMacros(macros, 'carbG', macros.carbG + patch.carbG);
+    if (patch.fatG != null) macros = rebalanceMacros(macros, 'fatG', macros.fatG + patch.fatG);
+    setPreference('nutritionGoals', { ...macros, hydrationMl: Math.max(0, base.hydrationMl + (patch.hydrationMl ?? 0)) });
   };
-  const setExact = (patch: Partial<{ kcal: number; proteinG: number; hydrationMl: number }>): void => {
-    const base = preferences.nutritionGoals ?? { kcal: Math.round(goals.kcal), proteinG: Math.round(goals.proteinG), hydrationMl: Math.round(goals.hydrationMl) };
-    setPreference('nutritionGoals', {
-      kcal: patch.kcal != null ? Math.max(800, Math.round(patch.kcal)) : base.kcal,
-      proteinG: patch.proteinG != null ? Math.max(0, Math.round(patch.proteinG)) : base.proteinG,
-      hydrationMl: patch.hydrationMl != null ? Math.max(0, Math.round(patch.hydrationMl)) : base.hydrationMl,
-    });
+  const setExact = (patch: Partial<{ kcal: number; proteinG: number; carbG: number; fatG: number; hydrationMl: number }>): void => {
+    const base = preferences.nutritionGoals ?? autoGoals;
+    let macros: MacroGoals = { kcal: base.kcal, proteinG: base.proteinG, carbG: base.carbG, fatG: base.fatG };
+    if (patch.kcal != null) macros = rebalanceMacros(macros, 'kcal', patch.kcal);
+    if (patch.proteinG != null) macros = rebalanceMacros(macros, 'proteinG', patch.proteinG);
+    if (patch.carbG != null) macros = rebalanceMacros(macros, 'carbG', patch.carbG);
+    if (patch.fatG != null) macros = rebalanceMacros(macros, 'fatG', patch.fatG);
+    setPreference('nutritionGoals', { ...macros, hydrationMl: patch.hydrationMl != null ? Math.max(0, Math.round(patch.hydrationMl)) : base.hydrationMl });
   };
   const totals = useMemo(() => sumDay(entries, asOf), [entries, asOf]);
   const today = useMemo(() => entriesForDay(entries, asOf), [entries, asOf]);
@@ -201,9 +224,6 @@ export function NutritionScreen(): React.JSX.Element {
   const hasData = today.length > 0;
 
   const kcalTarget = goals.kcal;
-  const remainingKcal = Math.max(0, kcalTarget - goals.proteinG * 4);
-  const carbTarget = Math.round((remainingKcal * 0.55) / 4);
-  const fatTarget = Math.round((remainingKcal * 0.45) / 9);
   const kcalPct = hasData && kcalTarget > 0 ? Math.min(100, (totals.kcal / kcalTarget) * 100) : 0;
   const remaining = Math.max(0, Math.round(kcalTarget - totals.kcal));
 
@@ -233,8 +253,8 @@ export function NutritionScreen(): React.JSX.Element {
         <SectionTitle>{t('nutrition.screen.macros.title')}</SectionTitle>
         <View style={{ flexDirection: 'row', justifyContent: 'space-around' }}>
           <MacroRing label={t('nutrition.screen.macros.protein')} current={totals.proteinG} target={goals.proteinG} color={colors.accentData} />
-          <MacroRing label={t('nutrition.screen.macros.carbs')} current={totals.carbG} target={carbTarget} color={colors.warning} />
-          <MacroRing label={t('nutrition.screen.macros.fat')} current={totals.fatG} target={fatTarget} color={colors.accentMobility} />
+          <MacroRing label={t('nutrition.screen.macros.carbs')} current={totals.carbG} target={goals.carbG} color={colors.warning} />
+          <MacroRing label={t('nutrition.screen.macros.fat')} current={totals.fatG} target={goals.fatG} color={colors.accentMobility} />
         </View>
       </Card>
     ),
@@ -373,9 +393,12 @@ export function NutritionScreen(): React.JSX.Element {
         }>{t('nutrition.screen.goals.title')}</SectionTitle>
         <GoalBar label={t('nutrition.screen.goals.caloriesLabel')} current={totals.kcal} target={kcalTarget} unit="kcal" color={colors.info} />
         <GoalBar label={t('nutrition.screen.goals.proteinLabel')} current={totals.proteinG} target={goals.proteinG} unit="g" color={colors.accentData} />
+        <GoalBar label={t('nutrition.screen.goals.carbLabel')} current={totals.carbG} target={goals.carbG} unit="g" color={colors.warning} />
+        <GoalBar label={t('nutrition.screen.goals.fatLabel')} current={totals.fatG} target={goals.fatG} unit="g" color={colors.accentMobility} />
         <GoalBar label={t('nutrition.screen.goals.hydrationLabel')} current={totals.hydrationMl / 1000} target={goals.hydrationMl / 1000} unit="L" color={colors.accentEndurance} />
 
         <Text variant="caption" color="textSubtle" style={{ marginTop: spacing[4] }}>{customized ? t('nutrition.screen.goals.adjustHintPerso') : t('nutrition.screen.goals.adjustHintAuto')}</Text>
+        <Text variant="caption" color="textSubtle">{t('nutrition.screen.goals.linkedHint')}</Text>
         <StepperRow
           label={t('nutrition.screen.goals.caloriesLabel')}
           rawValue={Math.round(goals.kcal)}
@@ -391,6 +414,22 @@ export function NutritionScreen(): React.JSX.Element {
           onMinus={() => adjust({ proteinG: -5 })}
           onPlus={() => adjust({ proteinG: 5 })}
           onSet={(v) => setExact({ proteinG: v })}
+        />
+        <StepperRow
+          label={t('nutrition.screen.goals.carbLabel')}
+          rawValue={Math.round(goals.carbG)}
+          format={(v) => `${Math.round(v)} g`}
+          onMinus={() => adjust({ carbG: -5 })}
+          onPlus={() => adjust({ carbG: 5 })}
+          onSet={(v) => setExact({ carbG: v })}
+        />
+        <StepperRow
+          label={t('nutrition.screen.goals.fatLabel')}
+          rawValue={Math.round(goals.fatG)}
+          format={(v) => `${Math.round(v)} g`}
+          onMinus={() => adjust({ fatG: -5 })}
+          onPlus={() => adjust({ fatG: 5 })}
+          onSet={(v) => setExact({ fatG: v })}
         />
         <StepperRow
           label={t('nutrition.screen.goals.hydrationLabel')}

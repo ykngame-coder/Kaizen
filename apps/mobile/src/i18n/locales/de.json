@@ -2009,7 +2009,10 @@
         "proteinLabel": "Protein",
         "hydrationLabel": "Flüssigkeitszufuhr",
         "adjustHintPerso": "Meine Ziele anpassen (persönlich)",
-        "adjustHintAuto": "Meine Ziele anpassen (auto — ändern zum Personalisieren)"
+        "adjustHintAuto": "Meine Ziele anpassen (auto — ändern zum Personalisieren)",
+        "carbLabel": "Kohlenhydrate",
+        "fatLabel": "Fett",
+        "linkedHint": "Die Makros sind verknüpft: Wird eines angepasst, verteilen sich die anderen beiden neu, um bei 100 % der Zufuhr zu bleiben."
       },
       "micronutrients": {
         "title": "Mikronährstoffe",

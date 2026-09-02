@@ -2009,7 +2009,10 @@
         "proteinLabel": "Protein",
         "hydrationLabel": "Hydration",
         "adjustHintPerso": "Adjust my goals (custom)",
-        "adjustHintAuto": "Adjust my goals (auto — edit to customize)"
+        "adjustHintAuto": "Adjust my goals (auto — edit to customize)",
+        "carbLabel": "Carbs",
+        "fatLabel": "Fat",
+        "linkedHint": "Macros are linked: adjusting one redistributes the other two to stay at 100% of intake."
       },
       "micronutrients": {
         "title": "Micronutrients",

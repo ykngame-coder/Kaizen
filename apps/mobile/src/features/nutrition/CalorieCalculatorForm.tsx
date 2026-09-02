@@ -3,7 +3,7 @@ import { Pressable, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { Button, Input, SegmentedControl, Text, useTheme } from '@supotsu/ui';
 import { spacing } from '@supotsu/design-system';
-import { estimateDeficitTarget, estimateTargets, type ActivityLevel } from '@supotsu/engines';
+import { estimateDeficitTarget, estimateTargets, rebalanceMacros, type ActivityLevel } from '@supotsu/engines';
 import { useHealthMetrics } from '@/lib/data/queries';
 import { usePreferences } from '@/lib/preferences';
 
@@ -62,13 +62,25 @@ export function CalorieCalculatorForm(): React.JSX.Element {
   const applyResult = (): void => {
     if (!result) return;
     // Kaizen's own protein/hydration ratios still apply — only the calorie
-    // target comes from this calculator's more detailed inputs.
+    // target comes from this calculator's more detailed inputs. Carbs/fat
+    // stay "linked": rescale the user's existing split if they'd already
+    // customized one, else fall back to the same 55/45 auto split.
     const base = estimateTargets({ weightKg: inputs.weightKg, goal: 'body_composition' }, new Date().toISOString()).value;
-    setPreference('nutritionGoals', {
-      kcal: result.targetKcal,
-      proteinG: preferences.nutritionGoals?.proteinG ?? Math.round(base.proteinG),
-      hydrationMl: preferences.nutritionGoals?.hydrationMl ?? Math.round(base.hydrationMl),
-    });
+    const proteinG = preferences.nutritionGoals?.proteinG ?? Math.round(base.proteinG);
+    const hydrationMl = preferences.nutritionGoals?.hydrationMl ?? Math.round(base.hydrationMl);
+    const prior = preferences.nutritionGoals;
+    let carbG: number;
+    let fatG: number;
+    if (prior) {
+      const rescaled = rebalanceMacros({ kcal: prior.kcal, proteinG: prior.proteinG, carbG: prior.carbG, fatG: prior.fatG }, 'kcal', result.targetKcal);
+      carbG = rescaled.carbG;
+      fatG = rescaled.fatG;
+    } else {
+      const remainingKcal = Math.max(0, result.targetKcal - proteinG * 4);
+      carbG = Math.round((remainingKcal * 0.55) / 4);
+      fatG = Math.round((remainingKcal * 0.45) / 9);
+    }
+    setPreference('nutritionGoals', { kcal: result.targetKcal, proteinG, carbG, fatG, hydrationMl });
     setApplied(true);
   };
 

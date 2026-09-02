@@ -1,10 +1,12 @@
 import { describe, expect, it } from 'vitest';
 import type { NutritionEntry, NutritionTargets } from '@supotsu/core';
+import type { MacroGoals } from './nutrition';
 import {
   computeNutritionScore,
   estimateTargets,
   isHydrationOnlyEntry,
   nutritionExplanation,
+  rebalanceMacros,
   sumDay,
 } from './nutrition';
 
@@ -29,6 +31,56 @@ function entry(partial: Partial<NutritionEntry> & { kcal: number }): NutritionEn
     updatedAt: loggedAt,
   };
 }
+
+describe('rebalanceMacros', () => {
+  const base: MacroGoals = { kcal: 2500, proteinG: 200, carbG: 234, fatG: 85 };
+
+  it('keeps total macro calories close to the kcal target after adjusting protein', () => {
+    const next = rebalanceMacros(base, 'proteinG', 220);
+    expect(next.proteinG).toBe(220);
+    expect(next.kcal).toBe(base.kcal);
+    const totalKcal = next.proteinG * 4 + next.carbG * 4 + next.fatG * 9;
+    expect(totalKcal).toBeGreaterThan(base.kcal - 10);
+    expect(totalKcal).toBeLessThan(base.kcal + 10);
+  });
+
+  it('preserves the ratio between the two untouched macros when adjusting the third', () => {
+    const next = rebalanceMacros(base, 'proteinG', 220);
+    const oldRatio = (base.carbG * 4) / (base.fatG * 9);
+    const newRatio = (next.carbG * 4) / (next.fatG * 9);
+    expect(newRatio).toBeCloseTo(oldRatio, 1);
+  });
+
+  it('rescales all three macros proportionally when the overall kcal target changes', () => {
+    const next = rebalanceMacros(base, 'kcal', 3000);
+    expect(next.kcal).toBe(3000);
+    const oldProteinShare = (base.proteinG * 4) / base.kcal;
+    const newProteinShare = (next.proteinG * 4) / next.kcal;
+    expect(newProteinShare).toBeCloseTo(oldProteinShare, 1);
+    const totalKcal = next.proteinG * 4 + next.carbG * 4 + next.fatG * 9;
+    expect(totalKcal).toBeGreaterThan(2990);
+    expect(totalKcal).toBeLessThan(3010);
+  });
+
+  it('never goes negative even when a macro is pushed to consume the whole budget', () => {
+    const next = rebalanceMacros(base, 'proteinG', 1000);
+    expect(next.carbG).toBeGreaterThanOrEqual(0);
+    expect(next.fatG).toBeGreaterThanOrEqual(0);
+  });
+
+  it('splits the remainder evenly when both other macros start at zero', () => {
+    const zeroed: MacroGoals = { kcal: 2000, proteinG: 0, carbG: 0, fatG: 0 };
+    const next = rebalanceMacros(zeroed, 'proteinG', 100);
+    expect(next.proteinG).toBe(100);
+    expect(next.carbG).toBe(200);
+    expect(next.fatG).toBe(89);
+  });
+
+  it('respects the 800 kcal floor when lowering the target', () => {
+    const next = rebalanceMacros(base, 'kcal', 100);
+    expect(next.kcal).toBe(800);
+  });
+});
 
 describe('isHydrationOnlyEntry', () => {
   it('recognizes a pure water log', () => {

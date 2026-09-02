@@ -33,6 +33,64 @@ export function entriesForDay(entries: NutritionEntry[], asOf: ISODateString): N
   });
 }
 
+export interface MacroGoals {
+  kcal: number;
+  proteinG: number;
+  carbG: number;
+  fatG: number;
+}
+
+const KCAL_PER_G: Record<'proteinG' | 'carbG' | 'fatG', number> = { proteinG: 4, carbG: 4, fatG: 9 };
+const MACRO_KEYS = ['proteinG', 'carbG', 'fatG'] as const;
+
+/**
+ * Adjust one macro (or the overall calorie target) while keeping the three
+ * macros' calories summed to the kcal target — "linked to reach 100% of
+ * intake" rather than three independent numbers that can drift apart.
+ *
+ * - Editing `kcal` rescales all three macros proportionally, preserving
+ *   their current split.
+ * - Editing one macro fixes it at the new value and redistributes the
+ *   remaining calories across the other two, preserving *their* existing
+ *   ratio to each other (so nudging protein up mostly eats into whichever
+ *   of carbs/fat was already the bigger share, not a blind 50/50 split).
+ */
+export function rebalanceMacros(
+  current: MacroGoals,
+  changed: 'kcal' | 'proteinG' | 'carbG' | 'fatG',
+  newValue: number,
+): MacroGoals {
+  if (changed === 'kcal') {
+    const kcal = Math.max(800, Math.round(newValue));
+    const totalKcalNow = current.proteinG * 4 + current.carbG * 4 + current.fatG * 9;
+    if (totalKcalNow <= 0) return { ...current, kcal };
+    const scale = kcal / totalKcalNow;
+    return {
+      kcal,
+      proteinG: Math.max(0, Math.round(current.proteinG * scale)),
+      carbG: Math.max(0, Math.round(current.carbG * scale)),
+      fatG: Math.max(0, Math.round(current.fatG * scale)),
+    };
+  }
+
+  const fixedG = Math.max(0, Math.round(newValue));
+  const fixedKcal = fixedG * KCAL_PER_G[changed];
+  const [a, b] = MACRO_KEYS.filter((k) => k !== changed) as ['proteinG' | 'carbG' | 'fatG', 'proteinG' | 'carbG' | 'fatG'];
+  const aKcalOld = current[a] * KCAL_PER_G[a];
+  const bKcalOld = current[b] * KCAL_PER_G[b];
+  const otherTotalOld = aKcalOld + bKcalOld;
+  const remaining = Math.max(0, current.kcal - fixedKcal);
+  const aRatio = otherTotalOld > 0 ? aKcalOld / otherTotalOld : 0.5;
+  const aKcalNew = remaining * aRatio;
+  const bKcalNew = remaining - aKcalNew;
+
+  const result: MacroGoals = { kcal: current.kcal, proteinG: current.proteinG, carbG: current.carbG, fatG: current.fatG };
+  result[changed] = fixedG;
+  result[a] = Math.max(0, Math.round(aKcalNew / KCAL_PER_G[a]));
+  result[b] = Math.max(0, Math.round(bKcalNew / KCAL_PER_G[b]));
+  return result;
+}
+
 /**
  * A pure water log (the "+250 ml" etc. buttons on the hydration card) — 0
  * kcal, no macros, some hydrationMl. These are already represented by the

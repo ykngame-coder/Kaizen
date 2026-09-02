@@ -49,8 +49,13 @@ export interface Preferences {
   reminders: boolean;
   /** Primary goal archetype — personalises the whole app (mockup #17). */
   primaryGoal?: string;
-  /** Manual nutrition targets — override the auto-estimated ones when set. */
-  nutritionGoals?: { kcal: number; proteinG: number; hydrationMl: number };
+  /**
+   * Manual nutrition targets — override the auto-estimated ones when set.
+   * proteinG/carbG/fatG are kept "linked": every edit runs through
+   * rebalanceMacros (packages/engines) so their calories always sum back to
+   * kcal instead of drifting apart.
+   */
+  nutritionGoals?: { kcal: number; proteinG: number; carbG: number; fatG: number; hydrationMl: number };
   /** How times are displayed throughout the app. */
   timeFormat: TimeFormat;
   /** Haptic feedback on buttons and toggles (native only). */
