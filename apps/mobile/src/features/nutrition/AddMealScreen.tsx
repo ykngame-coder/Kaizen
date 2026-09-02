@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { Pressable, View } from 'react-native';
+import { Pressable, ScrollView, View } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { Badge, Button, Card, Input, Screen, SegmentedControl, Text, useTheme } from '@supotsu/ui';
@@ -69,7 +69,7 @@ export function AddMealScreen(): React.JSX.Element {
       if (!key || seen.has(key)) continue;
       seen.add(key);
       out.push(e);
-      if (out.length >= 8) break;
+      if (out.length >= 30) break;
     }
     return out;
   }, [entries]);
@@ -157,18 +157,20 @@ export function AddMealScreen(): React.JSX.Element {
             <Text variant="heading" style={{ color: colors.textSubtle, transform: [{ rotate: showRecent ? '180deg' : '0deg' }] }}>⌄</Text>
           </Pressable>
           {showRecent && (
-            <View style={{ gap: spacing[2], marginTop: spacing[3] }}>
-              {recentMeals.map((entry) => (
-                <Pressable
-                  key={entry.id}
-                  onPress={() => copyMeal(entry)}
-                  style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: spacing[2], paddingHorizontal: spacing[3], borderRadius: radii.md, backgroundColor: colors.surfaceElevated }}
-                >
-                  <Text variant="body" style={{ flex: 1 }} numberOfLines={1}>{entry.description}</Text>
-                  <Text variant="caption" color="textMuted">{t('nutrition.addMeal.recent.kcal', { kcal: Math.round(entry.kcal) })}</Text>
-                </Pressable>
-              ))}
-            </View>
+            <ScrollView style={{ maxHeight: 320, marginTop: spacing[3] }} nestedScrollEnabled>
+              <View style={{ gap: spacing[2] }}>
+                {recentMeals.map((entry) => (
+                  <Pressable
+                    key={entry.id}
+                    onPress={() => copyMeal(entry)}
+                    style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: spacing[2], paddingHorizontal: spacing[3], borderRadius: radii.md, backgroundColor: colors.surfaceElevated }}
+                  >
+                    <Text variant="body" style={{ flex: 1 }} numberOfLines={1}>{entry.description}</Text>
+                    <Text variant="caption" color="textMuted">{t('nutrition.addMeal.recent.kcal', { kcal: Math.round(entry.kcal) })}</Text>
+                  </Pressable>
+                ))}
+              </View>
+            </ScrollView>
           )}
         </Card>
       )}

@@ -312,28 +312,33 @@ export function NutritionScreen(): React.JSX.Element {
                 {m.count > 0 ? <Text variant="caption" color="textSubtle">{Math.round(m.kcal)} kcal</Text> : null}
               </View>
               {m.count > 0 ? (
-                m.entries.map((e) => (
-                  <Pressable
-                    key={e.id}
-                    onPress={() => router.push({ pathname: '/nutrition/meal/[id]', params: { id: e.id } })}
-                    style={({ pressed }) => ({ flexDirection: 'row', alignItems: 'center', gap: spacing[3], paddingVertical: spacing[2], opacity: pressed ? 0.6 : 1 })}
-                  >
-                    <View style={{ width: 40, height: 40, borderRadius: 12, backgroundColor: colors.surfaceElevated, alignItems: 'center', justifyContent: 'center' }}><Icon name={MEAL_ICON[m.type] ?? 'bowl'} size={19} color={colors.text} /></View>
-                    <View style={{ flex: 1 }}>
-                      <Text variant="body" style={{ fontWeight: '600' }} numberOfLines={1}>{e.description || t(`nutrition.screen.meal.${m.type}`)}</Text>
-                      <Text variant="caption" color="textSubtle" style={{ marginTop: 2 }}>P {Math.round(e.proteinG ?? 0)} · G {Math.round(e.carbG ?? 0)} · L {Math.round(e.fatG ?? 0)}</Text>
-                    </View>
-                    <Text variant="body" style={{ fontWeight: '700' }}>{Math.round(e.kcal)}</Text>
+                <View style={{ gap: spacing[2], marginTop: spacing[1] }}>
+                  {m.entries.map((e) => (
                     <Pressable
-                      onPress={() => deleteEntry.mutate(e.id)}
-                      disabled={deleteEntry.isPending && deleteEntry.variables === e.id}
-                      hitSlop={8}
-                      style={{ opacity: deleteEntry.isPending && deleteEntry.variables === e.id ? 0.4 : 1 }}
+                      key={e.id}
+                      onPress={() => router.push({ pathname: '/nutrition/meal/[id]', params: { id: e.id } })}
+                      style={({ pressed }) => ({ flexDirection: 'row', alignItems: 'center', gap: spacing[3], padding: spacing[3], borderRadius: radii.md, backgroundColor: colors.surfaceElevated, opacity: pressed ? 0.6 : 1 })}
                     >
-                      <Icon name="trash" size={18} color={colors.textSubtle} />
+                      <View style={{ width: 40, height: 40, borderRadius: 12, backgroundColor: colors.surface, alignItems: 'center', justifyContent: 'center' }}><Icon name={MEAL_ICON[m.type] ?? 'bowl'} size={19} color={colors.text} /></View>
+                      <View style={{ flex: 1, minWidth: 0 }}>
+                        <Text variant="body" style={{ fontWeight: '600' }} numberOfLines={1}>{e.description || t(`nutrition.screen.meal.${m.type}`)}</Text>
+                        <Text variant="caption" color="textSubtle" style={{ marginTop: 2 }} numberOfLines={1}>P {Math.round(e.proteinG ?? 0)} · G {Math.round(e.carbG ?? 0)} · L {Math.round(e.fatG ?? 0)}</Text>
+                      </View>
+                      <View style={{ alignItems: 'flex-end' }}>
+                        <Text variant="body" style={{ fontWeight: '700' }}>{Math.round(e.kcal)}</Text>
+                        <Text variant="caption" color="textSubtle">kcal</Text>
+                      </View>
+                      <Pressable
+                        onPress={() => deleteEntry.mutate(e.id)}
+                        disabled={deleteEntry.isPending && deleteEntry.variables === e.id}
+                        hitSlop={8}
+                        style={{ opacity: deleteEntry.isPending && deleteEntry.variables === e.id ? 0.4 : 1 }}
+                      >
+                        <Icon name="trash" size={18} color={colors.textSubtle} />
+                      </Pressable>
                     </Pressable>
-                  </Pressable>
-                ))
+                  ))}
+                </View>
               ) : (
                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing[3], paddingVertical: spacing[2] }}>
                   <View style={{ width: 40, height: 40, borderRadius: 12, backgroundColor: colors.surfaceElevated, alignItems: 'center', justifyContent: 'center' }}><Icon name={MEAL_ICON[m.type] ?? 'bowl'} size={19} color={colors.text} /></View>
