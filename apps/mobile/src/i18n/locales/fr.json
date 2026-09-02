@@ -1618,6 +1618,14 @@
       },
       "hypnogram": {
         "title": "Chronologie du sommeil"
+      },
+      "debtTrend": {
+        "title": "Évolution de la dette",
+        "subtitle": "Dette cumulée (fenêtre glissante de 30 jours) sur les 30 derniers jours.",
+        "avg": "Moyenne",
+        "max": "Max",
+        "min": "Min",
+        "hoursValue": "{{value}} h"
       }
     },
     "tracking": {

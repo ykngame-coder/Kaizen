@@ -3,7 +3,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { Pressable, ScrollView, View, useWindowDimensions } from 'react-native';
 import { useRouter, type Href } from 'expo-router';
 import { useTranslation } from 'react-i18next';
-import { Badge, Button, Card, EmptyState, Icon, ProgressRing, Screen, Text, useTheme } from '@supotsu/ui';
+import { Badge, Button, Card, EmptyState, Icon, ProgressRing, Screen, Sparkline, Text, useTheme } from '@supotsu/ui';
 import { radii, spacing } from '@supotsu/design-system';
 import type { HealthMetric, SleepSession, SleepStage } from '@supotsu/core';
 import {
@@ -15,6 +15,7 @@ import {
   predictNextDayEnergy,
   sleepBand,
   sleepCoaching,
+  sleepDebtHours,
   sleepTrend,
   wellnessBand,
   type FatigueRisk,
@@ -28,6 +29,10 @@ import { DayNav, useSelectedDay } from '@/features/navigation/DayNav';
 import { ComprendreCard } from '@/features/knowledge/ComprendreCard';
 import { ObjectifsCard } from '@/features/goals/ObjectifsCard';
 import { isTodayLocal } from '@/features/community/leaderboardHelpers';
+
+const DAY_MS = 86_400_000;
+/** Sleep debt trend card: how many trailing days to plot, one point per day. */
+const DEBT_TREND_DAYS = 30;
 
 const RISK_TONE: Record<FatigueRisk, 'success' | 'warning' | 'error'> = {
   faible: 'success',
@@ -108,6 +113,17 @@ function QuickStat({ icon, value, label }: { icon: React.ReactNode; value: strin
       {typeof icon === 'string' ? <Text style={{ fontSize: 15 }}>{icon}</Text> : icon}
       <Text variant="subtitle" style={{ marginTop: spacing[1] }}>{value}</Text>
       <Text variant="caption" color="textSubtle" style={{ marginTop: 2 }}>{label}</Text>
+    </View>
+  );
+}
+
+/** Min/avg/max readout under the sleep debt evolution Sparkline. */
+function DebtStat({ label, value }: { label: string; value: string }): React.JSX.Element {
+  const { colors } = useTheme();
+  return (
+    <View style={{ alignItems: 'center' }}>
+      <Text variant="caption" color="textSubtle">{label}</Text>
+      <Text variant="body" style={{ fontWeight: '700', color: colors.warning, marginTop: 2 }}>{value}</Text>
     </View>
   );
 }
@@ -387,6 +403,26 @@ export function SommeilScreen(): React.JSX.Element {
   const chrono = useMemo(() => [...trend].sort((a, b) => a.date.localeCompare(b.date)), [trend]);
   const chronoMax = Math.max(1, ...chrono.map((n) => n.hours));
   const avg = useMemo(() => averageSleepHours(metrics, asOf, 7), [metrics, asOf]);
+  // Sleep debt evolution — one point per trailing day, each computed with its
+  // own rolling debt window (same sleepDebtHours the "Dette" score component
+  // above already uses), so the curve shows whether the debt itself is
+  // growing or being paid down over the last month, not just today's value.
+  const debtSeries = useMemo(() => {
+    const points: number[] = [];
+    for (let i = DEBT_TREND_DAYS - 1; i >= 0; i -= 1) {
+      const dayIso = new Date(new Date(asOf).getTime() - i * DAY_MS).toISOString();
+      points.push(sleepDebtHours(metrics, dayIso, 30).debt);
+    }
+    return points;
+  }, [metrics, asOf]);
+  const debtStats = useMemo(() => {
+    if (debtSeries.length < 2) return null;
+    return {
+      avg: Math.round((debtSeries.reduce((s, v) => s + v, 0) / debtSeries.length) * 10) / 10,
+      max: Math.max(...debtSeries),
+      min: Math.min(...debtSeries),
+    };
+  }, [debtSeries]);
   const coaching = useMemo(() => sleepCoaching(metrics, asOf), [metrics, asOf]);
   const acwr = useMemo(() => computeAcwr(activities, asOf).ratio, [activities, asOf]);
   const prediction = useMemo(
@@ -617,6 +653,21 @@ export function SommeilScreen(): React.JSX.Element {
               })}
             </View>
           </Card>
+
+          {score.components.find((c) => c.key === 'debt')?.value !== null && debtStats ? (
+            <Card>
+              <Text variant="heading">{t('sommeil.screen.debtTrend.title')}</Text>
+              <Text variant="caption" color="textSubtle">{t('sommeil.screen.debtTrend.subtitle')}</Text>
+              <View style={{ alignItems: 'center', marginTop: spacing[3] }}>
+                <Sparkline values={debtSeries} width={300} height={70} color={colors.warning} />
+              </View>
+              <View style={{ flexDirection: 'row', justifyContent: 'space-around', marginTop: spacing[3], paddingTop: spacing[3], borderTopWidth: 1, borderTopColor: colors.border }}>
+                <DebtStat label={t('sommeil.screen.debtTrend.avg')} value={t('sommeil.screen.debtTrend.hoursValue', { value: debtStats.avg })} />
+                <DebtStat label={t('sommeil.screen.debtTrend.max')} value={t('sommeil.screen.debtTrend.hoursValue', { value: debtStats.max })} />
+                <DebtStat label={t('sommeil.screen.debtTrend.min')} value={t('sommeil.screen.debtTrend.hoursValue', { value: debtStats.min })} />
+              </View>
+            </Card>
+          ) : null}
 
           {prediction.value && prediction.explanation && (
             <Card>

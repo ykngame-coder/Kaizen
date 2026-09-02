@@ -1618,6 +1618,14 @@
       },
       "hypnogram": {
         "title": "Sleep timeline"
+      },
+      "debtTrend": {
+        "title": "Debt trend",
+        "subtitle": "Cumulative debt (rolling 30-day window) over the last 30 days.",
+        "avg": "Average",
+        "max": "Max",
+        "min": "Min",
+        "hoursValue": "{{value}}h"
       }
     },
     "tracking": {

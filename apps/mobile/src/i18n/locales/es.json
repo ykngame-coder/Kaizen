@@ -1618,6 +1618,14 @@
       },
       "hypnogram": {
         "title": "Cronología del sueño"
+      },
+      "debtTrend": {
+        "title": "Evolución de la deuda",
+        "subtitle": "Deuda acumulada (ventana móvil de 30 días) en los últimos 30 días.",
+        "avg": "Media",
+        "max": "Máx",
+        "min": "Mín",
+        "hoursValue": "{{value}} h"
       }
     },
     "tracking": {
