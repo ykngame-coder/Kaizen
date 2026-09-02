@@ -1740,6 +1740,9 @@
       "title": "Intelligenter Wecker",
       "subtitle": "Ein Wecker, der während deiner Leichtschlafphase klingelt.",
       "comingIn": "Diese Funktion ist pausiert, bis wir eine zuverlässige Hintergrundlösung finden."
+    },
+    "customize": {
+      "title": "Schlaf anpassen"
     }
   },
   "wellbeing": {

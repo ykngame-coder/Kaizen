@@ -1740,6 +1740,9 @@
       "title": "Réveil intelligent",
       "subtitle": "Un réveil qui sonne pendant ta phase de sommeil léger.",
       "comingIn": "Cette fonctionnalité est mise en pause, le temps de trouver une solution fiable en arrière-plan."
+    },
+    "customize": {
+      "title": "Personnaliser le Sommeil"
     }
   },
   "wellbeing": {

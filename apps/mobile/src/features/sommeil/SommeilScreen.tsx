@@ -29,6 +29,7 @@ import { DayNav, useSelectedDay } from '@/features/navigation/DayNav';
 import { ComprendreCard } from '@/features/knowledge/ComprendreCard';
 import { ObjectifsCard } from '@/features/goals/ObjectifsCard';
 import { isTodayLocal } from '@/features/community/leaderboardHelpers';
+import { resolveSommeilCardOrder } from './sommeilCards';
 
 const DAY_MS = 86_400_000;
 /** Sleep debt trend card: how many trailing days to plot, one point per day. */
@@ -371,6 +372,7 @@ export function SommeilScreen(): React.JSX.Element {
   const router = useRouter();
   const { colors } = useTheme();
   const { preferences } = usePreferences();
+  const cardOrder = useMemo(() => resolveSommeilCardOrder(preferences.sommeilCards), [preferences.sommeilCards]);
   const { data: metrics = [], isLoading } = useHealthMetrics();
   const { data: activities = [] } = useActivities();
   const { data: sessions = [] } = useSleepSessions();
@@ -457,6 +459,194 @@ export function SommeilScreen(): React.JSX.Element {
     stress && { label: t('sommeil.screen.signals.stress'), value: `${Math.round(stress.value)}/100` },
   ].filter(Boolean) as { label: string; value: string }[];
 
+  const cardNodes: Record<string, React.ReactNode> = {
+    last7Nights: chrono.length > 0 ? (
+      <Card>
+        <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'baseline' }}>
+          <Text variant="heading">{t('sommeil.screen.last7Nights.title')}</Text>
+          {avg !== undefined && (
+            <Text variant="caption" color="textMuted">
+              {t('sommeil.screen.last7Nights.average', { avg: avg.toFixed(1) })}
+            </Text>
+          )}
+        </View>
+        <Text variant="caption" color="textSubtle" style={{ marginTop: spacing[1] }}>
+          {tappedNight
+            ? t('sommeil.screen.last7Nights.tappedDetail', { day: fullWeekdayDate(tappedNight.date), hours: fmtHM(tappedNight.hours * 60) })
+            : t('sommeil.screen.last7Nights.tapHint')}
+        </Text>
+        <View
+          style={{ flexDirection: 'row', alignItems: 'flex-end', gap: spacing[2], height: 92, marginTop: spacing[3] }}
+        >
+          {chrono.map((n) => {
+            const selected = tappedNight?.date === n.date;
+            return (
+              <Pressable
+                key={n.date}
+                onPress={() => setTappedNight(selected ? null : n)}
+                hitSlop={4}
+                style={{ flex: 1, alignItems: 'center', gap: spacing[1] }}
+              >
+                <View
+                  style={{
+                    width: '70%',
+                    height: Math.max(6, (n.hours / chronoMax) * 72),
+                    borderRadius: 4,
+                    backgroundColor: colors[BAND_TONE[sleepBand(n.score)]],
+                    borderWidth: selected ? 2 : 0,
+                    borderColor: colors.text,
+                  }}
+                />
+                <Text variant="caption" color={selected ? 'text' : 'textSubtle'} style={selected ? { fontWeight: '700' } : undefined}>
+                  {weekdayLetter(n.date)}
+                </Text>
+              </Pressable>
+            );
+          })}
+        </View>
+      </Card>
+    ) : null,
+    phases: lastSession ? <SleepPhaseCarousel session={lastSession} timeFormat={preferences.timeFormat} /> : null,
+    bedtime: circadian.value ? (
+      <Card>
+        <Text variant="caption" color="textMuted">
+          {t('sommeil.screen.bedtime.title')}
+        </Text>
+        <Text variant="display" color="primary" style={{ marginTop: spacing[1] }}>
+          {bedtimeWindow(circadian.value.idealBedtime, preferences.timeFormat)}
+        </Text>
+        <Text variant="caption" color="textSubtle">
+          {t('sommeil.screen.bedtime.estimate', { chronotype: circadian.value.chronotype })}
+        </Text>
+      </Card>
+    ) : null,
+    advice: coaching ? (
+      <Card>
+        <Text variant="heading">{t('sommeil.screen.advice.title')}</Text>
+        <Text variant="caption" color="textMuted">
+          {t(coaching.observation.key, coaching.observation.params)}
+        </Text>
+        <Text variant="caption" color="textMuted">
+          {t(coaching.analysis.key, coaching.analysis.params)}
+        </Text>
+        <Text variant="body" style={{ marginTop: spacing[1] }}>
+          {t(coaching.action.key, coaching.action.params)}
+        </Text>
+      </Card>
+    ) : null,
+    detail: (
+      <Card>
+        <Text variant="heading">{t('sommeil.screen.detail.title')}</Text>
+        <Text variant="caption" color="textSubtle">
+          {t('sommeil.screen.detail.description')}
+        </Text>
+        <View style={{ gap: spacing[3], marginTop: spacing[3] }}>
+          {score.components.map((c) => {
+            const tone = c.value !== null ? BAND_TONE[sleepBand(c.value)] : undefined;
+            const barColor = tone ? colors[tone] : colors.border;
+            return (
+              <View key={c.key} style={{ gap: spacing[1] }}>
+                <View
+                  style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'baseline' }}
+                >
+                  <Text variant="body">{c.label}</Text>
+                  <Text variant="subtitle" color={c.value !== null ? 'text' : 'textSubtle'}>
+                    {c.value !== null ? `${c.value}` : '—'}
+                  </Text>
+                </View>
+                <ScoreBar value={c.value} color={barColor} track={colors.surfaceElevated} />
+                <Text variant="caption" color="textSubtle">
+                  {c.detail}
+                </Text>
+              </View>
+            );
+          })}
+        </View>
+      </Card>
+    ),
+    debtTrend: score.components.find((c) => c.key === 'debt')?.value !== null && debtStats ? (
+      <Card>
+        <Text variant="heading">{t('sommeil.screen.debtTrend.title')}</Text>
+        <Text variant="caption" color="textSubtle">{t('sommeil.screen.debtTrend.subtitle')}</Text>
+        <View style={{ alignItems: 'center', marginTop: spacing[3] }}>
+          <Sparkline values={debtSeries} width={300} height={70} color={colors.warning} />
+        </View>
+        <View style={{ flexDirection: 'row', justifyContent: 'space-around', marginTop: spacing[3], paddingTop: spacing[3], borderTopWidth: 1, borderTopColor: colors.border }}>
+          <DebtStat label={t('sommeil.screen.debtTrend.avg')} value={t('sommeil.screen.debtTrend.hoursValue', { value: debtStats.avg })} />
+          <DebtStat label={t('sommeil.screen.debtTrend.max')} value={t('sommeil.screen.debtTrend.hoursValue', { value: debtStats.max })} />
+          <DebtStat label={t('sommeil.screen.debtTrend.min')} value={t('sommeil.screen.debtTrend.hoursValue', { value: debtStats.min })} />
+        </View>
+      </Card>
+    ) : null,
+    prediction: prediction.value && prediction.explanation ? (
+      <Card>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing[2] }}>
+          <Text variant="heading">{t('sommeil.screen.prediction.title')}</Text>
+          <Badge
+            label={t('sommeil.screen.prediction.fatigueBadge', { risk: prediction.value.fatigueRisk })}
+            tone={RISK_TONE[prediction.value.fatigueRisk]}
+          />
+        </View>
+        <Text variant="subtitle" color="primary" style={{ marginTop: spacing[1] }}>
+          {t('sommeil.screen.prediction.energy', { score: prediction.value.energyScore })}
+        </Text>
+        <Text variant="caption" color="textMuted" style={{ marginTop: spacing[1] }}>
+          {t(prediction.explanation.analysis.key, prediction.explanation.analysis.params)}
+        </Text>
+        <Text variant="body" style={{ marginTop: spacing[1] }}>
+          {t(prediction.explanation.action.key, prediction.explanation.action.params)}
+        </Text>
+      </Card>
+    ) : null,
+    signals: signals.length > 0 ? (
+      <Card>
+        <Text variant="heading">{t('sommeil.screen.signals.title')}</Text>
+        <View
+          style={{ flexDirection: 'row', flexWrap: 'wrap', gap: spacing[4], marginTop: spacing[2] }}
+        >
+          {signals.map((s) => (
+            <View key={s.label}>
+              <Text variant="caption" color="textSubtle">
+                {s.label}
+              </Text>
+              <Text variant="subtitle">{s.value}</Text>
+            </View>
+          ))}
+        </View>
+      </Card>
+    ) : null,
+    circadian: (
+      <Card>
+        <Text variant="heading">{t('sommeil.screen.circadian.title')}</Text>
+        <Text variant="caption" color="textMuted">
+          {t('sommeil.screen.circadian.description')}
+        </Text>
+        <View style={{ alignItems: 'flex-start', marginTop: spacing[2] }}>
+          <Button
+            label={t('sommeil.screen.circadian.cta')}
+            variant="gradient"
+            onPress={() => router.push('/sommeil/circadian')}
+          />
+        </View>
+      </Card>
+    ),
+    tools: (
+      <>
+        <Text variant="heading" style={{ marginTop: spacing[2] }}>
+          {t('sommeil.screen.tools.title')}
+        </Text>
+        <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: spacing[3] }}>
+          <ToolTile icon={<Icon name="windy" size={16} color={colors.text} />} label={t('sommeil.screen.tools.breathing')} path="/sommeil/breathing" />
+          <ToolTile icon={<Icon name="lungs" size={16} color={colors.text} />} label={t('sommeil.screen.tools.stomachVacuum')} path="/sport/stomach-vacuum" />
+          <ToolTile icon={<Icon name="puzzle" size={16} color={colors.text} />} label={t('sommeil.screen.tools.neuroRecovery')} path="/sommeil/neuro-recovery" />
+          <ToolTile icon={<Icon name="headphones" size={16} color={colors.text} />} label={t('sommeil.screen.tools.sounds')} path="/sommeil/sound" />
+        </View>
+      </>
+    ),
+    comprendre: <ComprendreCard pillars={['sleep', 'recovery', 'understanding']} />,
+    objectifs: <ObjectifsCard types={['health']} />,
+  };
+
   return (
     <Screen scroll onRefresh={onRefresh} refreshing={refreshing}>
       <View style={{ position: 'relative' }}>
@@ -466,11 +656,18 @@ export function SommeilScreen(): React.JSX.Element {
             {t('sommeil.screen.subtitle')}
           </Text>
         </View>
-        <Pressable onPress={() => router.push('/search')} style={({ pressed }) => ({ opacity: pressed ? 0.6 : 1, position: 'absolute', right: 0, top: 0 })}>
-          <View style={{ width: 38, height: 38, borderRadius: 19, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border, alignItems: 'center', justifyContent: 'center' }}>
-            <Icon name="search" size={16} color={colors.text} />
-          </View>
-        </Pressable>
+        <View style={{ position: 'absolute', right: 0, top: 0, flexDirection: 'row', gap: spacing[2] }}>
+          <Pressable onPress={() => router.push('/sommeil-customize')} accessibilityLabel={t('sommeil.customize.title')} style={({ pressed }) => ({ opacity: pressed ? 0.6 : 1 })}>
+            <View style={{ width: 38, height: 38, borderRadius: 19, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border, alignItems: 'center', justifyContent: 'center' }}>
+              <Icon name="tune" size={16} color={colors.text} />
+            </View>
+          </Pressable>
+          <Pressable onPress={() => router.push('/search')} style={({ pressed }) => ({ opacity: pressed ? 0.6 : 1 })}>
+            <View style={{ width: 38, height: 38, borderRadius: 19, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border, alignItems: 'center', justifyContent: 'center' }}>
+              <Icon name="search" size={16} color={colors.text} />
+            </View>
+          </Pressable>
+        </View>
       </View>
       <DayNav value={selectedDate} onChange={setSelectedDate} />
 
@@ -542,201 +739,9 @@ export function SommeilScreen(): React.JSX.Element {
             />
           </View>
 
-          {/* 3. 7 dernières nuits */}
-          {chrono.length > 0 && (
-            <Card>
-              <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'baseline' }}>
-                <Text variant="heading">{t('sommeil.screen.last7Nights.title')}</Text>
-                {avg !== undefined && (
-                  <Text variant="caption" color="textMuted">
-                    {t('sommeil.screen.last7Nights.average', { avg: avg.toFixed(1) })}
-                  </Text>
-                )}
-              </View>
-              <Text variant="caption" color="textSubtle" style={{ marginTop: spacing[1] }}>
-                {tappedNight
-                  ? t('sommeil.screen.last7Nights.tappedDetail', { day: fullWeekdayDate(tappedNight.date), hours: fmtHM(tappedNight.hours * 60) })
-                  : t('sommeil.screen.last7Nights.tapHint')}
-              </Text>
-              <View
-                style={{ flexDirection: 'row', alignItems: 'flex-end', gap: spacing[2], height: 92, marginTop: spacing[3] }}
-              >
-                {chrono.map((n) => {
-                  const selected = tappedNight?.date === n.date;
-                  return (
-                    <Pressable
-                      key={n.date}
-                      onPress={() => setTappedNight(selected ? null : n)}
-                      hitSlop={4}
-                      style={{ flex: 1, alignItems: 'center', gap: spacing[1] }}
-                    >
-                      <View
-                        style={{
-                          width: '70%',
-                          height: Math.max(6, (n.hours / chronoMax) * 72),
-                          borderRadius: 4,
-                          backgroundColor: colors[BAND_TONE[sleepBand(n.score)]],
-                          borderWidth: selected ? 2 : 0,
-                          borderColor: colors.text,
-                        }}
-                      />
-                      <Text variant="caption" color={selected ? 'text' : 'textSubtle'} style={selected ? { fontWeight: '700' } : undefined}>
-                        {weekdayLetter(n.date)}
-                      </Text>
-                    </Pressable>
-                  );
-                })}
-              </View>
-            </Card>
-          )}
-
-          {/* 4. Phases de sommeil */}
-          {lastSession && <SleepPhaseCarousel session={lastSession} timeFormat={preferences.timeFormat} />}
-
-          {/* 5. Coucher optimal */}
-          {circadian.value && (
-            <Card>
-              <Text variant="caption" color="textMuted">
-                {t('sommeil.screen.bedtime.title')}
-              </Text>
-              <Text variant="display" color="primary" style={{ marginTop: spacing[1] }}>
-                {bedtimeWindow(circadian.value.idealBedtime, preferences.timeFormat)}
-              </Text>
-              <Text variant="caption" color="textSubtle">
-                {t('sommeil.screen.bedtime.estimate', { chronotype: circadian.value.chronotype })}
-              </Text>
-            </Card>
-          )}
-
-          {/* 6. Conseil du jour */}
-          {coaching && (
-            <Card>
-              <Text variant="heading">{t('sommeil.screen.advice.title')}</Text>
-              <Text variant="caption" color="textMuted">
-                {t(coaching.observation.key, coaching.observation.params)}
-              </Text>
-              <Text variant="caption" color="textMuted">
-                {t(coaching.analysis.key, coaching.analysis.params)}
-              </Text>
-              <Text variant="body" style={{ marginTop: spacing[1] }}>
-                {t(coaching.action.key, coaching.action.params)}
-              </Text>
-            </Card>
-          )}
-
-          {/* 7. Détail — plus analytique, repoussé en fin */}
-          <Card>
-            <Text variant="heading">{t('sommeil.screen.detail.title')}</Text>
-            <Text variant="caption" color="textSubtle">
-              {t('sommeil.screen.detail.description')}
-            </Text>
-            <View style={{ gap: spacing[3], marginTop: spacing[3] }}>
-              {score.components.map((c) => {
-                const tone = c.value !== null ? BAND_TONE[sleepBand(c.value)] : undefined;
-                const barColor = tone ? colors[tone] : colors.border;
-                return (
-                  <View key={c.key} style={{ gap: spacing[1] }}>
-                    <View
-                      style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'baseline' }}
-                    >
-                      <Text variant="body">{c.label}</Text>
-                      <Text variant="subtitle" color={c.value !== null ? 'text' : 'textSubtle'}>
-                        {c.value !== null ? `${c.value}` : '—'}
-                      </Text>
-                    </View>
-                    <ScoreBar value={c.value} color={barColor} track={colors.surfaceElevated} />
-                    <Text variant="caption" color="textSubtle">
-                      {c.detail}
-                    </Text>
-                  </View>
-                );
-              })}
-            </View>
-          </Card>
-
-          {score.components.find((c) => c.key === 'debt')?.value !== null && debtStats ? (
-            <Card>
-              <Text variant="heading">{t('sommeil.screen.debtTrend.title')}</Text>
-              <Text variant="caption" color="textSubtle">{t('sommeil.screen.debtTrend.subtitle')}</Text>
-              <View style={{ alignItems: 'center', marginTop: spacing[3] }}>
-                <Sparkline values={debtSeries} width={300} height={70} color={colors.warning} />
-              </View>
-              <View style={{ flexDirection: 'row', justifyContent: 'space-around', marginTop: spacing[3], paddingTop: spacing[3], borderTopWidth: 1, borderTopColor: colors.border }}>
-                <DebtStat label={t('sommeil.screen.debtTrend.avg')} value={t('sommeil.screen.debtTrend.hoursValue', { value: debtStats.avg })} />
-                <DebtStat label={t('sommeil.screen.debtTrend.max')} value={t('sommeil.screen.debtTrend.hoursValue', { value: debtStats.max })} />
-                <DebtStat label={t('sommeil.screen.debtTrend.min')} value={t('sommeil.screen.debtTrend.hoursValue', { value: debtStats.min })} />
-              </View>
-            </Card>
-          ) : null}
-
-          {prediction.value && prediction.explanation && (
-            <Card>
-              <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing[2] }}>
-                <Text variant="heading">{t('sommeil.screen.prediction.title')}</Text>
-                <Badge
-                  label={t('sommeil.screen.prediction.fatigueBadge', { risk: prediction.value.fatigueRisk })}
-                  tone={RISK_TONE[prediction.value.fatigueRisk]}
-                />
-              </View>
-              <Text variant="subtitle" color="primary" style={{ marginTop: spacing[1] }}>
-                {t('sommeil.screen.prediction.energy', { score: prediction.value.energyScore })}
-              </Text>
-              <Text variant="caption" color="textMuted" style={{ marginTop: spacing[1] }}>
-                {t(prediction.explanation.analysis.key, prediction.explanation.analysis.params)}
-              </Text>
-              <Text variant="body" style={{ marginTop: spacing[1] }}>
-                {t(prediction.explanation.action.key, prediction.explanation.action.params)}
-              </Text>
-            </Card>
-          )}
-
-          {signals.length > 0 && (
-            <Card>
-              <Text variant="heading">{t('sommeil.screen.signals.title')}</Text>
-              <View
-                style={{ flexDirection: 'row', flexWrap: 'wrap', gap: spacing[4], marginTop: spacing[2] }}
-              >
-                {signals.map((s) => (
-                  <View key={s.label}>
-                    <Text variant="caption" color="textSubtle">
-                      {s.label}
-                    </Text>
-                    <Text variant="subtitle">{s.value}</Text>
-                  </View>
-                ))}
-              </View>
-            </Card>
-          )}
-
-          {/* 8. Rythme circadien */}
-          <Card>
-            <Text variant="heading">{t('sommeil.screen.circadian.title')}</Text>
-            <Text variant="caption" color="textMuted">
-              {t('sommeil.screen.circadian.description')}
-            </Text>
-            <View style={{ alignItems: 'flex-start', marginTop: spacing[2] }}>
-              <Button
-                label={t('sommeil.screen.circadian.cta')}
-                variant="gradient"
-                onPress={() => router.push('/sommeil/circadian')}
-              />
-            </View>
-          </Card>
-
-          {/* 9. Outils de récupération */}
-          <Text variant="heading" style={{ marginTop: spacing[2] }}>
-            {t('sommeil.screen.tools.title')}
-          </Text>
-          <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: spacing[3] }}>
-            <ToolTile icon={<Icon name="windy" size={16} color={colors.text} />} label={t('sommeil.screen.tools.breathing')} path="/sommeil/breathing" />
-            <ToolTile icon={<Icon name="lungs" size={16} color={colors.text} />} label={t('sommeil.screen.tools.stomachVacuum')} path="/sport/stomach-vacuum" />
-            <ToolTile icon={<Icon name="puzzle" size={16} color={colors.text} />} label={t('sommeil.screen.tools.neuroRecovery')} path="/sommeil/neuro-recovery" />
-            <ToolTile icon={<Icon name="headphones" size={16} color={colors.text} />} label={t('sommeil.screen.tools.sounds')} path="/sommeil/sound" />
-          </View>
-
-          {/* 10. Comprendre + Objectifs */}
-          <ComprendreCard pillars={['sleep', 'recovery', 'understanding']} />
-          <ObjectifsCard types={['health']} />
+          {cardOrder.filter((c) => c.visible).map((c) => (
+            <React.Fragment key={c.id}>{cardNodes[c.id]}</React.Fragment>
+          ))}
         </>
       )}
     </Screen>

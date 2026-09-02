@@ -1740,6 +1740,9 @@
       "title": "Alarma inteligente",
       "subtitle": "Una alarma que suena durante tu fase de sueño ligero.",
       "comingIn": "Esta función está en pausa mientras buscamos una solución fiable en segundo plano."
+    },
+    "customize": {
+      "title": "Personalizar Sueño"
     }
   },
   "wellbeing": {

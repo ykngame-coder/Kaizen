@@ -1740,6 +1740,9 @@
       "title": "Smart alarm",
       "subtitle": "An alarm that rings during your light sleep phase.",
       "comingIn": "This feature is paused while we find a reliable background solution."
+    },
+    "customize": {
+      "title": "Customize Sleep"
     }
   },
   "wellbeing": {

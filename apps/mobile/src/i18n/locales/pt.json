@@ -1740,6 +1740,9 @@
       "title": "Alarme inteligente",
       "subtitle": "Um alarme que toca durante a tua fase de sono leve.",
       "comingIn": "Esta funcionalidade está em pausa enquanto procuramos uma solução fiável em segundo plano."
+    },
+    "customize": {
+      "title": "Personalizar Sono"
     }
   },
   "wellbeing": {
