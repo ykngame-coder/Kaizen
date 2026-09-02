@@ -17,7 +17,10 @@
     "save": "Speichern",
     "back": "Zurück",
     "close": "Schließen",
-    "loading": "Lädt…"
+    "loading": "Lädt…",
+    "hubCustomize": {
+      "subtitle": "Halte ☰ gedrückt, um eine Karte zu verschieben; der Schalter zeigt oder verbirgt sie."
+    }
   },
   "home": {
     "dailyBriefing": {

@@ -17,7 +17,10 @@
     "save": "Save",
     "back": "Back",
     "close": "Close",
-    "loading": "Loading…"
+    "loading": "Loading…",
+    "hubCustomize": {
+      "subtitle": "Press and hold ☰ to move a card; the switch shows or hides it."
+    }
   },
   "home": {
     "dailyBriefing": {

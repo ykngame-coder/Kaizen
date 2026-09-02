@@ -17,7 +17,10 @@
     "save": "Guardar",
     "back": "Atrás",
     "close": "Cerrar",
-    "loading": "Cargando…"
+    "loading": "Cargando…",
+    "hubCustomize": {
+      "subtitle": "Mantén pulsado ☰ para mover una tarjeta; el interruptor la muestra u oculta."
+    }
   },
   "home": {
     "dailyBriefing": {

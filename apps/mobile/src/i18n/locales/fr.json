@@ -17,7 +17,10 @@
     "save": "Enregistrer",
     "back": "Retour",
     "close": "Fermer",
-    "loading": "Chargement…"
+    "loading": "Chargement…",
+    "hubCustomize": {
+      "subtitle": "Reste appuyé sur ☰ pour déplacer une card ; l'interrupteur l'affiche ou la masque."
+    }
   },
   "home": {
     "dailyBriefing": {
