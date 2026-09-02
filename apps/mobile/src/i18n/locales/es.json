@@ -2792,7 +2792,9 @@
         "goal": "Objetivo",
         "sleep": "Sueño",
         "coach": "Coach IA",
-        "stats": "Estadísticas"
+        "stats": "Estadísticas",
+        "hydration": "Hidratación",
+        "customizeTitle": "Personalizar accesos rápidos"
       },
       "header": {
         "greetingWithName": "Hola {{name}}",

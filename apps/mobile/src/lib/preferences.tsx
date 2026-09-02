@@ -69,6 +69,8 @@ export interface Preferences {
   sportCards?: DashboardCardPref[];
   nutritionCards?: DashboardCardPref[];
   sommeilCards?: DashboardCardPref[];
+  /** Which "Accès rapides" tiles show, and in what order — same shape as the per-hub card prefs above. */
+  quickLinks?: DashboardCardPref[];
   /** Undefined until the user configures the phone-tracking smart alarm. */
   sleepAlarm?: SleepAlarmSettings;
   /** 'auto' follows the phone's language (expo-localization); otherwise a specific choice. */

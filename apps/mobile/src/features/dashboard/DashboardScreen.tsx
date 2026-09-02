@@ -28,6 +28,7 @@ import { usePreferences } from '@/lib/preferences';
 import { secureStorage } from '@/lib/secure-storage';
 import { useManualHealthKitSync } from '@/features/connectors/useHealthKitAutoSync';
 import { resolveDashboardCardOrder } from './dashboardCards';
+import { resolveCardOrder, type HubCardDef } from '@/lib/hubCards';
 
 const DAY_MS = 86_400_000;
 
@@ -173,6 +174,12 @@ export function DashboardScreen(): React.JSX.Element {
   const { user, mode } = useAuth();
   const { preferences } = usePreferences();
   const cardOrder = useMemo(() => resolveDashboardCardOrder(preferences.dashboardCards), [preferences.dashboardCards]);
+  const quickLinkDefs: HubCardDef[] = useMemo(() => QUICK_LINKS.map((l) => ({ id: l.key, label: t(l.labelKey) })), [t]);
+  const quickLinkOrder = useMemo(() => resolveCardOrder(quickLinkDefs, preferences.quickLinks), [quickLinkDefs, preferences.quickLinks]);
+  const visibleQuickLinks = useMemo(() => {
+    const byId = new Map(QUICK_LINKS.map((l) => [l.key, l]));
+    return quickLinkOrder.filter((c) => c.visible).map((c) => byId.get(c.id)).filter((l): l is (typeof QUICK_LINKS)[number] => l != null);
+  }, [quickLinkOrder]);
   const { data: activities = [] } = useActivities();
   const { data: health = [] } = useHealthMetrics();
   const { data: nutrition = [] } = useNutritionEntries();
@@ -522,9 +529,13 @@ export function DashboardScreen(): React.JSX.Element {
     ) : null,
     'acces-rapides': (
       <Card>
-        <SectionTitle>{t('dashboard.screen.quickLinks.title')}</SectionTitle>
+        <SectionTitle right={
+          <Pressable onPress={() => router.push('/quicklinks-customize')} accessibilityLabel={t('dashboard.screen.quickLinks.customizeTitle')} hitSlop={8}>
+            <Icon name="tune" size={16} color={colors.textSubtle} />
+          </Pressable>
+        }>{t('dashboard.screen.quickLinks.title')}</SectionTitle>
         <View style={{ flexDirection: 'row', flexWrap: 'wrap' }}>
-          {QUICK_LINKS.map((l) => (
+          {visibleQuickLinks.map((l) => (
             <Pressable key={l.key} onPress={() => router.push(l.path)} style={({ pressed }) => ({ width: '25%', alignItems: 'center', gap: 6, paddingVertical: spacing[2], opacity: pressed ? 0.6 : 1 })}>
               <View style={{ width: 52, height: 52, borderRadius: radii.lg, backgroundColor: colors.surfaceElevated, borderWidth: 1, borderColor: colors.border, alignItems: 'center', justifyContent: 'center' }}><Icon name={l.icon} size={22} color={colors.text} /></View>
               <Text variant="caption" color="textMuted" style={{ textAlign: 'center' }}>{t(l.labelKey)}</Text>
@@ -613,10 +624,11 @@ export function DashboardScreen(): React.JSX.Element {
   );
 }
 
-const QUICK_LINKS: { key: string; labelKey: string; icon: IconName; path: Href }[] = [
+export const QUICK_LINKS: { key: string; labelKey: string; icon: IconName; path: Href }[] = [
   { key: 'meals', labelKey: 'dashboard.screen.quickLinks.meals', icon: 'silverware', path: '/nutrition/meal/new' },
   { key: 'workout', labelKey: 'dashboard.screen.quickLinks.workout', icon: 'play', path: '/sport/workout/new' },
   { key: 'weighIn', labelKey: 'dashboard.screen.quickLinks.weighIn', icon: 'scale', path: '/nutrition/weight' },
+  { key: 'hydration', labelKey: 'dashboard.screen.quickLinks.hydration', icon: 'water', path: '/nutrition' },
   { key: 'steps', labelKey: 'dashboard.screen.quickLinks.steps', icon: 'footsteps', path: '/sport/steps' },
   { key: 'habit', labelKey: 'dashboard.screen.quickLinks.habit', icon: 'calendarCheck', path: '/profile/habits' },
   { key: 'goal', labelKey: 'dashboard.screen.quickLinks.goal', icon: 'target', path: '/profile/habits' },

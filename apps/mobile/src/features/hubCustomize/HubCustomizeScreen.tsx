@@ -14,7 +14,7 @@ export interface HubCustomizeScreenProps {
   subtitle: string;
   cardDefs: HubCardDef[];
   /** Which Preferences field this hub's card order/visibility is stored under. */
-  prefKey: 'dashboardCards' | 'sportCards' | 'nutritionCards' | 'sommeilCards';
+  prefKey: 'dashboardCards' | 'sportCards' | 'nutritionCards' | 'sommeilCards' | 'quickLinks';
   backLabel: string;
 }
 

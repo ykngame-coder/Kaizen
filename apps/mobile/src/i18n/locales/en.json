@@ -2792,7 +2792,9 @@
         "goal": "Goal",
         "sleep": "Sleep",
         "coach": "AI coach",
-        "stats": "Stats"
+        "stats": "Stats",
+        "hydration": "Hydration",
+        "customizeTitle": "Customize quick access"
       },
       "header": {
         "greetingWithName": "Hi {{name}}",
