@@ -149,12 +149,12 @@ export function sleepExplanation(
 /** Beyond this spread in bedtimes, regularity is treated as fully irregular. */
 const REGULARITY_TOLERANCE_MIN = 90;
 /**
- * Sleep debt looks back 3 months rather than the 7-day window used for
+ * Sleep debt looks back 1 month rather than the 7-day window used for
  * regularity: a single "bad week" is noise, but a sustained shortfall over a
- * season is the kind of chronic debt that actually matters and is worth
+ * month is the kind of chronic debt that actually matters and is worth
  * surfacing on its own timeline, independent of `windowDays`.
  */
-const DEBT_WINDOW_DAYS = 90;
+const DEBT_WINDOW_DAYS = 30;
 /** A full night's deficit *per week*, sustained across the debt window, maps sleep debt to a score of 0 — same severity bar as before, just extended to the longer window. */
 const DEBT_CAP_HOURS = SLEEP_TARGET_HOURS * (DEBT_WINDOW_DAYS / 7);
 /** Minimum nights required before regularity / debt are meaningful. */
@@ -367,7 +367,7 @@ export function computeSleepScore2(
         : `Nécessite au moins ${MIN_NIGHTS_FOR_TREND} nuits enregistrées.`,
   });
 
-  // 4) Dette — cumulative shortfall over the last 3 months (its own window,
+  // 4) Dette — cumulative shortfall over the last month (its own window,
   //    independent of windowDays — see DEBT_WINDOW_DAYS above).
   const { debt, nights } = sleepDebtHours(metrics, asOf, DEBT_WINDOW_DAYS);
   components.push({
@@ -378,8 +378,8 @@ export function computeSleepScore2(
     detail:
       nights >= MIN_NIGHTS_FOR_TREND
         ? debt > 0
-          ? `−${debt.toFixed(1)} h cumulées sur ${nights} nuits (3 derniers mois).`
-          : `Aucune dette sur ${nights} nuits (3 derniers mois).`
+          ? `−${debt.toFixed(1)} h cumulées sur ${nights} nuits (dernier mois).`
+          : `Aucune dette sur ${nights} nuits (dernier mois).`
         : `Nécessite au moins ${MIN_NIGHTS_FOR_TREND} nuits enregistrées.`,
   });
 
