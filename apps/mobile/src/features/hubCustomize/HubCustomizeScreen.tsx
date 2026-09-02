@@ -16,6 +16,8 @@ export interface HubCustomizeScreenProps {
   /** Which Preferences field this hub's card order/visibility is stored under. */
   prefKey: 'dashboardCards' | 'sportCards' | 'nutritionCards' | 'sommeilCards' | 'quickLinks';
   backLabel: string;
+  /** Optional link to a nested customize screen (e.g. Dashboard → "Accès rapides") — keeps every page down to one customize entry point instead of one button per customizable card. */
+  secondaryAction?: { label: string; onPress: () => void };
 }
 
 /**
@@ -27,7 +29,7 @@ export interface HubCustomizeScreenProps {
  * react-native-gesture-handler is also driving the list's own drag
  * detection.
  */
-export function HubCustomizeScreen({ title, subtitle, cardDefs, prefKey, backLabel }: HubCustomizeScreenProps): React.JSX.Element {
+export function HubCustomizeScreen({ title, subtitle, cardDefs, prefKey, backLabel, secondaryAction }: HubCustomizeScreenProps): React.JSX.Element {
   const router = useRouter();
   const { colors } = useTheme();
   const { preferences, setPreference } = usePreferences();
@@ -79,6 +81,12 @@ export function HubCustomizeScreen({ title, subtitle, cardDefs, prefKey, backLab
           )}
         />
       </View>
+
+      {secondaryAction ? (
+        <Pressable onPress={secondaryAction.onPress} style={{ paddingVertical: spacing[2] }}>
+          <Text variant="body" color="primary">{secondaryAction.label} →</Text>
+        </Pressable>
+      ) : null}
 
       <View style={{ alignItems: 'flex-start', marginTop: spacing[2] }}>
         <Button label={backLabel} variant="secondary" onPress={() => router.back()} />

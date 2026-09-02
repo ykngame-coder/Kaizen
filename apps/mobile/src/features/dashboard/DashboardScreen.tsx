@@ -529,11 +529,7 @@ export function DashboardScreen(): React.JSX.Element {
     ) : null,
     'acces-rapides': (
       <Card>
-        <SectionTitle right={
-          <Pressable onPress={() => router.push('/quicklinks-customize')} accessibilityLabel={t('dashboard.screen.quickLinks.customizeTitle')} hitSlop={8}>
-            <Icon name="tune" size={16} color={colors.textSubtle} />
-          </Pressable>
-        }>{t('dashboard.screen.quickLinks.title')}</SectionTitle>
+        <SectionTitle>{t('dashboard.screen.quickLinks.title')}</SectionTitle>
         <View style={{ flexDirection: 'row', flexWrap: 'wrap' }}>
           {visibleQuickLinks.map((l) => (
             <Pressable key={l.key} onPress={() => router.push(l.path)} style={({ pressed }) => ({ width: '25%', alignItems: 'center', gap: 6, paddingVertical: spacing[2], opacity: pressed ? 0.6 : 1 })}>
