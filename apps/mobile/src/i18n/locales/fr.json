@@ -2217,6 +2217,9 @@
       "enterManually": "Saisir le numéro à la place",
       "aimHint": "Vise le code-barres du produit",
       "cancelButton": "Annuler"
+    },
+    "customize": {
+      "title": "Personnaliser la Nutrition"
     }
   },
   "analytics": {

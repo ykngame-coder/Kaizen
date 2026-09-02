@@ -2217,6 +2217,9 @@
       "enterManually": "Stattdessen Nummer eingeben",
       "aimHint": "Richte die Kamera auf den Barcode des Produkts",
       "cancelButton": "Abbrechen"
+    },
+    "customize": {
+      "title": "Ernährung anpassen"
     }
   },
   "analytics": {

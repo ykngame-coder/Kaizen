@@ -22,6 +22,7 @@ import { usePreferences } from '@/lib/preferences';
 import { DayNav, useSelectedDay } from '@/features/navigation/DayNav';
 import { ComprendreCard } from '@/features/knowledge/ComprendreCard';
 import { isTodayLocal } from '@/features/community/leaderboardHelpers';
+import { resolveNutritionCardOrder } from './nutritionCards';
 
 const DAY_MS = 86_400_000;
 const dayKey = (iso: string): string => {
@@ -163,6 +164,7 @@ export function NutritionScreen(): React.JSX.Element {
     return latestWeight != null && weekAgo != null ? latestWeight - weekAgo : null;
   }, [asOfMetrics, latestWeight, asOf]);
   const { preferences, setPreference } = usePreferences();
+  const cardOrder = useMemo(() => resolveNutritionCardOrder(preferences.nutritionCards), [preferences.nutritionCards]);
   const targets = useMemo(() => estimateTargets({ weightKg: latestWeight }, asOf), [latestWeight, asOf]);
   const goals = preferences.nutritionGoals ?? targets.value;
   const customized = preferences.nutritionGoals != null;
@@ -222,6 +224,204 @@ export function NutritionScreen(): React.JSX.Element {
     return dailySums(pts, asOf, 30).filter((v) => v > 0);
   }, [entries, asOf]);
 
+  const cardNodes: Record<string, React.ReactNode> = {
+    macros: (
+      <Card>
+        <SectionTitle>{t('nutrition.screen.macros.title')}</SectionTitle>
+        <View style={{ flexDirection: 'row', justifyContent: 'space-around' }}>
+          <MacroRing label={t('nutrition.screen.macros.protein')} current={totals.proteinG} target={goals.proteinG} color={colors.accentData} />
+          <MacroRing label={t('nutrition.screen.macros.carbs')} current={totals.carbG} target={carbTarget} color={colors.warning} />
+          <MacroRing label={t('nutrition.screen.macros.fat')} current={totals.fatG} target={fatTarget} color={colors.accentMobility} />
+        </View>
+      </Card>
+    ),
+    hydration: (
+      <Card>
+        <SectionTitle right={<Text variant="subtitle" style={{ color: colors.accentEndurance }}>{(Math.max(0, totals.hydrationMl) / 1000).toFixed(2)} / {(goals.hydrationMl / 1000).toFixed(2)} L</Text>}>{t('nutrition.screen.hydration.title')}</SectionTitle>
+        <View style={{ height: 10, borderRadius: 6, backgroundColor: colors.surfaceElevated, overflow: 'hidden' }}>
+          <View style={{ width: `${Math.max(0, Math.min(100, (totals.hydrationMl / goals.hydrationMl) * 100))}%`, height: 10, backgroundColor: colors.accentEndurance }} />
+        </View>
+        <View style={{ flexDirection: 'row', gap: spacing[2], marginTop: spacing[3] }}>
+          {WATER_PRESETS.map((ml) => (
+            <FilterChip key={ml} label={`${ml} ml`} active={waterAmount === ml} onPress={() => setWaterAmount(ml)} />
+          ))}
+        </View>
+        <View style={{ flexDirection: 'row', gap: spacing[2], marginTop: spacing[2] }}>
+          <View style={{ flex: 1 }}>
+            <Button label={`− ${waterAmount} ml`} variant="secondary" fullWidth onPress={() => addWater(-waterAmount)} />
+          </View>
+          <View style={{ flex: 1 }}>
+            <Button label={`+ ${waterAmount} ml`} fullWidth onPress={() => addWater(waterAmount)} />
+          </View>
+        </View>
+        <View style={{ flexDirection: 'row', gap: spacing[2], marginTop: spacing[2], alignItems: 'flex-end' }}>
+          <View style={{ flex: 1 }}>
+            <Input
+              label={t('nutrition.screen.hydration.quantityLabel')}
+              placeholder={t('nutrition.screen.hydration.quantityPlaceholder')}
+              keyboardType="numeric"
+              value={customWater}
+              onChangeText={setCustomWater}
+            />
+          </View>
+          <Button
+            label={t('nutrition.screen.hydration.addButton')}
+            variant="secondary"
+            disabled={!customWater.trim() || Number(customWater) <= 0}
+            onPress={() => {
+              addWater(Number(customWater));
+              setCustomWater('');
+            }}
+          />
+        </View>
+      </Card>
+    ),
+    meals: (
+      <Card>
+        <SectionTitle>{t('nutrition.screen.meals.title')}</SectionTitle>
+        {meals.map((m, i) => (
+          <View key={m.type} style={{ paddingVertical: spacing[2], borderBottomWidth: i < meals.length - 1 ? 1 : 0, borderBottomColor: colors.border }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing[2] }}>
+              <Text variant="caption" color="textSubtle" style={{ flex: 1, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 0.6 }}>{t(`nutrition.screen.meal.${m.type}`)}</Text>
+              {m.count > 0 ? <Text variant="caption" color="textSubtle">{Math.round(m.kcal)} kcal</Text> : null}
+            </View>
+            {m.count > 0 ? (
+              <View style={{ gap: spacing[2], marginTop: spacing[1] }}>
+                {m.entries.map((e) => (
+                  <Pressable
+                    key={e.id}
+                    onPress={() => router.push({ pathname: '/nutrition/meal/[id]', params: { id: e.id } })}
+                    style={({ pressed }) => ({ flexDirection: 'row', alignItems: 'center', gap: spacing[3], padding: spacing[3], borderRadius: radii.md, backgroundColor: colors.surfaceElevated, opacity: pressed ? 0.6 : 1 })}
+                  >
+                    <View style={{ width: 40, height: 40, borderRadius: 12, backgroundColor: colors.surface, alignItems: 'center', justifyContent: 'center' }}><Icon name={MEAL_ICON[m.type] ?? 'bowl'} size={19} color={colors.text} /></View>
+                    <View style={{ flex: 1, minWidth: 0 }}>
+                      <Text variant="body" style={{ fontWeight: '600' }} numberOfLines={1}>{e.description || t(`nutrition.screen.meal.${m.type}`)}</Text>
+                      <Text variant="caption" color="textSubtle" style={{ marginTop: 2 }} numberOfLines={1}>P {Math.round(e.proteinG ?? 0)} · G {Math.round(e.carbG ?? 0)} · L {Math.round(e.fatG ?? 0)}</Text>
+                    </View>
+                    <View style={{ alignItems: 'flex-end' }}>
+                      <Text variant="body" style={{ fontWeight: '700' }}>{Math.round(e.kcal)}</Text>
+                      <Text variant="caption" color="textSubtle">kcal</Text>
+                    </View>
+                    <Pressable
+                      onPress={() => deleteEntry.mutate(e.id)}
+                      disabled={deleteEntry.isPending && deleteEntry.variables === e.id}
+                      hitSlop={8}
+                      style={{ opacity: deleteEntry.isPending && deleteEntry.variables === e.id ? 0.4 : 1 }}
+                    >
+                      <Icon name="trash" size={18} color={colors.textSubtle} />
+                    </Pressable>
+                  </Pressable>
+                ))}
+              </View>
+            ) : (
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing[3], paddingVertical: spacing[2] }}>
+                <View style={{ width: 40, height: 40, borderRadius: 12, backgroundColor: colors.surfaceElevated, alignItems: 'center', justifyContent: 'center' }}><Icon name={MEAL_ICON[m.type] ?? 'bowl'} size={19} color={colors.text} /></View>
+                <Text variant="caption" color="textSubtle" style={{ flex: 1 }}>{t('nutrition.screen.meals.toPlan')}</Text>
+                <Text variant="caption" color="textSubtle">{t('nutrition.screen.meals.pending')}</Text>
+              </View>
+            )}
+          </View>
+        ))}
+        <View style={{ flexDirection: 'row', gap: spacing[2], marginTop: spacing[3] }}>
+          <View style={{ flex: 1 }}>
+            <Button label={t('nutrition.screen.meals.searchFood')} onPress={() => router.push('/nutrition/food/search')} fullWidth />
+          </View>
+          <View style={{ flex: 1 }}>
+            <Button label={t('nutrition.screen.meals.manualEntry')} variant="secondary" onPress={() => router.push({ pathname: '/nutrition/meal/new', params: { date: dayKey(selectedDate) } })} fullWidth />
+          </View>
+        </View>
+      </Card>
+    ),
+    score: (
+      <Card>
+        <SectionTitle>{t('nutrition.screen.score.title')}</SectionTitle>
+        <View style={{ flexDirection: 'row', gap: spacing[5], alignItems: 'center' }}>
+          <ProgressRing value={hasData ? score.value : 0} size={96} thickness={9} color={colors.accentData} centerLabel={hasData ? `${score.value}` : '—'} caption="/ 100" />
+          <View style={{ flex: 1 }}>
+            <Text variant="body">{hasData ? (score.value >= 80 ? t('nutrition.screen.score.quality.excellent') : score.value >= 60 ? t('nutrition.screen.score.quality.good') : t('nutrition.screen.score.quality.needsImprovement')) : t('nutrition.screen.score.quality.noData')}</Text>
+            <Text variant="caption" color="textSubtle" style={{ marginTop: spacing[2], lineHeight: 18 }}>{t('nutrition.screen.score.basedOn')}</Text>
+          </View>
+        </View>
+      </Card>
+    ),
+    weight: (
+      <Card>
+        <SectionTitle right={<Pressable onPress={() => router.push('/nutrition/weight')}><Text variant="caption" color="primary">{t('nutrition.screen.weight.viewLink')}</Text></Pressable>}>{t('nutrition.screen.weight.title')}</SectionTitle>
+        <View style={{ flexDirection: 'row', justifyContent: 'space-around' }}>
+          <Balance label={t('nutrition.screen.weight.weight')} value={latestWeight != null ? `${latestWeight.toFixed(1)} kg` : '—'} />
+          <Balance label={t('nutrition.screen.weight.bodyFat')} value={bodyFat != null ? `${bodyFat.toFixed(1)} %` : '—'} />
+          <Balance label={t('nutrition.screen.weight.muscleMass')} value={muscleMass != null ? `${muscleMass.toFixed(1)} kg` : '—'} />
+          <Balance
+            label={t('nutrition.screen.weight.weeklyChange')}
+            value={weightDelta != null ? `${weightDelta > 0 ? '+' : ''}${weightDelta.toFixed(1)} kg` : '—'}
+            color={weightDelta != null && weightDelta <= 0 ? colors.accentData : undefined}
+          />
+        </View>
+      </Card>
+    ),
+    impact: explanation ? (
+      <Card>
+        <SectionTitle>{t('nutrition.screen.impact.title')}</SectionTitle>
+        <Text variant="body" color="textMuted">{t(explanation.observation.key, explanation.observation.params)}</Text>
+        <Text variant="body" color="textMuted" style={{ marginTop: spacing[1] }}>{t(explanation.analysis.key, explanation.analysis.params)}</Text>
+        <Text variant="body" style={{ marginTop: spacing[2] }}>{t(explanation.action.key, explanation.action.params)}</Text>
+      </Card>
+    ) : null,
+    trend: kcalSeries.length >= 2 ? (
+      <Card>
+        <SectionTitle right={<Text variant="caption" color="textSubtle">{t('nutrition.screen.trend.days30')}</Text>}>{t('nutrition.screen.trend.title')}</SectionTitle>
+        <Sparkline values={kcalSeries} width={300} height={80} color={colors.primary} />
+      </Card>
+    ) : null,
+    goals: (
+      <Card>
+        <SectionTitle right={
+          <Pressable onPress={() => setPreference('nutritionGoals', undefined)} disabled={!customized}>
+            <Text variant="caption" color={customized ? 'primary' : 'textSubtle'}>{customized ? t('nutrition.screen.goals.resetAuto') : t('nutrition.screen.goals.auto')}</Text>
+          </Pressable>
+        }>{t('nutrition.screen.goals.title')}</SectionTitle>
+        <GoalBar label={t('nutrition.screen.goals.caloriesLabel')} current={totals.kcal} target={kcalTarget} unit="kcal" color={colors.info} />
+        <GoalBar label={t('nutrition.screen.goals.proteinLabel')} current={totals.proteinG} target={goals.proteinG} unit="g" color={colors.accentData} />
+        <GoalBar label={t('nutrition.screen.goals.hydrationLabel')} current={totals.hydrationMl / 1000} target={goals.hydrationMl / 1000} unit="L" color={colors.accentEndurance} />
+
+        <Text variant="caption" color="textSubtle" style={{ marginTop: spacing[4] }}>{customized ? t('nutrition.screen.goals.adjustHintPerso') : t('nutrition.screen.goals.adjustHintAuto')}</Text>
+        <StepperRow
+          label={t('nutrition.screen.goals.caloriesLabel')}
+          rawValue={Math.round(goals.kcal)}
+          format={(v) => `${Math.round(v)} kcal`}
+          onMinus={() => adjust({ kcal: -50 })}
+          onPlus={() => adjust({ kcal: 50 })}
+          onSet={(v) => setExact({ kcal: v })}
+        />
+        <StepperRow
+          label={t('nutrition.screen.goals.proteinLabel')}
+          rawValue={Math.round(goals.proteinG)}
+          format={(v) => `${Math.round(v)} g`}
+          onMinus={() => adjust({ proteinG: -5 })}
+          onPlus={() => adjust({ proteinG: 5 })}
+          onSet={(v) => setExact({ proteinG: v })}
+        />
+        <StepperRow
+          label={t('nutrition.screen.goals.hydrationLabel')}
+          rawValue={Number((goals.hydrationMl / 1000).toFixed(2))}
+          format={(v) => `${v.toFixed(2)} L`}
+          onMinus={() => adjust({ hydrationMl: -250 })}
+          onPlus={() => adjust({ hydrationMl: 250 })}
+          onSet={(v) => setExact({ hydrationMl: v * 1000 })}
+        />
+
+        <CalorieCalculatorForm />
+      </Card>
+    ),
+    micronutrients: (
+      <Card>
+        <SectionTitle>{t('nutrition.screen.micronutrients.title')}</SectionTitle>
+        <Text variant="body" color="textMuted" style={{ lineHeight: 21 }}>{t('nutrition.screen.micronutrients.description')}</Text>
+      </Card>
+    ),
+    comprendre: <ComprendreCard pillars={['nutrition']} />,
+  };
+
   return (
     <View style={{ flex: 1 }}>
       <Screen scroll onRefresh={onRefresh} refreshing={refreshing}>
@@ -231,6 +431,9 @@ export function NutritionScreen(): React.JSX.Element {
             <Text variant="caption" color="textSubtle">{t('nutrition.screen.subtitle')}</Text>
           </View>
           <View style={{ position: 'absolute', right: 0, top: 0, flexDirection: 'row', gap: spacing[2] }}>
+            <Pressable onPress={() => router.push('/nutrition-customize')} accessibilityLabel={t('nutrition.customize.title')} style={({ pressed }) => ({ opacity: pressed ? 0.6 : 1 })}>
+              <View style={{ width: 38, height: 38, borderRadius: 19, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border, alignItems: 'center', justifyContent: 'center' }}><Icon name="tune" size={16} color={colors.text} /></View>
+            </Pressable>
             <Pressable onPress={() => router.push('/sport/calendar')} style={({ pressed }) => ({ opacity: pressed ? 0.6 : 1 })}>
               <View style={{ width: 38, height: 38, borderRadius: 19, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border, alignItems: 'center', justifyContent: 'center' }}><Icon name="calendar" size={16} color={colors.text} /></View>
             </Pressable>
@@ -251,205 +454,9 @@ export function NutritionScreen(): React.JSX.Element {
           </View>
         </Card>
 
-        {/* Macros */}
-        <Card>
-          <SectionTitle>{t('nutrition.screen.macros.title')}</SectionTitle>
-          <View style={{ flexDirection: 'row', justifyContent: 'space-around' }}>
-            <MacroRing label={t('nutrition.screen.macros.protein')} current={totals.proteinG} target={goals.proteinG} color={colors.accentData} />
-            <MacroRing label={t('nutrition.screen.macros.carbs')} current={totals.carbG} target={carbTarget} color={colors.warning} />
-            <MacroRing label={t('nutrition.screen.macros.fat')} current={totals.fatG} target={fatTarget} color={colors.accentMobility} />
-          </View>
-        </Card>
-
-        {/* Hydration */}
-        <Card>
-          <SectionTitle right={<Text variant="subtitle" style={{ color: colors.accentEndurance }}>{(Math.max(0, totals.hydrationMl) / 1000).toFixed(2)} / {(goals.hydrationMl / 1000).toFixed(2)} L</Text>}>{t('nutrition.screen.hydration.title')}</SectionTitle>
-          <View style={{ height: 10, borderRadius: 6, backgroundColor: colors.surfaceElevated, overflow: 'hidden' }}>
-            <View style={{ width: `${Math.max(0, Math.min(100, (totals.hydrationMl / goals.hydrationMl) * 100))}%`, height: 10, backgroundColor: colors.accentEndurance }} />
-          </View>
-          <View style={{ flexDirection: 'row', gap: spacing[2], marginTop: spacing[3] }}>
-            {WATER_PRESETS.map((ml) => (
-              <FilterChip key={ml} label={`${ml} ml`} active={waterAmount === ml} onPress={() => setWaterAmount(ml)} />
-            ))}
-          </View>
-          <View style={{ flexDirection: 'row', gap: spacing[2], marginTop: spacing[2] }}>
-            <View style={{ flex: 1 }}>
-              <Button label={`− ${waterAmount} ml`} variant="secondary" fullWidth onPress={() => addWater(-waterAmount)} />
-            </View>
-            <View style={{ flex: 1 }}>
-              <Button label={`+ ${waterAmount} ml`} fullWidth onPress={() => addWater(waterAmount)} />
-            </View>
-          </View>
-          <View style={{ flexDirection: 'row', gap: spacing[2], marginTop: spacing[2], alignItems: 'flex-end' }}>
-            <View style={{ flex: 1 }}>
-              <Input
-                label={t('nutrition.screen.hydration.quantityLabel')}
-                placeholder={t('nutrition.screen.hydration.quantityPlaceholder')}
-                keyboardType="numeric"
-                value={customWater}
-                onChangeText={setCustomWater}
-              />
-            </View>
-            <Button
-              label={t('nutrition.screen.hydration.addButton')}
-              variant="secondary"
-              disabled={!customWater.trim() || Number(customWater) <= 0}
-              onPress={() => {
-                addWater(Number(customWater));
-                setCustomWater('');
-              }}
-            />
-          </View>
-        </Card>
-
-        {/* Repas */}
-        <Card>
-          <SectionTitle>{t('nutrition.screen.meals.title')}</SectionTitle>
-          {meals.map((m, i) => (
-            <View key={m.type} style={{ paddingVertical: spacing[2], borderBottomWidth: i < meals.length - 1 ? 1 : 0, borderBottomColor: colors.border }}>
-              <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing[2] }}>
-                <Text variant="caption" color="textSubtle" style={{ flex: 1, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 0.6 }}>{t(`nutrition.screen.meal.${m.type}`)}</Text>
-                {m.count > 0 ? <Text variant="caption" color="textSubtle">{Math.round(m.kcal)} kcal</Text> : null}
-              </View>
-              {m.count > 0 ? (
-                <View style={{ gap: spacing[2], marginTop: spacing[1] }}>
-                  {m.entries.map((e) => (
-                    <Pressable
-                      key={e.id}
-                      onPress={() => router.push({ pathname: '/nutrition/meal/[id]', params: { id: e.id } })}
-                      style={({ pressed }) => ({ flexDirection: 'row', alignItems: 'center', gap: spacing[3], padding: spacing[3], borderRadius: radii.md, backgroundColor: colors.surfaceElevated, opacity: pressed ? 0.6 : 1 })}
-                    >
-                      <View style={{ width: 40, height: 40, borderRadius: 12, backgroundColor: colors.surface, alignItems: 'center', justifyContent: 'center' }}><Icon name={MEAL_ICON[m.type] ?? 'bowl'} size={19} color={colors.text} /></View>
-                      <View style={{ flex: 1, minWidth: 0 }}>
-                        <Text variant="body" style={{ fontWeight: '600' }} numberOfLines={1}>{e.description || t(`nutrition.screen.meal.${m.type}`)}</Text>
-                        <Text variant="caption" color="textSubtle" style={{ marginTop: 2 }} numberOfLines={1}>P {Math.round(e.proteinG ?? 0)} · G {Math.round(e.carbG ?? 0)} · L {Math.round(e.fatG ?? 0)}</Text>
-                      </View>
-                      <View style={{ alignItems: 'flex-end' }}>
-                        <Text variant="body" style={{ fontWeight: '700' }}>{Math.round(e.kcal)}</Text>
-                        <Text variant="caption" color="textSubtle">kcal</Text>
-                      </View>
-                      <Pressable
-                        onPress={() => deleteEntry.mutate(e.id)}
-                        disabled={deleteEntry.isPending && deleteEntry.variables === e.id}
-                        hitSlop={8}
-                        style={{ opacity: deleteEntry.isPending && deleteEntry.variables === e.id ? 0.4 : 1 }}
-                      >
-                        <Icon name="trash" size={18} color={colors.textSubtle} />
-                      </Pressable>
-                    </Pressable>
-                  ))}
-                </View>
-              ) : (
-                <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing[3], paddingVertical: spacing[2] }}>
-                  <View style={{ width: 40, height: 40, borderRadius: 12, backgroundColor: colors.surfaceElevated, alignItems: 'center', justifyContent: 'center' }}><Icon name={MEAL_ICON[m.type] ?? 'bowl'} size={19} color={colors.text} /></View>
-                  <Text variant="caption" color="textSubtle" style={{ flex: 1 }}>{t('nutrition.screen.meals.toPlan')}</Text>
-                  <Text variant="caption" color="textSubtle">{t('nutrition.screen.meals.pending')}</Text>
-                </View>
-              )}
-            </View>
-          ))}
-          <View style={{ flexDirection: 'row', gap: spacing[2], marginTop: spacing[3] }}>
-            <View style={{ flex: 1 }}>
-              <Button label={t('nutrition.screen.meals.searchFood')} onPress={() => router.push('/nutrition/food/search')} fullWidth />
-            </View>
-            <View style={{ flex: 1 }}>
-              <Button label={t('nutrition.screen.meals.manualEntry')} variant="secondary" onPress={() => router.push({ pathname: '/nutrition/meal/new', params: { date: dayKey(selectedDate) } })} fullWidth />
-            </View>
-          </View>
-        </Card>
-
-        {/* Nutrition Score */}
-        <Card>
-          <SectionTitle>{t('nutrition.screen.score.title')}</SectionTitle>
-          <View style={{ flexDirection: 'row', gap: spacing[5], alignItems: 'center' }}>
-            <ProgressRing value={hasData ? score.value : 0} size={96} thickness={9} color={colors.accentData} centerLabel={hasData ? `${score.value}` : '—'} caption="/ 100" />
-            <View style={{ flex: 1 }}>
-              <Text variant="body">{hasData ? (score.value >= 80 ? t('nutrition.screen.score.quality.excellent') : score.value >= 60 ? t('nutrition.screen.score.quality.good') : t('nutrition.screen.score.quality.needsImprovement')) : t('nutrition.screen.score.quality.noData')}</Text>
-              <Text variant="caption" color="textSubtle" style={{ marginTop: spacing[2], lineHeight: 18 }}>{t('nutrition.screen.score.basedOn')}</Text>
-            </View>
-          </View>
-        </Card>
-
-        {/* Poids & composition */}
-        <Card>
-          <SectionTitle right={<Pressable onPress={() => router.push('/nutrition/weight')}><Text variant="caption" color="primary">{t('nutrition.screen.weight.viewLink')}</Text></Pressable>}>{t('nutrition.screen.weight.title')}</SectionTitle>
-          <View style={{ flexDirection: 'row', justifyContent: 'space-around' }}>
-            <Balance label={t('nutrition.screen.weight.weight')} value={latestWeight != null ? `${latestWeight.toFixed(1)} kg` : '—'} />
-            <Balance label={t('nutrition.screen.weight.bodyFat')} value={bodyFat != null ? `${bodyFat.toFixed(1)} %` : '—'} />
-            <Balance label={t('nutrition.screen.weight.muscleMass')} value={muscleMass != null ? `${muscleMass.toFixed(1)} kg` : '—'} />
-            <Balance
-              label={t('nutrition.screen.weight.weeklyChange')}
-              value={weightDelta != null ? `${weightDelta > 0 ? '+' : ''}${weightDelta.toFixed(1)} kg` : '—'}
-              color={weightDelta != null && weightDelta <= 0 ? colors.accentData : undefined}
-            />
-          </View>
-        </Card>
-
-        {/* Impact */}
-        {explanation ? (
-          <Card>
-            <SectionTitle>{t('nutrition.screen.impact.title')}</SectionTitle>
-            <Text variant="body" color="textMuted">{t(explanation.observation.key, explanation.observation.params)}</Text>
-            <Text variant="body" color="textMuted" style={{ marginTop: spacing[1] }}>{t(explanation.analysis.key, explanation.analysis.params)}</Text>
-            <Text variant="body" style={{ marginTop: spacing[2] }}>{t(explanation.action.key, explanation.action.params)}</Text>
-          </Card>
-        ) : null}
-
-        {/* Tendances */}
-        {kcalSeries.length >= 2 ? (
-          <Card>
-            <SectionTitle right={<Text variant="caption" color="textSubtle">{t('nutrition.screen.trend.days30')}</Text>}>{t('nutrition.screen.trend.title')}</SectionTitle>
-            <Sparkline values={kcalSeries} width={300} height={80} color={colors.primary} />
-          </Card>
-        ) : null}
-
-        {/* Objectifs */}
-        <Card>
-          <SectionTitle right={
-            <Pressable onPress={() => setPreference('nutritionGoals', undefined)} disabled={!customized}>
-              <Text variant="caption" color={customized ? 'primary' : 'textSubtle'}>{customized ? t('nutrition.screen.goals.resetAuto') : t('nutrition.screen.goals.auto')}</Text>
-            </Pressable>
-          }>{t('nutrition.screen.goals.title')}</SectionTitle>
-          <GoalBar label={t('nutrition.screen.goals.caloriesLabel')} current={totals.kcal} target={kcalTarget} unit="kcal" color={colors.info} />
-          <GoalBar label={t('nutrition.screen.goals.proteinLabel')} current={totals.proteinG} target={goals.proteinG} unit="g" color={colors.accentData} />
-          <GoalBar label={t('nutrition.screen.goals.hydrationLabel')} current={totals.hydrationMl / 1000} target={goals.hydrationMl / 1000} unit="L" color={colors.accentEndurance} />
-
-          <Text variant="caption" color="textSubtle" style={{ marginTop: spacing[4] }}>{customized ? t('nutrition.screen.goals.adjustHintPerso') : t('nutrition.screen.goals.adjustHintAuto')}</Text>
-          <StepperRow
-            label={t('nutrition.screen.goals.caloriesLabel')}
-            rawValue={Math.round(goals.kcal)}
-            format={(v) => `${Math.round(v)} kcal`}
-            onMinus={() => adjust({ kcal: -50 })}
-            onPlus={() => adjust({ kcal: 50 })}
-            onSet={(v) => setExact({ kcal: v })}
-          />
-          <StepperRow
-            label={t('nutrition.screen.goals.proteinLabel')}
-            rawValue={Math.round(goals.proteinG)}
-            format={(v) => `${Math.round(v)} g`}
-            onMinus={() => adjust({ proteinG: -5 })}
-            onPlus={() => adjust({ proteinG: 5 })}
-            onSet={(v) => setExact({ proteinG: v })}
-          />
-          <StepperRow
-            label={t('nutrition.screen.goals.hydrationLabel')}
-            rawValue={Number((goals.hydrationMl / 1000).toFixed(2))}
-            format={(v) => `${v.toFixed(2)} L`}
-            onMinus={() => adjust({ hydrationMl: -250 })}
-            onPlus={() => adjust({ hydrationMl: 250 })}
-            onSet={(v) => setExact({ hydrationMl: v * 1000 })}
-          />
-
-          <CalorieCalculatorForm />
-        </Card>
-
-        {/* Micronutriments — honest */}
-        <Card>
-          <SectionTitle>{t('nutrition.screen.micronutrients.title')}</SectionTitle>
-          <Text variant="body" color="textMuted" style={{ lineHeight: 21 }}>{t('nutrition.screen.micronutrients.description')}</Text>
-        </Card>
-
-        <ComprendreCard pillars={['nutrition']} />
+        {cardOrder.filter((c) => c.visible).map((c) => (
+          <React.Fragment key={c.id}>{cardNodes[c.id]}</React.Fragment>
+        ))}
       </Screen>
       <Fab icon="+" accessibilityLabel={t('nutrition.screen.fab.addFood')} onPress={() => router.push({ pathname: '/nutrition/meal/new', params: { date: dayKey(selectedDate) } })} />
     </View>

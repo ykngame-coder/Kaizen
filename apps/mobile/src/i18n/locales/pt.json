@@ -2217,6 +2217,9 @@
       "enterManually": "Digitar o número em vez disso",
       "aimHint": "Aponte para o código de barras do produto",
       "cancelButton": "Cancelar"
+    },
+    "customize": {
+      "title": "Personalizar Nutrição"
     }
   },
   "analytics": {

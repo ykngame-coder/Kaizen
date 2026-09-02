@@ -2217,6 +2217,9 @@
       "enterManually": "Enter the number instead",
       "aimHint": "Aim at the product's barcode",
       "cancelButton": "Cancel"
+    },
+    "customize": {
+      "title": "Customize Nutrition"
     }
   },
   "analytics": {
