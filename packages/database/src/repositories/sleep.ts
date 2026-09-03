@@ -5,6 +5,20 @@ import { fetchAllPages } from '../paginate';
 export type SleepSessionRow = Database['public']['Tables']['sleep_sessions']['Row'];
 export type SleepSessionInsertRow = Database['public']['Tables']['sleep_sessions']['Insert'];
 
+/**
+ * Collapse rows that share the table's unique key (user_id, started_at,
+ * source) to their last occurrence. A single upsert statement can't apply
+ * ON CONFLICT DO UPDATE twice to the same row — Postgres raises "cannot
+ * affect row a second time" if two rows in the same batch collide on the
+ * unique index (e.g. a HealthKit sync whose sample fetch produced two
+ * overlapping sessions for what is really one night).
+ */
+export function dedupeSleepSessionRows(rows: SleepSessionInsertRow[]): SleepSessionInsertRow[] {
+  const byKey = new Map<string, SleepSessionInsertRow>();
+  for (const row of rows) byKey.set(`${row.user_id}|${row.started_at}|${row.source}`, row);
+  return [...byKey.values()];
+}
+
 /** Insert many sleep sessions at once (import). Idempotent via the dedup index. */
 export async function insertSleepSessions(
   client: SupotsuClient,
@@ -16,7 +30,7 @@ export async function insertSleepSessions(
   // no-op forever — full upsert (update on conflict) instead of ignoring it.
   const { error } = await client
     .from('sleep_sessions')
-    .upsert(rows, { onConflict: 'user_id,started_at,source' });
+    .upsert(dedupeSleepSessionRows(rows), { onConflict: 'user_id,started_at,source' });
   if (error) throw error;
 }
 
