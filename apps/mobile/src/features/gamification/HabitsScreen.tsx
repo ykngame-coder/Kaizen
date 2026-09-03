@@ -195,9 +195,18 @@ export function HabitsScreen(): React.JSX.Element {
     return Math.round((total / 30) * 100);
   }, [cal]);
 
-  // Streaks per habit + best.
+  // Streaks per habit (shown individually in "Séries en cours").
   const streaks = useMemo(() => active.map((h) => ({ habit: h, streak: streakOf(perHabitDays.get(h.id) ?? new Set(), now) })).sort((a, b) => b.streak - a.streak), [active, perHabitDays, now]);
-  const bestStreak = streaks[0]?.streak ?? 0;
+  // "Meilleure série" KPI: a streak day only counts if ALL active habits were
+  // validated that day — previously it took the max of any single habit's own
+  // streak, so it could read "1 j" even on a day nothing else was done. Reuses
+  // the same full-day-completion notion as the 30-day calendar's "Tout fait" cells.
+  const daysFullyDone = useMemo(() => {
+    const full = new Set<string>();
+    for (const [k, ids] of byDay) if (ids.size >= denom) full.add(k);
+    return full;
+  }, [byDay, denom]);
+  const bestStreak = useMemo(() => streakOf(daysFullyDone, now), [daysFullyDone, now]);
   const doneToday = useMemo(() => new Set(active.filter((h) => (perHabitDays.get(h.id) ?? new Set()).has(todayK)).map((h) => h.id)), [active, perHabitDays, todayK]);
   const disciplineScore = Math.round((doneToday.size / denom) * 40 + success * 0.6);
 
