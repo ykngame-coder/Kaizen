@@ -1244,14 +1244,22 @@ function createDemoRepository(): DataRepository {
     },
     async listMuscleSessions(userId) {
       const rows = await readJson<LoggedSetRow & { date: string }>(setKey(userId));
-      const dates = new Map(rows.map((r) => [r.workoutId, r.date]));
-      const activities = await readJson<Activity>(actKey(userId));
       const workouts = await readJson<Workout>(wkKey(userId));
+      // Only a workout actually done should fatigue a muscle — a planned or
+      // in-progress one has sets pre-filled but was never trained, so
+      // including it (previously keyed by every set's own `date`, regardless
+      // of the parent workout's status) kept muscles "fatigued" from a plan
+      // that was only ever created, not completed.
+      const completedIds = new Set(workouts.filter((w) => w.status === 'completed').map((w) => w.id));
+      const dates = new Map(rows.filter((r) => completedIds.has(r.workoutId)).map((r) => [r.workoutId, r.date]));
+      const activities = await readJson<Activity>(actKey(userId));
       return [...buildMuscleSessions(dates, rows), ...buildActivityMuscleSessions(activities, workouts)];
     },
     async listMuscleWork(userId) {
       const rows = await readJson<LoggedSetRow & { date: string }>(setKey(userId));
-      const dates = new Map(rows.map((r) => [r.workoutId, r.date]));
+      const workouts = await readJson<Workout>(wkKey(userId));
+      const completedIds = new Set(workouts.filter((w) => w.status === 'completed').map((w) => w.id));
+      const dates = new Map(rows.filter((r) => completedIds.has(r.workoutId)).map((r) => [r.workoutId, r.date]));
       return buildMuscleWork(dates, rows);
     },
     async lastSessionSetsByExercise(userId) {
@@ -1952,7 +1960,14 @@ function createSupabaseRepository(
     },
     async listMuscleSessions(userId) {
       const workoutRows = await listWorkoutsDb(client, userId);
-      const dates = new Map(workoutRows.map((w) => [w.id, w.completed_at ?? w.created_at]));
+      // Only a workout actually done should fatigue a muscle — a planned or
+      // in-progress one already has its sets in workout_sets but was never
+      // trained, so including it (previously falling back to created_at when
+      // completed_at was null) kept muscles "fatigued" from a plan that was
+      // only ever created, not completed.
+      const dates = new Map(
+        workoutRows.filter((w) => w.status === 'completed' && w.completed_at).map((w) => [w.id, w.completed_at!]),
+      );
       const sets = await listWorkoutSetsForUser(client, userId);
       const activities = (await listActivitiesDb(client, userId)).map(rowToActivity);
       const workouts = workoutRows.map(rowToWorkout);
@@ -1960,7 +1975,9 @@ function createSupabaseRepository(
     },
     async listMuscleWork(userId) {
       const workouts = await listWorkoutsDb(client, userId);
-      const dates = new Map(workouts.map((w) => [w.id, w.completed_at ?? w.created_at]));
+      const dates = new Map(
+        workouts.filter((w) => w.status === 'completed' && w.completed_at).map((w) => [w.id, w.completed_at!]),
+      );
       const sets = await listLoggedSetsDb(client, userId);
       return buildMuscleWork(dates, sets);
     },
