@@ -834,7 +834,9 @@
           "notDone": "À faire",
           "editA11y": "Modifier l'habitude {{name}}",
           "checkA11y": "Cocher {{name}}",
-          "uncheckA11y": "Décocher {{name}}"
+          "uncheckA11y": "Décocher {{name}}",
+          "toggleErrorTitle": "Oups",
+          "toggleError": "Impossible d'enregistrer cette habitude pour l'instant. Réessaie dans un instant."
         },
         "disciplineScore": {
           "heading": "Score discipline",

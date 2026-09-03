@@ -834,7 +834,9 @@
           "notDone": "To do",
           "editA11y": "Edit habit {{name}}",
           "checkA11y": "Check {{name}}",
-          "uncheckA11y": "Uncheck {{name}}"
+          "uncheckA11y": "Uncheck {{name}}",
+          "toggleErrorTitle": "Oops",
+          "toggleError": "Could not save this habit right now. Try again in a moment."
         },
         "disciplineScore": {
           "heading": "Discipline score",

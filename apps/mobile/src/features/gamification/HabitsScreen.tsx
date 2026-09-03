@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { Pressable, View } from 'react-native';
+import { ActivityIndicator, Alert, Pressable, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { Button, Card, Icon, Screen, Text, useTheme } from '@supotsu/ui';
@@ -90,6 +90,11 @@ export function HabitsScreen(): React.JSX.Element {
   const unlogHabit = useUnlogHabit();
   const [selectedDate, setSelectedDate] = useSelectedDay();
   const [showGoalForm, setShowGoalForm] = useState(false);
+  // Which habit's checkbox is mid-tap — per-row instead of the mutations'
+  // own shared isPending (which would freeze every other row's checkbox for
+  // the duration of one tap), plus an explicit error surface: a failed
+  // log/unlog used to fail silently, which reads as "le clic ne fait rien".
+  const [pendingHabitId, setPendingHabitId] = useState<string | null>(null);
   const now = new Date();
   const todayK = dayKey(now);
   const viewedK = dayKey(new Date(selectedDate));
@@ -317,20 +322,37 @@ export function HabitsScreen(): React.JSX.Element {
                     {p.liveConfirmed ? null : (
                       <Pressable
                         onPress={() => {
+                          const settle = (): void => setPendingHabitId((id) => (id === h.id ? null : id));
+                          const onError = (): void => {
+                            Alert.alert(
+                              t('sport.gamification.habitsScreen.checklist.toggleErrorTitle'),
+                              t('sport.gamification.habitsScreen.checklist.toggleError'),
+                            );
+                          };
                           if (p.done) {
                             const logId = latestLogIdOnViewedDay.get(h.id)?.id;
-                            if (logId) unlogHabit.mutate(logId);
+                            if (!logId) return;
+                            setPendingHabitId(h.id);
+                            unlogHabit.mutate(logId, { onSettled: settle, onError });
                           } else {
-                            logHabit.mutate({ habitId: h.id, completedAt: isToday ? undefined : new Date(selectedDate).toISOString() });
+                            setPendingHabitId(h.id);
+                            logHabit.mutate(
+                              { habitId: h.id, completedAt: isToday ? undefined : new Date(selectedDate).toISOString() },
+                              { onSettled: settle, onError },
+                            );
                           }
                         }}
-                        disabled={logHabit.isPending || unlogHabit.isPending}
+                        disabled={pendingHabitId === h.id}
                         hitSlop={16}
                         accessibilityLabel={p.done ? t('sport.gamification.habitsScreen.checklist.uncheckA11y', { name: h.name }) : t('sport.gamification.habitsScreen.checklist.checkA11y', { name: h.name })}
                         style={{ padding: 6 }}
                       >
                         <View style={{ width: 32, height: 32, borderRadius: 16, alignItems: 'center', justifyContent: 'center', backgroundColor: p.done ? colors.accentData : 'transparent', borderWidth: p.done ? 0 : 2, borderColor: colors.textSubtle }}>
-                          {p.done ? <Text style={{ color: '#04140b', fontSize: 14, fontWeight: '800' }}>✓</Text> : null}
+                          {pendingHabitId === h.id ? (
+                            <ActivityIndicator size="small" color={p.done ? '#04140b' : colors.textSubtle} />
+                          ) : p.done ? (
+                            <Text style={{ color: '#04140b', fontSize: 14, fontWeight: '800' }}>✓</Text>
+                          ) : null}
                         </View>
                       </Pressable>
                     )}

@@ -834,7 +834,9 @@
           "notDone": "Pendiente",
           "editA11y": "Editar el hábito {{name}}",
           "checkA11y": "Marcar {{name}}",
-          "uncheckA11y": "Desmarcar {{name}}"
+          "uncheckA11y": "Desmarcar {{name}}",
+          "toggleErrorTitle": "Ups",
+          "toggleError": "No se pudo guardar este hábito ahora mismo. Inténtalo de nuevo en un momento."
         },
         "disciplineScore": {
           "heading": "Puntuación de disciplina",

@@ -834,7 +834,9 @@
           "notDone": "Offen",
           "editA11y": "Gewohnheit {{name}} bearbeiten",
           "checkA11y": "{{name}} abhaken",
-          "uncheckA11y": "Haken bei {{name}} entfernen"
+          "uncheckA11y": "Haken bei {{name}} entfernen",
+          "toggleErrorTitle": "Hoppla",
+          "toggleError": "Diese Gewohnheit konnte gerade nicht gespeichert werden. Versuch es gleich noch einmal."
         },
         "disciplineScore": {
           "heading": "Disziplin-Score",
