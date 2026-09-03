@@ -12,6 +12,7 @@ import {
   computeCircadianProfile,
   computeSleepScore2,
   computeWellnessIndex,
+  latestSession,
   predictNextDayEnergy,
   sleepBand,
   sleepCoaching,
@@ -386,7 +387,10 @@ export function SommeilScreen(): React.JSX.Element {
   const onRefresh = async (): Promise<void> => { setRefreshing(true); await syncHealth(); await qc.invalidateQueries(); setRefreshing(false); };
   const [tappedNight, setTappedNight] = useState<SleepNight | null>(null);
 
-  const lastSession = sessions[0];
+  // Pinned to the browsed day (asOf), not just "the most recent sync ever" —
+  // sessions[0] used to ignore the DayNav entirely, so "Durée totale" showed
+  // the same night's numbers whichever day you navigated to.
+  const lastSession = latestSession(sessions, asOf);
   const score = useMemo(
     () => computeSleepScore2(metrics, asOf, 7, sessions),
     [metrics, asOf, sessions],

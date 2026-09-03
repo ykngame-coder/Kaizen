@@ -86,16 +86,37 @@ export interface SleepNight {
   score: number;
 }
 
+const localDayKey = (iso: string): string => {
+  const d = new Date(iso);
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+};
+
+/**
+ * One sleep_duration metric per calendar night within the window — a night
+ * can have more than one recorded entry (repeated syncs before ingestion
+ * refreshed a night's row in place instead of appending, or more than one
+ * source), which used to make "N dernières nuits" render more than N bars.
+ * The most recently recorded entry for a night wins.
+ */
+function distinctNights(metrics: HealthMetric[], asOf: ISODateString, days: number): HealthMetric[] {
+  const candidates = metrics
+    .filter((m) => m.type === 'sleep_duration' && within(m, asOf, days))
+    .sort((a, b) => b.measuredAt.localeCompare(a.measuredAt));
+  const byDay = new Map<string, HealthMetric>();
+  for (const m of candidates) {
+    const key = localDayKey(m.measuredAt);
+    if (!byDay.has(key)) byDay.set(key, m);
+  }
+  return [...byDay.values()];
+}
+
 /** Per-night duration + score over the last `days`, most recent first. */
 export function sleepTrend(
   metrics: HealthMetric[],
   asOf: ISODateString,
   days = 7,
 ): SleepNight[] {
-  return metrics
-    .filter((m) => m.type === 'sleep_duration' && within(m, asOf, days))
-    .sort((a, b) => b.measuredAt.localeCompare(a.measuredAt))
-    .map((m) => ({ date: m.measuredAt, hours: m.value, score: Math.round(durationScore(m.value)) }));
+  return distinctNights(metrics, asOf, days).map((m) => ({ date: m.measuredAt, hours: m.value, score: Math.round(durationScore(m.value)) }));
 }
 
 /** Mean nightly hours over `days`, or undefined when no nights are logged. */
@@ -104,7 +125,7 @@ export function averageSleepHours(
   asOf: ISODateString,
   days = 7,
 ): number | undefined {
-  const nights = metrics.filter((m) => m.type === 'sleep_duration' && within(m, asOf, days));
+  const nights = distinctNights(metrics, asOf, days);
   if (nights.length === 0) return undefined;
   return nights.reduce((s, m) => s + m.value, 0) / nights.length;
 }
@@ -297,7 +318,7 @@ export function sleepPhaseQuality(session: SleepSession): PhaseQuality | null {
 }
 
 /** The most recent sleep session at/before `asOf`, or undefined. */
-function latestSession(
+export function latestSession(
   sessions: SleepSession[] | undefined,
   asOf: ISODateString,
 ): SleepSession | undefined {

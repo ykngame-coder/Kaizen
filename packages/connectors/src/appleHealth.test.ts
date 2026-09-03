@@ -65,6 +65,17 @@ describe('aggregateHealthKitSleep', () => {
     expect(night?.value).toBe(7); // 3h + 4h, awake excluded
     expect(night?.source).toBe('apple_health');
   });
+
+  it('derives a stable per-night measuredAt independent of the exact end-of-sleep sample time (regression: re-syncing produced a slightly different end each time, creating a duplicate row for the same night instead of refreshing it)', () => {
+    const first = aggregateHealthKitSleep([
+      { value: 3, startDate: '2026-07-20T23:00:00Z', endDate: '2026-07-21T06:00:00Z' },
+    ]);
+    const resynced = aggregateHealthKitSleep([
+      // Same night, but HealthKit finalized a few minutes of extra data by the next sync.
+      { value: 3, startDate: '2026-07-20T23:00:00Z', endDate: '2026-07-21T06:07:00Z' },
+    ]);
+    expect(first[0]?.measuredAt).toBe(resynced[0]?.measuredAt);
+  });
 });
 
 describe('aggregateHealthKitSleepSessions', () => {

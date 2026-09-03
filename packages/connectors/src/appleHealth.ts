@@ -83,29 +83,38 @@ const nightKey = (endDate: string): string => {
 };
 
 /**
+ * A stable instant for a night key — noon local time, safely clear of any
+ * midnight/DST boundary. Using this (rather than the last asleep sample's
+ * own end time, which drifts by minutes as HealthKit keeps finalizing a
+ * night's data across repeated background syncs) keeps the same real night
+ * mapped to the exact same `measuredAt` every sync, so re-syncing updates
+ * that one row instead of piling up a near-duplicate for the same night.
+ */
+const nightKeyToIso = (key: string): string => {
+  const [y, m, d] = key.split('-').map(Number) as [number, number, number];
+  return new Date(y, m - 1, d, 12, 0, 0, 0).toISOString();
+};
+
+/**
  * Aggregate sleep-stage samples into one sleep_duration metric per night (hours
  * actually asleep, awake intervals excluded). Fragmented samples are summed.
  */
 export function aggregateHealthKitSleep(samples: HKSleepSample[]): ImportedHealthMetric[] {
-  const perNight = new Map<string, { seconds: number; end: string }>();
+  const perNight = new Map<string, number>();
   for (const s of samples) {
     if (!ASLEEP_VALUES.has(s.value)) continue;
     const seconds = (new Date(s.endDate).getTime() - new Date(s.startDate).getTime()) / 1000;
     if (seconds <= 0) continue;
     const key = nightKey(s.endDate);
-    const prev = perNight.get(key) ?? { seconds: 0, end: s.endDate };
-    perNight.set(key, {
-      seconds: prev.seconds + seconds,
-      end: s.endDate > prev.end ? s.endDate : prev.end,
-    });
+    perNight.set(key, (perNight.get(key) ?? 0) + seconds);
   }
-  return [...perNight.values()].map((n) => ({
+  return [...perNight.entries()].map(([key, seconds]) => ({
     type: 'sleep_duration' as HealthMetricType,
-    value: Number((n.seconds / 3600).toFixed(2)),
+    value: Number((seconds / 3600).toFixed(2)),
     unit: 'h',
     source: 'apple_health' as const,
     reliability: 'high' as const,
-    measuredAt: new Date(n.end).toISOString(),
+    measuredAt: nightKeyToIso(key),
   }));
 }
 

@@ -5,6 +5,7 @@ import {
   bedtimeSpreadMinutes,
   computeSleepScore,
   computeSleepScore2,
+  latestSession,
   sleepBand,
   sleepCoaching,
   sleepDebtHours,
@@ -124,6 +125,36 @@ describe('sleepTrend / averageSleepHours', () => {
     const trend = sleepTrend(metrics, ASOF, 7);
     expect(trend.map((n) => n.hours)).toEqual([8, 6, 7]);
     expect(averageSleepHours(metrics, ASOF, 7)).toBeCloseTo(7);
+  });
+
+  it('collapses more than one entry for the same calendar night to the most recently recorded one (regression: a night synced twice with a slightly different measuredAt rendered as two bars instead of one)', () => {
+    const staleAt = new Date(new Date(nightsAgo(0)).getTime() - 10 * 60_000).toISOString();
+    const stale = metricAt('sleep_duration', 5, staleAt, 's0-stale');
+    const freshAt = new Date(new Date(nightsAgo(0)).getTime() - 2 * 60_000).toISOString();
+    const fresh = metricAt('sleep_duration', 8, freshAt, 's0-fresh');
+    const trend = sleepTrend([stale, fresh, sleep(6, 1)], ASOF, 7);
+    expect(trend).toHaveLength(2);
+    expect(trend[0]?.hours).toBe(8);
+    expect(averageSleepHours([stale, fresh, sleep(6, 1)], ASOF, 7)).toBeCloseTo(7);
+  });
+});
+
+describe('latestSession', () => {
+  it('picks the most recent session at/before asOf', () => {
+    const older = session({ startedAt: nightsAgo(1) });
+    const newer = session({ startedAt: nightsAgo(0) });
+    expect(latestSession([older, newer], ASOF)).toBe(newer);
+  });
+
+  it('ignores sessions after the browsed day instead of always taking the globally latest one (regression: "Durée totale" used to show the same night regardless of which day was browsed)', () => {
+    const past = session({ startedAt: nightsAgo(2) });
+    const future = session({ startedAt: nightsAgo(0) });
+    expect(latestSession([past, future], nightsAgo(2))).toBe(past);
+  });
+
+  it('returns undefined with no sessions', () => {
+    expect(latestSession([], ASOF)).toBeUndefined();
+    expect(latestSession(undefined, ASOF)).toBeUndefined();
   });
 });
 
