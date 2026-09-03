@@ -302,7 +302,8 @@ export interface DataRepository {
   /** Soft-delete: hides the habit from the active list, keeps its log history and streaks. */
   archiveHabit(userId: string, habitId: string): Promise<void>;
   listHabitLogs(userId: string): Promise<HabitLog[]>;
-  logHabit(userId: string, habitId: string): Promise<HabitLog>;
+  /** `completedAt` lets a past checklist day be validated retroactively — defaults to now. */
+  logHabit(userId: string, habitId: string, completedAt?: string): Promise<HabitLog>;
   /** Undo one completion (e.g. unchecking a habit that's already logged today). */
   deleteHabitLog(userId: string, logId: string): Promise<void>;
   /** The caller's own exercises added on top of the bundled catalogue (e.g. home-gym equipment). */
@@ -1441,13 +1442,13 @@ function createDemoRepository(): DataRepository {
       const items = await readJson<HabitLog>(hlogKey(userId));
       return items.sort((a, b) => b.completedAt.localeCompare(a.completedAt));
     },
-    async logHabit(userId, habitId) {
+    async logHabit(userId, habitId, completedAt) {
       const now = new Date().toISOString();
       const log: HabitLog = {
         id: randomId(),
         userId,
         habitId,
-        completedAt: now,
+        completedAt: completedAt ?? now,
         createdAt: now,
         updatedAt: now,
       };
@@ -2120,8 +2121,8 @@ function createSupabaseRepository(
     async listHabitLogs(userId) {
       return (await listHabitLogsDb(client, userId)).map(rowToHabitLog);
     },
-    async logHabit(userId, habitId) {
-      const row = await insertHabitLog(client, userId, habitId, new Date().toISOString());
+    async logHabit(userId, habitId, completedAt) {
+      const row = await insertHabitLog(client, userId, habitId, completedAt ?? new Date().toISOString());
       return rowToHabitLog(row);
     },
     async deleteHabitLog(_userId, logId) {

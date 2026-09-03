@@ -172,7 +172,7 @@ export function HabitsScreen(): React.JSX.Element {
       const live = liveProgress(kind);
       if (live.target <= 0 || live.value < live.target) continue;
       if ((perHabitDays.get(h.id) ?? new Set()).has(todayK)) continue;
-      logHabit.mutate(h.id);
+      logHabit.mutate({ habitId: h.id });
     }
   }, [isToday, habitsLoading, logsLoading, active, hydrationToday, hydrationTarget, stepsToday, preferences.dailyStepsGoal, workoutDoneToday, perHabitDays, todayK]);
 
@@ -302,20 +302,19 @@ export function HabitsScreen(): React.JSX.Element {
                     {p.live ? null : (
                       <Pressable
                         onPress={() => {
-                          if (!isToday) return;
                           if (p.done) {
                             const logId = latestLogIdOnViewedDay.get(h.id)?.id;
                             if (logId) unlogHabit.mutate(logId);
                           } else {
-                            logHabit.mutate(h.id);
+                            logHabit.mutate({ habitId: h.id, completedAt: isToday ? undefined : new Date(selectedDate).toISOString() });
                           }
                         }}
-                        disabled={!isToday || logHabit.isPending || unlogHabit.isPending}
+                        disabled={logHabit.isPending || unlogHabit.isPending}
                         hitSlop={16}
                         accessibilityLabel={p.done ? t('sport.gamification.habitsScreen.checklist.uncheckA11y', { name: h.name }) : t('sport.gamification.habitsScreen.checklist.checkA11y', { name: h.name })}
                         style={{ padding: 6 }}
                       >
-                        <View style={{ width: 32, height: 32, borderRadius: 16, alignItems: 'center', justifyContent: 'center', backgroundColor: p.done ? colors.accentData : 'transparent', borderWidth: p.done ? 0 : 2, borderColor: colors.textSubtle, opacity: isToday ? 1 : 0.4 }}>
+                        <View style={{ width: 32, height: 32, borderRadius: 16, alignItems: 'center', justifyContent: 'center', backgroundColor: p.done ? colors.accentData : 'transparent', borderWidth: p.done ? 0 : 2, borderColor: colors.textSubtle }}>
                           {p.done ? <Text style={{ color: '#04140b', fontSize: 14, fontWeight: '800' }}>✓</Text> : null}
                         </View>
                       </Pressable>

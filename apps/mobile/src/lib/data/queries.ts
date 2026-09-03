@@ -289,7 +289,7 @@ export function useLogHabit() {
   const repo = useRepository();
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (habitId: string) => repo.logHabit(user!.id, habitId),
+    mutationFn: ({ habitId, completedAt }: { habitId: string; completedAt?: string }) => repo.logHabit(user!.id, habitId, completedAt),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['habitLogs', user?.id] });
     },
