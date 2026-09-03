@@ -862,7 +862,8 @@
         },
         "notFound": {
           "title": "Hábito não encontrado"
-        }
+        },
+        "adjustLinkedTarget": "Ajustar o meu objetivo"
       }
     },
     "editWorkout": {

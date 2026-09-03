@@ -50,13 +50,23 @@ function SectionTitle({ children, right }: { children: React.ReactNode; right?: 
   );
 }
 
-/** One macro ring (protein / carbs / fat). */
+/**
+ * One macro ring (protein / carbs / fat). The ring itself can't visually
+ * fill past a full circle, but the label shouldn't lie about it — it shows
+ * the real (uncapped) percentage, and switches to the warning color once
+ * intake has actually exceeded the target instead of just reading "100%"
+ * indistinguishably from "right on target".
+ */
 function MacroRing({ label, current, target, color }: { label: string; current: number; target: number; color: string }): React.JSX.Element {
-  const pct = target > 0 ? Math.min(100, Math.round((current / target) * 100)) : 0;
+  const { colors } = useTheme();
+  const rawPct = target > 0 ? Math.round((current / target) * 100) : 0;
+  const fillPct = Math.min(100, rawPct);
+  const over = rawPct > 100;
+  const ringColor = over ? colors.warning : color;
   return (
     <View style={{ alignItems: 'center' }}>
-      <ProgressRing value={pct} size={78} thickness={8} color={color} centerLabel={`${pct}%`} />
-      <Text variant="caption" style={{ color, fontWeight: '700', marginTop: spacing[1] }}>{label}</Text>
+      <ProgressRing value={fillPct} size={78} thickness={8} color={ringColor} centerLabel={`${rawPct}%`} />
+      <Text variant="caption" style={{ color: ringColor, fontWeight: '700', marginTop: spacing[1] }}>{label}</Text>
       <Text variant="caption" color="textSubtle">{Math.round(current)} / {Math.round(target)} g</Text>
     </View>
   );

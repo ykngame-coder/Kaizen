@@ -119,7 +119,13 @@ export function HabitsScreen(): React.JSX.Element {
 
   // Real progress for linked habits — today only, no history backfill for past days.
   const weight = latestMetric(health, 'weight');
-  const hydrationTarget = useMemo(() => estimateTargets({ weightKg: weight }, now.toISOString()).value.hydrationMl, [weight]);
+  // The auto estimate, unless the user already set a real target on the
+  // Nutrition hub's Objectifs card — this used to always show the raw
+  // auto-estimate here, silently ignoring any customization made there.
+  const hydrationTarget = useMemo(
+    () => preferences.nutritionGoals?.hydrationMl ?? estimateTargets({ weightKg: weight }, now.toISOString()).value.hydrationMl,
+    [preferences.nutritionGoals, weight],
+  );
   const hydrationToday = useMemo(() => sumDay(nutrition, now.toISOString()).hydrationMl, [nutrition]);
   const stepsToday = useMemo(() => {
     const todays = health.filter((m) => m.type === 'steps' && dayKey(new Date(m.measuredAt)) === todayK);

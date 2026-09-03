@@ -8,9 +8,15 @@ import { spacing } from '@supotsu/design-system';
 import { habitInputSchema } from '@supotsu/shared';
 import { BackButton } from '@/features/navigation/BackButton';
 import { useArchiveHabit, useHabits, useUpdateHabit } from '@/lib/data/queries';
-import { linkedKindFor, LINKED_LABEL } from './linkedHabits';
+import { linkedKindFor, LINKED_LABEL, type LinkedKind } from './linkedHabits';
 
 type PillarOption = 'habits' | 'nutrition' | 'recovery' | 'sleep' | 'performance';
+
+/** Where to go adjust a linked habit's real target — no in-place stepper here since the value lives elsewhere (Nutrition's Objectifs card, Réglages). `workout` has no adjustable numeric target, so no entry. */
+const LINKED_ADJUST_PATH: Partial<Record<LinkedKind, '/nutrition' | '/profile/settings'>> = {
+  hydration: '/nutrition',
+  steps: '/profile/settings',
+};
 
 function pillarOptions(t: TFunction) {
   return [
@@ -139,6 +145,11 @@ export function EditHabitScreen(): React.JSX.Element {
         <Text variant="caption" color="primary">
           {t('sport.gamification.addHabit.linkedHint', { source: LINKED_LABEL[linked] })}
         </Text>
+      ) : null}
+      {linked && LINKED_ADJUST_PATH[linked] ? (
+        <Pressable onPress={() => router.push(LINKED_ADJUST_PATH[linked]!)} hitSlop={6}>
+          <Text variant="caption" color="primary">{t('sport.gamification.editHabit.adjustLinkedTarget')} →</Text>
+        </Pressable>
       ) : null}
 
       <View style={{ gap: spacing[2] }}>

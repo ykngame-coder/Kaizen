@@ -862,7 +862,8 @@
         },
         "notFound": {
           "title": "Habitude introuvable"
-        }
+        },
+        "adjustLinkedTarget": "Ajuster mon objectif"
       }
     },
     "editWorkout": {
