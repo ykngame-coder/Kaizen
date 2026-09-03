@@ -16,8 +16,12 @@ import { linkedKindFor, type LinkedKind } from './linkedHabits';
 const DAY_MS = 86_400_000;
 const dayKey = (d: Date): string => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 
+// 'habits' (the default pillar) and 'performance' have no thematic icon of
+// their own, so both fell back to the same '✅' checkmark — which reads as
+// "done" regardless of the habit's actual state, and was confusing right
+// next to a habit still marked "À faire". Neutral star instead.
 const PILLAR_ICON: Record<string, string> = {
-  sleep: '😴', nutrition: '🥗', training: '🏋️', mind: '🧘', recovery: '💧', habits: '✅', movement: '🚶', mobility: '🧘', hydration: '💧',
+  sleep: '😴', nutrition: '🥗', training: '🏋️', mind: '🧘', recovery: '💧', habits: '⭐', movement: '🚶', mobility: '🧘', hydration: '💧', performance: '📈',
 };
 const iconFor = (pillar: string, name: string): string => {
   const n = name.toLowerCase();
@@ -27,7 +31,7 @@ const iconFor = (pillar: string, name: string): string => {
   if (n.includes('mobil') || n.includes('étir') || n.includes('stretch')) return '🧘';
   if (n.includes('marche') || n.includes('pas')) return '🚶';
   if (n.includes('muscu') || n.includes('entra') || n.includes('sport')) return '🏋️';
-  return PILLAR_ICON[pillar] ?? '✅';
+  return PILLAR_ICON[pillar] ?? '⭐';
 };
 
 function latestMetric(m: { type: HealthMetricType; value: number; measuredAt: string }[], type: HealthMetricType): number | undefined {
@@ -145,16 +149,27 @@ export function HabitsScreen(): React.JSX.Element {
     return { value: workoutDoneToday ? 1 : 0, target: 1 };
   };
 
-  /** count/target/done for a habit on the viewed day — live data for linked habits, else manual log count. */
-  const progressFor = (h: Habit): { count: number; target: number; done: boolean; live?: { value: number; target: number } } => {
+  /**
+   * count/target/done for a habit on the viewed day — live data for linked
+   * habits, else manual log count. `liveConfirmed` is true only once real
+   * data itself hits the target — a linked habit not yet confirmed that way
+   * (e.g. Apple Santé hasn't synced today's workout yet) still allows a
+   * manual tap, same as any other habit ("on ne peut pas cocher la case
+   * sport malgré qu'elle soit faite via Apple Santé" — previously the
+   * checkbox was hidden entirely whenever a habit was linked and it's today).
+   */
+  const progressFor = (h: Habit): { count: number; target: number; done: boolean; live?: { value: number; target: number }; liveConfirmed: boolean } => {
     const kind = linkedKindFor(h.name);
     if (kind && isToday) {
       const live = liveProgress(kind);
-      return { count: live.value >= live.target ? 1 : 0, target: 1, done: live.target > 0 && live.value >= live.target, live };
+      const liveConfirmed = live.target > 0 && live.value >= live.target;
+      const manuallyLogged = (perHabitDays.get(h.id) ?? new Set()).has(todayK);
+      const done = liveConfirmed || manuallyLogged;
+      return { count: done ? 1 : 0, target: 1, done, live, liveConfirmed };
     }
     const target = h.cadence === 'daily' ? Math.max(1, h.targetPerPeriod) : 1;
     const count = countsOnViewedDay.get(h.id) ?? 0;
-    return { count, target, done: count >= target };
+    return { count, target, done: count >= target, liveConfirmed: false };
   };
 
   // Linked habits auto-log once their real-data target is hit — guarded by
@@ -299,7 +314,7 @@ export function HabitsScreen(): React.JSX.Element {
                       )}
                     </View>
                     </Pressable>
-                    {p.live ? null : (
+                    {p.liveConfirmed ? null : (
                       <Pressable
                         onPress={() => {
                           if (p.done) {
@@ -330,7 +345,11 @@ export function HabitsScreen(): React.JSX.Element {
         <Card>
           <Text variant="heading">{t('sport.gamification.habitsScreen.disciplineScore.heading')}</Text>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing[4], marginTop: spacing[2] }}>
-            <Text style={{ fontSize: 48, fontWeight: '800', letterSpacing: -0.4, color: colors.text, flexShrink: 0 }}>{disciplineScore}<Text variant="subtitle" color="textSubtle">/100</Text></Text>
+            {/* variant="data" (Archivo Black, already a black weight) — forcing
+                fontWeight:800 onto Barlow (a regular-weight font file with no
+                800 cut) made iOS synthesize the bold and mangled the digits
+                into illegible glyphs, exactly what a tester reported. */}
+            <Text variant="data" style={{ fontSize: 48, color: colors.text, flexShrink: 0 }}>{disciplineScore}<Text variant="subtitle" color="textSubtle">/100</Text></Text>
             <Text variant="body" color="textMuted" style={{ flex: 1, lineHeight: 20 }}>
               {disciplineScore >= 80
                 ? t('sport.gamification.habitsScreen.disciplineScore.excellent')
