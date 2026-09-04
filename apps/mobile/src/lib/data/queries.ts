@@ -867,11 +867,14 @@ export function useAddWorkout() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (workout: NewWorkout) => repo.addWorkout(user!.id, workout),
-    onSuccess: (_data, workout) => {
+    // No HealthKit mirror here — addWorkout always creates the workout as
+    // 'planned' (see repository.ts), so writing to Apple Santé at this point
+    // would record a session before it's actually been done. The real write
+    // happens in useSetWorkoutStatus, when status actually flips to 'completed'.
+    onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['workouts', user?.id] });
       qc.invalidateQueries({ queryKey: ['muscleSessions', user?.id] });
       qc.invalidateQueries({ queryKey: ['exerciseHistory', user?.id] });
-      void mirrorToHealthKit(() => saveWorkoutToHealthKit(workout.sets.length));
     },
   });
 }
@@ -1041,9 +1044,17 @@ export function useSetWorkoutStatus() {
       status: Workout['status'];
       completedAt?: string | null;
     }) => repo.setWorkoutStatus(user!.id, input.workoutId, input.status, input.completedAt),
-    onSuccess: () => {
+    onSuccess: (_data, input) => {
       qc.invalidateQueries({ queryKey: ['plannedWorkouts', user?.id] });
       qc.invalidateQueries({ queryKey: ['workouts', user?.id] });
+      // This is the actual "I finished this session" moment — mirror it to
+      // Apple Santé here rather than at creation time (still 'planned' then).
+      if (input.status === 'completed') {
+        void mirrorToHealthKit(async () => {
+          const sets = await repo.getWorkoutSets(user!.id, input.workoutId);
+          await saveWorkoutToHealthKit(sets.length, input.completedAt ? new Date(input.completedAt) : new Date());
+        });
+      }
     },
   });
 }
