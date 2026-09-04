@@ -1,6 +1,6 @@
-import React, { useRef } from 'react';
+import React, { useCallback, useRef, useState } from 'react';
 import { Platform, StyleSheet, View } from 'react-native';
-import { useRouter } from 'expo-router';
+import { useFocusEffect, useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { CameraView, useCameraPermissions, type BarcodeScanningResult } from 'expo-camera';
 import { Button, Screen, Text } from '@supotsu/ui';
@@ -16,6 +16,19 @@ export function BarcodeScanScreen(): React.JSX.Element {
   const router = useRouter();
   const [permission, requestPermission] = useCameraPermissions();
   const scannedRef = useRef(false);
+  // expo-camera's iOS preview doesn't re-initialise reliably under the new
+  // architecture (expo/expo#31597) — the view mounts but the capture session
+  // never starts, leaving a blank screen with no camera image at all. Bumping
+  // this key on every focus forces a fresh CameraView mount each time the
+  // screen is opened, which does start the session.
+  const [mountKey, setMountKey] = useState(0);
+
+  useFocusEffect(
+    useCallback(() => {
+      scannedRef.current = false;
+      setMountKey((k) => k + 1);
+    }, []),
+  );
 
   const onScanned = (result: BarcodeScanningResult): void => {
     if (scannedRef.current) return; // fire once
@@ -63,8 +76,12 @@ export function BarcodeScanScreen(): React.JSX.Element {
   }
 
   return (
-    <View style={{ flex: 1 }}>
+    // Explicit black ground: this is the one screen that doesn't use <Screen>,
+    // so without it the navigator's own (light) background shows through
+    // wherever the preview doesn't paint.
+    <View style={{ flex: 1, backgroundColor: '#000' }}>
       <CameraView
+        key={mountKey}
         style={StyleSheet.absoluteFill}
         barcodeScannerSettings={{ barcodeTypes: ['ean13', 'ean8', 'upc_a', 'upc_e'] }}
         onBarcodeScanned={onScanned}
