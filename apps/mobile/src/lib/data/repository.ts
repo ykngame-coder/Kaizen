@@ -20,6 +20,7 @@ import type {
   UserProgram,
   UserProgramSession,
   UserSession,
+  UserSessionBlock,
   UserSessionExercise,
   Visibility,
   WellnessCheckin,
@@ -109,6 +110,7 @@ import {
   listCommunitySessions as listCommunitySessionsDb,
   getUserSession as getUserSessionDb,
   listSessionExercises as listSessionExercisesDb,
+  listSessionBlocks,
   insertUserSession as insertUserSessionDb,
   updateUserSessionVisibility as updateUserSessionVisibilityDb,
   deleteUserSession as deleteUserSessionDb,
@@ -151,6 +153,7 @@ import {
   type GoalRow,
   type UserSessionRow,
   type UserSessionExerciseRow,
+  type UserSessionBlockRow,
   type UserProgramRow,
   type UserProgramSessionRow,
 } from '@supotsu/database';
@@ -188,8 +191,10 @@ export interface PlannedInput {
   /** ISO date (YYYY-MM-DD) the session is planned for. */
   plannedFor: string;
   notes?: string;
-  /** Optional exercise list, e.g. when reprogramming a past session or planning from a template. */
+  /** Optional flat exercise list, e.g. when reprogramming a past plain-strength session or planning from a legacy flat template. Ignored when `blocks` is present. */
   sets?: Omit<SetEntry, 'id' | 'workoutId'>[];
+  /** Optional block structure (AMRAP/EMOM/pour le temps/musculation) — takes priority over `sets` when present, so the planned workout is created with real blocks via insertWorkoutWithBlocks. */
+  blocks?: { format: BlockFormat; timeCapSec?: number; targetRounds?: number; sets: Omit<SetEntry, 'id' | 'workoutId' | 'blockId'>[] }[];
 }
 
 /** A hand-entered health metric (no connected device/scale involved). */
@@ -338,6 +343,7 @@ export interface DataRepository {
   /** Public sessions from other users. */
   listCommunitySessions(userId: string): Promise<UserSession[]>;
   getSessionExercises(sessionId: string): Promise<UserSessionExercise[]>;
+  getSessionBlocks(userId: string, sessionId: string): Promise<UserSessionBlock[]>;
   /** Rejects past the 50-session quota (server-enforced too). */
   addUserSession(userId: string, input: UserSessionInput): Promise<UserSession>;
   setSessionVisibility(userId: string, sessionId: string, visibility: Visibility): Promise<void>;
@@ -589,12 +595,24 @@ function rowToUserSessionExercise(r: UserSessionExerciseRow): UserSessionExercis
   return {
     id: r.id,
     sessionId: r.session_id,
+    blockId: r.block_id ?? undefined,
     exerciseId: r.exercise_id,
     order: r.order,
     reps: r.reps ?? undefined,
     weightKg: r.weight_kg ?? undefined,
     durationSec: r.duration_sec ?? undefined,
     restSec: r.rest_sec ?? undefined,
+  };
+}
+
+function rowToUserSessionBlock(r: UserSessionBlockRow): UserSessionBlock {
+  return {
+    id: r.id,
+    sessionId: r.session_id,
+    order: r.order,
+    format: r.format,
+    timeCapSec: r.time_cap_sec ?? undefined,
+    targetRounds: r.target_rounds ?? undefined,
   };
 }
 
@@ -912,6 +930,7 @@ const enrollKey = (u: string): string => `supotsu.enrollments.${u}`;
 // programs live under one shared local list, same as challenges.
 const usKey = (): string => 'supotsu.usersessions.all';
 const usExKey = (sessionId: string): string => `supotsu.usersessionexercises.${sessionId}`;
+const usBlockKey = (sessionId: string): string => `supotsu.usersessionblocks.${sessionId}`;
 const upKey = (): string => 'supotsu.userprograms.all';
 const upsKey = (programId: string): string => `supotsu.userprogramsessions.${programId}`;
 const SESSIONS_QUOTA = 50;
@@ -1035,7 +1054,37 @@ function createDemoRepository(): DataRepository {
       };
       const items = await readJson<Workout>(wkKey(userId));
       await writeJson(wkKey(userId), [created, ...items]);
-      if (input.sets && input.sets.length > 0) {
+      if (input.blocks && input.blocks.length > 0) {
+        const existingBlocks = await readJson<WorkoutBlock>(blockKey(userId));
+        const existingSets = await readJson<LoggedSetRow & { date: string }>(setKey(userId));
+        const newBlocks: WorkoutBlock[] = [];
+        const newSets: (LoggedSetRow & { date: string })[] = [];
+        input.blocks.forEach((b, i) => {
+          const block: WorkoutBlock = {
+            id: randomId(),
+            workoutId: created.id,
+            order: i,
+            format: b.format,
+            timeCapSec: b.timeCapSec,
+            targetRounds: b.targetRounds,
+          };
+          newBlocks.push(block);
+          b.sets.forEach((s) => {
+            newSets.push({
+              workoutId: created.id,
+              blockId: block.id,
+              exerciseId: s.exerciseId,
+              order: s.order,
+              reps: s.reps ?? null,
+              weightKg: s.weightKg ?? null,
+              restSec: s.restSec ?? null,
+              date: now,
+            });
+          });
+        });
+        await writeJson(blockKey(userId), [...newBlocks, ...existingBlocks]);
+        await writeJson(setKey(userId), [...newSets, ...existingSets]);
+      } else if (input.sets && input.sets.length > 0) {
         const rows = await readJson<LoggedSetRow & { date: string }>(setKey(userId));
         const added = input.sets.map((s) => ({
           workoutId: created.id,
@@ -1620,6 +1669,10 @@ function createDemoRepository(): DataRepository {
     async getSessionExercises(sessionId) {
       return readJson<UserSessionExercise>(usExKey(sessionId));
     },
+    async getSessionBlocks(_userId, sessionId) {
+      const items = await readJson<UserSessionBlock>(usBlockKey(sessionId));
+      return items.sort((a, b) => a.order - b.order);
+    },
     async addUserSession(userId, input) {
       const all = await readJson<UserSession>(usKey());
       if (all.filter((s) => s.userId === userId).length >= SESSIONS_QUOTA) {
@@ -1636,16 +1689,33 @@ function createDemoRepository(): DataRepository {
         updatedAt: now,
       };
       await writeJson(usKey(), [session, ...all]);
-      const exercises: UserSessionExercise[] = input.exercises.map((e, i) => ({
-        id: randomId(),
-        sessionId: session.id,
-        exerciseId: e.exerciseId,
-        order: e.order ?? i,
-        reps: e.reps,
-        weightKg: e.weightKg,
-        durationSec: e.durationSec,
-        restSec: e.restSec,
-      }));
+      const blocks: UserSessionBlock[] = [];
+      const exercises: UserSessionExercise[] = [];
+      input.blocks.forEach((b, i) => {
+        const block: UserSessionBlock = {
+          id: randomId(),
+          sessionId: session.id,
+          order: i,
+          format: b.format,
+          timeCapSec: b.timeCapSec,
+          targetRounds: b.targetRounds,
+        };
+        blocks.push(block);
+        b.exercises.forEach((e, j) => {
+          exercises.push({
+            id: randomId(),
+            sessionId: session.id,
+            blockId: block.id,
+            exerciseId: e.exerciseId,
+            order: e.order ?? j,
+            reps: e.reps,
+            weightKg: e.weightKg,
+            durationSec: e.durationSec,
+            restSec: e.restSec,
+          });
+        });
+      });
+      await writeJson(usBlockKey(session.id), blocks);
       await writeJson(usExKey(session.id), exercises);
       return session;
     },
@@ -1667,6 +1737,7 @@ function createDemoRepository(): DataRepository {
       if (all.filter((s) => s.userId === userId).length >= SESSIONS_QUOTA) {
         throw new Error(`Limite de ${SESSIONS_QUOTA} séances atteinte.`);
       }
+      const sourceBlocks = await readJson<UserSessionBlock>(usBlockKey(sourceSessionId));
       const exercises = await readJson<UserSessionExercise>(usExKey(sourceSessionId));
       const now = new Date().toISOString();
       const copy: UserSession = {
@@ -1679,9 +1750,21 @@ function createDemoRepository(): DataRepository {
         updatedAt: now,
       };
       await writeJson(usKey(), [copy, ...all]);
+      const blockIdMap = new Map<string, string>();
+      const newBlocks = sourceBlocks.map((b) => {
+        const newId = randomId();
+        blockIdMap.set(b.id, newId);
+        return { ...b, id: newId, sessionId: copy.id };
+      });
+      await writeJson(usBlockKey(copy.id), newBlocks);
       await writeJson(
         usExKey(copy.id),
-        exercises.map((e) => ({ ...e, id: randomId(), sessionId: copy.id })),
+        exercises.map((e) => ({
+          ...e,
+          id: randomId(),
+          sessionId: copy.id,
+          blockId: e.blockId ? blockIdMap.get(e.blockId) : undefined,
+        })),
       );
       return copy;
     },
@@ -1781,8 +1864,24 @@ function createDemoRepository(): DataRepository {
         const newId = randomId();
         idMap.set(sid, newId);
         newSessions.push({ ...src, id: newId, userId, visibility: 'private', createdAt: now, updatedAt: now });
+        const sourceBlocks = await readJson<UserSessionBlock>(usBlockKey(sid));
         const exercises = await readJson<UserSessionExercise>(usExKey(sid));
-        await writeJson(usExKey(newId), exercises.map((e) => ({ ...e, id: randomId(), sessionId: newId })));
+        const blockIdMap = new Map<string, string>();
+        const newBlocks = sourceBlocks.map((b) => {
+          const newBlockId = randomId();
+          blockIdMap.set(b.id, newBlockId);
+          return { ...b, id: newBlockId, sessionId: newId };
+        });
+        await writeJson(usBlockKey(newId), newBlocks);
+        await writeJson(
+          usExKey(newId),
+          exercises.map((e) => ({
+            ...e,
+            id: randomId(),
+            sessionId: newId,
+            blockId: e.blockId ? blockIdMap.get(e.blockId) : undefined,
+          })),
+        );
       }
       await writeJson(usKey(), [...newSessions, ...allSessions]);
 
@@ -2259,17 +2358,25 @@ function createSupabaseRepository(
     async getSessionExercises(sessionId) {
       return (await listSessionExercisesDb(client, sessionId)).map(rowToUserSessionExercise);
     },
+    async getSessionBlocks(_userId, sessionId) {
+      return (await listSessionBlocks(client, sessionId)).map(rowToUserSessionBlock);
+    },
     async addUserSession(userId, input) {
       const row = await insertUserSessionDb(
         client,
         { user_id: userId, name: input.name, notes: input.notes ?? null, visibility: input.visibility },
-        input.exercises.map((e, i) => ({
-          exercise_id: e.exerciseId,
-          order: e.order ?? i,
-          reps: e.reps ?? null,
-          weight_kg: e.weightKg ?? null,
-          duration_sec: e.durationSec ?? null,
-          rest_sec: e.restSec ?? null,
+        input.blocks.map((b) => ({
+          format: b.format,
+          timeCapSec: b.timeCapSec,
+          targetRounds: b.targetRounds,
+          exercises: b.exercises.map((e, i) => ({
+            exercise_id: e.exerciseId,
+            order: e.order ?? i,
+            reps: e.reps ?? null,
+            weight_kg: e.weightKg ?? null,
+            duration_sec: e.durationSec ?? null,
+            rest_sec: e.restSec ?? null,
+          })),
         })),
       );
       return rowToUserSession(row);
@@ -2283,18 +2390,41 @@ function createSupabaseRepository(
     async copySession(userId, sourceSessionId) {
       const source = await getUserSessionDb(client, sourceSessionId);
       if (!source) throw new Error('Séance introuvable.');
+      const sourceBlocks = await listSessionBlocks(client, sourceSessionId);
       const exercises = await listSessionExercisesDb(client, sourceSessionId);
+      const blocksInput = sourceBlocks.length > 0
+        ? sourceBlocks.map((b) => ({
+            format: b.format,
+            timeCapSec: b.time_cap_sec ?? undefined,
+            targetRounds: b.target_rounds ?? undefined,
+            exercises: exercises
+              .filter((e) => e.block_id === b.id)
+              .map((e) => ({
+                exercise_id: e.exercise_id,
+                order: e.order,
+                reps: e.reps,
+                weight_kg: e.weight_kg,
+                duration_sec: e.duration_sec,
+                rest_sec: e.rest_sec,
+              })),
+          }))
+        : [
+            {
+              format: 'strength' as const,
+              exercises: exercises.map((e) => ({
+                exercise_id: e.exercise_id,
+                order: e.order,
+                reps: e.reps,
+                weight_kg: e.weight_kg,
+                duration_sec: e.duration_sec,
+                rest_sec: e.rest_sec,
+              })),
+            },
+          ];
       const row = await insertUserSessionDb(
         client,
         { user_id: userId, name: source.name, notes: source.notes, visibility: 'private' },
-        exercises.map((e) => ({
-          exercise_id: e.exercise_id,
-          order: e.order,
-          reps: e.reps,
-          weight_kg: e.weight_kg,
-          duration_sec: e.duration_sec,
-          rest_sec: e.rest_sec,
-        })),
+        blocksInput,
       );
       return rowToUserSession(row);
     },
@@ -2359,18 +2489,41 @@ function createSupabaseRepository(
       for (const sid of distinctSessionIds) {
         const src = await getUserSessionDb(client, sid);
         if (!src) continue;
+        const sourceBlocks = await listSessionBlocks(client, sid);
         const exercises = await listSessionExercisesDb(client, sid);
+        const blocksInput = sourceBlocks.length > 0
+          ? sourceBlocks.map((b) => ({
+              format: b.format,
+              timeCapSec: b.time_cap_sec ?? undefined,
+              targetRounds: b.target_rounds ?? undefined,
+              exercises: exercises
+                .filter((e) => e.block_id === b.id)
+                .map((e) => ({
+                  exercise_id: e.exercise_id,
+                  order: e.order,
+                  reps: e.reps,
+                  weight_kg: e.weight_kg,
+                  duration_sec: e.duration_sec,
+                  rest_sec: e.rest_sec,
+                })),
+            }))
+          : [
+              {
+                format: 'strength' as const,
+                exercises: exercises.map((e) => ({
+                  exercise_id: e.exercise_id,
+                  order: e.order,
+                  reps: e.reps,
+                  weight_kg: e.weight_kg,
+                  duration_sec: e.duration_sec,
+                  rest_sec: e.rest_sec,
+                })),
+              },
+            ];
         const newSession = await insertUserSessionDb(
           client,
           { user_id: userId, name: src.name, notes: src.notes, visibility: 'private' },
-          exercises.map((e) => ({
-            exercise_id: e.exercise_id,
-            order: e.order,
-            reps: e.reps,
-            weight_kg: e.weight_kg,
-            duration_sec: e.duration_sec,
-            rest_sec: e.rest_sec,
-          })),
+          blocksInput,
         );
         idMap.set(sid, newSession.id);
       }
@@ -2511,7 +2664,30 @@ function createSupabaseRepository(
       return (await listPlannedWorkoutsDb(client, userId)).map(rowToWorkout);
     },
     async addPlannedWorkout(userId, input) {
-      const row = input.sets && input.sets.length > 0
+      const row = input.blocks && input.blocks.length > 0
+        ? await insertWorkoutWithBlocksDb(
+            client,
+            {
+              user_id: userId,
+              name: input.name,
+              status: 'planned',
+              planned_for: input.plannedFor,
+              notes: input.notes ?? null,
+            },
+            input.blocks.map((b) => ({
+              format: b.format,
+              timeCapSec: b.timeCapSec,
+              targetRounds: b.targetRounds,
+              sets: b.sets.map((s) => ({
+                exercise_id: s.exerciseId,
+                order: s.order,
+                reps: s.reps ?? null,
+                weight_kg: s.weightKg ?? null,
+                rest_sec: s.restSec ?? null,
+              })),
+            })),
+          )
+        : input.sets && input.sets.length > 0
         ? await insertWorkout(
             client,
             {
