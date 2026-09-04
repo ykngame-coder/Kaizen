@@ -57,6 +57,7 @@ import {
   upsertActivities,
   listActivities as listActivitiesDb,
   updateActivityMuscles as updateActivityMusclesDb,
+  updateActivityHeartRate as updateActivityHeartRateDb,
   deleteActivity as deleteActivityDb,
   insertWorkout,
   insertWorkoutWithBlocks as insertWorkoutWithBlocksDb,
@@ -68,6 +69,7 @@ import {
   insertPlannedWorkout,
   listPlannedWorkouts as listPlannedWorkoutsDb,
   updateWorkoutStatus as updateWorkoutStatusDb,
+  updateWorkoutHeartRate as updateWorkoutHeartRateDb,
   deleteWorkout as deleteWorkoutDb,
   listSetsForWorkout,
   updateWorkout as updateWorkoutDb,
@@ -226,6 +228,8 @@ export interface DataRepository {
   addActivity(userId: string, input: ActivityInput): Promise<Activity>;
   /** Set (or clear) an activity's self-reported worked muscles. */
   updateActivityMuscles(userId: string, activityId: string, muscles: MuscleGroup[]): Promise<Activity>;
+  /** Attach a connected watch's avg/max heart rate — best-effort, never called when the activity already has one. */
+  setActivityHeartRate(userId: string, activityId: string, summary: { avgHeartRate: number; maxHeartRate: number }): Promise<void>;
   /** Remove a logged/imported activity (e.g. a duplicate or unwanted import). */
   deleteActivity(userId: string, activityId: string): Promise<void>;
   listWorkouts(userId: string): Promise<Workout[]>;
@@ -241,6 +245,8 @@ export interface DataRepository {
     status: Workout['status'],
     completedAt?: string | null,
   ): Promise<Workout>;
+  /** Attach a connected watch's avg/max heart rate to a completed workout — best-effort. */
+  setWorkoutHeartRate(userId: string, workoutId: string, summary: { avgHeartRate: number; maxHeartRate: number }): Promise<void>;
   /** Remove a planned session. */
   deletePlannedWorkout(userId: string, workoutId: string): Promise<void>;
   /** The exercises/sets logged for one specific workout, in order. */
@@ -391,6 +397,8 @@ function rowToWorkout(r: WorkoutRow): Workout {
     completedAt: r.completed_at ?? undefined,
     durationSec: r.duration_sec ?? undefined,
     rpe: r.rpe ?? undefined,
+    avgHeartRate: r.avg_heart_rate ?? undefined,
+    maxHeartRate: r.max_heart_rate ?? undefined,
     notes: r.notes ?? undefined,
     createdAt: r.created_at,
     updatedAt: r.updated_at,
@@ -957,6 +965,16 @@ function createDemoRepository(): DataRepository {
       await writeJson(actKey(userId), next);
       return updated;
     },
+    async setActivityHeartRate(userId, activityId, summary) {
+      const items = await readJson<Activity>(actKey(userId));
+      const now = new Date().toISOString();
+      const next = items.map((a) =>
+        a.id === activityId
+          ? { ...a, avgHeartRate: summary.avgHeartRate, maxHeartRate: summary.maxHeartRate, updatedAt: now }
+          : a,
+      );
+      await writeJson(actKey(userId), next);
+    },
     async deleteActivity(userId, activityId) {
       const items = await readJson<Activity>(actKey(userId));
       await writeJson(
@@ -1049,6 +1067,16 @@ function createDemoRepository(): DataRepository {
       await writeJson(wkKey(userId), next);
       if (!updated) throw new Error('Séance introuvable.');
       return updated;
+    },
+    async setWorkoutHeartRate(userId, workoutId, summary) {
+      const items = await readJson<Workout>(wkKey(userId));
+      const now = new Date().toISOString();
+      const next = items.map((w) =>
+        w.id === workoutId
+          ? { ...w, avgHeartRate: summary.avgHeartRate, maxHeartRate: summary.maxHeartRate, updatedAt: now }
+          : w,
+      );
+      await writeJson(wkKey(userId), next);
     },
     async deletePlannedWorkout(userId, workoutId) {
       const items = await readJson<Workout>(wkKey(userId));
@@ -1893,6 +1921,9 @@ function createSupabaseRepository(
     async updateActivityMuscles(_userId, activityId, muscles) {
       return rowToActivity(await updateActivityMusclesDb(client, activityId, muscles));
     },
+    async setActivityHeartRate(_userId, activityId, summary) {
+      await updateActivityHeartRateDb(client, activityId, summary);
+    },
     async deleteActivity(_userId, activityId) {
       await deleteActivityDb(client, activityId);
     },
@@ -2510,6 +2541,9 @@ function createSupabaseRepository(
     async setWorkoutStatus(_userId, workoutId, status, completedAt) {
       const row = await updateWorkoutStatusDb(client, workoutId, status, completedAt);
       return rowToWorkout(row);
+    },
+    async setWorkoutHeartRate(_userId, workoutId, summary) {
+      await updateWorkoutHeartRateDb(client, workoutId, summary);
     },
     async deletePlannedWorkout(_userId, workoutId) {
       await deleteWorkoutDb(client, workoutId);
