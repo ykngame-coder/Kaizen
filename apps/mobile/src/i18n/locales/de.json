@@ -2813,7 +2813,8 @@
       "header": {
         "greetingWithName": "Hallo {{name}}",
         "greeting": "Hallo",
-        "tagline": "Exzellenz entsteht heute."
+        "tagline": "Exzellenz entsteht heute.",
+        "syncA11y": "Apple Health erneut synchronisieren"
       },
       "score": {
         "title": "KAIZEN-SCORE",

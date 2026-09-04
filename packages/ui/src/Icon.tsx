@@ -18,6 +18,7 @@ const community = (name: CommunityName): Glyph => ({ family: 'community', name }
 const REGISTRY = {
   // Navigation / generic actions
   search: material('search'),
+  sync: material('sync'),
   notifications: material('notifications'),
   settings: material('settings'),
   chat: community('chat-outline'),

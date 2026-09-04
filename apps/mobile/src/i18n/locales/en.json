@@ -2813,7 +2813,8 @@
       "header": {
         "greetingWithName": "Hi {{name}}",
         "greeting": "Hi",
-        "tagline": "Excellence is built today."
+        "tagline": "Excellence is built today.",
+        "syncA11y": "Resync Apple Health"
       },
       "score": {
         "title": "KAIZEN SCORE",

@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { Image, Pressable, ScrollView, View } from 'react-native';
+import { ActivityIndicator, Image, Pressable, ScrollView, View } from 'react-native';
 import { useRouter, type Href } from 'expo-router';
 import { useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
@@ -219,7 +219,19 @@ export function DashboardScreen(): React.JSX.Element {
   }, [health, now]);
   const weightDelta = weight != null && weekAgoWeight != null ? weight - weekAgoWeight : null;
 
-  const targets = useMemo(() => estimateTargets({ weightKg: weight }, asOf).value, [weight, asOf]);
+  // The auto estimate, unless the user already set a real target on the
+  // Nutrition hub's Objectifs card — this used to always show the raw
+  // auto-estimate here, silently ignoring any customization made there (the
+  // same root-cause pattern already fixed for NutritionWidget/HabitsScreen).
+  const autoTargets = useMemo(() => estimateTargets({ weightKg: weight }, asOf).value, [weight, asOf]);
+  const targets = useMemo(
+    () => ({
+      kcal: preferences.nutritionGoals?.kcal ?? autoTargets.kcal,
+      proteinG: preferences.nutritionGoals?.proteinG ?? autoTargets.proteinG,
+      hydrationMl: preferences.nutritionGoals?.hydrationMl ?? autoTargets.hydrationMl,
+    }),
+    [preferences.nutritionGoals, autoTargets],
+  );
   const totals = useMemo(() => sumDay(nutrition, asOf), [nutrition, asOf]);
   const kcalPct = targets.kcal > 0 ? Math.min(100, (totals.kcal / targets.kcal) * 100) : 0;
   const deficit = Math.round(targets.kcal - totals.kcal);
@@ -547,22 +559,29 @@ export function DashboardScreen(): React.JSX.Element {
       <Screen scroll onRefresh={onRefresh} refreshing={refreshing}>
         {/* Header */}
         <View>
-          <View style={{ flexDirection: 'row', justifyContent: 'flex-end', gap: spacing[2] }}>
-            <IconBtn icon={<Icon name="search" size={16} />} onPress={() => router.push('/search')} />
-            <IconBtn icon={<Icon name="tune" size={16} />} onPress={() => router.push('/dashboard-customize')} />
-            <IconBtn icon={<Icon name="notifications" size={16} />} onPress={() => router.push('/profile/notifications')} />
-            <Pressable onPress={() => router.push('/profile')}>
-              <View style={{ width: 38, height: 38, borderRadius: 19, overflow: 'hidden', alignItems: 'center', justifyContent: 'center' }}>
-                {avatarUri ? (
-                  <Image source={{ uri: avatarUri }} style={{ width: 38, height: 38 }} resizeMode="cover" />
-                ) : (
-                  <>
-                    <Gradient fill />
-                    <Text variant="body" color="onGradient" style={{ fontWeight: '700' }}>{initial}</Text>
-                  </>
-                )}
-              </View>
-            </Pressable>
+          <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', gap: spacing[2] }}>
+            <IconBtn
+              icon={refreshing ? <ActivityIndicator size="small" color={colors.text} /> : <Icon name="sync" size={16} />}
+              onPress={onRefresh}
+              accessibilityLabel={t('dashboard.screen.header.syncA11y')}
+            />
+            <View style={{ flexDirection: 'row', gap: spacing[2] }}>
+              <IconBtn icon={<Icon name="search" size={16} />} onPress={() => router.push('/search')} />
+              <IconBtn icon={<Icon name="tune" size={16} />} onPress={() => router.push('/dashboard-customize')} />
+              <IconBtn icon={<Icon name="notifications" size={16} />} onPress={() => router.push('/profile/notifications')} />
+              <Pressable onPress={() => router.push('/profile')}>
+                <View style={{ width: 38, height: 38, borderRadius: 19, overflow: 'hidden', alignItems: 'center', justifyContent: 'center' }}>
+                  {avatarUri ? (
+                    <Image source={{ uri: avatarUri }} style={{ width: 38, height: 38 }} resizeMode="cover" />
+                  ) : (
+                    <>
+                      <Gradient fill />
+                      <Text variant="body" color="onGradient" style={{ fontWeight: '700' }}>{initial}</Text>
+                    </>
+                  )}
+                </View>
+              </Pressable>
+            </View>
           </View>
           <View style={{ alignItems: 'center', marginTop: spacing[2] }}>
             <Text variant="title">{firstName ? t('dashboard.screen.header.greetingWithName', { name: firstName }) : t('dashboard.screen.header.greeting')}</Text>
@@ -633,10 +652,10 @@ export const QUICK_LINKS: { key: string; labelKey: string; icon: IconName; path:
   { key: 'stats', labelKey: 'dashboard.screen.quickLinks.stats', icon: 'chartBar', path: '/profile/analytics' },
 ];
 
-function IconBtn({ icon, onPress }: { icon: React.ReactNode; onPress: () => void }): React.JSX.Element {
+function IconBtn({ icon, onPress, accessibilityLabel }: { icon: React.ReactNode; onPress: () => void; accessibilityLabel?: string }): React.JSX.Element {
   const { colors } = useTheme();
   return (
-    <Pressable onPress={onPress} style={({ pressed }) => ({ transform: [{ scale: pressed ? 0.94 : 1 }] })}>
+    <Pressable onPress={onPress} accessibilityLabel={accessibilityLabel} style={({ pressed }) => ({ transform: [{ scale: pressed ? 0.94 : 1 }] })}>
       <View style={{ width: 38, height: 38, borderRadius: 19, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border, alignItems: 'center', justifyContent: 'center' }}>{typeof icon === 'string' ? <Text style={{ fontSize: 16 }}>{icon}</Text> : icon}</View>
     </Pressable>
   );

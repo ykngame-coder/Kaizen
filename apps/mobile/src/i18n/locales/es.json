@@ -2813,7 +2813,8 @@
       "header": {
         "greetingWithName": "Hola {{name}}",
         "greeting": "Hola",
-        "tagline": "La excelencia se construye hoy."
+        "tagline": "La excelencia se construye hoy.",
+        "syncA11y": "Resincronizar Apple Salud"
       },
       "score": {
         "title": "PUNTUACIÓN KAIZEN",
