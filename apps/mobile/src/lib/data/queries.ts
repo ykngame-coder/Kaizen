@@ -15,6 +15,7 @@ import type {
   WellnessCheckinInput,
 } from '@supotsu/shared';
 import type { Challenge, GoalType, MuscleGroup, SetEntry, Visibility, Workout } from '@supotsu/core';
+import { estimateActivityHeartRateWindow, estimateWorkoutHeartRateWindow } from '@supotsu/connectors';
 import type {
   ImportedActivity,
   ImportedHealthMetric,
@@ -25,7 +26,7 @@ import type {
 import { useAuth } from '@/features/auth/AuthProvider';
 import { createDataRepository, type HealthMetricInput, type NewCircuitBlockInput, type NewCircuitWorkout, type NewSleepSession, type NewWorkout, type PlannedInput } from './repository';
 import { isHealthKitConnected } from '@/features/connectors/useHealthKitAutoSync';
-import { saveActivityToHealthKit, saveNutritionToHealthKit, saveWorkoutToHealthKit } from '@/features/connectors/healthKitClient';
+import { queryHeartRateSummary, saveActivityToHealthKit, saveNutritionToHealthKit, saveWorkoutToHealthKit } from '@/features/connectors/healthKitClient';
 import { periodToDays, type DailyScoreColumn, type LeaderboardCategory, type LeaderboardPeriod } from '@/features/community/leaderboardHelpers';
 
 /**
@@ -65,9 +66,18 @@ export function useAddActivity() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (input: ActivityInput) => repo.addActivity(user!.id, input),
-    onSuccess: (_data, input) => {
+    onSuccess: (data, input) => {
       qc.invalidateQueries({ queryKey: ['activities', user?.id] });
       void mirrorToHealthKit(() => saveActivityToHealthKit(input));
+      // Only chase heart rate when the entry doesn't already carry one
+      // (never overwrite a manual value the user just typed in).
+      if (input.avgHeartRate == null) {
+        void mirrorToHealthKit(async () => {
+          const window = estimateActivityHeartRateWindow(input.startedAt, input.durationSec);
+          const summary = await queryHeartRateSummary(new Date(window.start), new Date(window.end));
+          if (summary) await repo.setActivityHeartRate(user!.id, data.id, summary);
+        });
+      }
     },
   });
 }
@@ -1048,11 +1058,17 @@ export function useSetWorkoutStatus() {
       qc.invalidateQueries({ queryKey: ['plannedWorkouts', user?.id] });
       qc.invalidateQueries({ queryKey: ['workouts', user?.id] });
       // This is the actual "I finished this session" moment — mirror it to
-      // Apple Santé here rather than at creation time (still 'planned' then).
+      // Apple Santé here rather than at creation time (still 'planned' then),
+      // and best-effort pull back the heart rate a connected watch recorded
+      // over the same (estimated) window.
       if (input.status === 'completed') {
         void mirrorToHealthKit(async () => {
           const sets = await repo.getWorkoutSets(user!.id, input.workoutId);
-          await saveWorkoutToHealthKit(sets.length, input.completedAt ? new Date(input.completedAt) : new Date());
+          const completedAtIso = input.completedAt ?? new Date().toISOString();
+          await saveWorkoutToHealthKit(sets.length, new Date(completedAtIso));
+          const window = estimateWorkoutHeartRateWindow(completedAtIso, sets.length);
+          const summary = await queryHeartRateSummary(new Date(window.start), new Date(window.end));
+          if (summary) await repo.setWorkoutHeartRate(user!.id, input.workoutId, summary);
         });
       }
     },
