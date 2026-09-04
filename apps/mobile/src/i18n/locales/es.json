@@ -895,7 +895,8 @@
       "stats": {
         "duration": "Duración",
         "rpe": "RPE",
-        "status": "Estado"
+        "status": "Estado",
+        "avgHeartRate": "FC media"
       },
       "notesTitle": "Notas",
       "exercisesTitle": "Ejercicios",

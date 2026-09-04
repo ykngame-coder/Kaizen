@@ -895,7 +895,8 @@
       "stats": {
         "duration": "Duration",
         "rpe": "RPE",
-        "status": "Status"
+        "status": "Status",
+        "avgHeartRate": "Avg heart rate"
       },
       "notesTitle": "Notes",
       "exercisesTitle": "Exercises",

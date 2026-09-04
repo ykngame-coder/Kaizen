@@ -895,7 +895,8 @@
       "stats": {
         "duration": "Dauer",
         "rpe": "RPE",
-        "status": "Status"
+        "status": "Status",
+        "avgHeartRate": "Ø Herzfrequenz"
       },
       "notesTitle": "Notizen",
       "exercisesTitle": "Übungen",

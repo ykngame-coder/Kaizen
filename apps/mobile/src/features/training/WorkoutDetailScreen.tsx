@@ -127,10 +127,13 @@ export function WorkoutDetailScreen(): React.JSX.Element {
       </View>
 
       {/* Résumé */}
-      <View style={{ flexDirection: 'row', gap: spacing[3], marginTop: spacing[2] }}>
+      <View style={{ flexDirection: 'row', gap: spacing[3], marginTop: spacing[2], flexWrap: 'wrap' }}>
         <Stat label={t('sport.workoutDetail.stats.duration')} value={workout.durationSec ? fmtDur(workout.durationSec, t) : '—'} />
         <Stat label={t('sport.workoutDetail.stats.rpe')} value={workout.rpe != null ? `${workout.rpe}/10` : '—'} />
         <Stat label={t('sport.workoutDetail.stats.status')} value={status.label} />
+        {workout.avgHeartRate != null ? (
+          <Stat label={t('sport.workoutDetail.stats.avgHeartRate')} value={`${workout.avgHeartRate} bpm`} />
+        ) : null}
       </View>
 
       {/* Notes */}
