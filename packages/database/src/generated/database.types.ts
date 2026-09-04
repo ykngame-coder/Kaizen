@@ -134,6 +134,7 @@ export interface Database {
           calories?: number | null;
           intensity?: 'low' | 'moderate' | 'high' | 'max' | null;
           avg_heart_rate?: number | null;
+          max_heart_rate?: number | null;
           notes?: string | null;
           external_id?: string | null;
           muscles?: string[] | null;
@@ -152,6 +153,8 @@ export interface Database {
           completed_at: string | null;
           duration_sec: number | null;
           rpe: number | null;
+          avg_heart_rate: number | null;
+          max_heart_rate: number | null;
           notes: string | null;
           external_id: string | null;
         } & Timestamps;
@@ -163,6 +166,8 @@ export interface Database {
           completed_at?: string | null;
           duration_sec?: number | null;
           rpe?: number | null;
+          avg_heart_rate?: number | null;
+          max_heart_rate?: number | null;
           notes?: string | null;
           external_id?: string | null;
         };

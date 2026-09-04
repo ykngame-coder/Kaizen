@@ -45,6 +45,9 @@ export interface Workout extends OwnedEntity {
   durationSec?: number;
   /** Session-level rate of perceived exertion, 1-10 (Master Prompt P36.11). */
   rpe?: number;
+  /** From a connected watch's heart-rate samples over the session's estimated time window (best-effort, may be absent). */
+  avgHeartRate?: number;
+  maxHeartRate?: number;
   notes?: string;
 }
 
