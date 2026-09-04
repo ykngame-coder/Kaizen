@@ -33,3 +33,7 @@ export async function saveWorkoutToHealthKit(_setCount: number, _at?: Date): Pro
 export async function saveNutritionToHealthKit(_input: NutritionEntryInput): Promise<void> {
   /* no-op off iOS */
 }
+
+export async function queryHeartRateSummary(_start: Date, _end: Date): Promise<{ avgHeartRate: number; maxHeartRate: number } | null> {
+  return null; // no-op off iOS
+}

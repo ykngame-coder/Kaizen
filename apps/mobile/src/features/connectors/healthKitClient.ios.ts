@@ -5,9 +5,12 @@ import {
   aggregateHealthKitSleep,
   aggregateHealthKitSleepSessions,
   normalizeHealthKitWorkout,
+  summarizeHeartRate,
+  SET_DURATION_ESTIMATE_SEC,
   type HKQuantitySample,
   type HKSleepSample,
   type HKWorkout,
+  type HeartRateSummary,
   type ImportedActivity,
   type ImportedHealthMetric,
   type ImportedSleepSession,
@@ -37,6 +40,10 @@ const QUANTITY_TYPES: { id: QuantityTypeIdentifier; unit: string }[] = [
 const STEP_COUNT_TYPE = 'HKQuantityTypeIdentifierStepCount' as const;
 const SLEEP_TYPE = 'HKCategoryTypeIdentifierSleepAnalysis' as const;
 const WORKOUT_TYPE = 'HKWorkoutTypeIdentifier' as const;
+// Read on demand for a specific session's time window (queryHeartRateSummary)
+// — never added to QUANTITY_TYPES, which does a bulk 3-year sweep on every
+// sync; heart-rate sample volume over 3 years would be enormous.
+const HEART_RATE_TYPE = 'HKQuantityTypeIdentifierHeartRate' as const;
 // Matches ios.bundleIdentifier in app.json — used to recognize (and skip
 // re-importing) workouts this app wrote back to Apple Santé itself.
 const APP_BUNDLE_ID = 'com.supotsu.app';
@@ -116,7 +123,7 @@ export async function syncHealthKit(): Promise<{
   // below, so activities/meals/water logged in-app can be mirrored back to
   // Apple Health without a second, separate prompt later.
   await HealthKit.requestAuthorization({
-    toRead: [...QUANTITY_TYPES.map((q) => q.id), STEP_COUNT_TYPE, SLEEP_TYPE, WORKOUT_TYPE],
+    toRead: [...QUANTITY_TYPES.map((q) => q.id), STEP_COUNT_TYPE, SLEEP_TYPE, WORKOUT_TYPE, HEART_RATE_TYPE],
     toShare: WRITE_TYPES,
   });
 
@@ -237,6 +244,26 @@ export async function syncHealthKit(): Promise<{
   return { activities, healthMetrics, sleepSessions };
 }
 
+/**
+ * Best-effort avg/max heart rate for one session's time window. Targeted —
+ * called once per completed workout/activity, never part of the bulk sync
+ * sweep above.
+ */
+export async function queryHeartRateSummary(start: Date, end: Date): Promise<HeartRateSummary | null> {
+  if (!healthKitAvailable()) return null;
+  try {
+    const samples = await HealthKit.queryQuantitySamples(HEART_RATE_TYPE, {
+      unit: 'count/min',
+      limit: 0,
+      ascending: true,
+      filter: { date: { startDate: start, endDate: end } },
+    });
+    return summarizeHeartRate(samples.map((s) => ({ value: s.quantity })));
+  } catch {
+    return null;
+  }
+}
+
 /** Kaizen `ActivityType` → HealthKit's own workout-type enum, for writes. */
 const ACTIVITY_TYPE_TO_HK: Record<ActivityType, HealthKit.WorkoutActivityType> = {
   walking: HealthKit.WorkoutActivityType.walking,
@@ -275,7 +302,7 @@ export async function saveActivityToHealthKit(input: ActivityInput): Promise<voi
  */
 export async function saveWorkoutToHealthKit(setCount: number, at: Date = new Date()): Promise<void> {
   if (setCount <= 0) return;
-  const durationSec = setCount * 90;
+  const durationSec = setCount * SET_DURATION_ESTIMATE_SEC;
   const start = new Date(at.getTime() - durationSec * 1000);
   await HealthKit.saveWorkoutSample(HealthKit.WorkoutActivityType.traditionalStrengthTraining, [], start, at);
 }
