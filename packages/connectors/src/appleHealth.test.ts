@@ -2,11 +2,14 @@ import { afterEach, describe, expect, it } from 'vitest';
 import {
   aggregateHealthKitSleep,
   aggregateHealthKitSleepSessions,
+  estimateActivityHeartRateWindow,
+  estimateWorkoutHeartRateWindow,
   mapHealthKitWorkoutType,
   normalizeHealthKitSample,
   normalizeHealthKitSamples,
   normalizeHealthKitWorkout,
   normalizeShortcutHealth,
+  summarizeHeartRate,
 } from './appleHealth';
 
 describe('normalizeHealthKitSample', () => {
@@ -251,5 +254,53 @@ describe('normalizeShortcutHealth', () => {
       { type: 'hrv', value: '61.4' as unknown as number, date: '2026-07-20T05:00:00Z' },
     ]);
     expect(out[0]?.value).toBe(61.4);
+  });
+});
+
+describe('summarizeHeartRate', () => {
+  it('returns null for no samples', () => {
+    expect(summarizeHeartRate([])).toBeNull();
+  });
+
+  it('averages and maxes a single sample', () => {
+    const out = summarizeHeartRate([{ value: 120 }]);
+    expect(out).toEqual({ avgHeartRate: 120, maxHeartRate: 120 });
+  });
+
+  it('averages and maxes several samples, rounding the average', () => {
+    const out = summarizeHeartRate([{ value: 100 }, { value: 130 }, { value: 145 }]);
+    expect(out).toEqual({ avgHeartRate: 125, maxHeartRate: 145 }); // (100+130+145)/3 = 125
+  });
+
+  it('drops non-finite/non-positive readings before summarizing', () => {
+    const out = summarizeHeartRate([{ value: 0 }, { value: -5 }, { value: Number.NaN }, { value: 110 }]);
+    expect(out).toEqual({ avgHeartRate: 110, maxHeartRate: 110 });
+  });
+
+  it('returns null when every reading is invalid', () => {
+    expect(summarizeHeartRate([{ value: 0 }, { value: -1 }])).toBeNull();
+  });
+});
+
+describe('estimateWorkoutHeartRateWindow', () => {
+  it('pads a set-count-based duration estimate around the completion time', () => {
+    const win = estimateWorkoutHeartRateWindow('2026-09-04T18:00:00.000Z', 10);
+    // 10 sets * 90s = 900s = 15min estimated duration, padded 10min each side.
+    expect(win.start).toBe('2026-09-04T17:35:00.000Z');
+    expect(win.end).toBe('2026-09-04T18:10:00.000Z');
+  });
+
+  it('never produces a negative estimated duration for zero sets', () => {
+    const win = estimateWorkoutHeartRateWindow('2026-09-04T18:00:00.000Z', 0);
+    expect(win.start).toBe('2026-09-04T17:50:00.000Z');
+    expect(win.end).toBe('2026-09-04T18:10:00.000Z');
+  });
+});
+
+describe('estimateActivityHeartRateWindow', () => {
+  it("pads the activity's real start/duration", () => {
+    const win = estimateActivityHeartRateWindow('2026-09-04T07:00:00.000Z', 1800); // 30min activity
+    expect(win.start).toBe('2026-09-04T06:50:00.000Z');
+    expect(win.end).toBe('2026-09-04T07:40:00.000Z');
   });
 });

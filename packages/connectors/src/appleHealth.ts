@@ -95,6 +95,70 @@ const nightKeyToIso = (key: string): string => {
   return new Date(y, m - 1, d, 12, 0, 0, 0).toISOString();
 };
 
+/** Duration Kaizen estimates for a structured workout with no reliable start
+ * time — must stay the exact value saveWorkoutToHealthKit (in the mobile
+ * app's healthKitClient.ios.ts) uses to write the workout's own duration,
+ * or the read-back window and the written workout drift apart. */
+export const SET_DURATION_ESTIMATE_SEC = 90;
+
+const HR_WINDOW_PAD_MS = 10 * 60_000;
+
+export interface HeartRateSample {
+  value: number;
+}
+
+export interface HeartRateSummary {
+  avgHeartRate: number;
+  maxHeartRate: number;
+}
+
+/**
+ * Session-level avg/max heart rate from raw quantity samples. HealthKit
+ * doesn't attach heart rate directly to a workout sample — samples are
+ * queried separately for a time window and summarized here, client-side.
+ */
+export function summarizeHeartRate(samples: HeartRateSample[]): HeartRateSummary | null {
+  const values = samples.map((s) => s.value).filter((v) => Number.isFinite(v) && v > 0);
+  if (values.length === 0) return null;
+  return {
+    avgHeartRate: Math.round(values.reduce((sum, v) => sum + v, 0) / values.length),
+    maxHeartRate: Math.round(Math.max(...values)),
+  };
+}
+
+export interface HeartRateWindow {
+  start: string;
+  end: string;
+}
+
+/**
+ * Estimated time window for a structured workout — `workouts` has no
+ * reliable start time or guaranteed duration today, so this reuses the same
+ * set-count-based duration estimate saveWorkoutToHealthKit writes with,
+ * padded on each side to tolerate the estimate being off.
+ */
+export function estimateWorkoutHeartRateWindow(completedAt: string, setCount: number): HeartRateWindow {
+  const durationMs = Math.max(setCount, 0) * SET_DURATION_ESTIMATE_SEC * 1000;
+  const completedMs = new Date(completedAt).getTime();
+  return {
+    start: new Date(completedMs - durationMs - HR_WINDOW_PAD_MS).toISOString(),
+    end: new Date(completedMs + HR_WINDOW_PAD_MS).toISOString(),
+  };
+}
+
+/**
+ * Time window for a cardio activity — real start/duration, padded since a
+ * watch's heart-rate sampling rarely aligns exactly to the activity's own
+ * recorded boundaries.
+ */
+export function estimateActivityHeartRateWindow(startedAt: string, durationSec: number): HeartRateWindow {
+  const startMs = new Date(startedAt).getTime();
+  return {
+    start: new Date(startMs - HR_WINDOW_PAD_MS).toISOString(),
+    end: new Date(startMs + durationSec * 1000 + HR_WINDOW_PAD_MS).toISOString(),
+  };
+}
+
 /**
  * Aggregate sleep-stage samples into one sleep_duration metric per night (hours
  * actually asleep, awake intervals excluded). Fragmented samples are summed.
