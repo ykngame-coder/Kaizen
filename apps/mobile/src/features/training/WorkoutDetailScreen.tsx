@@ -253,7 +253,7 @@ export function BlockSummaryCard({
         {sets.map((s, i) => (
           <View key={s.id} style={{ flexDirection: 'row', alignItems: 'center', gap: spacing[2] }}>
             <Text variant="caption" color="textSubtle">
-              {exerciseName(s.exerciseId)}{s.reps != null ? ` · ${s.reps} reps` : ''}{block.format === 'strength' && s.weightKg != null ? ` · ${s.weightKg} kg` : ''}
+              {exerciseName(s.exerciseId)}{s.reps != null ? ` · ${s.reps} reps` : ''}{s.weightKg != null ? ` · ${s.weightKg} kg` : ''}
             </Text>
             {supersetPartners(sets, i).length > 0 ? <Badge label={t('sport.workoutDetail.superset.badge')} tone="info" /> : null}
           </View>

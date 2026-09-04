@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Image, Pressable, ScrollView, View } from 'react-native';
+import { Image, Pressable, ScrollView, TextInput, View } from 'react-native';
 import DraggableFlatList, { type RenderItemParams } from 'react-native-draggable-flatlist';
 import type { TFunction } from 'i18next';
 import { Badge, Button, Card, Input, SegmentedControl, Text, useTheme } from '@supotsu/ui';
@@ -84,6 +84,14 @@ function Stepper({
     const next = Math.max(0, Math.round((n + dir * step) * 100) / 100);
     onChange(next === 0 ? '' : String(next));
   };
+  // Besides the +/- nudges, let the value be typed directly — reaching e.g.
+  // 24 reps or 60kg one tap at a time was reported as impractical enough
+  // that people gave up and left the default in place.
+  const onChangeText = (text: string): void => {
+    const cleaned = text.replace(/[^\d.]/g, '');
+    const parts = cleaned.split('.');
+    onChange(parts.length > 2 ? `${parts[0]}.${parts.slice(1).join('')}` : cleaned);
+  };
   return (
     <View style={{ flex: 1 }}>
       <Text variant="caption" color="textSubtle" style={{ marginBottom: 4 }}>{label}</Text>
@@ -91,9 +99,17 @@ function Stepper({
         <Pressable onPress={() => bump(-1)} hitSlop={8} style={{ width: 34, height: 36, alignItems: 'center', justifyContent: 'center' }}>
           <Text variant="body" style={{ color: colors.primary, fontWeight: '700' }}>−</Text>
         </Pressable>
-        <Text variant="body" style={{ flex: 1, textAlign: 'center', fontWeight: '600' }}>
-          {value || '—'}{value && unit ? ` ${unit}` : ''}
-        </Text>
+        <TextInput
+          value={value}
+          onChangeText={onChangeText}
+          keyboardType="decimal-pad"
+          placeholder="—"
+          placeholderTextColor={colors.textSubtle}
+          style={{ flex: 1, textAlign: 'center', fontWeight: '600', fontSize: 16, color: colors.text, paddingVertical: 0 }}
+        />
+        {unit && value ? (
+          <Text variant="caption" color="textSubtle" style={{ marginRight: 8 }}>{unit}</Text>
+        ) : null}
         <Pressable onPress={() => bump(1)} hitSlop={8} style={{ width: 34, height: 36, alignItems: 'center', justifyContent: 'center' }}>
           <Text variant="body" style={{ color: colors.primary, fontWeight: '700' }}>+</Text>
         </Pressable>
@@ -443,9 +459,7 @@ export function SessionBlocksEditor({
 
           <View style={{ flexDirection: 'row', gap: spacing[3], marginTop: spacing[2] }}>
             <Stepper label={t('sport.sessionBuilder.set.repsLabel')} value={draft.reps} step={1} onChange={(v) => builder.updateExercise(slotId, { reps: v })} />
-            {isStrength ? (
-              <Stepper label={t('sport.sessionBuilder.set.weightLabel')} value={draft.weight} step={2.5} unit="kg" onChange={(v) => builder.updateExercise(slotId, { weight: v })} />
-            ) : null}
+            <Stepper label={t('sport.sessionBuilder.set.weightLabel')} value={draft.weight} step={2.5} unit="kg" onChange={(v) => builder.updateExercise(slotId, { weight: v })} />
           </View>
           {isStrength ? (
             <View style={{ marginTop: spacing[2] }}>

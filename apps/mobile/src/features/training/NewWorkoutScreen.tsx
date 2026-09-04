@@ -138,7 +138,7 @@ export function NewWorkoutScreen(): React.JSX.Element {
                 exerciseId: s.exerciseId,
                 order: i,
                 reps: s.reps ? Number(s.reps) : undefined,
-                weightKg: b.format === 'strength' && s.weight ? Number(s.weight) : undefined,
+                weightKg: s.weight ? Number(s.weight) : undefined,
                 restSec: b.format === 'strength' && s.rest ? Number(s.rest) : undefined,
                 supersetGroup: b.supersetGroups[slotId],
               };

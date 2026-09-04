@@ -217,7 +217,7 @@ export function flattenBlocksToExercises(blocks: BlockDraft[]): FlatSessionExerc
         exerciseId: draft.exerciseId,
         order: out.length,
         reps: draft.reps ? Number(draft.reps) : undefined,
-        weightKg: block.format === 'strength' && draft.weight ? Number(draft.weight) : undefined,
+        weightKg: draft.weight ? Number(draft.weight) : undefined,
         restSec: block.format === 'strength' && draft.rest ? Number(draft.rest) : undefined,
       });
     }
