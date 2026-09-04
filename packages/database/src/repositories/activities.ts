@@ -31,6 +31,22 @@ export async function updateActivityMuscles(
   return data;
 }
 
+/** Attach a connected watch's avg/max heart rate to an activity — only ever called by the caller when the activity doesn't already have one (never overwrites a manual entry or an import). RLS scopes it to the owner. */
+export async function updateActivityHeartRate(
+  client: SupotsuClient,
+  activityId: string,
+  summary: { avgHeartRate: number; maxHeartRate: number },
+): Promise<ActivityRow> {
+  const { data, error } = await client
+    .from('activities')
+    .update({ avg_heart_rate: summary.avgHeartRate, max_heart_rate: summary.maxHeartRate })
+    .eq('id', activityId)
+    .select('*')
+    .single();
+  if (error) throw error;
+  return data;
+}
+
 /**
  * Bulk upsert activities (bulk import). Idempotent via the
  * (user_id, source, external_id) unique index, so re-importing the same export

@@ -240,6 +240,22 @@ export async function updateWorkoutStatus(
   return data;
 }
 
+/** Attach a connected watch's avg/max heart rate to a completed workout — RLS scopes it to the owner. Never called with a summary the caller hasn't already computed as non-null. */
+export async function updateWorkoutHeartRate(
+  client: SupotsuClient,
+  workoutId: string,
+  summary: { avgHeartRate: number; maxHeartRate: number },
+): Promise<WorkoutRow> {
+  const { data, error } = await client
+    .from('workouts')
+    .update({ avg_heart_rate: summary.avgHeartRate, max_heart_rate: summary.maxHeartRate })
+    .eq('id', workoutId)
+    .select('*')
+    .single();
+  if (error) throw error;
+  return data;
+}
+
 /** Delete a workout (RLS scopes to the owner). */
 export async function deleteWorkout(client: SupotsuClient, workoutId: string): Promise<void> {
   const { error } = await client.from('workouts').delete().eq('id', workoutId);
