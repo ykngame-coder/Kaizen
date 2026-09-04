@@ -37,6 +37,9 @@ const QUANTITY_TYPES: { id: QuantityTypeIdentifier; unit: string }[] = [
 const STEP_COUNT_TYPE = 'HKQuantityTypeIdentifierStepCount' as const;
 const SLEEP_TYPE = 'HKCategoryTypeIdentifierSleepAnalysis' as const;
 const WORKOUT_TYPE = 'HKWorkoutTypeIdentifier' as const;
+// Matches ios.bundleIdentifier in app.json — used to recognize (and skip
+// re-importing) workouts this app wrote back to Apple Santé itself.
+const APP_BUNDLE_ID = 'com.supotsu.app';
 
 /**
  * How far back to read on each sync. 3 years — HealthKit itself has no real
@@ -202,6 +205,10 @@ export async function syncHealthKit(): Promise<{
       filter: dateFilter,
     });
     for (const w of workouts) {
+      // Skip workouts Kaizen itself wrote back to Apple Santé (saveWorkoutToHealthKit,
+      // saveActivityToHealthKit) — importing them here would re-create the same
+      // completed workout/activity as a second, duplicate entry.
+      if (w.sourceRevision?.source?.bundleIdentifier === APP_BUNDLE_ID) continue;
       workoutSamples.push({
         uuid: w.uuid,
         workoutActivityType: Number(w.workoutActivityType),
