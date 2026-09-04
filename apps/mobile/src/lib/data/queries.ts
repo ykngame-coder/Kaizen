@@ -15,7 +15,7 @@ import type {
   WellnessCheckinInput,
 } from '@supotsu/shared';
 import type { Challenge, GoalType, MuscleGroup, SetEntry, Visibility, Workout } from '@supotsu/core';
-import { estimateActivityHeartRateWindow, estimateWorkoutHeartRateWindow } from '@supotsu/connectors';
+import { dedupActivities, estimateActivityHeartRateWindow, estimateWorkoutHeartRateWindow } from '@supotsu/connectors';
 import type {
   ImportedActivity,
   ImportedHealthMetric,
@@ -727,13 +727,24 @@ export function useImportHealth() {
   const repo = useRepository();
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (payload: {
+    mutationFn: async (payload: {
       activities: ImportedActivity[];
       healthMetrics: ImportedHealthMetric[];
       records: ImportedRecord[];
       sleepSessions: ImportedSleepSession[];
       workouts: ImportedWorkout[];
-    }) => repo.persistImport(user!.id, payload),
+    }) => {
+      // HealthKit's own external_id dedup only catches the exact same sample
+      // synced twice — it does nothing when the same real-world session was
+      // recorded by more than one source (Watch workout + phone auto-detect,
+      // or a third-party app also writing to HealthKit), since each of those
+      // gets its own distinct uuid. Fuzzy-match (type + day + close duration)
+      // against what's already stored to catch that case before it's persisted
+      // as a second real row (reported: "Football" logged 3x after build 44).
+      const existing = payload.activities.length > 0 ? await repo.listActivities(user!.id) : [];
+      const activities = dedupActivities(existing, payload.activities);
+      return repo.persistImport(user!.id, { ...payload, activities });
+    },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['activities', user?.id] });
       qc.invalidateQueries({ queryKey: ['health', user?.id] });

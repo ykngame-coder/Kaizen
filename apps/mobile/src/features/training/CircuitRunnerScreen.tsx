@@ -5,6 +5,7 @@ import { useTranslation } from 'react-i18next';
 import { Badge, Button, Card, EmptyState, Icon, Screen, Text, triggerHaptic, useTheme } from '@supotsu/ui';
 import { radii, spacing } from '@supotsu/design-system';
 import { EXERCISE_LIBRARY } from '@supotsu/shared';
+import { EXERCISES } from '@/features/exercises/catalog';
 import { useSetWorkoutStatus, useWorkoutBlocks, useBlockSets, useCompleteBlock, useCustomExercises } from '@/lib/data/queries';
 import { computeAmrapState, computeEmomState, computeForTimeState, formatClock, supersetPartners } from './blockRunnerEngine';
 
@@ -35,6 +36,7 @@ export function CircuitRunnerScreen(): React.JSX.Element {
   const exerciseName = useMemo(() => {
     const map = new Map<string, string>();
     for (const e of EXERCISE_LIBRARY) map.set(e.id, e.name);
+    for (const e of EXERCISES) map.set(e.id, e.name);
     for (const e of customExercises) map.set(e.id, e.name);
     return (exerciseId: string): string => map.get(exerciseId) ?? exerciseId;
   }, [customExercises]);
