@@ -1,5 +1,6 @@
 import type { OwnedEntity, UUID } from './common';
 import type { ProgramFocus } from './marketplace';
+import type { BlockFormat } from './training';
 import type { SportLevel } from './user';
 
 export type Visibility = 'private' | 'public';
@@ -18,12 +19,24 @@ export interface UserSession extends OwnedEntity {
 export interface UserSessionExercise {
   id: UUID;
   sessionId: UUID;
+  /** The block this exercise belongs to — absent for a session saved before block support existed (treated as a legacy flat session everywhere it's read). */
+  blockId?: UUID;
   exerciseId: UUID;
   order: number;
   reps?: number;
   weightKg?: number;
   durationSec?: number;
   restSec?: number;
+}
+
+/** One block within a user-created session template (mirrors WorkoutBlock). */
+export interface UserSessionBlock {
+  id: UUID;
+  sessionId: UUID;
+  order: number;
+  format: BlockFormat;
+  timeCapSec?: number;
+  targetRounds?: number;
 }
 
 /** A user-authored multi-week program — the editable counterpart to the coach `Program` catalogue. */

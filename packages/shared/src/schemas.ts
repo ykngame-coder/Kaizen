@@ -186,12 +186,21 @@ export const sessionExerciseInputSchema = z.object({
 });
 export type SessionExerciseInput = z.infer<typeof sessionExerciseInputSchema>;
 
+/** One block within a user-created session (mirrors workout_blocks). */
+export const sessionBlockInputSchema = z.object({
+  format: z.enum(['strength', 'amrap', 'emom', 'for_time']),
+  timeCapSec: z.number().int().positive().max(36000).optional(),
+  targetRounds: z.number().int().positive().max(100).optional(),
+  exercises: z.array(sessionExerciseInputSchema).min(1).max(50),
+});
+export type SessionBlockInput = z.infer<typeof sessionBlockInputSchema>;
+
 /** A user-created reusable session template (Master Prompt-adjacent: user-generated content). */
 export const userSessionInputSchema = z.object({
   name: z.string().min(1).max(120),
   notes: z.string().max(1000).optional(),
   visibility: visibilitySchema.default('private'),
-  exercises: z.array(sessionExerciseInputSchema).min(1).max(50),
+  blocks: z.array(sessionBlockInputSchema).min(1).max(10),
 });
 export type UserSessionInput = z.infer<typeof userSessionInputSchema>;
 
