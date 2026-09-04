@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { View } from 'react-native';
+import { ScrollView, View } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { Badge, Button, Card, EmptyState, Icon, Screen, Text, triggerHaptic, useTheme } from '@supotsu/ui';
@@ -177,7 +177,7 @@ export function CircuitRunnerScreen(): React.JSX.Element {
 
       {active.format === 'strength' && !isRepeatingStrength && !hasSuperset ? (
         <View style={{ flex: 1, gap: spacing[3] }}>
-          <View style={{ gap: spacing[2] }}>
+          <ScrollView style={{ flex: 1 }} contentContainerStyle={{ gap: spacing[2] }}>
             {sets.map((s) => (
               <Card key={s.id}>
                 <Text variant="body" style={{ fontWeight: '700' }}>{exerciseName(s.exerciseId)}</Text>
@@ -186,7 +186,7 @@ export function CircuitRunnerScreen(): React.JSX.Element {
                 </Text>
               </Card>
             ))}
-          </View>
+          </ScrollView>
           <Button label={t('sport.circuitRunner.nextBlock')} onPress={() => void finishActiveBlock()} />
         </View>
       ) : active.format === 'strength' && isRepeatingStrength && !hasSuperset ? (
@@ -199,7 +199,7 @@ export function CircuitRunnerScreen(): React.JSX.Element {
               <Text variant="display">{roundsCompleted}/{repeatRounds}</Text>
             </View>
           </View>
-          <View style={{ gap: spacing[2] }}>
+          <ScrollView style={{ flex: 1 }} contentContainerStyle={{ gap: spacing[2] }}>
             {sets.map((s) => (
               <Card key={s.id}>
                 <Text variant="body" style={{ fontWeight: '700' }}>{exerciseName(s.exerciseId)}</Text>
@@ -208,7 +208,7 @@ export function CircuitRunnerScreen(): React.JSX.Element {
                 </Text>
               </Card>
             ))}
-          </View>
+          </ScrollView>
           <View style={{ flexDirection: 'row', gap: spacing[3] }}>
             <Button label={t('sport.circuitRunner.stop')} variant="secondary" onPress={() => router.back()} />
             <Button label={t('sport.circuitRunner.roundDone')} onPress={() => setRoundsCompleted((r) => r + 1)} />
@@ -262,7 +262,7 @@ export function CircuitRunnerScreen(): React.JSX.Element {
               <Text variant="display">{formatClock(state!.displaySec)}</Text>
             </View>
           </View>
-          <View style={{ gap: spacing[2] }}>
+          <ScrollView style={{ flex: 1 }} contentContainerStyle={{ gap: spacing[2] }}>
             {sets.map((s) => (
               <Card key={s.id}>
                 <Text variant="body" style={{ fontWeight: '700' }}>{exerciseName(s.exerciseId)}</Text>
@@ -275,7 +275,7 @@ export function CircuitRunnerScreen(): React.JSX.Element {
                 </Text>
               </Card>
             ))}
-          </View>
+          </ScrollView>
           <View style={{ flexDirection: 'row', gap: spacing[3] }}>
             <Button label={t('sport.circuitRunner.stop')} variant="secondary" onPress={() => router.back()} />
             {active.format !== 'emom' ? <Button label={t('sport.circuitRunner.roundDone')} onPress={() => setRoundsCompleted((r) => r + 1)} /> : null}
