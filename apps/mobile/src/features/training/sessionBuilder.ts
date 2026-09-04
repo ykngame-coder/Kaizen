@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react';
 import type { TFunction } from 'i18next';
 import type { BlockFormat, MuscleGroup } from '@supotsu/core';
+import type { SessionBlockInput, SessionExerciseInput } from '@supotsu/shared';
 import { EXERCISES, MUSCLE_LABEL, type Exercise } from '@/features/exercises/catalog';
 
 export interface SetDraft {
@@ -193,34 +194,36 @@ export function useSessionBlocks(options: UseSessionBlocksOptions = {}) {
 
 export type SessionBlocksBuilder = ReturnType<typeof useSessionBlocks>;
 
-export interface FlatSessionExercise {
-  exerciseId: string;
-  order: number;
-  reps?: number;
-  weightKg?: number;
-  restSec?: number;
-}
-
 /**
- * Flattens all blocks into one sequential exercise list — used when saving a
- * (possibly multi-block) session into the "Mes séances" library, whose
- * UserSessionExercise model has no concept of blocks/formats. Block
- * boundaries are lost; the exercise order is preserved.
+ * Converts the builder's blocks into the library's SessionBlockInput shape —
+ * used when saving a (possibly multi-block) session into "Mes séances".
+ * Unlike the old flattenBlocksToExercises, block boundaries and format are
+ * preserved (the library now has its own block model, see
+ * user_session_blocks). Blocks with zero exercises are dropped since
+ * userSessionInputSchema requires at least one exercise per block.
  */
-export function flattenBlocksToExercises(blocks: BlockDraft[]): FlatSessionExercise[] {
-  const out: FlatSessionExercise[] = [];
+export function blocksToSessionInput(blocks: BlockDraft[]): SessionBlockInput[] {
+  const out: SessionBlockInput[] = [];
   for (const block of blocks) {
+    const exercises: SessionExerciseInput[] = [];
     for (const slotId of block.order) {
       const draft = block.selected[slotId];
       if (!draft) continue;
-      out.push({
+      exercises.push({
         exerciseId: draft.exerciseId,
-        order: out.length,
+        order: exercises.length,
         reps: draft.reps ? Number(draft.reps) : undefined,
         weightKg: draft.weight ? Number(draft.weight) : undefined,
         restSec: block.format === 'strength' && draft.rest ? Number(draft.rest) : undefined,
       });
     }
+    if (exercises.length === 0) continue;
+    out.push({
+      format: block.format,
+      timeCapSec: block.format === 'amrap' ? (Number(block.timeCapSec) || 0) * 60 || undefined : block.format === 'emom' ? Number(block.timeCapSec) || undefined : undefined,
+      targetRounds: block.format === 'emom' || block.format === 'for_time' || block.format === 'strength' ? Number(block.targetRounds) || undefined : undefined,
+      exercises,
+    });
   }
   return out;
 }

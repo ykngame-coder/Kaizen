@@ -15,7 +15,7 @@ import {
   useWorkoutSets,
   useWorkouts,
 } from '@/lib/data/queries';
-import { emptyBlock, flattenBlocksToExercises, newSlotId, useSessionBlocks, type BlockDraft, type SetDraft } from './sessionBuilder';
+import { blocksToSessionInput, emptyBlock, newSlotId, useSessionBlocks, type BlockDraft, type SetDraft } from './sessionBuilder';
 import { SessionBlocksEditor } from './SessionBlocksEditor';
 
 const SESSIONS_QUOTA = 50;
@@ -140,7 +140,7 @@ export function EditWorkoutScreen(): React.JSX.Element {
         await addUserSession.mutateAsync({
           name: builder.name.trim(),
           visibility,
-          exercises: flattenBlocksToExercises(builder.blocks),
+          blocks: blocksToSessionInput(builder.blocks),
         });
       }
       router.back();

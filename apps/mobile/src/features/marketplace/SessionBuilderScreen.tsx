@@ -7,7 +7,7 @@ import { spacing } from '@supotsu/design-system';
 import { toCatalogExercise } from '@/features/exercises/catalog';
 import { useAddUserSession, useCustomExercises, useExerciseHistory, useUserSessions } from '@/lib/data/queries';
 import { BackButton } from '@/features/navigation/BackButton';
-import { flattenBlocksToExercises, useSessionBlocks } from '@/features/training/sessionBuilder';
+import { blocksToSessionInput, useSessionBlocks } from '@/features/training/sessionBuilder';
 import { SessionBlocksEditor } from '@/features/training/SessionBlocksEditor';
 
 const SESSIONS_QUOTA = 50;
@@ -42,7 +42,7 @@ export function SessionBuilderScreen(): React.JSX.Element {
       await addSession.mutateAsync({
         name: builder.name.trim(),
         visibility,
-        exercises: flattenBlocksToExercises(builder.blocks),
+        blocks: blocksToSessionInput(builder.blocks),
       });
       router.back();
     } catch (e) {
