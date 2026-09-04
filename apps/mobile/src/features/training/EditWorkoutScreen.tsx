@@ -10,7 +10,6 @@ import {
   useAddUserSession,
   useCustomExercises,
   useEditCircuitWorkout,
-  useEditWorkout,
   useUserSessions,
   useWorkoutBlocks,
   useWorkoutSets,
@@ -32,7 +31,6 @@ export function EditWorkoutScreen(): React.JSX.Element {
   const { data: existingBlocks, isLoading: loadingBlocks } = useWorkoutBlocks(id);
   const { data: customExercises = [] } = useCustomExercises();
   const { data: userSessions = [] } = useUserSessions();
-  const editWorkout = useEditWorkout();
   const editCircuitWorkout = useEditCircuitWorkout();
   const addUserSession = useAddUserSession();
 
@@ -102,7 +100,7 @@ export function EditWorkoutScreen(): React.JSX.Element {
     setPrefilled(true);
   }, [prefilled, workout, existingSets, existingBlocks]);
 
-  const isSaving = editWorkout.isPending || editCircuitWorkout.isPending || addUserSession.isPending;
+  const isSaving = editCircuitWorkout.isPending || addUserSession.isPending;
 
   const submit = async (): Promise<void> => {
     setError(null);
@@ -112,41 +110,32 @@ export function EditWorkoutScreen(): React.JSX.Element {
       return;
     }
     try {
-      if (builder.isSingleStrength) {
-        const sets = builder.blocks[0]!.order.map((slotId, index) => {
-          const s = builder.blocks[0]!.selected[slotId]!;
-          return {
-            exerciseId: s.exerciseId,
-            order: index,
-            reps: s.reps ? Number(s.reps) : undefined,
-            weightKg: s.weight ? Number(s.weight) : undefined,
-            restSec: s.rest ? Number(s.rest) : undefined,
-          };
-        });
-        await editWorkout.mutateAsync({ workoutId: workout.id, name: builder.name.trim(), notes: workout.notes, sets });
-      } else {
-        await editCircuitWorkout.mutateAsync({
-          workoutId: workout.id,
-          name: builder.name.trim(),
-          notes: workout.notes,
-          blocks: builder.blocks.map((b) => ({
-            format: b.format,
-            timeCapSec: b.format === 'amrap' ? (Number(b.timeCapSec) || 0) * 60 || undefined : b.format === 'emom' ? Number(b.timeCapSec) || undefined : undefined,
-            targetRounds: b.format === 'emom' || b.format === 'for_time' || b.format === 'strength' ? Number(b.targetRounds) || undefined : undefined,
-            sets: b.order.map((slotId, index) => {
-              const s = b.selected[slotId]!;
-              return {
-                exerciseId: s.exerciseId,
-                order: index,
-                reps: s.reps ? Number(s.reps) : undefined,
-                weightKg: s.weight ? Number(s.weight) : undefined,
-                restSec: b.format === 'strength' && s.rest ? Number(s.rest) : undefined,
-                supersetGroup: b.supersetGroups[slotId],
-              };
-            }),
-          })),
-        });
-      }
+      // Always save through editCircuitWorkout, even for a plain single
+      // strength block — editWorkout (blockless) would strip the workout's
+      // block away on save, silently regressing it out of the live runner's
+      // eligibility (WorkoutDetailScreen's "Commencer" button requires at
+      // least one workout_blocks row). Matches NewWorkoutScreen's creation path.
+      await editCircuitWorkout.mutateAsync({
+        workoutId: workout.id,
+        name: builder.name.trim(),
+        notes: workout.notes,
+        blocks: builder.blocks.map((b) => ({
+          format: b.format,
+          timeCapSec: b.format === 'amrap' ? (Number(b.timeCapSec) || 0) * 60 || undefined : b.format === 'emom' ? Number(b.timeCapSec) || undefined : undefined,
+          targetRounds: b.format === 'emom' || b.format === 'for_time' || b.format === 'strength' ? Number(b.targetRounds) || undefined : undefined,
+          sets: b.order.map((slotId, index) => {
+            const s = b.selected[slotId]!;
+            return {
+              exerciseId: s.exerciseId,
+              order: index,
+              reps: s.reps ? Number(s.reps) : undefined,
+              weightKg: s.weight ? Number(s.weight) : undefined,
+              restSec: b.format === 'strength' && s.rest ? Number(s.rest) : undefined,
+              supersetGroup: b.supersetGroups[slotId],
+            };
+          }),
+        })),
+      });
       if (addToLibrary && !atQuota) {
         await addUserSession.mutateAsync({
           name: builder.name.trim(),

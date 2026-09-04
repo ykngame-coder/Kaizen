@@ -660,16 +660,25 @@ export function useLaunchSession() {
   return useMutation({
     mutationFn: async (session: { id: string; name: string }) => {
       const exercises = await repo.getSessionExercises(session.id);
-      return repo.addWorkout(user!.id, {
+      // A single 'strength' block (not a blockless workout) so the launched
+      // session is immediately eligible for the live runner — WorkoutDetailScreen's
+      // "Commencer" button, and CircuitRunnerScreen itself, both require at
+      // least one workout_blocks row.
+      return repo.addCircuitWorkout(user!.id, {
         name: session.name,
-        sets: exercises.map((e, i) => ({
-          exerciseId: e.exerciseId,
-          order: e.order ?? i,
-          reps: e.reps,
-          weightKg: e.weightKg,
-          durationSec: e.durationSec,
-          restSec: e.restSec,
-        })),
+        blocks: [
+          {
+            format: 'strength',
+            sets: exercises.map((e, i) => ({
+              exerciseId: e.exerciseId,
+              order: e.order ?? i,
+              reps: e.reps,
+              weightKg: e.weightKg,
+              durationSec: e.durationSec,
+              restSec: e.restSec,
+            })),
+          },
+        ],
       });
     },
     onSuccess: () => {

@@ -9,7 +9,6 @@ import { toCatalogExercise } from '@/features/exercises/catalog';
 import {
   useAddCircuitWorkout,
   useAddUserSession,
-  useAddWorkout,
   useCustomExercises,
   useExerciseHistory,
   useUserSessions,
@@ -33,7 +32,6 @@ export function NewWorkoutScreen(): React.JSX.Element {
   const router = useRouter();
   const { t } = useTranslation();
   const params = useLocalSearchParams<{ openPicker?: string }>();
-  const addWorkout = useAddWorkout();
   const addCircuitWorkout = useAddCircuitWorkout();
   const addUserSession = useAddUserSession();
   const { data: history = {} } = useExerciseHistory();
@@ -98,7 +96,7 @@ export function NewWorkoutScreen(): React.JSX.Element {
     return { reps: top.reps, weightKg: top.weightKg };
   };
 
-  const isPending = addWorkout.isPending || addCircuitWorkout.isPending || addUserSession.isPending;
+  const isPending = addCircuitWorkout.isPending || addUserSession.isPending;
 
   const submit = async (): Promise<void> => {
     setError(null);
@@ -111,41 +109,30 @@ export function NewWorkoutScreen(): React.JSX.Element {
       return;
     }
     try {
-      if (builder.isSingleStrength) {
-        await addWorkout.mutateAsync({
-          name: builder.name.trim(),
-          sets: builder.blocks[0]!.order.map((slotId, i) => {
-            const s = builder.blocks[0]!.selected[slotId]!;
+      // Always a circuit-shaped workout (even a plain single strength block)
+      // so every newly created session — not just AMRAP/EMOM circuits — is
+      // immediately eligible for the live runner (WorkoutDetailScreen's
+      // "Commencer" button and CircuitRunnerScreen both require at least one
+      // workout_blocks row).
+      await addCircuitWorkout.mutateAsync({
+        name: builder.name.trim(),
+        blocks: builder.blocks.map((b) => ({
+          format: b.format,
+          timeCapSec: b.format === 'amrap' ? (Number(b.timeCapSec) || 0) * 60 || undefined : b.format === 'emom' ? Number(b.timeCapSec) || undefined : undefined,
+          targetRounds: b.format === 'emom' || b.format === 'for_time' || b.format === 'strength' ? Number(b.targetRounds) || undefined : undefined,
+          sets: b.order.map((slotId, i) => {
+            const s = b.selected[slotId]!;
             return {
               exerciseId: s.exerciseId,
               order: i,
               reps: s.reps ? Number(s.reps) : undefined,
               weightKg: s.weight ? Number(s.weight) : undefined,
-              restSec: s.rest ? Number(s.rest) : undefined,
+              restSec: b.format === 'strength' && s.rest ? Number(s.rest) : undefined,
+              supersetGroup: b.supersetGroups[slotId],
             };
           }),
-        });
-      } else {
-        await addCircuitWorkout.mutateAsync({
-          name: builder.name.trim(),
-          blocks: builder.blocks.map((b) => ({
-            format: b.format,
-            timeCapSec: b.format === 'amrap' ? (Number(b.timeCapSec) || 0) * 60 || undefined : b.format === 'emom' ? Number(b.timeCapSec) || undefined : undefined,
-            targetRounds: b.format === 'emom' || b.format === 'for_time' || b.format === 'strength' ? Number(b.targetRounds) || undefined : undefined,
-            sets: b.order.map((slotId, i) => {
-              const s = b.selected[slotId]!;
-              return {
-                exerciseId: s.exerciseId,
-                order: i,
-                reps: s.reps ? Number(s.reps) : undefined,
-                weightKg: s.weight ? Number(s.weight) : undefined,
-                restSec: b.format === 'strength' && s.rest ? Number(s.rest) : undefined,
-                supersetGroup: b.supersetGroups[slotId],
-              };
-            }),
-          })),
-        });
-      }
+        })),
+      });
       if (addToLibrary && !atQuota) {
         await addUserSession.mutateAsync({
           name: builder.name.trim(),

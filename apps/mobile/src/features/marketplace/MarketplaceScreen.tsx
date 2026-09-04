@@ -129,7 +129,9 @@ export function MarketplaceScreen(): React.JSX.Element {
     setLaunchError(null);
     try {
       const workout = await launchSession.mutateAsync(session);
-      router.push({ pathname: '/sport/workout/[id]', params: { id: workout.id } });
+      // Straight into the live runner — launching a session means "I'm
+      // about to do this now", not "show me its summary page".
+      router.push({ pathname: '/sport/workout/[id]/run', params: { id: workout.id } });
     } catch (e) {
       setLaunchError(e instanceof Error ? e.message : 'Lancement impossible.');
     }
