@@ -484,6 +484,16 @@ export function useSessionExercises(sessionId: string | undefined) {
   });
 }
 
+export function useSessionBlocks(sessionId: string | undefined) {
+  const { user } = useAuth();
+  const repo = useRepository();
+  return useQuery({
+    queryKey: ['sessionBlocks', sessionId],
+    enabled: !!user && !!sessionId,
+    queryFn: () => repo.getSessionBlocks(user!.id, sessionId!),
+  });
+}
+
 export function useAddUserSession() {
   const { user } = useAuth();
   const repo = useRepository();
@@ -659,27 +669,50 @@ export function useLaunchSession() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (session: { id: string; name: string }) => {
-      const exercises = await repo.getSessionExercises(session.id);
-      // A single 'strength' block (not a blockless workout) so the launched
+      const [blocks, exercises] = await Promise.all([
+        repo.getSessionBlocks(user!.id, session.id),
+        repo.getSessionExercises(session.id),
+      ]);
+      // Real blocks when the library saved them (post block-support saves);
+      // a legacy flat session (saved before this, block_id always null) falls
+      // back to exactly the previous behavior — one synthetic 'strength'
+      // block, so it's still eligible for the live runner even without a
+      // remembered format.
+      const workoutBlocks =
+        blocks.length > 0
+          ? blocks.map((b) => ({
+              format: b.format,
+              timeCapSec: b.timeCapSec,
+              targetRounds: b.targetRounds,
+              sets: exercises
+                .filter((e) => e.blockId === b.id)
+                .map((e) => ({
+                  exerciseId: e.exerciseId,
+                  order: e.order,
+                  reps: e.reps,
+                  weightKg: e.weightKg,
+                  durationSec: e.durationSec,
+                  restSec: e.restSec,
+                })),
+            }))
+          : [
+              {
+                format: 'strength' as const,
+                sets: exercises.map((e, i) => ({
+                  exerciseId: e.exerciseId,
+                  order: e.order ?? i,
+                  reps: e.reps,
+                  weightKg: e.weightKg,
+                  durationSec: e.durationSec,
+                  restSec: e.restSec,
+                })),
+              },
+            ];
+      // A single or multi-block workout (never blockless) so the launched
       // session is immediately eligible for the live runner — WorkoutDetailScreen's
       // "Commencer" button, and CircuitRunnerScreen itself, both require at
       // least one workout_blocks row.
-      return repo.addCircuitWorkout(user!.id, {
-        name: session.name,
-        blocks: [
-          {
-            format: 'strength',
-            sets: exercises.map((e, i) => ({
-              exerciseId: e.exerciseId,
-              order: e.order ?? i,
-              reps: e.reps,
-              weightKg: e.weightKg,
-              durationSec: e.durationSec,
-              restSec: e.restSec,
-            })),
-          },
-        ],
-      });
+      return repo.addCircuitWorkout(user!.id, { name: session.name, blocks: workoutBlocks });
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['workouts', user?.id] });
@@ -973,7 +1006,31 @@ export function useReprogramWorkout() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (input: { workoutId: string; name: string; notes?: string; plannedFor: string }) => {
-      const sets = await repo.getWorkoutSets(user!.id, input.workoutId);
+      const [blocks, sets] = await Promise.all([
+        repo.getWorkoutBlocks(user!.id, input.workoutId),
+        repo.getWorkoutSets(user!.id, input.workoutId),
+      ]);
+      if (blocks.length > 0) {
+        return repo.addPlannedWorkout(user!.id, {
+          name: input.name,
+          plannedFor: input.plannedFor,
+          notes: input.notes,
+          blocks: blocks.map((b) => ({
+            format: b.format,
+            timeCapSec: b.timeCapSec,
+            targetRounds: b.targetRounds,
+            sets: sets
+              .filter((s) => s.blockId === b.id)
+              .map(({ exerciseId, order, reps, weightKg, restSec }) => ({
+                exerciseId,
+                order,
+                reps,
+                weightKg,
+                restSec,
+              })),
+          })),
+        });
+      }
       return repo.addPlannedWorkout(user!.id, {
         name: input.name,
         plannedFor: input.plannedFor,
@@ -1002,7 +1059,32 @@ export function usePlanUserSession() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (input: { sessionId: string; name: string; plannedFor: string; notes?: string }) => {
-      const exercises = await repo.getSessionExercises(input.sessionId);
+      const [blocks, exercises] = await Promise.all([
+        repo.getSessionBlocks(user!.id, input.sessionId),
+        repo.getSessionExercises(input.sessionId),
+      ]);
+      if (blocks.length > 0) {
+        return repo.addPlannedWorkout(user!.id, {
+          name: input.name,
+          plannedFor: input.plannedFor,
+          notes: input.notes,
+          blocks: blocks.map((b) => ({
+            format: b.format,
+            timeCapSec: b.timeCapSec,
+            targetRounds: b.targetRounds,
+            sets: exercises
+              .filter((e) => e.blockId === b.id)
+              .map((e) => ({
+                exerciseId: e.exerciseId,
+                order: e.order,
+                reps: e.reps,
+                weightKg: e.weightKg,
+                durationSec: e.durationSec,
+                restSec: e.restSec,
+              })),
+          })),
+        });
+      }
       return repo.addPlannedWorkout(user!.id, {
         name: input.name,
         plannedFor: input.plannedFor,
