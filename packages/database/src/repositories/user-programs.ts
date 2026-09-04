@@ -5,6 +5,8 @@ export type UserSessionRow = Database['public']['Tables']['user_sessions']['Row'
 export type UserSessionInsertRow = Database['public']['Tables']['user_sessions']['Insert'];
 export type UserSessionExerciseRow = Database['public']['Tables']['user_session_exercises']['Row'];
 export type UserSessionExerciseInsertRow = Database['public']['Tables']['user_session_exercises']['Insert'];
+export type UserSessionBlockRow = Database['public']['Tables']['user_session_blocks']['Row'];
+export type UserSessionBlockInsertRow = Database['public']['Tables']['user_session_blocks']['Insert'];
 export type UserProgramRow = Database['public']['Tables']['user_programs']['Row'];
 export type UserProgramInsertRow = Database['public']['Tables']['user_programs']['Insert'];
 export type UserProgramSessionRow = Database['public']['Tables']['user_program_sessions']['Row'];
@@ -53,20 +55,57 @@ export async function listSessionExercises(
   return data ?? [];
 }
 
-/** Insert a session and its exercises; the quota trigger rejects past the 50 limit. */
+/** A session's blocks, in order — empty for a session saved before block support existed. */
+export async function listSessionBlocks(
+  client: SupotsuClient,
+  sessionId: string,
+): Promise<UserSessionBlockRow[]> {
+  const { data, error } = await client
+    .from('user_session_blocks')
+    .select('*')
+    .eq('session_id', sessionId)
+    .order('order', { ascending: true });
+  if (error) throw error;
+  return data ?? [];
+}
+
+/** Insert a session made of one or more blocks; the quota trigger rejects past the 50 limit. */
 export async function insertUserSession(
   client: SupotsuClient,
   input: UserSessionInsertRow,
-  exercises: Omit<UserSessionExerciseInsertRow, 'session_id'>[],
+  blocks: {
+    format: UserSessionBlockRow['format'];
+    timeCapSec?: number;
+    targetRounds?: number;
+    exercises: Omit<UserSessionExerciseInsertRow, 'session_id' | 'block_id'>[];
+  }[],
 ): Promise<UserSessionRow> {
   const { data, error } = await client.from('user_sessions').insert(input).select('*').single();
   if (error) throw error;
-  if (exercises.length > 0) {
-    const { error: exError } = await client
-      .from('user_session_exercises')
-      .insert(exercises.map((e) => ({ ...e, session_id: data.id })));
-    if (exError) throw exError;
+
+  for (let i = 0; i < blocks.length; i++) {
+    const b = blocks[i]!;
+    const { data: blockRow, error: blockError } = await client
+      .from('user_session_blocks')
+      .insert({
+        session_id: data.id,
+        order: i,
+        format: b.format,
+        time_cap_sec: b.timeCapSec ?? null,
+        target_rounds: b.targetRounds ?? null,
+      })
+      .select('*')
+      .single();
+    if (blockError) throw blockError;
+
+    if (b.exercises.length > 0) {
+      const { error: exError } = await client
+        .from('user_session_exercises')
+        .insert(b.exercises.map((e) => ({ ...e, session_id: data.id, block_id: blockRow.id })));
+      if (exError) throw exError;
+    }
   }
+
   return data;
 }
 

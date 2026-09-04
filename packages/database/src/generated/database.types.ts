@@ -562,6 +562,7 @@ export interface Database {
         Row: {
           id: string;
           session_id: string;
+          block_id: string | null;
           exercise_id: string;
           order: number;
           reps: number | null;
@@ -571,6 +572,7 @@ export interface Database {
         };
         Insert: {
           session_id: string;
+          block_id?: string | null;
           exercise_id: string;
           order?: number;
           reps?: number | null;
@@ -579,6 +581,25 @@ export interface Database {
           rest_sec?: number | null;
         };
         Update: Partial<Database['public']['Tables']['user_session_exercises']['Insert']>;
+        Relationships: [];
+      };
+      user_session_blocks: {
+        Row: {
+          id: string;
+          session_id: string;
+          order: number;
+          format: 'strength' | 'amrap' | 'emom' | 'for_time';
+          time_cap_sec: number | null;
+          target_rounds: number | null;
+        };
+        Insert: {
+          session_id: string;
+          order?: number;
+          format: 'strength' | 'amrap' | 'emom' | 'for_time';
+          time_cap_sec?: number | null;
+          target_rounds?: number | null;
+        };
+        Update: Partial<Database['public']['Tables']['user_session_blocks']['Insert']>;
         Relationships: [];
       };
       user_programs: {
