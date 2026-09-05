@@ -798,6 +798,11 @@ interface LoggedSetRow {
   weightKg: number | null;
   restSec?: number | null;
   supersetGroup?: number | null;
+  plannedReps?: number | null;
+  plannedWeightKg?: number | null;
+  rir?: number | null;
+  isWarmup?: boolean;
+  completedAt?: string | null;
 }
 
 /** For each exercise, the sets of the most recent workout that contains it. */
@@ -2656,6 +2661,9 @@ function createSupabaseRepository(
           weight_kg: s.weightKg ?? null,
           rest_sec: s.restSec ?? null,
           rpe: s.rpe ?? null,
+          planned_reps: s.reps ?? null,
+          planned_weight_kg: s.weightKg ?? null,
+          is_warmup: s.isWarmup ?? false,
         })),
       );
       return rowToWorkout(row);
@@ -2684,6 +2692,9 @@ function createSupabaseRepository(
                 reps: s.reps ?? null,
                 weight_kg: s.weightKg ?? null,
                 rest_sec: s.restSec ?? null,
+                planned_reps: s.reps ?? null,
+                planned_weight_kg: s.weightKg ?? null,
+                is_warmup: s.isWarmup ?? false,
               })),
             })),
           )
@@ -2704,6 +2715,9 @@ function createSupabaseRepository(
               weight_kg: s.weightKg ?? null,
               rest_sec: s.restSec ?? null,
               rpe: s.rpe ?? null,
+              planned_reps: s.reps ?? null,
+              planned_weight_kg: s.weightKg ?? null,
+              is_warmup: s.isWarmup ?? false,
             })),
           )
         : await insertPlannedWorkout(client, {
@@ -2738,6 +2752,11 @@ function createSupabaseRepository(
         restSec: r.rest_sec ?? undefined,
         rpe: r.rpe ?? undefined,
         supersetGroup: r.superset_group ?? undefined,
+        plannedReps: r.planned_reps ?? undefined,
+        plannedWeightKg: r.planned_weight_kg ?? undefined,
+        rir: r.rir ?? undefined,
+        isWarmup: r.is_warmup ?? undefined,
+        completedAt: r.completed_at ?? undefined,
       }));
     },
     async addCircuitWorkout(userId, workout) {
@@ -2756,6 +2775,9 @@ function createSupabaseRepository(
             duration_sec: s.durationSec ?? null,
             rest_sec: s.restSec ?? null,
             superset_group: s.supersetGroup ?? null,
+            planned_reps: s.reps ?? null,
+            planned_weight_kg: s.weightKg ?? null,
+            is_warmup: s.isWarmup ?? false,
           })),
         })),
       );
@@ -2778,6 +2800,11 @@ function createSupabaseRepository(
         restSec: r.rest_sec ?? undefined,
         rpe: r.rpe ?? undefined,
         supersetGroup: r.superset_group ?? undefined,
+        plannedReps: r.planned_reps ?? undefined,
+        plannedWeightKg: r.planned_weight_kg ?? undefined,
+        rir: r.rir ?? undefined,
+        isWarmup: r.is_warmup ?? undefined,
+        completedAt: r.completed_at ?? undefined,
       }));
     },
     async completeBlock(_userId, blockId, result) {
@@ -2788,7 +2815,7 @@ function createSupabaseRepository(
       await replaceWorkoutSetsDb(
         client,
         workoutId,
-        patch.sets.map((s) => ({ exercise_id: s.exerciseId, order: s.order, reps: s.reps ?? null, weight_kg: s.weightKg ?? null, rest_sec: s.restSec ?? null })),
+        patch.sets.map((s) => ({ exercise_id: s.exerciseId, order: s.order, reps: s.reps ?? null, weight_kg: s.weightKg ?? null, rest_sec: s.restSec ?? null, planned_reps: s.reps ?? null, planned_weight_kg: s.weightKg ?? null, is_warmup: s.isWarmup ?? false })),
       );
     },
     async editCircuitWorkout(_userId, workoutId, patch) {
@@ -2808,6 +2835,9 @@ function createSupabaseRepository(
             duration_sec: s.durationSec ?? null,
             rest_sec: s.restSec ?? null,
             superset_group: s.supersetGroup ?? null,
+            planned_reps: s.reps ?? null,
+            planned_weight_kg: s.weightKg ?? null,
+            is_warmup: s.isWarmup ?? false,
           })),
         })),
       );

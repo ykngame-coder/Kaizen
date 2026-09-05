@@ -10,6 +10,8 @@ export interface SetDraft {
   reps: string;
   weight: string;
   rest: string;
+  /** Warm-up slot: kept out of volume and records. Set by the runner's auto-ramp (lot 2) or by hand. */
+  isWarmup?: boolean;
 }
 
 export interface BlockDraft {
