@@ -18,6 +18,7 @@ export * from './progression';
 export * from './analytics';
 export * from './load';
 export * from './plates';
+export * from './warmup';
 export * from './dataquality';
 export * from './training';
 export * from './recommendation';
