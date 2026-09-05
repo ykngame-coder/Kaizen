@@ -15,10 +15,20 @@ export interface ProgressionOptions {
   incrementKg?: number;
 }
 
+/**
+ * Pourquoi cette suggestion — donnée structurée, pas une phrase. Le moteur
+ * reste sans langue : c'est l'app qui traduit chaque `kind` avec ses
+ * paramètres (clés sport.progression.rationale.*).
+ */
+export type ProgressionRationale =
+  | { kind: 'addRep'; reps: number }
+  | { kind: 'increaseLoad'; fromWeightKg: number; toWeightKg: number; highReps: number; lowReps: number }
+  | { kind: 'addRepSameLoad'; reps: number; weightKg: number };
+
 export interface ProgressionSuggestion {
   weightKg?: number;
   reps?: number;
-  rationale: string;
+  rationale: ProgressionRationale;
 }
 
 /** The heaviest working set of a session (ties broken by most reps). */
@@ -47,7 +57,7 @@ export function suggestProgression(
       .filter((s) => s.reps !== undefined)
       .reduce<number | undefined>((m, s) => (m === undefined ? s.reps : Math.max(m, s.reps!)), undefined);
     if (bestReps === undefined) return undefined;
-    return { reps: bestReps + 1, rationale: `Ajoute une répétition (${bestReps + 1}) par rapport à ta dernière séance.` };
+    return { reps: bestReps + 1, rationale: { kind: 'addRep', reps: bestReps + 1 } };
   }
 
   if (top.reps! >= high) {
@@ -55,12 +65,18 @@ export function suggestProgression(
     return {
       weightKg,
       reps: low,
-      rationale: `Tu as atteint ${high} reps à ${top.weightKg} kg — passe à ${weightKg} kg pour ${low} reps.`,
+      rationale: {
+        kind: 'increaseLoad',
+        fromWeightKg: top.weightKg!,
+        toWeightKg: weightKg,
+        highReps: high,
+        lowReps: low,
+      },
     };
   }
   return {
     weightKg: top.weightKg,
     reps: top.reps! + 1,
-    rationale: `Vise ${top.reps! + 1} reps à ${top.weightKg} kg (même charge) avant d’augmenter.`,
+    rationale: { kind: 'addRepSameLoad', reps: top.reps! + 1, weightKg: top.weightKg! },
   };
 }

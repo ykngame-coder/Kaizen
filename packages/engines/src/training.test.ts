@@ -40,3 +40,32 @@ describe('suggestProgression', () => {
     expect(suggestProgression([set(0, undefined, undefined)])).toBeUndefined();
   });
 });
+
+describe('suggestProgression — rationale structurée', () => {
+  it('addRep quand aucune charge n’est enregistrée', () => {
+    const s = suggestProgression([
+      { id: 's1', workoutId: 'w', exerciseId: 'pushup', order: 0, reps: 12 },
+    ]);
+    expect(s?.rationale).toEqual({ kind: 'addRep', reps: 13 });
+  });
+
+  it('increaseLoad une fois le haut de la fourchette atteint', () => {
+    const s = suggestProgression([
+      { id: 's1', workoutId: 'w', exerciseId: 'squat', order: 0, reps: 12, weightKg: 60 },
+    ]);
+    expect(s?.rationale).toEqual({
+      kind: 'increaseLoad',
+      fromWeightKg: 60,
+      toWeightKg: 62.5,
+      highReps: 12,
+      lowReps: 8,
+    });
+  });
+
+  it('addRepSameLoad tant que la fourchette n’est pas atteinte', () => {
+    const s = suggestProgression([
+      { id: 's1', workoutId: 'w', exerciseId: 'squat', order: 0, reps: 9, weightKg: 60 },
+    ]);
+    expect(s?.rationale).toEqual({ kind: 'addRepSameLoad', reps: 10, weightKg: 60 });
+  });
+});
