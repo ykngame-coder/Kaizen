@@ -91,4 +91,22 @@ export interface SetEntry {
   rpe?: number;
   /** Sets sharing this number, within the same block and adjacent in order, form one superset — alternated live, no rest between members. */
   supersetGroup?: number;
+  /**
+   * What was programmed, never rewritten after creation. reps/weightKg above
+   * hold the best known truth — the plan until the set is logged, the actual
+   * performance afterwards — so every existing reader stays correct and gets
+   * more accurate. Undefined for anything created before migration 0029.
+   */
+  plannedReps?: number;
+  plannedWeightKg?: number;
+  /** Reps in reserve — the alternative to rpe, picked via the effortMetric preference. */
+  rir?: number;
+  /** A warm-up set: shown while training, excluded from volume, records and adherence. */
+  isWarmup?: boolean;
+  /**
+   * When the set was ticked off in the runner. Absent means never performed —
+   * which is what separates "done exactly as planned" from "skipped", since
+   * the runner prefills every set with its planned values.
+   */
+  completedAt?: ISODateString;
 }

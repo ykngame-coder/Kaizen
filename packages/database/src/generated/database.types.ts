@@ -187,6 +187,11 @@ export interface Database {
           rpe: number | null;
           block_id: string | null;
           superset_group: number | null;
+          planned_reps: number | null;
+          planned_weight_kg: number | null;
+          rir: number | null;
+          is_warmup: boolean;
+          completed_at: string | null;
         };
         Insert: {
           workout_id: string;
@@ -199,6 +204,11 @@ export interface Database {
           rpe?: number | null;
           block_id?: string | null;
           superset_group?: number | null;
+          planned_reps?: number | null;
+          planned_weight_kg?: number | null;
+          rir?: number | null;
+          is_warmup?: boolean;
+          completed_at?: string | null;
         };
         Update: Partial<Database['public']['Tables']['workout_sets']['Insert']>;
         Relationships: [];
@@ -569,6 +579,7 @@ export interface Database {
           weight_kg: number | null;
           duration_sec: number | null;
           rest_sec: number | null;
+          is_warmup: boolean;
         };
         Insert: {
           session_id: string;
@@ -579,6 +590,7 @@ export interface Database {
           weight_kg?: number | null;
           duration_sec?: number | null;
           rest_sec?: number | null;
+          is_warmup?: boolean;
         };
         Update: Partial<Database['public']['Tables']['user_session_exercises']['Insert']>;
         Relationships: [];
