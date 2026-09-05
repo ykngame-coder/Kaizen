@@ -1,5 +1,15 @@
 # Prompt — Améliorer la création ET le suivi de séance
 
+> **Cibles visuelles** (maquettes d'intention à reproduire, dans `docs/prompts/assets/`) :
+> - `creation-suivi-seance.png` — écran de création (prefill + suggestion de surcharge,
+>   superset, ajout rapide) et suivi d'une série de force (log + repos auto, RPE, disques).
+> - `suivi-amrap.png` — suivi d'un AMRAP (chrono proéminent, tours, cadence, mouvements à cocher).
+> - `suivi-multibloc.png` — suivi d'une séance multi-blocs (échauffement → force → finisher AMRAP,
+>   fil des blocs avec bloc actif).
+> Ouvre ces images avant de commencer : elles fixent la direction visuelle (couleurs,
+> densité, hiérarchie). Reproduis l'esprit avec les composants et tokens réels de l'app,
+> pas au pixel.
+
 > Style visé : **mix Fitbod (charges suggérées, échauffements guidés) + Garmin/
 > CrossFit (blocs & timers, chrono proéminent)**. L'app a déjà : création en blocs
 > (`sessionBuilder.ts`, `SessionBlocksEditor`), formats strength/AMRAP/EMOM/for-time,
