@@ -1,14 +1,16 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Pressable, ScrollView, TextInput, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
-import { Button, Card, Text, useTheme } from '@supotsu/ui';
+import { Button, Card, ProgressRing, Text, triggerHaptic, useTheme } from '@supotsu/ui';
 import { radii, spacing } from '@supotsu/design-system';
 import type { SetEntry } from '@supotsu/core';
+import { computePlates } from '@supotsu/engines';
 import { EXERCISE_LIBRARY } from '@supotsu/shared';
 import { EXERCISES } from '@/features/exercises/catalog';
 import { useClearSetLog, useCustomExercises, useExerciseHistory, useLogSet } from '@/lib/data/queries';
 import { usePreferences } from '@/lib/preferences';
-import { buildRunProgress } from './runnerState';
+import { buildRunProgress, restRemainingSec } from './runnerState';
+import { formatClock } from './blockRunnerEngine';
 
 const EFFORT_VALUES = [7, 8, 9, 10];
 
@@ -70,6 +72,27 @@ export function StrengthRunner({ workoutId, sets, onBlockFinished }: StrengthRun
     return { weightKg: top.weightKg, reps: top.reps };
   }, [history, progress.activeExerciseId]);
 
+  // Repos : on retient l'échéance, jamais un compteur décrémenté — iOS suspend
+  // les timers en arrière-plan et un compteur prendrait du retard en silence.
+  const [restEndsAtMs, setRestEndsAtMs] = useState<number | undefined>(undefined);
+  const [restTotalSec, setRestTotalSec] = useState(0);
+  const [nowMs, setNowMs] = useState(() => Date.now());
+  const buzzedRef = useRef(false);
+
+  useEffect(() => {
+    if (restEndsAtMs === undefined) return;
+    const id = setInterval(() => setNowMs(Date.now()), 500);
+    return () => clearInterval(id);
+  }, [restEndsAtMs]);
+
+  const restLeft = restRemainingSec(restEndsAtMs, nowMs);
+
+  useEffect(() => {
+    if (restEndsAtMs === undefined || restLeft > 0 || buzzedRef.current) return;
+    buzzedRef.current = true;
+    triggerHaptic();
+  }, [restLeft, restEndsAtMs]);
+
   const validate = (): void => {
     if (!activeSet) return;
     logSet.mutate({
@@ -83,7 +106,19 @@ export function StrengthRunner({ workoutId, sets, onBlockFinished }: StrengthRun
         completedAt: new Date().toISOString(),
       },
     });
+    const restSec = activeSet.restSec ?? preferences.defaultRestSec;
+    buzzedRef.current = false;
+    setRestTotalSec(restSec);
+    setNowMs(Date.now());
+    setRestEndsAtMs(Date.now() + restSec * 1000);
   };
+
+  const plates = useMemo(() => {
+    const weight = weightDraft ? Number(weightDraft) : activeSet?.weightKg;
+    if (!weight || !Number.isFinite(weight)) return undefined;
+    const solution = computePlates(weight, preferences.barWeightKg, preferences.availablePlates);
+    return solution ? { ...solution, requestedKg: weight } : undefined;
+  }, [weightDraft, activeSet?.weightKg, preferences.barWeightKg, preferences.availablePlates]);
 
   return (
     <View style={{ flex: 1, gap: spacing[3] }}>
@@ -195,6 +230,72 @@ export function StrengthRunner({ workoutId, sets, onBlockFinished }: StrengthRun
           );
         })}
       </ScrollView>
+
+      {restEndsAtMs !== undefined && restLeft > 0 ? (
+        <Card>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing[3] }}>
+            <View style={{ alignItems: 'center', justifyContent: 'center' }}>
+              <ProgressRing
+                value={restTotalSec > 0 ? ((restTotalSec - restLeft) / restTotalSec) * 100 : 0}
+                size={72}
+              />
+              <View style={{ position: 'absolute' }}>
+                <Text variant="caption" style={{ fontWeight: '700' }}>{formatClock(restLeft)}</Text>
+              </View>
+            </View>
+            <View style={{ flex: 1 }}>
+              <Text variant="body" style={{ fontWeight: '700' }}>{t('sport.runner.resting')}</Text>
+              <Text variant="caption" color="textSubtle">{t('sport.runner.restAuto')}</Text>
+            </View>
+            <View style={{ gap: spacing[2] }}>
+              <Button
+                label={t('sport.runner.restPlus15')}
+                variant="secondary"
+                onPress={() => setRestEndsAtMs((e) => (e === undefined ? e : e + 15_000))}
+              />
+              <Button
+                label={t('sport.runner.restSkip')}
+                variant="secondary"
+                onPress={() => setRestEndsAtMs(undefined)}
+              />
+            </View>
+          </View>
+        </Card>
+      ) : null}
+
+      {/* Masquée sans charge chargeable : haltères et poids du corps n'ont pas de disques. */}
+      {plates ? (
+        <Card>
+          <View style={{ flexDirection: 'row', alignItems: 'baseline', justifyContent: 'space-between' }}>
+            <Text variant="body" style={{ fontWeight: '700' }}>
+              {t('sport.runner.plates', { weight: plates.achievedKg })}
+            </Text>
+            <Text variant="caption" color="textSubtle">
+              {t('sport.runner.platesBar', { bar: preferences.barWeightKg })}
+            </Text>
+          </View>
+          <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: spacing[2], marginTop: spacing[2] }}>
+            {plates.perSide.length === 0 ? (
+              <Text variant="caption" color="textMuted">{t('sport.runner.platesBarOnly')}</Text>
+            ) : (
+              plates.perSide.map((p) => (
+                <View
+                  key={p.plateKg}
+                  style={{ paddingHorizontal: spacing[3], paddingVertical: spacing[1], borderRadius: radii.full, backgroundColor: colors.surfaceElevated, borderWidth: 1, borderColor: colors.border }}
+                >
+                  <Text variant="caption">{p.count > 1 ? `${p.plateKg} × ${p.count}` : `${p.plateKg}`}</Text>
+                </View>
+              ))
+            )}
+          </View>
+          {/* La cible n'est pas toujours chargeable avec les disques déclarés : le dire. */}
+          {Math.abs(plates.achievedKg - plates.requestedKg) > 0.01 ? (
+            <Text variant="caption" color="warning" style={{ marginTop: spacing[2] }}>
+              {t('sport.runner.platesApprox', { requested: plates.requestedKg, achieved: plates.achievedKg })}
+            </Text>
+          ) : null}
+        </Card>
+      ) : null}
 
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing[3] }}>
         {progress.nextExerciseId ? (
