@@ -6,6 +6,8 @@
 > - `suivi-amrap.png` — suivi d'un AMRAP (chrono proéminent, tours, cadence, mouvements à cocher).
 > - `suivi-multibloc.png` — suivi d'une séance multi-blocs (échauffement → force → finisher AMRAP,
 >   fil des blocs avec bloc actif).
+> - `suivi-emom.png` — suivi EMOM (décompte de la minute en cours + tâche du top + bande des minutes).
+> - `suivi-fortime.png` — suivi For Time (chrono qui monte + schéma 21-15-9 + rounds à cocher).
 > Ouvre ces images avant de commencer : elles fixent la direction visuelle (couleurs,
 > densité, hiérarchie). Reproduis l'esprit avec les composants et tokens réels de l'app,
 > pas au pixel.
