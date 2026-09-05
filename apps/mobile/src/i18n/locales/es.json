@@ -1572,7 +1572,26 @@
    "adherence": "{{percent}} % del plan",
    "toggleSetA11y": "Serie {{n}}",
    "repsA11y": "Repeticiones",
-   "weightA11y": "Peso en kilos"
+   "weightA11y": "Peso en kilos",
+   "remaining": "Restante",
+   "elapsed": "Tiempo transcurrido",
+   "roundsDone": "{{done}} rondas",
+   "cadence": "Ritmo {{sec}} s/ronda",
+   "roundDone": "Ronda terminada",
+   "roundCounter": "Ronda {{current}} / {{total}}",
+   "target": "objetivo < {{time}}",
+   "minuteCounter": "Minuto {{current}} / {{total}}",
+   "beforeNextMinute": "hasta el próximo minuto",
+   "thisMinute": "Este minuto",
+   "minuteDone": "Minuto hecho",
+   "restUntilMinute": "¿Listo? descansa hasta el minuto {{next}}",
+   "pause": "Pausa",
+   "resumeClock": "Reanudar",
+   "blockDone": "terminado",
+   "blockInProgress": "en curso",
+   "blockUpcoming": "próximo",
+   "continueBlock": "Continuar",
+   "skipBlock": "Pasar al siguiente bloque"
   }
  },
  "sommeil": {
