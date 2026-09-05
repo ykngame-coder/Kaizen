@@ -5,6 +5,8 @@ import { secureStorage } from '@/lib/secure-storage';
 
 export type UnitSystem = 'metric' | 'imperial';
 export type TimeFormat = '24h' | '12h';
+/** Comment l'effort d'une série se saisit dans le runner : RPE (1-10) ou reps en réserve. */
+export type EffortMetric = 'rpe' | 'rir';
 export type { LanguagePreference } from '@/i18n';
 
 /** Réveil intelligent, stored locally (Master Prompt : 100% offline). Rings only reliably while the app is open — see SleepTrackingScreen / AlarmSettingsScreen. */
@@ -80,6 +82,14 @@ export interface Preferences {
   sleepAlarm?: SleepAlarmSettings;
   /** 'auto' follows the phone's language (expo-localization); otherwise a specific choice. */
   language: LanguagePreference;
+  /** Effort scale used per set while training. */
+  effortMetric: EffortMetric;
+  /** Barbell weight, for the runner's plate calculator. */
+  barWeightKg: number;
+  /** Plates the user owns (kg, one side), heaviest first. */
+  availablePlates: number[];
+  /** Rest used when a set carries none — replaces the hardcoded 90 s in the runner. */
+  defaultRestSec: number;
 }
 
 const DEFAULTS: Preferences = {
@@ -92,6 +102,10 @@ const DEFAULTS: Preferences = {
   biometricLock: false,
   dailyStepsGoal: 10_000,
   language: 'auto',
+  effortMetric: 'rpe',
+  barWeightKg: 20,
+  availablePlates: [25, 20, 15, 10, 5, 2.5, 1.25],
+  defaultRestSec: 90,
 };
 
 const STORAGE_KEY = 'supotsu.preferences';
