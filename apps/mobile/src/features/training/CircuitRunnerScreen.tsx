@@ -9,8 +9,12 @@ import { EXERCISES } from '@/features/exercises/catalog';
 import { activateKeepAwakeAsync, deactivateKeepAwake } from 'expo-keep-awake';
 import { useSetWorkoutStatus, useWorkoutBlocks, useBlockSets, useCompleteBlock, useCustomExercises, useWorkouts } from '@/lib/data/queries';
 import { clearRunState, loadRunState, saveRunState } from './runStore';
-import { computeAmrapState, computeEmomState, computeForTimeState, formatClock, supersetPartners } from './blockRunnerEngine';
+import { formatClock, supersetPartners } from './blockRunnerEngine';
 import { StrengthRunner } from './StrengthRunner';
+import { AmrapRunner } from './AmrapRunner';
+import { EmomRunner } from './EmomRunner';
+import { ForTimeRunner } from './ForTimeRunner';
+import { BlockTimeline } from './BlockTimeline';
 
 const FORMAT_COLOR_KEY: Record<string, 'accentStrength' | 'accentEndurance' | 'accentLime'> = {
   amrap: 'accentStrength',
@@ -71,38 +75,20 @@ export function CircuitRunnerScreen(): React.JSX.Element {
   }, [id, workouts.length]);
 
   const [activeIndex, setActiveIndex] = useState(0);
-  const [elapsedSec, setElapsedSec] = useState(0);
   const [roundsCompleted, setRoundsCompleted] = useState(0);
   const [stepIndex, setStepIndex] = useState(0);
   const [restCountdown, setRestCountdown] = useState<number | null>(null);
+  const [showTimeline, setShowTimeline] = useState(true);
   const tick = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const active = blocks[activeIndex];
   const { data: sets = [] } = useBlockSets(active?.id);
 
   useEffect(() => {
-    setElapsedSec(0);
     setRoundsCompleted(0);
     setStepIndex(0);
     setRestCountdown(null);
   }, [activeIndex]);
-
-  useEffect(() => {
-    if (!active || active.format === 'strength') return;
-    tick.current = setInterval(() => setElapsedSec((s) => s + 1), 1000);
-    return () => {
-      if (tick.current) clearInterval(tick.current);
-    };
-  }, [active?.id, active?.format]);
-
-  const state =
-    active?.format === 'amrap'
-      ? computeAmrapState(elapsedSec, active.timeCapSec ?? 0, roundsCompleted)
-      : active?.format === 'emom'
-        ? computeEmomState(elapsedSec, active.timeCapSec ?? 60, active.targetRounds ?? 1)
-        : active?.format === 'for_time'
-          ? computeForTimeState(elapsedSec, roundsCompleted, active.targetRounds ?? 1)
-          : null;
 
   // A "Musculation" block can optionally repeat as a circuit — no timer
   // (strength has none), just a manual round counter like Pour le temps.
@@ -113,7 +99,9 @@ export function CircuitRunnerScreen(): React.JSX.Element {
   // at once — rounds still come from the same targetRounds/roundsCompleted
   // state the plain repeat feature already maintains.
   const hasSuperset = active?.format === 'strength' && sets.some((s) => s.supersetGroup != null);
-  const isFinished = state?.isFinished || ((isRepeatingStrength || hasSuperset) && roundsCompleted >= (repeatRounds ?? 1));
+  // Les formats chronométrés signalent leur propre fin (onFinished) : ici il ne
+  // reste que la musculation répétée et les supersets, comptés à la main.
+  const isFinished = (isRepeatingStrength || hasSuperset) && roundsCompleted >= (repeatRounds ?? 1);
 
   useEffect(() => {
     if (restCountdown == null || restCountdown <= 0) return;
@@ -140,31 +128,51 @@ export function CircuitRunnerScreen(): React.JSX.Element {
     }
   };
 
-  const finishActiveBlock = async (): Promise<void> => {
+  /** Passe au bloc suivant, ou termine la séance si c'était le dernier. */
+  const advanceOrFinish = async (): Promise<void> => {
     if (!active) return;
-    if (tick.current) clearInterval(tick.current);
-    if (active.format !== 'strength' || isRepeatingStrength) {
-      await completeBlock.mutateAsync({
-        blockId: active.id,
-        workoutId: active.workoutId,
-        completedRounds: active.format === 'emom' ? active.targetRounds : roundsCompleted,
-        resultTimeSec:
-          active.format === 'for_time'
-            ? elapsedSec
-            : active.format === 'amrap'
-              ? (active.timeCapSec ?? 0)
-              : active.format === 'emom'
-                ? (active.timeCapSec ?? 0) * (active.targetRounds ?? 0)
-                : undefined,
-      });
-    }
     if (activeIndex + 1 < blocks.length) {
       setActiveIndex(activeIndex + 1);
+      // Retour au fil : on voit ce qui vient d'être bouclé et ce qui reste.
+      setShowTimeline(true);
     } else {
       await setWorkoutStatus.mutateAsync({ workoutId: active.workoutId, status: 'completed', completedAt: new Date().toISOString() });
       await clearRunState(active.workoutId);
       router.replace({ pathname: '/sport/workout/[id]', params: { id: active.workoutId } });
     }
+  };
+
+  /**
+   * Fin d'un bloc chronométré : les tours et le temps viennent de l'écran de
+   * format, qui porte désormais sa propre horloge — plus d'état de chrono ici.
+   */
+  const finishTimedBlock = async (roundsDone: number, elapsed?: number): Promise<void> => {
+    if (!active) return;
+    await completeBlock.mutateAsync({
+      blockId: active.id,
+      workoutId: active.workoutId,
+      completedRounds: roundsDone,
+      resultTimeSec:
+        active.format === 'for_time'
+          ? elapsed
+          : active.format === 'amrap'
+            ? (active.timeCapSec ?? 0)
+            : (active.timeCapSec ?? 0) * (active.targetRounds ?? 0),
+    });
+    await advanceOrFinish();
+  };
+
+  const finishActiveBlock = async (): Promise<void> => {
+    if (!active) return;
+    if (tick.current) clearInterval(tick.current);
+    if (isRepeatingStrength) {
+      await completeBlock.mutateAsync({
+        blockId: active.id,
+        workoutId: active.workoutId,
+        completedRounds: roundsCompleted,
+      });
+    }
+    await advanceOrFinish();
   };
 
   useEffect(() => {
@@ -197,6 +205,22 @@ export function CircuitRunnerScreen(): React.JSX.Element {
 
   const colorKey = FORMAT_COLOR_KEY[active.format];
   const accent = colorKey ? colors[colorKey] : colors.primary;
+
+  // Vue d'ensemble entre les blocs, seulement au-delà d'un bloc : pour un bloc
+  // unique elle n'ajouterait qu'une étape sans information.
+  if (blocks.length > 1 && showTimeline) {
+    return (
+      <Screen style={{ flex: 1 }}>
+        <BlockTimeline
+          workoutName={workouts.find((w) => w.id === id)?.name ?? ''}
+          blocks={blocks}
+          activeIndex={activeIndex}
+          onContinue={() => setShowTimeline(false)}
+          onSkip={() => void advanceOrFinish()}
+        />
+      </Screen>
+    );
+  }
 
   return (
     <Screen style={{ flex: 1 }}>
@@ -268,37 +292,12 @@ export function CircuitRunnerScreen(): React.JSX.Element {
             </View>
           </View>
         )
+      ) : active.format === 'amrap' ? (
+        <AmrapRunner block={active} sets={sets} onFinished={(r) => void finishTimedBlock(r)} />
+      ) : active.format === 'emom' ? (
+        <EmomRunner block={active} sets={sets} onFinished={(r) => void finishTimedBlock(r)} />
       ) : (
-        <View style={{ flex: 1, gap: spacing[4] }}>
-          <View style={{ alignItems: 'center', gap: spacing[3] }}>
-            <Text variant="caption" color="textSubtle">
-              {active.format === 'emom'
-                ? t('sport.circuitRunner.interval', { current: state!.currentRound, total: active.targetRounds })
-                : t('sport.circuitRunner.round', { current: state!.currentRound })}
-            </Text>
-            <View style={{ width: 224, height: 224, borderRadius: radii.full, borderWidth: 3, borderColor: accent, backgroundColor: `${accent}22`, alignItems: 'center', justifyContent: 'center' }}>
-              <Text variant="display">{formatClock(state!.displaySec)}</Text>
-            </View>
-          </View>
-          <ScrollView style={{ flex: 1 }} contentContainerStyle={{ gap: spacing[2] }}>
-            {sets.map((s) => (
-              <Card key={s.id}>
-                <Text variant="body" style={{ fontWeight: '700' }}>{exerciseName(s.exerciseId)}</Text>
-                <Text variant="caption" color="textSubtle">
-                  {s.reps != null
-                    ? t('sport.circuitRunner.reps', { reps: s.reps })
-                    : s.durationSec != null
-                      ? t('sport.circuitRunner.durationSec', { sec: s.durationSec })
-                      : '—'}
-                </Text>
-              </Card>
-            ))}
-          </ScrollView>
-          <View style={{ flexDirection: 'row', gap: spacing[3] }}>
-            <Button label={t('sport.circuitRunner.stop')} variant="secondary" onPress={() => router.back()} />
-            {active.format !== 'emom' ? <Button label={t('sport.circuitRunner.roundDone')} onPress={() => setRoundsCompleted((r) => r + 1)} /> : null}
-          </View>
-        </View>
+        <ForTimeRunner block={active} sets={sets} onFinished={(r, e) => void finishTimedBlock(r, e)} />
       )}
     </Screen>
   );
