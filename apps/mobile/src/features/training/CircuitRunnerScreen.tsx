@@ -8,6 +8,7 @@ import { EXERCISE_LIBRARY } from '@supotsu/shared';
 import { EXERCISES } from '@/features/exercises/catalog';
 import { useSetWorkoutStatus, useWorkoutBlocks, useBlockSets, useCompleteBlock, useCustomExercises } from '@/lib/data/queries';
 import { computeAmrapState, computeEmomState, computeForTimeState, formatClock, supersetPartners } from './blockRunnerEngine';
+import { StrengthRunner } from './StrengthRunner';
 
 const FORMAT_COLOR_KEY: Record<string, 'accentStrength' | 'accentEndurance' | 'accentLime'> = {
   amrap: 'accentStrength',
@@ -176,19 +177,7 @@ export function CircuitRunnerScreen(): React.JSX.Element {
       </View>
 
       {active.format === 'strength' && !isRepeatingStrength && !hasSuperset ? (
-        <View style={{ flex: 1, gap: spacing[3] }}>
-          <ScrollView style={{ flex: 1 }} contentContainerStyle={{ gap: spacing[2] }}>
-            {sets.map((s) => (
-              <Card key={s.id}>
-                <Text variant="body" style={{ fontWeight: '700' }}>{exerciseName(s.exerciseId)}</Text>
-                <Text variant="caption" color="textSubtle">
-                  {s.reps != null ? t('sport.circuitRunner.reps', { reps: s.reps }) : '—'}{s.weightKg != null ? t('sport.circuitRunner.weightSuffix', { weight: s.weightKg }) : ''}
-                </Text>
-              </Card>
-            ))}
-          </ScrollView>
-          <Button label={t('sport.circuitRunner.nextBlock')} onPress={() => void finishActiveBlock()} />
-        </View>
+        <StrengthRunner workoutId={active.workoutId} sets={sets} onBlockFinished={() => void finishActiveBlock()} />
       ) : active.format === 'strength' && isRepeatingStrength && !hasSuperset ? (
         <View style={{ flex: 1, gap: spacing[4] }}>
           <View style={{ alignItems: 'center', gap: spacing[3] }}>
