@@ -344,3 +344,78 @@ export async function replaceWorkoutBlocks(
     }
   }
 }
+
+/** What the user actually did on one set. Never touches planned_reps/planned_weight_kg. */
+export interface SetLogPatch {
+  reps?: number;
+  weightKg?: number;
+  rpe?: number;
+  rir?: number;
+  completedAt: string;
+}
+
+/** Record a performed set. RLS scopes the update to the owner through the parent workout. */
+export async function updateSetLog(
+  client: SupotsuClient,
+  setId: string,
+  done: SetLogPatch,
+): Promise<WorkoutSetRow> {
+  const { data, error } = await client
+    .from('workout_sets')
+    .update({
+      reps: done.reps ?? null,
+      weight_kg: done.weightKg ?? null,
+      rpe: done.rpe ?? null,
+      rir: done.rir ?? null,
+      completed_at: done.completedAt,
+    })
+    .eq('id', setId)
+    .select('*')
+    .single();
+  if (error) throw error;
+  return data;
+}
+
+/**
+ * Undo a set's log — the user unticked it. reps/weight_kg go back to the
+ * planned values rather than null, so the row keeps showing what is still to
+ * be done; planned_* was never modified, so nothing is lost either way.
+ */
+export async function clearSetLog(client: SupotsuClient, setId: string): Promise<WorkoutSetRow> {
+  const { data: current, error: readError } = await client
+    .from('workout_sets')
+    .select('*')
+    .eq('id', setId)
+    .single();
+  if (readError) throw readError;
+
+  const { data, error } = await client
+    .from('workout_sets')
+    .update({
+      reps: current.planned_reps ?? current.reps,
+      weight_kg: current.planned_weight_kg ?? current.weight_kg,
+      rpe: null,
+      rir: null,
+      completed_at: null,
+    })
+    .eq('id', setId)
+    .select('*')
+    .single();
+  if (error) throw error;
+  return data;
+}
+
+/** Append sets to an existing workout (the runner's warm-up ramp). */
+export async function insertWorkoutSets(
+  client: SupotsuClient,
+  workoutId: string,
+  sets: Omit<WorkoutSetInsertRow, 'workout_id'>[],
+): Promise<WorkoutSetRow[]> {
+  if (sets.length === 0) return [];
+  const { data, error } = await client
+    .from('workout_sets')
+    .insert(sets.map((s) => ({ ...s, workout_id: workoutId })))
+    .select('*');
+  if (error) throw error;
+  return data;
+}
