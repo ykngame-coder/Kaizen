@@ -86,3 +86,38 @@ export function adherenceTone(ratio: number): AdherenceTone {
   if (ratio >= 0.7) return 'neutral';
   return 'warning';
 }
+
+/** Horloge d'un bloc chronométré, avec pause. */
+export interface RunClock {
+  startedAtMs: number;
+  /** Temps total déjà passé en pause. */
+  pausedTotalMs: number;
+  /** Instant de mise en pause, absent si l'horloge tourne. */
+  pausedAtMs?: number;
+}
+
+/**
+ * Secondes écoulées, pause déduite. Ancré sur l'horloge murale plutôt que sur
+ * un compteur : un `setInterval` s'arrête en arrière-plan et un AMRAP de 12
+ * minutes en afficherait 9 sans rien signaler.
+ */
+export function elapsedSecFrom(clock: RunClock, nowMs: number): number {
+  const reference = clock.pausedAtMs ?? nowMs;
+  return Math.max(0, Math.floor((reference - clock.startedAtMs - clock.pausedTotalMs) / 1000));
+}
+
+/** Temps moyen par tour. undefined tant qu'aucun tour n'est fini — une moyenne sur zéro n'a pas de sens. */
+export function cadenceSecPerRound(elapsedSec: number, roundsCompleted: number): number | undefined {
+  if (roundsCompleted <= 0) return undefined;
+  return Math.round(elapsedSec / roundsCompleted);
+}
+
+/**
+ * Mouvement de la minute EMOM demandée (1-based). Un seul mouvement se répète
+ * à chaque minute ; plusieurs s'alternent en boucle.
+ */
+export function emomMinuteTask<T extends { order: number }>(sets: T[], minute: number): T | undefined {
+  if (sets.length === 0) return undefined;
+  const ordered = [...sets].sort((a, b) => a.order - b.order);
+  return ordered[(Math.max(1, minute) - 1) % ordered.length];
+}

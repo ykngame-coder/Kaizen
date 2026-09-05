@@ -1,6 +1,14 @@
 import { describe, expect, it } from 'vitest';
 import type { SetEntry } from '@supotsu/core';
-import { adherenceTone, buildRunProgress, restRemainingSec, warmupProposal } from './runnerState';
+import {
+  adherenceTone,
+  buildRunProgress,
+  cadenceSecPerRound,
+  elapsedSecFrom,
+  emomMinuteTask,
+  restRemainingSec,
+  warmupProposal,
+} from './runnerState';
 
 const DONE = '2026-09-05T10:00:00.000Z';
 const s = (over: Partial<SetEntry>): SetEntry => ({
@@ -106,5 +114,55 @@ describe('adherenceTone', () => {
 
   it('traite un dépassement comme un succès', () => {
     expect(adherenceTone(1.2)).toBe('success');
+  });
+});
+
+describe('elapsedSecFrom', () => {
+  it('compte depuis le démarrage', () => {
+    expect(elapsedSecFrom({ startedAtMs: 1_000, pausedTotalMs: 0 }, 6_000)).toBe(5);
+  });
+
+  it('retranche le temps déjà mis en pause', () => {
+    expect(elapsedSecFrom({ startedAtMs: 1_000, pausedTotalMs: 2_000 }, 6_000)).toBe(3);
+  });
+
+  it('se fige pendant une pause en cours', () => {
+    const state = { startedAtMs: 1_000, pausedTotalMs: 0, pausedAtMs: 4_000 };
+    // L'horloge murale avance, l'écoulé non.
+    expect(elapsedSecFrom(state, 6_000)).toBe(3);
+    expect(elapsedSecFrom(state, 60_000)).toBe(3);
+  });
+
+  it('ne renvoie jamais de valeur négative', () => {
+    expect(elapsedSecFrom({ startedAtMs: 9_000, pausedTotalMs: 0 }, 1_000)).toBe(0);
+  });
+});
+
+describe('cadenceSecPerRound', () => {
+  it('moyenne le temps par tour', () => {
+    expect(cadenceSecPerRound(180, 3)).toBe(60);
+  });
+
+  it('ne renvoie rien sans tour terminé', () => {
+    expect(cadenceSecPerRound(180, 0)).toBeUndefined();
+  });
+});
+
+describe('emomMinuteTask', () => {
+  it('répète l’unique mouvement à chaque minute', () => {
+    const sets = [s({ id: 'a', order: 0 })];
+    expect(emomMinuteTask(sets, 1)?.id).toBe('a');
+    expect(emomMinuteTask(sets, 7)?.id).toBe('a');
+  });
+
+  it('alterne les mouvements minute après minute', () => {
+    const sets = [s({ id: 'a', order: 0 }), s({ id: 'b', order: 1 })];
+    expect(emomMinuteTask(sets, 1)?.id).toBe('a');
+    expect(emomMinuteTask(sets, 2)?.id).toBe('b');
+    expect(emomMinuteTask(sets, 3)?.id).toBe('a');
+  });
+
+  it('ne renvoie rien sans mouvement', () => {
+    expect(emomMinuteTask([], 1)).toBeUndefined();
   });
 });
