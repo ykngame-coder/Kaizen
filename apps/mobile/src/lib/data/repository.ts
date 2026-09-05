@@ -1033,6 +1033,9 @@ function createDemoRepository(): DataRepository {
           reps: s.reps ?? null,
           weightKg: s.weightKg ?? null,
           restSec: s.restSec ?? null,
+          plannedReps: s.reps ?? null,
+          plannedWeightKg: s.weightKg ?? null,
+          isWarmup: s.isWarmup ?? false,
           date: now,
         }));
         await writeJson(setKey(userId), [...added, ...rows]);
@@ -1083,6 +1086,9 @@ function createDemoRepository(): DataRepository {
               reps: s.reps ?? null,
               weightKg: s.weightKg ?? null,
               restSec: s.restSec ?? null,
+              plannedReps: s.reps ?? null,
+              plannedWeightKg: s.weightKg ?? null,
+              isWarmup: s.isWarmup ?? false,
               date: now,
             });
           });
@@ -1098,6 +1104,9 @@ function createDemoRepository(): DataRepository {
           reps: s.reps ?? null,
           weightKg: s.weightKg ?? null,
           restSec: s.restSec ?? null,
+          plannedReps: s.reps ?? null,
+          plannedWeightKg: s.weightKg ?? null,
+          isWarmup: s.isWarmup ?? false,
           date: now,
         }));
         await writeJson(setKey(userId), [...added, ...rows]);
@@ -1154,6 +1163,11 @@ function createDemoRepository(): DataRepository {
           weightKg: r.weightKg ?? undefined,
           restSec: r.restSec ?? undefined,
           supersetGroup: r.supersetGroup ?? undefined,
+          plannedReps: r.plannedReps ?? undefined,
+          plannedWeightKg: r.plannedWeightKg ?? undefined,
+          rir: r.rir ?? undefined,
+          isWarmup: r.isWarmup ?? undefined,
+          completedAt: r.completedAt ?? undefined,
         }));
     },
     async addCircuitWorkout(userId, workout) {
@@ -1194,6 +1208,9 @@ function createDemoRepository(): DataRepository {
             weightKg: s.weightKg ?? null,
             restSec: s.restSec ?? null,
             supersetGroup: s.supersetGroup ?? null,
+            plannedReps: s.reps ?? null,
+            plannedWeightKg: s.weightKg ?? null,
+            isWarmup: s.isWarmup ?? false,
             date: now,
           });
         });
@@ -1221,6 +1238,11 @@ function createDemoRepository(): DataRepository {
           weightKg: r.weightKg ?? undefined,
           restSec: r.restSec ?? undefined,
           supersetGroup: r.supersetGroup ?? undefined,
+          plannedReps: r.plannedReps ?? undefined,
+          plannedWeightKg: r.plannedWeightKg ?? undefined,
+          rir: r.rir ?? undefined,
+          isWarmup: r.isWarmup ?? undefined,
+          completedAt: r.completedAt ?? undefined,
         }));
     },
     async completeBlock(userId, blockId, result) {
@@ -1244,7 +1266,7 @@ function createDemoRepository(): DataRepository {
 
       const rows = await readJson<LoggedSetRow & { date: string }>(setKey(userId));
       const kept = rows.filter((r) => r.workoutId !== workoutId);
-      const added = patch.sets.map((s) => ({ workoutId, exerciseId: s.exerciseId, order: s.order, reps: s.reps ?? null, weightKg: s.weightKg ?? null, restSec: s.restSec ?? null, date: now }));
+      const added = patch.sets.map((s) => ({ workoutId, exerciseId: s.exerciseId, order: s.order, reps: s.reps ?? null, weightKg: s.weightKg ?? null, restSec: s.restSec ?? null, plannedReps: s.reps ?? null, plannedWeightKg: s.weightKg ?? null, isWarmup: s.isWarmup ?? false, date: now }));
       await writeJson(setKey(userId), [...added, ...kept]);
     },
     async editCircuitWorkout(userId, workoutId, patch) {
@@ -1265,7 +1287,7 @@ function createDemoRepository(): DataRepository {
         const block: WorkoutBlock = { id: randomId(), workoutId, order: i, format: b.format, timeCapSec: b.timeCapSec, targetRounds: b.targetRounds };
         newBlocks.push(block);
         b.sets.forEach((s) => {
-          newSets.push({ workoutId, blockId: block.id, exerciseId: s.exerciseId, order: s.order, reps: s.reps ?? null, weightKg: s.weightKg ?? null, restSec: s.restSec ?? null, supersetGroup: s.supersetGroup ?? null, date: now });
+          newSets.push({ workoutId, blockId: block.id, exerciseId: s.exerciseId, order: s.order, reps: s.reps ?? null, weightKg: s.weightKg ?? null, restSec: s.restSec ?? null, supersetGroup: s.supersetGroup ?? null, plannedReps: s.reps ?? null, plannedWeightKg: s.weightKg ?? null, isWarmup: s.isWarmup ?? false, date: now });
         });
       });
       await writeJson(blockKey(userId), [...newBlocks, ...keptBlocks]);

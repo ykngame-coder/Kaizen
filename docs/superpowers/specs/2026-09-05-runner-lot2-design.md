@@ -191,8 +191,11 @@ de rendu dans le repo aujourd'hui, et en installer une n'est pas au périmètre)
 ## 2b — Formats chronométrés (cadrage)
 
 **AMRAP** — décompte proéminent, tours réalisés, mouvements à cocher,
-cadence (temps moyen par tour). Maquette absente : construite par analogie
-avec EMOM et For Time, à valider avant implémentation.
+cadence (temps moyen par tour). Sa maquette est introuvable et ne sera pas
+fournie : l'écran se construit par analogie avec EMOM et For Time, dont il
+partage la structure (bandeau de format, chrono dominant, liste de mouvements
+cochables, action principale en pied). Il sera soumis en aperçu avant d'être
+implémenté, au titre du 2b.
 
 **EMOM** — « MINUTE 5 / 10 », décompte de la minute en cours, bande de
 pastilles (faites / en cours / à venir), tâche de la minute à cocher, et un
