@@ -24,7 +24,7 @@ import type {
   ImportedWorkout,
 } from '@supotsu/connectors';
 import { useAuth } from '@/features/auth/AuthProvider';
-import { createDataRepository, type HealthMetricInput, type NewCircuitBlockInput, type NewCircuitWorkout, type NewSleepSession, type NewWorkout, type PlannedInput } from './repository';
+import { createDataRepository, type HealthMetricInput, type NewCircuitBlockInput, type NewCircuitWorkout, type NewRunnerSet, type NewSleepSession, type NewWorkout, type PlannedInput, type SetLogInput } from './repository';
 import { isHealthKitConnected } from '@/features/connectors/useHealthKitAutoSync';
 import { queryHeartRateSummary, saveActivityToHealthKit, saveNutritionToHealthKit, saveWorkoutToHealthKit } from '@/features/connectors/healthKitClient';
 import { periodToDays, type DailyScoreColumn, type LeaderboardCategory, type LeaderboardPeriod } from '@/features/community/leaderboardHelpers';
@@ -985,6 +985,49 @@ export function useCompleteBlock() {
     onSuccess: (_data, input) => {
       qc.invalidateQueries({ queryKey: ['workoutBlocks', input.workoutId] });
     },
+  });
+}
+
+/**
+ * Invalide tout ce qui dépend des séries d'une séance. Les trois mutations du
+ * runner écrivent la même table, elles partagent donc la même invalidation.
+ */
+function invalidateSets(qc: ReturnType<typeof useQueryClient>, userId: string | undefined, workoutId: string): void {
+  qc.invalidateQueries({ queryKey: ['workoutSets', workoutId] });
+  qc.invalidateQueries({ queryKey: ['blockSets'] });
+  qc.invalidateQueries({ queryKey: ['workouts', userId] });
+  qc.invalidateQueries({ queryKey: ['exerciseHistory', userId] });
+}
+
+export function useLogSet() {
+  const { user } = useAuth();
+  const repo = useRepository();
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (input: { setId: string; workoutId: string; done: SetLogInput }) =>
+      repo.logSet(user!.id, input.setId, input.done),
+    onSuccess: (_d, input) => invalidateSets(qc, user?.id, input.workoutId),
+  });
+}
+
+export function useClearSetLog() {
+  const { user } = useAuth();
+  const repo = useRepository();
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (input: { setId: string; workoutId: string }) => repo.clearSetLog(user!.id, input.setId),
+    onSuccess: (_d, input) => invalidateSets(qc, user?.id, input.workoutId),
+  });
+}
+
+export function useAddSetsToWorkout() {
+  const { user } = useAuth();
+  const repo = useRepository();
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (input: { workoutId: string; sets: NewRunnerSet[] }) =>
+      repo.addSetsToWorkout(user!.id, input.workoutId, input.sets),
+    onSuccess: (_d, input) => invalidateSets(qc, user?.id, input.workoutId),
   });
 }
 
