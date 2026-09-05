@@ -6,12 +6,14 @@ import type { TFunction } from 'i18next';
 import { Badge, Button, Card, EmptyState, Icon, Screen, Text, useTheme, type BadgeTone } from '@supotsu/ui';
 import { radii, spacing } from '@supotsu/design-system';
 import type { WorkoutBlock, WorkoutStatus } from '@supotsu/core';
+import { computePlanAdherence } from '@supotsu/engines';
 import { EXERCISE_LIBRARY } from '@supotsu/shared';
 import { EXERCISES } from '@/features/exercises/catalog';
 import { BackButton } from '@/features/navigation/BackButton';
 import { useBlockSets, useCustomExercises, useDeletePlannedWorkout, useWorkoutBlocks, useWorkoutSets, useWorkouts } from '@/lib/data/queries';
 import { formatDate } from '@/lib/format';
 import { supersetPartners } from './blockRunnerEngine';
+import { adherenceTone } from './runnerState';
 
 const STATUS_TONE: Record<WorkoutStatus, BadgeTone> = {
   planned: 'info',
@@ -78,6 +80,10 @@ export function WorkoutDetailScreen(): React.JSX.Element {
     return (exerciseId: string): string => map.get(exerciseId) ?? exerciseId;
   }, [customExercises]);
 
+  // undefined pour toute séance antérieure à la migration 0029 : le badge
+  // disparaît alors complètement, plutôt que d'afficher un tiret ou 0 %.
+  const adherence = useMemo(() => computePlanAdherence(sets), [sets]);
+
   const byExercise = useMemo(() => {
     const groups: { exerciseId: string; sets: typeof sets }[] = [];
     for (const s of [...sets].sort((a, b) => a.order - b.order)) {
@@ -135,6 +141,15 @@ export function WorkoutDetailScreen(): React.JSX.Element {
           <Stat label={t('sport.workoutDetail.stats.avgHeartRate')} value={`${workout.avgHeartRate} bpm`} />
         ) : null}
       </View>
+
+      {adherence ? (
+        <View style={{ alignItems: 'flex-start' }}>
+          <Badge
+            label={t('sport.runner.adherence', { percent: Math.round(adherence.ratio * 100) })}
+            tone={adherenceTone(adherence.ratio) === 'neutral' ? 'info' : adherenceTone(adherence.ratio)}
+          />
+        </View>
+      ) : null}
 
       {/* Notes */}
       {workout.notes ? (
