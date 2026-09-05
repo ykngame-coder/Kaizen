@@ -22,7 +22,7 @@ Le périmètre couvre neuf chantiers ; il est livré en trois lots, le Lot 1
 
 | Lot | Contenu | Livrable |
 |---|---|---|
-| **1 — Fondations** | Modèle (`plannedReps`, `plannedWeightKg`, `rir`, `isWarmup`) + migration 0029 ; préférences (effort, barre, disques, repos) ; moteurs purs (disques, échauffement) ; `suggestProgression` internationalisé | Aucun changement visible ; base testée pour 2 et 3 |
+| **1 — Fondations** | Modèle (`plannedReps`, `plannedWeightKg`, `rir`, `isWarmup`, `completedAt`) + migration 0029 ; préférences (effort, barre, disques, repos) ; moteurs purs (disques, échauffement, adhésion au plan) ; `suggestProgression` internationalisé | Aucun changement visible ; base testée pour 2 et 3 |
 | **2 — Runner** | B1 log réel + repos auto, B2 référence précédente + RPE/RIR, B3 reprise + écran allumé + « prochain », B4 disques + échauffement auto ; refonte visuelle des écrans de suivi | Suivi de séance complet |
 | **3 — Création** | A1 prefill + suggestion, A2 sélecteur rapide (recherche normalisée, favoris, ajout multiple), A3 modèles & duplication, A4 UX supersets/blocs | Création de séance complète |
 
@@ -63,7 +63,17 @@ partout comme légitime, jamais comme une erreur.
   rir?: number;
   /** Série d'échauffement : affichée mais exclue du volume et des records. */
   isWarmup?: boolean;
+  /** Horodatage de validation de la série dans le runner — absent tant qu'elle n'a pas été faite. */
+  completedAt?: ISODateString;
 ```
+
+`completedAt` n'était pas au périmètre initial, mais l'adhésion au plan
+(§ 1.6) est fausse sans lui : comme le runner pré-remplit chaque série avec
+le prévu, une série jamais loguée garde des `reps`/`weightKg` identiques au
+plan et serait comptée comme réalisée à 100 %. Une séance abandonnée à
+mi-parcours afficherait une adhésion parfaite. Le champ sert aussi la
+reprise de séance (Lot 2 B3), qui doit de toute façon savoir quelles séries
+sont déjà cochées.
 
 **`SetDraft` (`sessionBuilder.ts`) gagne** `isWarmup?: boolean`. Le draft ne
 porte pas `plannedReps`/`plannedWeightKg` : à la création, le prévu *est* la
@@ -76,7 +86,8 @@ alter table public.workout_sets
   add column planned_reps smallint,
   add column planned_weight_kg numeric(6, 2),
   add column rir smallint check (rir between 0 and 10),
-  add column is_warmup boolean not null default false;
+  add column is_warmup boolean not null default false,
+  add column completed_at timestamptz;
 ```
 
 Colonnes nullables (sauf `is_warmup`, défaut `false`) : aucune donnée
@@ -145,7 +156,42 @@ nulle, négative, ou trop légère pour qu'une rampe ait du sens (une marche
 d'échauffement doit rester ≥ la barre à vide côté appelant — le moteur, lui,
 ne connaît pas la barre et se contente de refuser `workKg <= 0`).
 
-### 1.5 `suggestProgression` internationalisé
+### 1.5 Adhésion au plan
+
+Compare ce qui était programmé à ce qui a été réalisé, pour une séance.
+
+```ts
+export interface PlanAdherence {
+  /** Réalisé / prévu, borné à [0, 2] — au-delà de 200 % la valeur ne dit plus rien d'utile. */
+  ratio: number;
+  /** Séries porteuses d'un plan, hors échauffement. */
+  comparedSets: number;
+  /** Parmi elles, celles atteintes ou dépassées. */
+  metOrExceeded: number;
+}
+/** undefined quand aucune série ne porte de plan — séances antérieures à la 0029. */
+export function computePlanAdherence(sets: SetEntry[]): PlanAdherence | undefined;
+```
+
+Le ratio est un **tonnage** : chaque série contribue `reps × weightKg`, avec
+`weightKg` absent traité comme 1 pour que le poids du corps compte ses reps.
+Le tonnage est retenu plutôt que les reps seules parce que les reps seules
+manquent complètement les écarts de charge : prévu 8 × 62,5 kg, réalisé
+8 × 50 kg donnerait 100 % d'adhésion, ce qui est faux et trompeur.
+
+Une série sans `completedAt` compte pour un réalisé **nul** : elle était
+prévue et n'a pas été faite. Les séries d'échauffement sont exclues des deux
+côtés. Les séries sans `plannedReps` (historique) sont ignorées ; si aucune
+n'en porte, la fonction retourne `undefined` et l'écran n'affiche rien.
+
+Limite assumée : quand une même séance mélange séries chargées et séries au
+poids du corps, le ratio agrège des unités hétérogènes (kg·reps et reps). En
+pratique une séance est très majoritairement de l'un ou de l'autre, et le
+résultat reste une moyenne pondérée par la contribution prévue de chaque
+série — donc lisible. Un affichage séparé par catégorie serait plus rigoureux
+mais n'est pas justifié à ce stade.
+
+### 1.6 `suggestProgression` internationalisé
 
 `ProgressionSuggestion.rationale` est aujourd'hui une phrase française codée
 en dur — inutilisable dans une app en cinq langues. Aucun écran ne le
@@ -164,11 +210,14 @@ export type ProgressionRationale =
 Le moteur reste pur et sans langue ; l'app mappe `kind` vers une clé
 `sport.progression.rationale.*` avec ses paramètres.
 
-### 1.6 Tests (Lot 1)
+### 1.7 Tests (Lot 1)
 
 Vitest, moteurs purs uniquement : `plates.test.ts` (cas listés en 1.4),
 `warmup.test.ts` (rampe nominale, arrondi, charge nulle/négative),
-`training.test.ts` étendu pour les trois `kind` de rationale.
+`adherence.test.ts` (série non faite comptée à zéro, échauffements exclus,
+séance sans plan → `undefined`, dépassement borné à 2, mélange chargé /
+poids du corps), `training.test.ts` étendu pour les trois `kind` de
+rationale.
 
 ---
 
@@ -188,6 +237,12 @@ Persistance de la progression du run pour reprendre après fermeture. Aperçu
 moteurs du Lot 1. Refonte visuelle des quatre formats selon les maquettes,
 plus un écran de fil des blocs pour les séances multi-blocs.
 
+L'**adhésion au plan** y est affichée : un badge « 92 % du plan » sur la
+fiche d'une séance terminée, alimenté par `computePlanAdherence`, et rien du
+tout quand la fonction retourne `undefined` (séances antérieures à la 0029).
+Le runner écrit `completedAt` à chaque validation de série — sans quoi le
+badge est faux.
+
 Le risque principal du lot est la **persistance de l'état de run** : c'est le
 seul morceau qui doit survivre à un crash et se réconcilier au remontage. Il
 recevra son propre découpage.
@@ -206,8 +261,10 @@ fournis, « enregistrer comme modèle ». UX supersets et blocs plus lisible
 - La fréquence cardiaque live, déjà en place, n'est pas refaite.
 - Aucune migration rétroactive des séances existantes : `planned_*` reste
   `null` pour l'historique, `is_warmup` à `false`.
-- Pas de « taux d'adhésion au plan » : les colonnes `planned_*` le rendent
-  possible plus tard, aucun écran ne l'expose dans ces trois lots.
+- L'adhésion au plan se limite à un badge sur la fiche de séance (Lot 2).
+  Pas d'agrégation hebdomadaire, pas de ventilation par exercice, pas de
+  graphe de tendance — le moteur les rend possibles, aucun écran ne les
+  expose dans ces trois lots.
 
 ## Contraintes globales
 
