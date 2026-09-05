@@ -42,6 +42,12 @@ for_time. On le réemploie comme objectif de temps pour ce format : aucune
 migration, aucun champ nouveau. L'objectif s'affiche seulement quand il est
 renseigné.
 
+Condition posée par l'utilisateur : cet objectif n'a de sens que s'il peut le
+**choisir**. Or le builder n'expose aujourd'hui qu'un nombre de tours pour ce
+format, et `blocksToSessionInput` écarte explicitement `timeCapSec` hors AMRAP
+et EMOM. La tâche 0 ajoute donc la saisie avant tout le reste — sans elle,
+l'objectif serait un champ que personne ne peut remplir.
+
 ## Écran AMRAP (aucune maquette fournie)
 
 Construit par analogie avec EMOM et For Time, dont il partage la structure :
@@ -54,6 +60,126 @@ Construit par analogie avec EMOM et For Time, dont il partage la structure :
 4. liste des mouvements du tour en cours, cochables ;
 5. pied : pause, et « Tour terminé » qui incrémente le compteur et remet les
    cochages à zéro.
+
+---
+
+### Task 0 : Saisie de l'objectif de temps For Time
+
+**Files:**
+- Modify: `apps/mobile/src/features/training/SessionBlocksEditor.tsx`
+- Modify: `apps/mobile/src/features/training/sessionBuilder.ts`
+- Modify: `apps/mobile/src/features/training/NewWorkoutScreen.tsx`
+- Modify: `apps/mobile/src/features/training/EditWorkoutScreen.tsx`
+- Modify: `apps/mobile/src/i18n/locales/{fr,en,es,pt,de}.json`
+
+**Interfaces:**
+- Produces: un `timeCapSec` renseignable pour les blocs `for_time`, en minutes
+  dans le brouillon comme pour l'AMRAP, converti en secondes à l'écriture.
+
+- [ ] **Step 1 : ajouter le champ dans l'éditeur**
+
+Dans `SessionBlocksEditor.tsx`, remplacer :
+
+```tsx
+                    {b.format === 'for_time' ? (
+                      <Input label={t('sport.sessionBuilder.block.roundsLabel')} keyboardType="numeric" value={b.targetRounds} onChangeText={(v) => builder.updateActiveBlock({ targetRounds: v })} />
+                    ) : null}
+```
+
+par :
+
+```tsx
+                    {b.format === 'for_time' ? (
+                      <View style={{ flexDirection: 'row', gap: spacing[3] }}>
+                        <View style={{ flex: 1 }}>
+                          <Input label={t('sport.sessionBuilder.block.roundsLabel')} keyboardType="numeric" value={b.targetRounds} onChangeText={(v) => builder.updateActiveBlock({ targetRounds: v })} />
+                        </View>
+                        <View style={{ flex: 1 }}>
+                          <Input
+                            label={t('sport.sessionBuilder.block.targetTimeLabel')}
+                            placeholder={t('sport.sessionBuilder.block.targetTimePlaceholder')}
+                            keyboardType="numeric"
+                            value={b.timeCapSec}
+                            onChangeText={(v) => builder.updateActiveBlock({ timeCapSec: v })}
+                          />
+                        </View>
+                      </View>
+                    ) : null}
+```
+
+- [ ] **Step 2 : ne plus écarter le champ à l'écriture**
+
+Le brouillon porte des **minutes** pour l'AMRAP ; on garde la même unité ici
+pour ne pas surprendre. Dans `sessionBuilder.ts`, remplacer :
+
+```ts
+      timeCapSec: block.format === 'amrap' ? (Number(block.timeCapSec) || 0) * 60 || undefined : block.format === 'emom' ? Number(block.timeCapSec) || undefined : undefined,
+```
+
+par :
+
+```ts
+      timeCapSec:
+        block.format === 'amrap' || block.format === 'for_time'
+          ? (Number(block.timeCapSec) || 0) * 60 || undefined
+          : block.format === 'emom'
+            ? Number(block.timeCapSec) || undefined
+            : undefined,
+```
+
+- [ ] **Step 3 : aligner les deux écrans qui mappent les blocs à la main**
+
+`NewWorkoutScreen.tsx` et `EditWorkoutScreen.tsx` construisent leurs blocs
+sans passer par `blocksToSessionInput`. Dans **chacun** des deux, remplacer :
+
+```ts
+          timeCapSec: b.format === 'amrap' ? (Number(b.timeCapSec) || 0) * 60 || undefined : b.format === 'emom' ? Number(b.timeCapSec) || undefined : undefined,
+```
+
+par :
+
+```ts
+          timeCapSec:
+            b.format === 'amrap' || b.format === 'for_time'
+              ? (Number(b.timeCapSec) || 0) * 60 || undefined
+              : b.format === 'emom'
+                ? Number(b.timeCapSec) || undefined
+                : undefined,
+```
+
+- [ ] **Step 4 : préremplissage à l'édition**
+
+`EditWorkoutScreen.tsx` reconvertit les secondes en minutes pour l'AMRAP
+seulement :
+
+```ts
+            timeCapSec: b.timeCapSec != null ? String(b.format === 'amrap' ? Math.round(b.timeCapSec / 60) : b.timeCapSec) : '12',
+```
+
+Remplacer par :
+
+```ts
+            timeCapSec: b.timeCapSec != null ? String(b.format === 'amrap' || b.format === 'for_time' ? Math.round(b.timeCapSec / 60) : b.timeCapSec) : '12',
+```
+
+Sans cela, rouvrir une séance For Time afficherait 720 au lieu de 12.
+
+- [ ] **Step 5 : i18n**
+
+Ajouter `sport.sessionBuilder.block.targetTimeLabel` et
+`.targetTimePlaceholder` dans les cinq locales, par script Python additif.
+fr : « Objectif (min) » et « facultatif ».
+
+- [ ] **Step 6 : vérifier et committer**
+
+Run: `cd apps/mobile && npx tsc --noEmit -p tsconfig.json && cd ../.. && npx vitest run`
+Expected: vert. `sessionBuilder.test.ts` couvre déjà la conversion AMRAP
+minutes→secondes ; ajouter un cas For Time si le fichier n'en a pas.
+
+```bash
+git add apps/mobile/src/features/training apps/mobile/src/i18n/locales
+git commit -m "Let the user set a target time on a For Time block"
+```
 
 ---
 

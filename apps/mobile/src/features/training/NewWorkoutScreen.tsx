@@ -118,7 +118,12 @@ export function NewWorkoutScreen(): React.JSX.Element {
         name: builder.name.trim(),
         blocks: builder.blocks.map((b) => ({
           format: b.format,
-          timeCapSec: b.format === 'amrap' ? (Number(b.timeCapSec) || 0) * 60 || undefined : b.format === 'emom' ? Number(b.timeCapSec) || undefined : undefined,
+          timeCapSec:
+            b.format === 'amrap' || b.format === 'for_time'
+              ? (Number(b.timeCapSec) || 0) * 60 || undefined
+              : b.format === 'emom'
+                ? Number(b.timeCapSec) || undefined
+                : undefined,
           targetRounds: b.format === 'emom' || b.format === 'for_time' || b.format === 'strength' ? Number(b.targetRounds) || undefined : undefined,
           sets: b.order.map((slotId, i) => {
             const s = b.selected[slotId]!;

@@ -78,4 +78,26 @@ describe('blocksToSessionInput', () => {
     const out = blocksToSessionInput([emom]);
     expect(out[0]?.exercises[0]?.restSec).toBeUndefined();
   });
+
+  it('converts a for_time target from minutes to seconds', () => {
+    const forTime = block({
+      format: 'for_time',
+      timeCapSec: '12',
+      targetRounds: '3',
+      order: ['slot1'],
+      selected: { slot1: { exerciseId: 'thruster', reps: '21', weight: '40', rest: '' } },
+    });
+    expect(blocksToSessionInput([forTime])[0]?.timeCapSec).toBe(720);
+  });
+
+  it('leaves a for_time block without a target undefined', () => {
+    const forTime = block({
+      format: 'for_time',
+      timeCapSec: '',
+      targetRounds: '3',
+      order: ['slot1'],
+      selected: { slot1: { exerciseId: 'thruster', reps: '21', weight: '40', rest: '' } },
+    });
+    expect(blocksToSessionInput([forTime])[0]?.timeCapSec).toBeUndefined();
+  });
 });

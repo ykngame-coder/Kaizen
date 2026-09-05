@@ -253,7 +253,20 @@ export function SessionBlocksEditor({
                       </View>
                     ) : null}
                     {b.format === 'for_time' ? (
-                      <Input label={t('sport.sessionBuilder.block.roundsLabel')} keyboardType="numeric" value={b.targetRounds} onChangeText={(v) => builder.updateActiveBlock({ targetRounds: v })} />
+                      <View style={{ flexDirection: 'row', gap: spacing[3] }}>
+                        <View style={{ flex: 1 }}>
+                          <Input label={t('sport.sessionBuilder.block.roundsLabel')} keyboardType="numeric" value={b.targetRounds} onChangeText={(v) => builder.updateActiveBlock({ targetRounds: v })} />
+                        </View>
+                        <View style={{ flex: 1 }}>
+                          <Input
+                            label={t('sport.sessionBuilder.block.targetTimeLabel')}
+                            placeholder={t('sport.sessionBuilder.block.targetTimePlaceholder')}
+                            keyboardType="numeric"
+                            value={b.timeCapSec}
+                            onChangeText={(v) => builder.updateActiveBlock({ timeCapSec: v })}
+                          />
+                        </View>
+                      </View>
                     ) : null}
                     {b.format === 'strength' ? (
                       <Input

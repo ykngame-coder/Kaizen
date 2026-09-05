@@ -1469,7 +1469,9 @@
     "exerciseCount_one": "{{count}} exercício",
     "exerciseCount_other": "{{count}} exercícios",
     "addBlock": "+ Adicionar um bloco",
-    "tapToEdit": "toca para editar"
+    "tapToEdit": "toca para editar",
+    "targetTimeLabel": "Objetivo (min)",
+    "targetTimePlaceholder": "opcional"
    },
    "superset": {
     "startSelect": "Agrupar exercícios",

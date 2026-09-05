@@ -1469,7 +1469,9 @@
     "exerciseCount_one": "{{count}} Übung",
     "exerciseCount_other": "{{count}} Übungen",
     "addBlock": "+ Block hinzufügen",
-    "tapToEdit": "zum Bearbeiten tippen"
+    "tapToEdit": "zum Bearbeiten tippen",
+    "targetTimeLabel": "Ziel (Min.)",
+    "targetTimePlaceholder": "optional"
    },
    "superset": {
     "startSelect": "Übungen gruppieren",

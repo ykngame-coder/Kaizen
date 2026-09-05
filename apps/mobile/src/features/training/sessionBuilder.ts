@@ -222,7 +222,12 @@ export function blocksToSessionInput(blocks: BlockDraft[]): SessionBlockInput[] 
     if (exercises.length === 0) continue;
     out.push({
       format: block.format,
-      timeCapSec: block.format === 'amrap' ? (Number(block.timeCapSec) || 0) * 60 || undefined : block.format === 'emom' ? Number(block.timeCapSec) || undefined : undefined,
+      timeCapSec:
+        block.format === 'amrap' || block.format === 'for_time'
+          ? (Number(block.timeCapSec) || 0) * 60 || undefined
+          : block.format === 'emom'
+            ? Number(block.timeCapSec) || undefined
+            : undefined,
       targetRounds: block.format === 'emom' || block.format === 'for_time' || block.format === 'strength' ? Number(block.targetRounds) || undefined : undefined,
       exercises,
     });
