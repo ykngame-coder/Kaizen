@@ -7,9 +7,9 @@ import type { SetEntry } from '@supotsu/core';
 import { computePlates } from '@supotsu/engines';
 import { EXERCISE_LIBRARY } from '@supotsu/shared';
 import { EXERCISES } from '@/features/exercises/catalog';
-import { useClearSetLog, useCustomExercises, useExerciseHistory, useLogSet } from '@/lib/data/queries';
+import { useAddSetsToWorkout, useClearSetLog, useCustomExercises, useExerciseHistory, useLogSet } from '@/lib/data/queries';
 import { usePreferences } from '@/lib/preferences';
-import { buildRunProgress, restRemainingSec } from './runnerState';
+import { buildRunProgress, restRemainingSec, warmupProposal } from './runnerState';
 import { formatClock } from './blockRunnerEngine';
 
 const EFFORT_VALUES = [7, 8, 9, 10];
@@ -34,6 +34,7 @@ export function StrengthRunner({ workoutId, sets, onBlockFinished }: StrengthRun
   const { data: history = {} } = useExerciseHistory();
   const logSet = useLogSet();
   const clearSetLog = useClearSetLog();
+  const addSets = useAddSetsToWorkout();
 
   const exerciseName = useMemo(() => {
     const map = new Map<string, string>();
@@ -111,6 +112,36 @@ export function StrengthRunner({ workoutId, sets, onBlockFinished }: StrengthRun
     setRestTotalSec(restSec);
     setNowMs(Date.now());
     setRestEndsAtMs(Date.now() + restSec * 1000);
+  };
+
+  // Proposée seulement sur une première série de travail chargée encore
+  // intouchée : après coup, un échauffement n'a plus de sens.
+  const warmup = useMemo(() => {
+    if (!activeSet || activeSet.isWarmup) return [];
+    if (progress.activeSetIndexInExercise !== 0) return [];
+    if (ordered.some((s) => s.exerciseId === activeSet.exerciseId && s.isWarmup)) return [];
+    return warmupProposal({
+      workKg: activeSet.weightKg,
+      workReps: activeSet.reps,
+      barWeightKg: preferences.barWeightKg,
+    });
+  }, [activeSet, progress.activeSetIndexInExercise, ordered, preferences.barWeightKg]);
+
+  const addWarmup = (): void => {
+    if (!activeSet || warmup.length === 0) return;
+    addSets.mutate({
+      workoutId,
+      sets: warmup.map((w, i) => ({
+        exerciseId: activeSet.exerciseId,
+        // Placées avant la série de travail : ordres fractionnaires évités en
+        // décalant vers le bas depuis son propre ordre.
+        order: activeSet.order - warmup.length + i,
+        blockId: activeSet.blockId,
+        reps: w.reps,
+        weightKg: w.weightKg,
+        isWarmup: true,
+      })),
+    });
   };
 
   const plates = useMemo(() => {
@@ -230,6 +261,17 @@ export function StrengthRunner({ workoutId, sets, onBlockFinished }: StrengthRun
           );
         })}
       </ScrollView>
+
+      {warmup.length > 0 ? (
+        <View style={{ alignItems: 'flex-start' }}>
+          <Button
+            label={t('sport.runner.addWarmup', { count: warmup.length })}
+            variant="secondary"
+            onPress={addWarmup}
+            disabled={addSets.isPending}
+          />
+        </View>
+      ) : null}
 
       {restEndsAtMs !== undefined && restLeft > 0 ? (
         <Card>

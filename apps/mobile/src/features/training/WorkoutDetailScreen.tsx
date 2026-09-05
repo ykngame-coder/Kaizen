@@ -184,9 +184,12 @@ export function WorkoutDetailScreen(): React.JSX.Element {
         </Card>
       )}
 
-      {!confirmingDelete && workout.status === 'planned' && blocks.length > 0 ? (
+      {!confirmingDelete && (workout.status === 'planned' || workout.status === 'in_progress') && blocks.length > 0 ? (
         <View style={{ alignItems: 'flex-start' }}>
-          <Button label={t('sport.workoutDetail.actions.start')} onPress={() => router.push({ pathname: '/sport/workout/[id]/run', params: { id: workout.id } })} />
+          <Button
+            label={workout.status === 'in_progress' ? t('sport.runner.resume') : t('sport.workoutDetail.actions.start')}
+            onPress={() => router.push({ pathname: '/sport/workout/[id]/run', params: { id: workout.id } })}
+          />
         </View>
       ) : null}
 

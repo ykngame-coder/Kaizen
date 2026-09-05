@@ -6,7 +6,9 @@ import { Badge, Button, Card, EmptyState, Icon, Screen, Text, triggerHaptic, use
 import { radii, spacing } from '@supotsu/design-system';
 import { EXERCISE_LIBRARY } from '@supotsu/shared';
 import { EXERCISES } from '@/features/exercises/catalog';
-import { useSetWorkoutStatus, useWorkoutBlocks, useBlockSets, useCompleteBlock, useCustomExercises } from '@/lib/data/queries';
+import { activateKeepAwakeAsync, deactivateKeepAwake } from 'expo-keep-awake';
+import { useSetWorkoutStatus, useWorkoutBlocks, useBlockSets, useCompleteBlock, useCustomExercises, useWorkouts } from '@/lib/data/queries';
+import { clearRunState, loadRunState, saveRunState } from './runStore';
 import { computeAmrapState, computeEmomState, computeForTimeState, formatClock, supersetPartners } from './blockRunnerEngine';
 import { StrengthRunner } from './StrengthRunner';
 
@@ -41,6 +43,32 @@ export function CircuitRunnerScreen(): React.JSX.Element {
     for (const e of customExercises) map.set(e.id, e.name);
     return (exerciseId: string): string => map.get(exerciseId) ?? exerciseId;
   }, [customExercises]);
+
+  const { data: workouts = [] } = useWorkouts();
+
+  // L'écran reste allumé pendant la séance — même pattern que SleepTrackingScreen.
+  useEffect(() => {
+    void activateKeepAwakeAsync();
+    return () => {
+      void deactivateKeepAwake();
+    };
+  }, []);
+
+  // Rien ne posait 'in_progress' jusqu'ici : le statut sautait de 'planned' à
+  // 'completed', ce qui rendait une séance en cours irrécupérable après une
+  // fermeture. On le pose à l'entrée, et on amorce le chrono persistant.
+  useEffect(() => {
+    if (!id) return;
+    const workout = workouts.find((w) => w.id === id);
+    if (workout?.status === 'planned') {
+      setWorkoutStatus.mutate({ workoutId: id, status: 'in_progress' });
+    }
+    void (async () => {
+      if ((await loadRunState(id)) === null) {
+        await saveRunState(id, { startedAtMs: Date.now(), activeBlockIndex: 0 });
+      }
+    })();
+  }, [id, workouts.length]);
 
   const [activeIndex, setActiveIndex] = useState(0);
   const [elapsedSec, setElapsedSec] = useState(0);
@@ -134,6 +162,7 @@ export function CircuitRunnerScreen(): React.JSX.Element {
       setActiveIndex(activeIndex + 1);
     } else {
       await setWorkoutStatus.mutateAsync({ workoutId: active.workoutId, status: 'completed', completedAt: new Date().toISOString() });
+      await clearRunState(active.workoutId);
       router.replace({ pathname: '/sport/workout/[id]', params: { id: active.workoutId } });
     }
   };
