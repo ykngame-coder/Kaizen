@@ -65,6 +65,9 @@ import {
   listBlocksForWorkout as listBlocksForWorkoutDb,
   listSetsForBlock as listSetsForBlockDb,
   updateBlockResult as updateBlockResultDb,
+  updateSetLog,
+  clearSetLog as clearSetLogDb,
+  insertWorkoutSets,
   type WorkoutBlockRow,
   upsertImportedWorkouts,
   insertPlannedWorkout,
@@ -180,6 +183,26 @@ export interface NewCircuitBlockInput {
 }
 
 /** A session made of one or more ordered blocks (Musculation/AMRAP/EMOM/Pour le temps). */
+/** What the runner records once a set is ticked off. */
+export interface SetLogInput {
+  reps?: number;
+  weightKg?: number;
+  rpe?: number;
+  rir?: number;
+  completedAt: string;
+}
+
+/** A set appended to a live session — currently only the warm-up ramp. */
+export interface NewRunnerSet {
+  exerciseId: string;
+  order: number;
+  blockId?: string;
+  reps?: number;
+  weightKg?: number;
+  restSec?: number;
+  isWarmup?: boolean;
+}
+
 export interface NewCircuitWorkout {
   name: string;
   blocks: NewCircuitBlockInput[];
@@ -264,6 +287,12 @@ export interface DataRepository {
   getBlockSets(userId: string, blockId: string): Promise<SetEntry[]>;
   /** Record a finished block's result (rounds completed / elapsed time). */
   completeBlock(userId: string, blockId: string, result: { completedRounds?: number; resultTimeSec?: number }): Promise<WorkoutBlock>;
+  /** Record what was actually performed on one set. Never rewrites the planned values. */
+  logSet(userId: string, setId: string, done: SetLogInput): Promise<void>;
+  /** Undo a set's log — it goes back to "to do", restored to its planned values. */
+  clearSetLog(userId: string, setId: string): Promise<void>;
+  /** Append sets to an existing workout (warm-up ramp inserted from the runner). */
+  addSetsToWorkout(userId: string, workoutId: string, sets: NewRunnerSet[]): Promise<void>;
   /** Edit a session's name/notes and replace its exercise list wholesale. */
   editWorkout(userId: string, workoutId: string, patch: { name: string; notes?: string; sets: Omit<SetEntry, 'id' | 'workoutId'>[] }): Promise<void>;
   /** Edit a multi-block session's name/notes and replace its blocks (+ each block's exercises) wholesale. */
@@ -790,6 +819,8 @@ function buildMuscleWork(dates: Map<string, string>, sets: LoggedSetRow[]): Musc
 }
 
 interface LoggedSetRow {
+  /** Stable id, absent from rows written before lot 2a — readers fall back to the synthesized form. */
+  id?: string;
   workoutId: string;
   blockId?: string;
   exerciseId: string;
@@ -1027,6 +1058,7 @@ function createDemoRepository(): DataRepository {
       if (workout.sets.length > 0) {
         const rows = await readJson<LoggedSetRow & { date: string }>(setKey(userId));
         const added = workout.sets.map((s) => ({
+          id: randomId(),
           workoutId: created.id,
           exerciseId: s.exerciseId,
           order: s.order,
@@ -1079,6 +1111,7 @@ function createDemoRepository(): DataRepository {
           newBlocks.push(block);
           b.sets.forEach((s) => {
             newSets.push({
+              id: randomId(),
               workoutId: created.id,
               blockId: block.id,
               exerciseId: s.exerciseId,
@@ -1098,6 +1131,7 @@ function createDemoRepository(): DataRepository {
       } else if (input.sets && input.sets.length > 0) {
         const rows = await readJson<LoggedSetRow & { date: string }>(setKey(userId));
         const added = input.sets.map((s) => ({
+          id: randomId(),
           workoutId: created.id,
           exerciseId: s.exerciseId,
           order: s.order,
@@ -1154,7 +1188,7 @@ function createDemoRepository(): DataRepository {
         .filter((r) => r.workoutId === workoutId)
         .sort((a, b) => a.order - b.order)
         .map((r) => ({
-          id: `${r.workoutId}-${r.order}`,
+          id: r.id ?? `${r.workoutId}-${r.order}`,
           workoutId: r.workoutId,
           blockId: r.blockId,
           exerciseId: r.exerciseId,
@@ -1200,6 +1234,7 @@ function createDemoRepository(): DataRepository {
         newBlocks.push(block);
         b.sets.forEach((s) => {
           newSets.push({
+            id: randomId(),
             workoutId: created.id,
             blockId: block.id,
             exerciseId: s.exerciseId,
@@ -1229,7 +1264,7 @@ function createDemoRepository(): DataRepository {
         .filter((r) => r.blockId === blockId)
         .sort((a, b) => a.order - b.order)
         .map((r) => ({
-          id: `${r.workoutId}-${r.blockId}-${r.order}`,
+          id: r.id ?? `${r.workoutId}-${r.blockId}-${r.order}`,
           workoutId: r.workoutId,
           blockId: r.blockId,
           exerciseId: r.exerciseId,
@@ -1257,6 +1292,61 @@ function createDemoRepository(): DataRepository {
       if (!updated) throw new Error('Bloc introuvable.');
       return updated;
     },
+    async logSet(userId, setId, done) {
+      const rows = await readJson<LoggedSetRow & { date: string }>(setKey(userId));
+      await writeJson(
+        setKey(userId),
+        rows.map((r) => {
+          const id = r.id ?? `${r.workoutId}-${r.order}`;
+          const blockId = r.id ?? `${r.workoutId}-${r.blockId}-${r.order}`;
+          if (id !== setId && blockId !== setId) return r;
+          return {
+            ...r,
+            reps: done.reps ?? null,
+            weightKg: done.weightKg ?? null,
+            rir: done.rir ?? null,
+            completedAt: done.completedAt,
+          };
+        }),
+      );
+    },
+    async clearSetLog(userId, setId) {
+      const rows = await readJson<LoggedSetRow & { date: string }>(setKey(userId));
+      await writeJson(
+        setKey(userId),
+        rows.map((r) => {
+          const id = r.id ?? `${r.workoutId}-${r.order}`;
+          const blockId = r.id ?? `${r.workoutId}-${r.blockId}-${r.order}`;
+          if (id !== setId && blockId !== setId) return r;
+          return {
+            ...r,
+            reps: r.plannedReps ?? r.reps,
+            weightKg: r.plannedWeightKg ?? r.weightKg,
+            rir: null,
+            completedAt: null,
+          };
+        }),
+      );
+    },
+    async addSetsToWorkout(userId, workoutId, sets) {
+      const rows = await readJson<LoggedSetRow & { date: string }>(setKey(userId));
+      const now = new Date().toISOString();
+      const added = sets.map((s) => ({
+        id: randomId(),
+        workoutId,
+        blockId: s.blockId,
+        exerciseId: s.exerciseId,
+        order: s.order,
+        reps: s.reps ?? null,
+        weightKg: s.weightKg ?? null,
+        restSec: s.restSec ?? null,
+        plannedReps: s.reps ?? null,
+        plannedWeightKg: s.weightKg ?? null,
+        isWarmup: s.isWarmup ?? false,
+        date: now,
+      }));
+      await writeJson(setKey(userId), [...added, ...rows]);
+    },
     async editWorkout(userId, workoutId, patch) {
       const now = new Date().toISOString();
       const workouts = await readJson<Workout>(wkKey(userId));
@@ -1266,7 +1356,7 @@ function createDemoRepository(): DataRepository {
 
       const rows = await readJson<LoggedSetRow & { date: string }>(setKey(userId));
       const kept = rows.filter((r) => r.workoutId !== workoutId);
-      const added = patch.sets.map((s) => ({ workoutId, exerciseId: s.exerciseId, order: s.order, reps: s.reps ?? null, weightKg: s.weightKg ?? null, restSec: s.restSec ?? null, plannedReps: s.reps ?? null, plannedWeightKg: s.weightKg ?? null, isWarmup: s.isWarmup ?? false, date: now }));
+      const added = patch.sets.map((s) => ({ id: randomId(), workoutId, exerciseId: s.exerciseId, order: s.order, reps: s.reps ?? null, weightKg: s.weightKg ?? null, restSec: s.restSec ?? null, plannedReps: s.reps ?? null, plannedWeightKg: s.weightKg ?? null, isWarmup: s.isWarmup ?? false, date: now }));
       await writeJson(setKey(userId), [...added, ...kept]);
     },
     async editCircuitWorkout(userId, workoutId, patch) {
@@ -1287,7 +1377,7 @@ function createDemoRepository(): DataRepository {
         const block: WorkoutBlock = { id: randomId(), workoutId, order: i, format: b.format, timeCapSec: b.timeCapSec, targetRounds: b.targetRounds };
         newBlocks.push(block);
         b.sets.forEach((s) => {
-          newSets.push({ workoutId, blockId: block.id, exerciseId: s.exerciseId, order: s.order, reps: s.reps ?? null, weightKg: s.weightKg ?? null, restSec: s.restSec ?? null, supersetGroup: s.supersetGroup ?? null, plannedReps: s.reps ?? null, plannedWeightKg: s.weightKg ?? null, isWarmup: s.isWarmup ?? false, date: now });
+          newSets.push({ id: randomId(), workoutId, blockId: block.id, exerciseId: s.exerciseId, order: s.order, reps: s.reps ?? null, weightKg: s.weightKg ?? null, restSec: s.restSec ?? null, supersetGroup: s.supersetGroup ?? null, plannedReps: s.reps ?? null, plannedWeightKg: s.weightKg ?? null, isWarmup: s.isWarmup ?? false, date: now });
         });
       });
       await writeJson(blockKey(userId), [...newBlocks, ...keptBlocks]);
@@ -2828,6 +2918,29 @@ function createSupabaseRepository(
         isWarmup: r.is_warmup ?? undefined,
         completedAt: r.completed_at ?? undefined,
       }));
+    },
+    async logSet(_userId, setId, done) {
+      await updateSetLog(client, setId, done);
+    },
+    async clearSetLog(_userId, setId) {
+      await clearSetLogDb(client, setId);
+    },
+    async addSetsToWorkout(_userId, workoutId, sets) {
+      await insertWorkoutSets(
+        client,
+        workoutId,
+        sets.map((s) => ({
+          exercise_id: s.exerciseId,
+          order: s.order,
+          block_id: s.blockId ?? null,
+          reps: s.reps ?? null,
+          weight_kg: s.weightKg ?? null,
+          rest_sec: s.restSec ?? null,
+          planned_reps: s.reps ?? null,
+          planned_weight_kg: s.weightKg ?? null,
+          is_warmup: s.isWarmup ?? false,
+        })),
+      );
     },
     async completeBlock(_userId, blockId, result) {
       return rowToWorkoutBlock(await updateBlockResultDb(client, blockId, result));
