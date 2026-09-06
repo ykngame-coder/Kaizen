@@ -14,7 +14,7 @@ import type {
   UserSessionInput,
   WellnessCheckinInput,
 } from '@supotsu/shared';
-import type { Challenge, GoalType, MuscleGroup, SetEntry, Visibility, Workout } from '@supotsu/core';
+import type { Challenge, GoalType, MealType, MuscleGroup, SetEntry, Visibility, Workout } from '@supotsu/core';
 import { dedupActivities, estimateActivityHeartRateWindow, estimateWorkoutHeartRateWindow } from '@supotsu/connectors';
 import type {
   ImportedActivity,
@@ -207,7 +207,7 @@ export function useUpdateNutritionEntry() {
   const repo = useRepository();
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (input: { entryId: string; kcal: number; proteinG?: number; carbG?: number; fatG?: number }) =>
+    mutationFn: (input: { entryId: string; kcal?: number; proteinG?: number; carbG?: number; fatG?: number; mealType?: MealType }) =>
       repo.updateNutritionEntry(user!.id, input.entryId, input),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['nutrition', user?.id] });

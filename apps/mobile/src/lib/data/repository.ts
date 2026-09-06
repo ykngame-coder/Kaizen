@@ -10,6 +10,7 @@ import type {
   Habit,
   HabitLog,
   MuscleGroup,
+  MealType,
   NutritionEntry,
   PersonalRecord,
   Program,
@@ -333,8 +334,8 @@ export interface DataRepository {
   listNutritionEntries(userId: string): Promise<NutritionEntry[]>;
   addNutritionEntry(userId: string, input: NutritionEntryInput): Promise<NutritionEntry>;
   deleteNutritionEntry(userId: string, entryId: string): Promise<void>;
-  /** Adjust a logged entry's calories/macros (e.g. a portion estimate corrected after the fact). */
-  updateNutritionEntry(userId: string, entryId: string, patch: { kcal: number; proteinG?: number; carbG?: number; fatG?: number }): Promise<NutritionEntry>;
+  /** Adjust a logged entry's calories/macros, or move it to another meal (e.g. logged under breakfast, actually lunch). */
+  updateNutritionEntry(userId: string, entryId: string, patch: { kcal?: number; proteinG?: number; carbG?: number; fatG?: number; mealType?: MealType }): Promise<NutritionEntry>;
   listHabits(userId: string): Promise<Habit[]>;
   addHabit(userId: string, input: HabitInput): Promise<Habit>;
   /** Rename/retarget an existing habit. */
@@ -2333,11 +2334,15 @@ function createSupabaseRepository(
       await deleteNutritionEntryDb(client, entryId);
     },
     async updateNutritionEntry(_userId, entryId, patch) {
+      // Patch partiel : n'envoyer que ce qui est fourni. Écrire
+      // systématiquement les quatre champs effacerait les macros lors d'un
+      // simple changement de repas.
       const row = await updateNutritionEntryDb(client, entryId, {
-        kcal: patch.kcal,
-        protein_g: patch.proteinG ?? null,
-        carb_g: patch.carbG ?? null,
-        fat_g: patch.fatG ?? null,
+        ...(patch.kcal !== undefined ? { kcal: patch.kcal } : {}),
+        ...(patch.proteinG !== undefined ? { protein_g: patch.proteinG } : {}),
+        ...(patch.carbG !== undefined ? { carb_g: patch.carbG } : {}),
+        ...(patch.fatG !== undefined ? { fat_g: patch.fatG } : {}),
+        ...(patch.mealType !== undefined ? { meal_type: patch.mealType } : {}),
       });
       return rowToNutrition(row);
     },

@@ -2310,7 +2310,8 @@
    "editErrorInvalid": "Gib gültige Kalorien an.",
    "editErrorSaveFailed": "Speichern nicht möglich.",
    "confirmDelete": "Diese Mahlzeit endgültig löschen?",
-   "delete": "Löschen"
+   "delete": "Löschen",
+   "moveHeading": "In eine andere Mahlzeit verschieben"
   },
   "barcodeScan": {
    "webTitle": "Barcode scannen",

@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from 'react';
-import { View } from 'react-native';
+import { Pressable, View } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { Badge, Button, Card, EmptyState, Icon, Input, Screen, Text, useTheme } from '@supotsu/ui';
@@ -8,8 +8,10 @@ import { useDeleteNutritionEntry, useNutritionEntries, useUpdateNutritionEntry }
 import { formatDate } from '@/lib/format';
 import { formatClockFromIso, usePreferences } from '@/lib/preferences';
 import { BackButton } from '@/features/navigation/BackButton';
+import type { MealType } from '@supotsu/core';
 
 const MEAL_ICON: Record<string, string> = { breakfast: '🥣', lunch: '🍗', dinner: '🍝', snack: '🍎' };
+const MEAL_TYPES: MealType[] = ['breakfast', 'lunch', 'dinner', 'snack'];
 
 /** Small stat block — omits itself when there's no value to show. */
 function Stat({ label, value }: { label: string; value: string | null | undefined }): React.JSX.Element | null {
@@ -154,11 +156,44 @@ export function MealDetailScreen(): React.JSX.Element {
           </View>
         </Card>
       ) : !editing ? (
+        <>
+        {/* Réattribuer à un autre repas — une entrée loguée au petit-déjeuner
+            alors qu'elle relevait du déjeuner se déplace ici, sans avoir à la
+            supprimer et la ressaisir. Les macros ne sont pas touchées. */}
+        <Card>
+          <Text variant="label" color="textMuted">{t('nutrition.mealDetail.moveHeading')}</Text>
+          <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: spacing[2], marginTop: spacing[2] }}>
+            {MEAL_TYPES.map((m) => {
+              const current = m === entry.mealType;
+              return (
+                <Pressable
+                  key={m}
+                  disabled={current || updateEntry.isPending}
+                  onPress={() => updateEntry.mutate({ entryId: entry.id, mealType: m })}
+                  style={{
+                    flexDirection: 'row', alignItems: 'center', gap: 6,
+                    paddingHorizontal: 12, paddingVertical: 8, borderRadius: radii.full,
+                    backgroundColor: current ? colors.primary : colors.surfaceElevated,
+                    borderWidth: 1, borderColor: current ? colors.primary : colors.border,
+                    opacity: !current && updateEntry.isPending ? 0.5 : 1,
+                  }}
+                >
+                  <Text style={{ fontSize: 13 }}>{MEAL_ICON[m]}</Text>
+                  <Text variant="caption" style={{ color: current ? colors.onPrimary : colors.text, fontWeight: '600' }}>
+                    {t(`nutrition.journal.meal.${m}`)}
+                  </Text>
+                </Pressable>
+              );
+            })}
+          </View>
+        </Card>
+
         <View style={{ flexDirection: 'row', gap: spacing[3] }}>
           <Button label={t('common.back')} variant="secondary" onPress={() => router.back()} />
           <Button label={t('nutrition.mealDetail.edit')} variant="secondary" onPress={startEditing} />
           <Button label={t('nutrition.mealDetail.delete')} variant="secondary" onPress={() => setConfirmingDelete(true)} />
         </View>
+        </>
       ) : null}
     </Screen>
   );

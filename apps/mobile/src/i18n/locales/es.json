@@ -2310,7 +2310,8 @@
    "editErrorInvalid": "Indica calorías válidas.",
    "editErrorSaveFailed": "No se pudo guardar.",
    "confirmDelete": "¿Eliminar definitivamente esta comida?",
-   "delete": "Eliminar"
+   "delete": "Eliminar",
+   "moveHeading": "Mover a otra comida"
   },
   "barcodeScan": {
    "webTitle": "Escanear un código de barras",

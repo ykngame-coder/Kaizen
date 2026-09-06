@@ -2310,7 +2310,8 @@
    "editErrorInvalid": "Indique calorias válidas.",
    "editErrorSaveFailed": "Não foi possível salvar.",
    "confirmDelete": "Excluir definitivamente esta refeição?",
-   "delete": "Excluir"
+   "delete": "Excluir",
+   "moveHeading": "Mover para outra refeição"
   },
   "barcodeScan": {
    "webTitle": "Escanear um código de barras",

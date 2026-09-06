@@ -2310,7 +2310,8 @@
    "editErrorInvalid": "Enter valid calories.",
    "editErrorSaveFailed": "Couldn't save the changes.",
    "confirmDelete": "Permanently delete this meal?",
-   "delete": "Delete"
+   "delete": "Delete",
+   "moveHeading": "Move to another meal"
   },
   "barcodeScan": {
    "webTitle": "Scan a barcode",
