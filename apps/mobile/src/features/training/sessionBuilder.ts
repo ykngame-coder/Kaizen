@@ -40,6 +40,21 @@ export const emptySet = (exerciseId: string): SetDraft => ({ exerciseId, reps: '
 // their own compute functions already fall back to `?? 1`/`?? 0`.
 export const emptyBlock = (): BlockDraft => ({ format: 'strength', timeCapSec: '12', targetRounds: '', order: [], selected: {}, supersetGroups: {} });
 
+/**
+ * Valeur de départ du champ temps pour un format donné. Le champ ne veut pas
+ * dire la même chose d'un format à l'autre — minutes de plafond en AMRAP,
+ * secondes d'intervalle en EMOM, minutes d'objectif *facultatif* en For Time —
+ * donc le garder tel quel en changeant de format donne des non-sens : un « 12 »
+ * d'AMRAP devient 12 secondes d'intervalle EMOM, ou un objectif que
+ * l'utilisateur n'a jamais demandé en For Time.
+ */
+export function defaultTimeCapForFormat(format: BlockFormat): string {
+  if (format === 'amrap') return '12';
+  if (format === 'emom') return '60';
+  // For Time : objectif facultatif — vide, pour que le placeholder s'affiche.
+  return '';
+}
+
 export function formatLabel(format: BlockFormat, t: TFunction): string {
   if (format === 'strength') return t('sport.sessionBuilder.blockFormat.strength');
   if (format === 'for_time') return t('sport.sessionBuilder.blockFormat.forTime');

@@ -6,7 +6,7 @@ import { Badge, Button, Card, Input, SegmentedControl, Text, useTheme } from '@s
 import { radii, spacing } from '@supotsu/design-system';
 import type { BlockFormat, MuscleGroup } from '@supotsu/core';
 import { exerciseImageUrl, MUSCLE_ICON, MUSCLE_LABEL, type Exercise } from '@/features/exercises/catalog';
-import { formatLabel, type SessionBlocksBuilder } from './sessionBuilder';
+import { defaultTimeCapForFormat, formatLabel, type SessionBlocksBuilder } from './sessionBuilder';
 
 const MUSCLE_ORDER: MuscleGroup[] = ['chest', 'back', 'shoulders', 'biceps', 'triceps', 'quads', 'hamstrings', 'glutes', 'calves', 'core', 'full_body'];
 /** Real equipment values present in the exercise catalogue, most common first. */
@@ -238,7 +238,11 @@ export function SessionBlocksEditor({
                 </View>
                 {i === builder.activeBlock ? (
                   <>
-                    <SegmentedControl options={FORMAT_OPTIONS} value={b.format} onChange={(v) => builder.updateActiveBlock({ format: v })} />
+                    <SegmentedControl
+                      options={FORMAT_OPTIONS}
+                      value={b.format}
+                      onChange={(v) => builder.updateActiveBlock({ format: v, timeCapSec: defaultTimeCapForFormat(v) })}
+                    />
                     {b.format === 'amrap' ? (
                       <Input label={t('sport.sessionBuilder.block.timeCapLabel')} keyboardType="numeric" value={b.timeCapSec} onChangeText={(v) => builder.updateActiveBlock({ timeCapSec: v })} />
                     ) : null}

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { blocksToSessionInput, type BlockDraft } from './sessionBuilder';
+import { blocksToSessionInput, defaultTimeCapForFormat, type BlockDraft } from './sessionBuilder';
 
 function block(overrides: Partial<BlockDraft> = {}): BlockDraft {
   return {
@@ -99,5 +99,19 @@ describe('blocksToSessionInput', () => {
       selected: { slot1: { exerciseId: 'thruster', reps: '21', weight: '40', rest: '' } },
     });
     expect(blocksToSessionInput([forTime])[0]?.timeCapSec).toBeUndefined();
+  });
+});
+
+describe('defaultTimeCapForFormat', () => {
+  it('donne un plafond en minutes pour un AMRAP', () => {
+    expect(defaultTimeCapForFormat('amrap')).toBe('12');
+  });
+
+  it('donne une minute d’intervalle pour un EMOM, pas 12 secondes', () => {
+    expect(defaultTimeCapForFormat('emom')).toBe('60');
+  });
+
+  it('laisse l’objectif For Time vide — il est facultatif', () => {
+    expect(defaultTimeCapForFormat('for_time')).toBe('');
   });
 });
