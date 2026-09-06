@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { View } from 'react-native';
+import { Pressable, View } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { Button, Screen, SegmentedControl, Text, Toggle, useTheme } from '@supotsu/ui';
@@ -7,6 +7,7 @@ import { spacing } from '@supotsu/design-system';
 import { EXERCISE_LIBRARY } from '@supotsu/shared';
 import { suggestProgression, type ProgressionSuggestion } from '@supotsu/engines';
 import { toCatalogExercise } from '@/features/exercises/catalog';
+import { formatDate } from '@/lib/format';
 import { useAuth } from '@/features/auth/AuthProvider';
 import { loadFavorites, toggleFavorite } from '@/features/exercises/favorites';
 import {
@@ -17,8 +18,9 @@ import {
   useUserSessions,
   useWorkouts,
   useWorkoutSets,
+  useWorkoutBlocks,
 } from '@/lib/data/queries';
-import { blocksToSessionInput, newSlotId, useSessionBlocks, type SetDraft } from './sessionBuilder';
+import { blocksToSessionInput, defaultTimeCapForFormat, newSlotId, useSessionBlocks, type SetDraft } from './sessionBuilder';
 import { SessionBlocksEditor } from './SessionBlocksEditor';
 
 const SESSIONS_QUOTA = 50;
@@ -81,9 +83,6 @@ export function NewWorkoutScreen(): React.JSX.Element {
   const [error, setError] = useState<string | null>(null);
   const atQuota = userSessions.length >= SESSIONS_QUOTA;
 
-  // "Importer une séance déjà faite" (pastWorkouts picker) is paused — kept
-  // wired (pickerOpen/importSourceId below) for when it comes back, but has
-  // no UI entry point.
   const [pickerOpen, setPickerOpen] = useState(params.openPicker === '1');
   const [importSourceId, setImportSourceId] = useState<string | undefined>();
   const pastWorkouts = useMemo(
@@ -91,29 +90,55 @@ export function NewWorkoutScreen(): React.JSX.Element {
     [allWorkouts],
   );
   const { data: importSets } = useWorkoutSets(importSourceId);
+  const { data: importBlocks } = useWorkoutBlocks(importSourceId);
   useEffect(() => {
-    if (!importSourceId || !importSets) return;
+    if (!importSourceId || !importSets || !importBlocks) return;
     const source = allWorkouts.find((w) => w.id === importSourceId);
-    const nextOrder: string[] = [];
-    const nextSelected: Record<string, SetDraft> = {};
-    for (const s of [...importSets].sort((a, b) => a.order - b.order)) {
-      const slotId = newSlotId(s.exerciseId);
-      nextOrder.push(slotId);
-      nextSelected[slotId] = {
-        exerciseId: s.exerciseId,
-        reps: s.reps != null ? String(s.reps) : '',
-        weight: s.weightKg != null ? String(s.weightKg) : '',
-        rest: s.restSec != null ? String(s.restSec) : '',
-      };
-    }
+
+    /** Un slot par série, en reprenant reps/charge/repos tels quels. */
+    const toSlots = (sets: typeof importSets) => {
+      const order: string[] = [];
+      const selected: Record<string, SetDraft> = {};
+      const supersetGroups: Record<string, number> = {};
+      for (const s of [...sets].sort((a, b) => a.order - b.order)) {
+        const slotId = newSlotId(s.exerciseId);
+        order.push(slotId);
+        selected[slotId] = {
+          exerciseId: s.exerciseId,
+          reps: s.reps != null ? String(s.reps) : '',
+          weight: s.weightKg != null ? String(s.weightKg) : '',
+          rest: s.restSec != null ? String(s.restSec) : '',
+        };
+        if (s.supersetGroup != null) supersetGroups[slotId] = s.supersetGroup;
+      }
+      return { order, selected, supersetGroups };
+    };
+
     if (source && source.name !== GARMIN_IMPORT_NAME) {
       builder.setName((prev) => (prev.trim() ? prev : source.name));
     }
-    builder.setBlocks([{ format: 'strength', timeCapSec: '12', targetRounds: '', order: nextOrder, selected: nextSelected, supersetGroups: {} }]);
+
+    // Reprendre la structure en blocs de la source : l'aplatir en un bloc
+    // « musculation » unique détruirait un AMRAP ou un EMOM dupliqué.
+    if (importBlocks.length > 0) {
+      builder.setBlocks(
+        [...importBlocks]
+          .sort((a, b) => a.order - b.order)
+          .map((b) => ({
+            format: b.format,
+            timeCapSec: b.timeCapSec != null ? String(b.format === 'amrap' || b.format === 'for_time' ? Math.round(b.timeCapSec / 60) : b.timeCapSec) : defaultTimeCapForFormat(b.format),
+            targetRounds: b.targetRounds != null ? String(b.targetRounds) : '',
+            ...toSlots(importSets.filter((s) => s.blockId === b.id)),
+          })),
+      );
+    } else {
+      // Séance historique sans bloc : repli sur un bloc musculation unique.
+      builder.setBlocks([{ format: 'strength', timeCapSec: '12', targetRounds: '', ...toSlots(importSets) }]);
+    }
     builder.setActiveBlock(0);
     setImportSourceId(undefined);
     setPickerOpen(false);
-  }, [importSourceId, importSets, allWorkouts]);
+  }, [importSourceId, importSets, importBlocks, allWorkouts]);
 
   const isPending = addCircuitWorkout.isPending || addUserSession.isPending;
 
@@ -194,7 +219,35 @@ export function NewWorkoutScreen(): React.JSX.Element {
         cancelLabel={t('common.cancel')}
         onCancel={() => router.back()}
         headerTop={
-          <Button label={t('sport.newWorkout.import.fromScreenshot')} variant="secondary" onPress={() => router.push('/sport/workout/import')} />
+          <View style={{ gap: spacing[2] }}>
+            <View style={{ flexDirection: 'row', gap: spacing[2] }}>
+              <Button label={t('sport.newWorkout.import.fromScreenshot')} variant="secondary" onPress={() => router.push('/sport/workout/import')} />
+              {pastWorkouts.length > 0 ? (
+                <Button
+                  label={t('sport.newWorkout.duplicate.open')}
+                  variant="secondary"
+                  onPress={() => setPickerOpen((v) => !v)}
+                />
+              ) : null}
+            </View>
+            {pickerOpen ? (
+              <View style={{ gap: spacing[2] }}>
+                <Text variant="caption" color="textMuted">{t('sport.newWorkout.duplicate.hint')}</Text>
+                {pastWorkouts.slice(0, 8).map((w) => (
+                  <Pressable
+                    key={w.id}
+                    onPress={() => setImportSourceId(w.id)}
+                    style={{ borderWidth: 1, borderColor: colors.border, borderRadius: 12, padding: spacing[3] }}
+                  >
+                    <Text variant="body" style={{ fontWeight: '600' }}>{w.name}</Text>
+                    {w.completedAt ? (
+                      <Text variant="caption" color="textSubtle">{formatDate(w.completedAt)}</Text>
+                    ) : null}
+                  </Pressable>
+                ))}
+              </View>
+            ) : null}
+          </View>
         }
         headerAfterName={
           <View style={{ gap: spacing[3] }}>

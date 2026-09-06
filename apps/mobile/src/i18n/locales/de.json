@@ -932,6 +932,10 @@
    },
    "form": {
     "submit": "Training erstellen"
+   },
+   "duplicate": {
+    "open": "Einheit duplizieren",
+    "hint": "Wähle eine beendete Einheit zum Kopieren."
    }
   },
   "muscles": {

@@ -932,6 +932,10 @@
    },
    "form": {
     "submit": "Criar o treino"
+   },
+   "duplicate": {
+    "open": "Duplicar uma sessão",
+    "hint": "Escolhe uma sessão terminada para copiar."
    }
   },
   "muscles": {

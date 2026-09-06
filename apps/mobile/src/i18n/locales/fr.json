@@ -932,6 +932,10 @@
    },
    "form": {
     "submit": "Créer la séance"
+   },
+   "duplicate": {
+    "open": "Dupliquer une séance",
+    "hint": "Choisis une séance terminée à recopier."
    }
   },
   "muscles": {

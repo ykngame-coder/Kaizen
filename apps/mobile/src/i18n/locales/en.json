@@ -932,6 +932,10 @@
    },
    "form": {
     "submit": "Create workout"
+   },
+   "duplicate": {
+    "open": "Duplicate a session",
+    "hint": "Pick a finished session to copy."
    }
   },
   "muscles": {

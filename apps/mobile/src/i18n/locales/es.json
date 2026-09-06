@@ -932,6 +932,10 @@
    },
    "form": {
     "submit": "Crear la sesión"
+   },
+   "duplicate": {
+    "open": "Duplicar una sesión",
+    "hint": "Elige una sesión terminada para copiar."
    }
   },
   "muscles": {
