@@ -1175,7 +1175,9 @@
     "done": "✓ Erledigt",
     "skip": "Überspringen",
     "delete": "Löschen",
-    "reprogramA11y": "Dieses Training für nächste Woche verschieben"
+    "reprogramA11y": "Dieses Training für nächste Woche verschieben",
+    "launch": "Starten",
+    "openA11y": "{{name}} öffnen"
    },
    "focus": {
     "push": "Push",

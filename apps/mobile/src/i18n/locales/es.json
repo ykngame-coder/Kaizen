@@ -1175,7 +1175,9 @@
     "done": "✓ Hecho",
     "skip": "Omitir",
     "delete": "Eliminar",
-    "reprogramA11y": "Reprogramar esta sesión la semana que viene"
+    "reprogramA11y": "Reprogramar esta sesión la semana que viene",
+    "launch": "Empezar",
+    "openA11y": "Abrir {{name}}"
    },
    "focus": {
     "push": "Push",

@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Alert, Pressable, View } from 'react-native';
 import { Swipeable } from 'react-native-gesture-handler';
-import { useLocalSearchParams } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { Button, Card, Icon, Input, Screen, Text, useTheme } from '@supotsu/ui';
 import { radii, spacing } from '@supotsu/design-system';
@@ -101,6 +101,7 @@ function notReadyOn(
 
 export function PlanningScreen(): React.JSX.Element {
   const { t } = useTranslation();
+  const router = useRouter();
   const { colors } = useTheme();
   const { data: planned = [], isLoading } = usePlannedWorkouts();
   const { data: allWorkouts = [] } = useWorkouts();
@@ -576,6 +577,8 @@ export function PlanningScreen(): React.JSX.Element {
               onSkip={() => setStatus.mutate({ workoutId: w.id, status: 'skipped' })}
               onDelete={() => removePlanned.mutate(w.id)}
               onReprogram={() => setReprogramTarget(w)}
+              onOpen={() => router.push({ pathname: '/sport/workout/[id]', params: { id: w.id } })}
+              onLaunch={() => router.push({ pathname: '/sport/workout/[id]/run', params: { id: w.id } })}
             />
           ))}
         </View>
@@ -648,6 +651,8 @@ function SessionCard({
   onSkip,
   onDelete,
   onReprogram,
+  onOpen,
+  onLaunch,
 }: {
   workout: Workout;
   sessions: Parameters<typeof computeMuscleStates>[0];
@@ -655,6 +660,8 @@ function SessionCard({
   onSkip: () => void;
   onDelete: () => void;
   onReprogram: () => void;
+  onOpen: () => void;
+  onLaunch: () => void;
 }): React.JSX.Element {
   const { t } = useTranslation();
   const { colors } = useTheme();
@@ -689,6 +696,10 @@ function SessionCard({
       overshootRight={false}
     >
       <Card>
+        {/* Toute l'en-tête ouvre la fiche : depuis le planning on ne pouvait
+            ni consulter ni lancer une séance, seulement la cocher ou la
+            supprimer (retour TestFlight). */}
+        <Pressable onPress={onOpen} accessibilityLabel={t('sport.planning.sessionCard.openA11y', { name: workout.name })}>
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing[2] }}>
           <Text style={{ fontSize: 20 }}>{focus?.icon ?? '🎽'}</Text>
           <View style={{ flex: 1 }}>
@@ -700,7 +711,9 @@ function SessionCard({
               <Text variant="caption" color="textSubtle" style={{ marginTop: 1 }}>{workout.notes}</Text>
             ) : null}
           </View>
+          <Text variant="heading" style={{ color: colors.textSubtle }}>›</Text>
         </View>
+        </Pressable>
 
         {focus && focus.muscles.length > 0 && (
           <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: spacing[1], marginTop: spacing[2] }}>
@@ -723,6 +736,17 @@ function SessionCard({
             })}
           </View>
         )}
+
+        {/* Lançable seulement tant qu'elle n'est pas déjà terminée ou passée. */}
+        {workout.status === 'planned' || workout.status === 'in_progress' ? (
+          <View style={{ marginTop: spacing[3] }}>
+            <Button
+              label={workout.status === 'in_progress' ? t('sport.runner.resume') : t('sport.planning.sessionCard.launch')}
+              onPress={onLaunch}
+              fullWidth
+            />
+          </View>
+        ) : null}
 
         <View style={{ flexDirection: 'row', gap: spacing[2], marginTop: spacing[3] }}>
           <View style={{ flex: 1 }}>

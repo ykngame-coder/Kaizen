@@ -1175,7 +1175,9 @@
     "done": "✓ Done",
     "skip": "Skip",
     "delete": "Delete",
-    "reprogramA11y": "Reschedule this workout for next week"
+    "reprogramA11y": "Reschedule this workout for next week",
+    "launch": "Start",
+    "openA11y": "Open {{name}}"
    },
    "focus": {
     "push": "Push",

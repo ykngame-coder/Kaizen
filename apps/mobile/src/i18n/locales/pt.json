@@ -1175,7 +1175,9 @@
     "done": "✓ Feito",
     "skip": "Pular",
     "delete": "Excluir",
-    "reprogramA11y": "Reprogramar este treino para a semana que vem"
+    "reprogramA11y": "Reprogramar este treino para a semana que vem",
+    "launch": "Começar",
+    "openA11y": "Abrir {{name}}"
    },
    "focus": {
     "push": "Push",
