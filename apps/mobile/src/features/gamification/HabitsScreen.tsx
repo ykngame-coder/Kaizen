@@ -16,6 +16,19 @@ import { linkedKindFor, type LinkedKind } from './linkedHabits';
 const DAY_MS = 86_400_000;
 const dayKey = (d: Date): string => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 
+/**
+ * Midi local du jour consulté, en ISO. Le sélecteur de jour porte 23:59:59.999
+ * en heure locale — l'instant le plus fragile qui soit : un décalage d'une
+ * heure (heure d'été, fuseau réinterprété) le bascule au lendemain, et la
+ * coche se retrouve sur le mauvais jour. Midi ne bouge de jour sous aucun
+ * décalage réaliste.
+ */
+function noonOf(iso: string): string | null {
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return null;
+  return new Date(d.getFullYear(), d.getMonth(), d.getDate(), 12, 0, 0, 0).toISOString();
+}
+
 // 'habits' (the default pillar) and 'performance' have no thematic icon of
 // their own, so both fell back to the same '✅' checkmark — which reads as
 // "done" regardless of the habit's actual state, and was confusing right
@@ -365,12 +378,12 @@ export function HabitsScreen(): React.JSX.Element {
                             // définitivement.
                             let completedAt: string | undefined;
                             if (!isToday) {
-                              const at = new Date(selectedDate);
-                              if (Number.isNaN(at.getTime())) {
+                              const at = noonOf(selectedDate);
+                              if (!at) {
                                 onError(new Error('Invalid selected day'));
                                 return;
                               }
-                              completedAt = at.toISOString();
+                              completedAt = at;
                             }
                             setPendingHabitId(h.id);
                             logHabit.mutate({ habitId: h.id, completedAt }, { onSettled: settle, onError });
