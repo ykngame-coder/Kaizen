@@ -1592,6 +1592,13 @@
    "blockUpcoming": "próximo",
    "continueBlock": "Continuar",
    "skipBlock": "Pasar al siguiente bloque"
+  },
+  "progression": {
+   "rationale": {
+    "addRep": "Añade una repetición ({{reps}}) respecto a tu última sesión.",
+    "increaseLoad": "Llegaste a {{highReps}} reps con {{from}} kg — sube a {{to}} kg para {{lowReps}} reps.",
+    "addRepSameLoad": "Apunta a {{reps}} reps con {{weight}} kg (misma carga) antes de subir."
+   }
   }
  },
  "sommeil": {

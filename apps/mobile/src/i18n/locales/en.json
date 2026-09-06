@@ -1592,6 +1592,13 @@
    "blockUpcoming": "upcoming",
    "continueBlock": "Continue",
    "skipBlock": "Skip to next block"
+  },
+  "progression": {
+   "rationale": {
+    "addRep": "Add a rep ({{reps}}) compared with your last session.",
+    "increaseLoad": "You hit {{highReps}} reps at {{from}} kg — move up to {{to}} kg for {{lowReps}} reps.",
+    "addRepSameLoad": "Aim for {{reps}} reps at {{weight}} kg (same load) before adding weight."
+   }
   }
  },
  "sommeil": {
