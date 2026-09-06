@@ -6,6 +6,8 @@ import { EmptyState, Icon, Screen, SegmentedControl, Text, Toggle, useTheme } fr
 import { spacing } from '@supotsu/design-system';
 import { suggestProgression, type ProgressionSuggestion } from '@supotsu/engines';
 import { toCatalogExercise } from '@/features/exercises/catalog';
+import { useAuth } from '@/features/auth/AuthProvider';
+import { loadFavorites, toggleFavorite } from '@/features/exercises/favorites';
 import { BackButton } from '@/features/navigation/BackButton';
 import {
   useAddUserSession,
@@ -51,6 +53,17 @@ export function EditWorkoutScreen(): React.JSX.Element {
   /** Surcharge progressive proposée d'après la dernière séance — éditable, jamais imposée. */
   const suggestionFor = (exerciseId: string): ProgressionSuggestion | undefined =>
     suggestProgression(history[exerciseId] ?? []);
+
+  const { user } = useAuth();
+  const [favorites, setFavorites] = useState<string[]>([]);
+  useEffect(() => {
+    if (!user) return;
+    void loadFavorites(user.id).then(setFavorites);
+  }, [user?.id]);
+  const onToggleFavorite = async (exerciseId: string): Promise<void> => {
+    if (!user) return;
+    setFavorites(await toggleFavorite(user.id, exerciseId));
+  };
 
   const recentExerciseIds = useMemo(() => Object.keys(history), [history]);
   const builder = useSessionBlocks({ customExercises: catalogCustom, recentExerciseIds, lastKnownFor });
@@ -195,6 +208,8 @@ export function EditWorkoutScreen(): React.JSX.Element {
         isCustomExercise={isCustomExercise}
         lastKnownFor={lastKnownFor}
         suggestionFor={suggestionFor}
+        favorites={favorites}
+        onToggleFavorite={onToggleFavorite}
         onCreateExercise={() => router.push('/sport/exercise/new')}
         error={error}
         saving={isSaving}

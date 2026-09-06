@@ -1493,7 +1493,10 @@
     "resultCount_other": "{{count}} Ergebnisse",
     "noResults": "Keine Übung passt zu „{{query}}“. Du kannst",
     "createLink": "eine eigene Übung erstellen",
-    "activeBlock": "Hinzufügen zu Block {{n}} · {{format}}"
+    "activeBlock": "Hinzufügen zu Block {{n}} · {{format}}",
+    "favoritesHeading": "Favoriten",
+    "addSelected": "Hinzufügen ({{count}} ausgewählt)",
+    "favoriteA11y": "{{name}} zu Favoriten"
    },
    "session": {
     "title": "Dein Training",

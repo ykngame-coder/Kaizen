@@ -1493,7 +1493,10 @@
     "resultCount_other": "{{count}} résultats",
     "noResults": "Aucun exercice ne correspond à \"{{query}}\". Tu peux",
     "createLink": "créer un exercice personnalisé",
-    "activeBlock": "Ajout dans le bloc {{n}} · {{format}}"
+    "activeBlock": "Ajout dans le bloc {{n}} · {{format}}",
+    "favoritesHeading": "Favoris",
+    "addSelected": "Ajouter ({{count}} sélectionnés)",
+    "favoriteA11y": "Mettre {{name}} en favori"
    },
    "session": {
     "title": "Ta séance",

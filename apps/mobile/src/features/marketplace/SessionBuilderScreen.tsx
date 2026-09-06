@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
@@ -6,6 +6,8 @@ import { EmptyState, Icon, Screen, SegmentedControl, Text, useTheme } from '@sup
 import { spacing } from '@supotsu/design-system';
 import { suggestProgression, type ProgressionSuggestion } from '@supotsu/engines';
 import { toCatalogExercise } from '@/features/exercises/catalog';
+import { useAuth } from '@/features/auth/AuthProvider';
+import { loadFavorites, toggleFavorite } from '@/features/exercises/favorites';
 import { useAddUserSession, useCustomExercises, useExerciseHistory, useUserSessions } from '@/lib/data/queries';
 import { BackButton } from '@/features/navigation/BackButton';
 import { blocksToSessionInput, useSessionBlocks } from '@/features/training/sessionBuilder';
@@ -37,6 +39,17 @@ export function SessionBuilderScreen(): React.JSX.Element {
   /** Surcharge progressive proposée d'après la dernière séance — éditable, jamais imposée. */
   const suggestionFor = (exerciseId: string): ProgressionSuggestion | undefined =>
     suggestProgression(history[exerciseId] ?? []);
+
+  const { user } = useAuth();
+  const [favorites, setFavorites] = useState<string[]>([]);
+  useEffect(() => {
+    if (!user) return;
+    void loadFavorites(user.id).then(setFavorites);
+  }, [user?.id]);
+  const onToggleFavorite = async (exerciseId: string): Promise<void> => {
+    if (!user) return;
+    setFavorites(await toggleFavorite(user.id, exerciseId));
+  };
 
   const builder = useSessionBlocks({ customExercises: catalogCustom, recentExerciseIds, lastKnownFor });
   const [visibility, setVisibility] = useState<'private' | 'public'>('private');
@@ -89,6 +102,8 @@ export function SessionBuilderScreen(): React.JSX.Element {
         isCustomExercise={isCustomExercise}
         lastKnownFor={lastKnownFor}
         suggestionFor={suggestionFor}
+        favorites={favorites}
+        onToggleFavorite={onToggleFavorite}
         onCreateExercise={() => router.push('/sport/exercise/new')}
         error={error}
         saving={addSession.isPending}

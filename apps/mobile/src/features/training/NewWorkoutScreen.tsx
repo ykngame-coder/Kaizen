@@ -7,6 +7,8 @@ import { spacing } from '@supotsu/design-system';
 import { EXERCISE_LIBRARY } from '@supotsu/shared';
 import { suggestProgression, type ProgressionSuggestion } from '@supotsu/engines';
 import { toCatalogExercise } from '@/features/exercises/catalog';
+import { useAuth } from '@/features/auth/AuthProvider';
+import { loadFavorites, toggleFavorite } from '@/features/exercises/favorites';
 import {
   useAddCircuitWorkout,
   useAddUserSession,
@@ -55,6 +57,17 @@ export function NewWorkoutScreen(): React.JSX.Element {
   /** Surcharge progressive proposée d'après la dernière séance — éditable, jamais imposée. */
   const suggestionFor = (exerciseId: string): ProgressionSuggestion | undefined =>
     suggestProgression(history[exerciseId] ?? []);
+
+  const { user } = useAuth();
+  const [favorites, setFavorites] = useState<string[]>([]);
+  useEffect(() => {
+    if (!user) return;
+    void loadFavorites(user.id).then(setFavorites);
+  }, [user?.id]);
+  const onToggleFavorite = async (exerciseId: string): Promise<void> => {
+    if (!user) return;
+    setFavorites(await toggleFavorite(user.id, exerciseId));
+  };
 
   const builder = useSessionBlocks({
     customExercises: catalogCustom,
@@ -172,6 +185,8 @@ export function NewWorkoutScreen(): React.JSX.Element {
         onCreateExercise={() => router.push('/sport/exercise/new')}
         lastKnownFor={lastKnownFor}
         suggestionFor={suggestionFor}
+        favorites={favorites}
+        onToggleFavorite={onToggleFavorite}
         error={error}
         saving={isPending}
         saveLabel={isPending ? t('sport.sessionBuilder.form.submitPending') : t('sport.newWorkout.form.submit')}

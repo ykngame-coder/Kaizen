@@ -1493,7 +1493,10 @@
     "resultCount_other": "{{count}} resultados",
     "noResults": "Nenhum exercício corresponde a \"{{query}}\". Você pode",
     "createLink": "criar um exercício personalizado",
-    "activeBlock": "A adicionar ao bloco {{n}} · {{format}}"
+    "activeBlock": "A adicionar ao bloco {{n}} · {{format}}",
+    "favoritesHeading": "Favoritos",
+    "addSelected": "Adicionar ({{count}} selecionados)",
+    "favoriteA11y": "Marcar {{name}} como favorito"
    },
    "session": {
     "title": "Seu treino",

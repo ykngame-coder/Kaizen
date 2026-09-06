@@ -31,6 +31,10 @@ export interface SessionBlocksEditorProps {
   lastKnownFor?: (exerciseId: string) => LastKnown | undefined;
   /** Progression suggérée pour un exercice — proposition éditable, jamais imposée. */
   suggestionFor?: (exerciseId: string) => ProgressionSuggestion | undefined;
+  /** Ids des exercices favoris de l'utilisateur. */
+  favorites?: string[];
+  /** Bascule un exercice en favori. Sans ce callback, l'étoile ne s'affiche pas. */
+  onToggleFavorite?: (exerciseId: string) => void | Promise<void>;
   isCustomExercise: (exerciseId: string) => boolean;
   onCreateExercise: () => void;
   error?: string | null;
@@ -167,6 +171,8 @@ export function SessionBlocksEditor({
   headerAfterName,
   lastKnownFor,
   suggestionFor,
+  favorites = [],
+  onToggleFavorite,
   isCustomExercise,
   onCreateExercise,
   error,
@@ -180,6 +186,11 @@ export function SessionBlocksEditor({
   const [blocksOpen, setBlocksOpen] = useState(!builder.isSingleStrength);
   const [addOpen, setAddOpen] = useState(true);
   const [selectedOpen, setSelectedOpen] = useState(true);
+  /** Exercices cochés dans les résultats, ajoutés d'un seul geste. */
+  const [pendingAdd, setPendingAdd] = useState<string[]>([]);
+  const favoriteExercises = favorites
+    .map((id) => builder.byId.get(id))
+    .filter((ex): ex is Exercise => ex !== undefined);
   const [selectingSuperset, setSelectingSuperset] = useState(false);
   const [pendingSuperset, setPendingSuperset] = useState<string[]>([]);
 
@@ -329,6 +340,26 @@ export function SessionBlocksEditor({
           ))}
         </ScrollView>
 
+        {favoriteExercises.length > 0 ? (
+          <>
+            <Text variant="label" color="textMuted" style={{ marginTop: spacing[4] }}>
+              {t('sport.sessionBuilder.addExercise.favoritesHeading')}
+            </Text>
+            <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: spacing[2], marginTop: spacing[2] }}>
+              {favoriteExercises.map((ex) => (
+                <Pressable
+                  key={ex.id}
+                  onPress={() => builder.addExercise(ex.id)}
+                  style={{ flexDirection: 'row', alignItems: 'center', gap: spacing[2], paddingHorizontal: 10, paddingVertical: 6, borderRadius: radii.full, backgroundColor: colors.surfaceElevated, borderWidth: 1, borderColor: colors.accentData }}
+                >
+                  <Thumb exercise={ex} size={22} />
+                  <Text variant="caption" style={{ fontWeight: '600' }}>{ex.name}</Text>
+                </Pressable>
+              ))}
+            </View>
+          </>
+        ) : null}
+
         {builder.recentExercises.length > 0 ? (
           <>
             <Text variant="label" color="textMuted" style={{ marginTop: spacing[4] }}>
@@ -361,22 +392,54 @@ export function SessionBlocksEditor({
           </Text>
         ) : (
           <View style={{ gap: spacing[2], marginTop: spacing[2] }}>
-            {builder.searchResults.map((ex) => (
-              <Pressable key={ex.id} onPress={() => builder.addExercise(ex.id)} style={({ pressed }) => ({ opacity: pressed ? 0.7 : 1 })}>
-                <Card>
+            {builder.searchResults.map((ex) => {
+              const isPicked = pendingAdd.includes(ex.id);
+              const isFav = favorites.includes(ex.id);
+              return (
+              <Pressable
+                key={ex.id}
+                onPress={() => setPendingAdd((prev) => (isPicked ? prev.filter((id) => id !== ex.id) : [...prev, ex.id]))}
+                style={({ pressed }) => ({ opacity: pressed ? 0.7 : 1 })}
+              >
+                <Card style={{ borderWidth: isPicked ? 2 : undefined, borderColor: isPicked ? colors.primary : undefined }}>
                   <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing[3] }}>
                     <Thumb exercise={ex} />
                     <View style={{ flex: 1 }}>
                       <Text variant="subtitle">{ex.name}</Text>
                       <Text variant="caption" color="textMuted">{exerciseSubtitle(ex)}</Text>
                     </View>
-                    <Text variant="heading" style={{ color: colors.primary }}>+</Text>
+                    <Pressable
+                      onPress={() => void onToggleFavorite?.(ex.id)}
+                      hitSlop={10}
+                      accessibilityLabel={t('sport.sessionBuilder.addExercise.favoriteA11y', { name: ex.name })}
+                    >
+                      <Text variant="heading" style={{ color: isFav ? colors.accentData : colors.textSubtle }}>
+                        {isFav ? '★' : '☆'}
+                      </Text>
+                    </Pressable>
+                    <Text variant="heading" style={{ color: isPicked ? colors.primary : colors.textSubtle }}>
+                      {isPicked ? '✓' : '+'}
+                    </Text>
                   </View>
                 </Card>
               </Pressable>
-            ))}
+              );
+            })}
           </View>
         )}
+
+        {/* Ajout groupé : sélectionner plusieurs exercices puis les ajouter d'un coup. */}
+        {pendingAdd.length > 0 ? (
+          <View style={{ marginTop: spacing[3] }}>
+            <Button
+              label={t('sport.sessionBuilder.addExercise.addSelected', { count: pendingAdd.length })}
+              onPress={() => {
+                for (const id of pendingAdd) builder.addExercise(id);
+                setPendingAdd([]);
+              }}
+            />
+          </View>
+        ) : null}
       </Collapsible>
 
       <Pressable onPress={() => setSelectedOpen((v) => !v)}>

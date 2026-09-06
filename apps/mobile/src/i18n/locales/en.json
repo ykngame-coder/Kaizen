@@ -1493,7 +1493,10 @@
     "resultCount_other": "{{count}} results",
     "noResults": "No exercise matches \"{{query}}\". You can",
     "createLink": "create a custom exercise",
-    "activeBlock": "Adding to block {{n}} · {{format}}"
+    "activeBlock": "Adding to block {{n}} · {{format}}",
+    "favoritesHeading": "Favorites",
+    "addSelected": "Add ({{count}} selected)",
+    "favoriteA11y": "Favorite {{name}}"
    },
    "session": {
     "title": "Your workout",
