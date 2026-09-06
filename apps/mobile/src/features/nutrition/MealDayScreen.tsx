@@ -5,7 +5,7 @@ import { useTranslation } from 'react-i18next';
 import { Button, Card, EmptyState, Icon, Screen, Text, useTheme, type IconName } from '@supotsu/ui';
 import { radii, spacing } from '@supotsu/design-system';
 import type { MealType } from '@supotsu/core';
-import { isHydrationOnlyEntry } from '@supotsu/engines';
+import { entriesForDay, isHydrationOnlyEntry } from '@supotsu/engines';
 import { useDeleteNutritionEntry, useNutritionEntries } from '@/lib/data/queries';
 import { formatDate } from '@/lib/format';
 import { BackButton } from '@/features/navigation/BackButton';
@@ -27,8 +27,13 @@ export function MealDayScreen(): React.JSX.Element {
 
   const dayEntries = useMemo(
     () =>
-      entries
-        .filter((e) => e.mealType === type && e.loggedAt.slice(0, 10) === date && !isHydrationOnlyEntry(e))
+      // entriesForDay borne le jour en heure LOCALE, comme la liste Nutrition
+      // qui a amené ici. Comparer `loggedAt.slice(0, 10)` (la date UTC) à une
+      // clé de jour locale ratait toute entrée saisie entre minuit et l'écart
+      // UTC — le repas apparaissait dans la liste mais l'écran du repas
+      // s'affichait vide. Midi local comme ancre : jamais ambigu.
+      entriesForDay(entries, new Date(`${date}T12:00:00`).toISOString())
+        .filter((e) => e.mealType === type && !isHydrationOnlyEntry(e))
         .sort((a, b) => a.loggedAt.localeCompare(b.loggedAt)),
     [entries, type, date],
   );

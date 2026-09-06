@@ -2311,7 +2311,10 @@
    "editErrorSaveFailed": "No se pudo guardar.",
    "confirmDelete": "¿Eliminar definitivamente esta comida?",
    "delete": "Eliminar",
-   "moveHeading": "Mover a otra comida"
+   "moveHeading": "Mover a otra comida",
+   "copyHeading": "Copiar a otra comida",
+   "movePrevDay": "◀ Día anterior",
+   "moveNextDay": "Día siguiente ▶"
   },
   "barcodeScan": {
    "webTitle": "Escanear un código de barras",

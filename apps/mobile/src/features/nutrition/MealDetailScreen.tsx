@@ -4,7 +4,7 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { Badge, Button, Card, EmptyState, Icon, Input, Screen, Text, useTheme } from '@supotsu/ui';
 import { radii, spacing } from '@supotsu/design-system';
-import { useDeleteNutritionEntry, useNutritionEntries, useUpdateNutritionEntry } from '@/lib/data/queries';
+import { useAddNutritionEntry, useDeleteNutritionEntry, useNutritionEntries, useUpdateNutritionEntry } from '@/lib/data/queries';
 import { formatDate } from '@/lib/format';
 import { formatClockFromIso, usePreferences } from '@/lib/preferences';
 import { BackButton } from '@/features/navigation/BackButton';
@@ -12,6 +12,13 @@ import type { MealType } from '@supotsu/core';
 
 const MEAL_ICON: Record<string, string> = { breakfast: '🥣', lunch: '🍗', dinner: '🍝', snack: '🍎' };
 const MEAL_TYPES: MealType[] = ['breakfast', 'lunch', 'dinner', 'snack'];
+
+/** Même horodatage, décalé de N jours — l'heure de la journée est conservée. */
+function shiftDays(iso: string, days: number): string {
+  const d = new Date(iso);
+  d.setDate(d.getDate() + days);
+  return d.toISOString();
+}
 
 /** Small stat block — omits itself when there's no value to show. */
 function Stat({ label, value }: { label: string; value: string | null | undefined }): React.JSX.Element | null {
@@ -35,6 +42,7 @@ export function MealDetailScreen(): React.JSX.Element {
   const { data: entries = [], isLoading } = useNutritionEntries();
   const deleteEntry = useDeleteNutritionEntry();
   const updateEntry = useUpdateNutritionEntry();
+  const addEntry = useAddNutritionEntry();
   const [confirmingDelete, setConfirmingDelete] = useState(false);
   const [editing, setEditing] = useState(false);
   const [kcalInput, setKcalInput] = useState('');
@@ -185,6 +193,57 @@ export function MealDetailScreen(): React.JSX.Element {
                 </Pressable>
               );
             })}
+          </View>
+
+          {/* Décaler d'un jour : une entrée saisie le lendemain matin pour la
+              veille se recale sans ressaisie. L'heure est conservée. */}
+          <View style={{ flexDirection: 'row', gap: spacing[2], marginTop: spacing[3] }}>
+            <Button
+              label={t('nutrition.mealDetail.movePrevDay')}
+              variant="secondary"
+              disabled={updateEntry.isPending}
+              onPress={() => updateEntry.mutate({ entryId: entry.id, loggedAt: shiftDays(entry.loggedAt, -1) })}
+            />
+            <Button
+              label={t('nutrition.mealDetail.moveNextDay')}
+              variant="secondary"
+              disabled={updateEntry.isPending}
+              onPress={() => updateEntry.mutate({ entryId: entry.id, loggedAt: shiftDays(entry.loggedAt, 1) })}
+            />
+          </View>
+        </Card>
+
+        {/* Copier plutôt que déplacer — même aliment dans un second repas. */}
+        <Card>
+          <Text variant="label" color="textMuted">{t('nutrition.mealDetail.copyHeading')}</Text>
+          <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: spacing[2], marginTop: spacing[2] }}>
+            {MEAL_TYPES.map((m) => (
+              <Pressable
+                key={m}
+                disabled={addEntry.isPending}
+                onPress={() => addEntry.mutate({
+                  mealType: m,
+                  description: entry.description,
+                  kcal: entry.kcal,
+                  proteinG: entry.proteinG,
+                  carbG: entry.carbG,
+                  fatG: entry.fatG,
+                  hydrationMl: entry.hydrationMl,
+                  source: 'manual',
+                  loggedAt: entry.loggedAt,
+                })}
+                style={{
+                  flexDirection: 'row', alignItems: 'center', gap: 6,
+                  paddingHorizontal: 12, paddingVertical: 8, borderRadius: radii.full,
+                  backgroundColor: colors.surfaceElevated,
+                  borderWidth: 1, borderColor: colors.border,
+                  opacity: addEntry.isPending ? 0.5 : 1,
+                }}
+              >
+                <Text style={{ fontSize: 13 }}>{MEAL_ICON[m]}</Text>
+                <Text variant="caption" style={{ fontWeight: '600' }}>{t(`nutrition.journal.meal.${m}`)}</Text>
+              </Pressable>
+            ))}
           </View>
         </Card>
 

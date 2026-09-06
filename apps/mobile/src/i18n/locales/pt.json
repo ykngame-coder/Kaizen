@@ -2311,7 +2311,10 @@
    "editErrorSaveFailed": "Não foi possível salvar.",
    "confirmDelete": "Excluir definitivamente esta refeição?",
    "delete": "Excluir",
-   "moveHeading": "Mover para outra refeição"
+   "moveHeading": "Mover para outra refeição",
+   "copyHeading": "Copiar para outra refeição",
+   "movePrevDay": "◀ Dia anterior",
+   "moveNextDay": "Dia seguinte ▶"
   },
   "barcodeScan": {
    "webTitle": "Escanear um código de barras",

@@ -2311,7 +2311,10 @@
    "editErrorSaveFailed": "Speichern nicht möglich.",
    "confirmDelete": "Diese Mahlzeit endgültig löschen?",
    "delete": "Löschen",
-   "moveHeading": "In eine andere Mahlzeit verschieben"
+   "moveHeading": "In eine andere Mahlzeit verschieben",
+   "copyHeading": "In eine andere Mahlzeit kopieren",
+   "movePrevDay": "◀ Vortag",
+   "moveNextDay": "Folgetag ▶"
   },
   "barcodeScan": {
    "webTitle": "Barcode scannen",

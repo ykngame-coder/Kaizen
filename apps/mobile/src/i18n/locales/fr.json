@@ -2311,7 +2311,10 @@
    "editErrorSaveFailed": "Modification impossible.",
    "confirmDelete": "Supprimer définitivement ce repas ?",
    "delete": "Supprimer",
-   "moveHeading": "Déplacer vers un autre repas"
+   "moveHeading": "Déplacer vers un autre repas",
+   "copyHeading": "Copier vers un autre repas",
+   "movePrevDay": "◀ Jour précédent",
+   "moveNextDay": "Jour suivant ▶"
   },
   "barcodeScan": {
    "webTitle": "Scanner un code-barres",

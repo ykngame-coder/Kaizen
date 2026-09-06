@@ -335,7 +335,7 @@ export interface DataRepository {
   addNutritionEntry(userId: string, input: NutritionEntryInput): Promise<NutritionEntry>;
   deleteNutritionEntry(userId: string, entryId: string): Promise<void>;
   /** Adjust a logged entry's calories/macros, or move it to another meal (e.g. logged under breakfast, actually lunch). */
-  updateNutritionEntry(userId: string, entryId: string, patch: { kcal?: number; proteinG?: number; carbG?: number; fatG?: number; mealType?: MealType }): Promise<NutritionEntry>;
+  updateNutritionEntry(userId: string, entryId: string, patch: { kcal?: number; proteinG?: number; carbG?: number; fatG?: number; mealType?: MealType; loggedAt?: string }): Promise<NutritionEntry>;
   listHabits(userId: string): Promise<Habit[]>;
   addHabit(userId: string, input: HabitInput): Promise<Habit>;
   /** Rename/retarget an existing habit. */
@@ -2343,6 +2343,7 @@ function createSupabaseRepository(
         ...(patch.carbG !== undefined ? { carb_g: patch.carbG } : {}),
         ...(patch.fatG !== undefined ? { fat_g: patch.fatG } : {}),
         ...(patch.mealType !== undefined ? { meal_type: patch.mealType } : {}),
+        ...(patch.loggedAt !== undefined ? { logged_at: patch.loggedAt } : {}),
       });
       return rowToNutrition(row);
     },

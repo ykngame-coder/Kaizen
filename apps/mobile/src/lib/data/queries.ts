@@ -207,7 +207,7 @@ export function useUpdateNutritionEntry() {
   const repo = useRepository();
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (input: { entryId: string; kcal?: number; proteinG?: number; carbG?: number; fatG?: number; mealType?: MealType }) =>
+    mutationFn: (input: { entryId: string; kcal?: number; proteinG?: number; carbG?: number; fatG?: number; mealType?: MealType; loggedAt?: string }) =>
       repo.updateNutritionEntry(user!.id, input.entryId, input),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['nutrition', user?.id] });
@@ -294,12 +294,34 @@ export function useHabitLogs() {
   });
 }
 
+/**
+ * Borne une écriture qui pourrait ne jamais répondre. Sans ça, une requête
+ * suspendue laisse l'écran sur son indicateur de chargement indéfiniment, sans
+ * succès ni erreur — invisible pour l'utilisateur comme pour le diagnostic.
+ */
+async function withTimeout<T>(work: Promise<T>, ms: number, label: string): Promise<T> {
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  try {
+    return await Promise.race([
+      work,
+      new Promise<never>((_, reject) => {
+        timer = setTimeout(() => reject(new Error(`${label}: délai dépassé (${ms / 1000} s)`)), ms);
+      }),
+    ]);
+  } finally {
+    if (timer) clearTimeout(timer);
+  }
+}
+
+const WRITE_TIMEOUT_MS = 12_000;
+
 export function useLogHabit() {
   const { user } = useAuth();
   const repo = useRepository();
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: ({ habitId, completedAt }: { habitId: string; completedAt?: string }) => repo.logHabit(user!.id, habitId, completedAt),
+    mutationFn: ({ habitId, completedAt }: { habitId: string; completedAt?: string }) =>
+      withTimeout(repo.logHabit(user!.id, habitId, completedAt), WRITE_TIMEOUT_MS, 'logHabit'),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['habitLogs', user?.id] });
     },
@@ -312,7 +334,7 @@ export function useUnlogHabit() {
   const repo = useRepository();
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (logId: string) => repo.deleteHabitLog(user!.id, logId),
+    mutationFn: (logId: string) => withTimeout(repo.deleteHabitLog(user!.id, logId), WRITE_TIMEOUT_MS, 'deleteHabitLog'),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['habitLogs', user?.id] });
     },

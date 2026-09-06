@@ -2311,7 +2311,10 @@
    "editErrorSaveFailed": "Couldn't save the changes.",
    "confirmDelete": "Permanently delete this meal?",
    "delete": "Delete",
-   "moveHeading": "Move to another meal"
+   "moveHeading": "Move to another meal",
+   "copyHeading": "Copy to another meal",
+   "movePrevDay": "◀ Previous day",
+   "moveNextDay": "Next day ▶"
   },
   "barcodeScan": {
    "webTitle": "Scan a barcode",
