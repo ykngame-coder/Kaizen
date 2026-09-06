@@ -1,10 +1,10 @@
 import React, { useState } from 'react';
 import { View } from 'react-native';
-import { useRouter } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Badge, Button, EmptyState, Icon, Input, Screen, SegmentedControl, Text } from '@supotsu/ui';
 import { spacing } from '@supotsu/design-system';
-import type { ProgramFocus, SportLevel } from '@supotsu/core';
-import { useAddUserProgram, useUserPrograms } from '@/lib/data/queries';
+import type { ProgramFocus, SportLevel, UserProgram } from '@supotsu/core';
+import { useAddUserProgram, useUpdateUserProgram, useUserPrograms } from '@/lib/data/queries';
 
 const FOCUS_OPTIONS: { value: ProgramFocus; label: string }[] = [
   { value: 'strength', label: 'Force' },
@@ -26,21 +26,67 @@ const VISIBILITY_OPTIONS = [
 ];
 const PROGRAMS_QUOTA = 2;
 
-/** Create a program's metadata; sessions get assigned to weeks/days on the next screen. */
+/**
+ * Create or edit a program's metadata; sessions get assigned to weeks/days on
+ * the next screen, which stays the only place the schedule is edited. Shrinking
+ * `weeks` therefore leaves slots beyond the new count in place rather than
+ * deleting them — they reappear if the program is lengthened again.
+ */
 export function ProgramBuilderScreen(): React.JSX.Element {
   const router = useRouter();
-  const { data: programs = [] } = useUserPrograms();
-  const addProgram = useAddUserProgram();
+  const params = useLocalSearchParams<{ id?: string }>();
+  const programId = typeof params.id === 'string' && params.id ? params.id : undefined;
+  const { data: programs = [], isLoading } = useUserPrograms();
+  const existing = programId ? programs.find((p) => p.id === programId) : undefined;
 
-  const [title, setTitle] = useState('');
-  const [focus, setFocus] = useState<ProgramFocus>('general');
-  const [level, setLevel] = useState<SportLevel>('beginner');
-  const [weeksText, setWeeksText] = useState('8');
-  const [description, setDescription] = useState('');
-  const [visibility, setVisibility] = useState<'private' | 'public'>('private');
+  // Le formulaire ne se monte qu'une fois le programme connu : ses champs
+  // s'initialisent au premier rendu, donc le monter sur une requête encore
+  // vide le laisserait vierge définitivement.
+  if (programId && isLoading) {
+    return (
+      <Screen>
+        <Text variant="body" color="textMuted">Chargement…</Text>
+      </Screen>
+    );
+  }
+
+  if (programId && !existing) {
+    return (
+      <Screen>
+        <EmptyState
+          icon={<Icon name="calendarClock" size={44} />}
+          title="Programme introuvable"
+          message="Ce programme n'existe plus."
+          actionLabel="Retour"
+          onAction={() => router.back()}
+        />
+      </Screen>
+    );
+  }
+
+  return <ProgramForm key={programId ?? 'new'} existing={existing} programCount={programs.length} />;
+}
+
+function ProgramForm({ existing, programCount }: { existing?: UserProgram; programCount: number }): React.JSX.Element {
+  const router = useRouter();
+  const addProgram = useAddUserProgram();
+  const updateProgram = useUpdateUserProgram();
+  const programId = existing?.id;
+  const isEdit = !!programId;
+
+  const [title, setTitle] = useState(existing?.title ?? '');
+  const [focus, setFocus] = useState<ProgramFocus>(existing?.focus ?? 'general');
+  const [level, setLevel] = useState<SportLevel>(existing?.level ?? 'beginner');
+  const [weeksText, setWeeksText] = useState(existing ? String(existing.weeks) : '8');
+  const [description, setDescription] = useState(existing?.description ?? '');
+  const [visibility, setVisibility] = useState<'private' | 'public'>(
+    existing?.visibility === 'public' ? 'public' : 'private',
+  );
   const [error, setError] = useState<string | null>(null);
 
-  const atQuota = programs.length >= PROGRAMS_QUOTA;
+  // Le quota ne borne que la création.
+  const atQuota = !isEdit && programCount >= PROGRAMS_QUOTA;
+  const saving = addProgram.isPending || updateProgram.isPending;
 
   const submit = async (): Promise<void> => {
     setError(null);
@@ -49,15 +95,21 @@ export function ProgramBuilderScreen(): React.JSX.Element {
       setError('Donne un titre et une durée entre 1 et 26 semaines.');
       return;
     }
+    const input = {
+      title: title.trim(),
+      focus,
+      level,
+      weeks,
+      description: description.trim() || undefined,
+      visibility,
+    };
     try {
-      const program = await addProgram.mutateAsync({
-        title: title.trim(),
-        focus,
-        level,
-        weeks,
-        description: description.trim() || undefined,
-        visibility,
-      });
+      if (programId) {
+        await updateProgram.mutateAsync({ programId, input });
+        router.back();
+        return;
+      }
+      const program = await addProgram.mutateAsync(input);
       router.replace({ pathname: '/marketplace/program/[id]', params: { id: program.id } });
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Enregistrement impossible.');
@@ -80,10 +132,12 @@ export function ProgramBuilderScreen(): React.JSX.Element {
 
   return (
     <Screen scroll>
-      <Text variant="title">Nouveau programme</Text>
-      <Text variant="caption" color="textSubtle">
-        {programs.length}/{PROGRAMS_QUOTA} programmes
-      </Text>
+      <Text variant="title">{isEdit ? 'Modifier le programme' : 'Nouveau programme'}</Text>
+      {isEdit ? null : (
+        <Text variant="caption" color="textSubtle">
+          {programCount}/{PROGRAMS_QUOTA} programmes
+        </Text>
+      )}
 
       <Input label="Titre" placeholder="Ex : Prépa Hyrox perso" value={title} onChangeText={setTitle} />
       <Input
@@ -112,9 +166,9 @@ export function ProgramBuilderScreen(): React.JSX.Element {
         <Button label="Annuler" variant="secondary" onPress={() => router.back()} />
         <View style={{ flex: 1 }} />
         <Button
-          label={addProgram.isPending ? '…' : 'Créer et planifier les séances'}
+          label={saving ? '…' : isEdit ? 'Enregistrer' : 'Créer et planifier les séances'}
           onPress={submit}
-          disabled={addProgram.isPending}
+          disabled={saving}
         />
       </View>
     </Screen>

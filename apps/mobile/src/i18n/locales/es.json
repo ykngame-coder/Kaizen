@@ -1452,6 +1452,7 @@
   },
   "sessionBuilder": {
    "title": "Nueva sesión",
+   "editTitle": "Editar la sesión",
    "quotaCaption": "{{count}}/{{quota}} sesiones en tu biblioteca",
    "quota": {
     "title": "Límite de sesiones alcanzado",
@@ -1550,11 +1551,16 @@
     "nameLabel": "Nombre de la sesión",
     "namePlaceholder": "Ej.: Push A",
     "submitPending": "…",
-    "submitLibrary": "Guardar sesión"
+    "submitLibrary": "Guardar sesión",
+    "submitEdit": "Guardar los cambios"
    },
    "suggestion": {
     "title": "Sugerido (sobrecarga progresiva)",
     "accept": "Aceptar"
+   },
+   "notFound": {
+    "title": "Sesión no encontrada",
+    "message": "Esta sesión ya no existe."
    }
   },
   "activityDetail": {

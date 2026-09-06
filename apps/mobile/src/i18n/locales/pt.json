@@ -1452,6 +1452,7 @@
   },
   "sessionBuilder": {
    "title": "Nova sessão",
+   "editTitle": "Editar a sessão",
    "quotaCaption": "{{count}}/{{quota}} sessões na tua biblioteca",
    "quota": {
     "title": "Limite de sessões atingido",
@@ -1550,11 +1551,16 @@
     "nameLabel": "Nome do treino",
     "namePlaceholder": "Ex.: Push A",
     "submitPending": "…",
-    "submitLibrary": "Guardar sessão"
+    "submitLibrary": "Guardar sessão",
+    "submitEdit": "Guardar as alterações"
    },
    "suggestion": {
     "title": "Sugerido (sobrecarga progressiva)",
     "accept": "Aceitar"
+   },
+   "notFound": {
+    "title": "Sessão não encontrada",
+    "message": "Esta sessão já não existe."
    }
   },
   "activityDetail": {

@@ -116,6 +116,7 @@ import {
   listSessionExercises as listSessionExercisesDb,
   listSessionBlocks,
   insertUserSession as insertUserSessionDb,
+  updateUserSession as updateUserSessionDb,
   updateUserSessionVisibility as updateUserSessionVisibilityDb,
   deleteUserSession as deleteUserSessionDb,
   listUserPrograms as listUserProgramsDb,
@@ -123,6 +124,7 @@ import {
   getUserProgram as getUserProgramDb,
   listProgramSessions as listProgramSessionsDb,
   insertUserProgram as insertUserProgramDb,
+  updateUserProgram as updateUserProgramDb,
   updateUserProgramVisibility as updateUserProgramVisibilityDb,
   deleteUserProgram as deleteUserProgramDb,
   insertProgramSession as insertProgramSessionDb,
@@ -376,6 +378,8 @@ export interface DataRepository {
   getSessionBlocks(userId: string, sessionId: string): Promise<UserSessionBlock[]>;
   /** Rejects past the 50-session quota (server-enforced too). */
   addUserSession(userId: string, input: UserSessionInput): Promise<UserSession>;
+  /** Overwrite an existing session's name, visibility and whole block content. */
+  updateUserSession(userId: string, sessionId: string, input: UserSessionInput): Promise<UserSession>;
   setSessionVisibility(userId: string, sessionId: string, visibility: Visibility): Promise<void>;
   deleteUserSession(userId: string, sessionId: string): Promise<void>;
   /** Clone a public (or own) session into the caller's own library, private by default. */
@@ -386,6 +390,8 @@ export interface DataRepository {
   getProgramSessions(programId: string): Promise<UserProgramSession[]>;
   /** Rejects past the 2-program quota (server-enforced too). */
   addUserProgram(userId: string, input: UserProgramInput): Promise<UserProgram>;
+  /** Edit a program's own fields; its week/day schedule is untouched. */
+  updateUserProgram(userId: string, programId: string, input: UserProgramInput): Promise<UserProgram>;
   setProgramVisibility(userId: string, programId: string, visibility: Visibility): Promise<void>;
   deleteUserProgram(userId: string, programId: string): Promise<void>;
   /** Place one of the caller's own sessions at a week/day slot. */
@@ -619,6 +625,23 @@ function rowToUserSession(r: UserSessionRow): UserSession {
     createdAt: r.created_at,
     updatedAt: r.updated_at,
   };
+}
+
+/** Session blocks in the shape the database layer writes — shared by create and edit. */
+function toSessionBlocksWrite(input: UserSessionInput) {
+  return input.blocks.map((b) => ({
+    format: b.format,
+    timeCapSec: b.timeCapSec,
+    targetRounds: b.targetRounds,
+    exercises: b.exercises.map((e, i) => ({
+      exercise_id: e.exerciseId,
+      order: e.order ?? i,
+      reps: e.reps ?? null,
+      weight_kg: e.weightKg ?? null,
+      duration_sec: e.durationSec ?? null,
+      rest_sec: e.restSec ?? null,
+    })),
+  }));
 }
 
 function rowToUserSessionExercise(r: UserSessionExerciseRow): UserSessionExercise {
@@ -1837,6 +1860,49 @@ function createDemoRepository(): DataRepository {
       await writeJson(usExKey(session.id), exercises);
       return session;
     },
+    async updateUserSession(_userId, sessionId, input) {
+      const all = await readJson<UserSession>(usKey());
+      const existing = all.find((s) => s.id === sessionId);
+      if (!existing) throw new Error('Séance introuvable.');
+      const updated: UserSession = {
+        ...existing,
+        name: input.name,
+        notes: input.notes,
+        visibility: input.visibility,
+        updatedAt: new Date().toISOString(),
+      };
+      await writeJson(usKey(), all.map((s) => (s.id === sessionId ? updated : s)));
+      // Remplacement complet, comme côté serveur.
+      const blocks: UserSessionBlock[] = [];
+      const exercises: UserSessionExercise[] = [];
+      input.blocks.forEach((b, i) => {
+        const block: UserSessionBlock = {
+          id: randomId(),
+          sessionId,
+          order: i,
+          format: b.format,
+          timeCapSec: b.timeCapSec,
+          targetRounds: b.targetRounds,
+        };
+        blocks.push(block);
+        b.exercises.forEach((e, j) => {
+          exercises.push({
+            id: randomId(),
+            sessionId,
+            blockId: block.id,
+            exerciseId: e.exerciseId,
+            order: e.order ?? j,
+            reps: e.reps,
+            weightKg: e.weightKg,
+            durationSec: e.durationSec,
+            restSec: e.restSec,
+          });
+        });
+      });
+      await writeJson(usBlockKey(sessionId), blocks);
+      await writeJson(usExKey(sessionId), exercises);
+      return updated;
+    },
     async setSessionVisibility(_userId, sessionId, visibility) {
       const all = await readJson<UserSession>(usKey());
       await writeJson(
@@ -1917,6 +1983,23 @@ function createDemoRepository(): DataRepository {
       };
       await writeJson(upKey(), [program, ...all]);
       return program;
+    },
+    async updateUserProgram(_userId, programId, input) {
+      const all = await readJson<UserProgram>(upKey());
+      const existing = all.find((p) => p.id === programId);
+      if (!existing) throw new Error('Programme introuvable.');
+      const updated: UserProgram = {
+        ...existing,
+        title: input.title,
+        focus: input.focus,
+        level: input.level,
+        weeks: input.weeks,
+        description: input.description,
+        visibility: input.visibility,
+        updatedAt: new Date().toISOString(),
+      };
+      await writeJson(upKey(), all.map((p) => (p.id === programId ? updated : p)));
+      return updated;
     },
     async setProgramVisibility(_userId, programId, visibility) {
       const all = await readJson<UserProgram>(upKey());
@@ -2488,19 +2571,16 @@ function createSupabaseRepository(
       const row = await insertUserSessionDb(
         client,
         { user_id: userId, name: input.name, notes: input.notes ?? null, visibility: input.visibility },
-        input.blocks.map((b) => ({
-          format: b.format,
-          timeCapSec: b.timeCapSec,
-          targetRounds: b.targetRounds,
-          exercises: b.exercises.map((e, i) => ({
-            exercise_id: e.exerciseId,
-            order: e.order ?? i,
-            reps: e.reps ?? null,
-            weight_kg: e.weightKg ?? null,
-            duration_sec: e.durationSec ?? null,
-            rest_sec: e.restSec ?? null,
-          })),
-        })),
+        toSessionBlocksWrite(input),
+      );
+      return rowToUserSession(row);
+    },
+    async updateUserSession(_userId, sessionId, input) {
+      const row = await updateUserSessionDb(
+        client,
+        sessionId,
+        { name: input.name, visibility: input.visibility },
+        toSessionBlocksWrite(input),
       );
       return rowToUserSession(row);
     },
@@ -2563,6 +2643,17 @@ function createSupabaseRepository(
     async addUserProgram(userId, input) {
       const row = await insertUserProgramDb(client, {
         user_id: userId,
+        title: input.title,
+        focus: input.focus,
+        level: input.level,
+        weeks: input.weeks,
+        description: input.description ?? null,
+        visibility: input.visibility,
+      });
+      return rowToUserProgram(row);
+    },
+    async updateUserProgram(_userId, programId, input) {
+      const row = await updateUserProgramDb(client, programId, {
         title: input.title,
         focus: input.focus,
         level: input.level,

@@ -1452,6 +1452,7 @@
   },
   "sessionBuilder": {
    "title": "Neue Einheit",
+   "editTitle": "Einheit bearbeiten",
    "quotaCaption": "{{count}}/{{quota}} Einheiten in deiner Bibliothek",
    "quota": {
     "title": "Einheiten-Limit erreicht",
@@ -1550,11 +1551,16 @@
     "nameLabel": "Name des Trainings",
     "namePlaceholder": "Bsp.: Push A",
     "submitPending": "…",
-    "submitLibrary": "Einheit speichern"
+    "submitLibrary": "Einheit speichern",
+    "submitEdit": "Änderungen speichern"
    },
    "suggestion": {
     "title": "Vorschlag (progressive Steigerung)",
     "accept": "Übernehmen"
+   },
+   "notFound": {
+    "title": "Einheit nicht gefunden",
+    "message": "Diese Einheit existiert nicht mehr."
    }
   },
   "activityDetail": {

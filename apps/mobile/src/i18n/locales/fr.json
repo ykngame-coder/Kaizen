@@ -1452,6 +1452,7 @@
   },
   "sessionBuilder": {
    "title": "Nouvelle séance",
+   "editTitle": "Modifier la séance",
    "quotaCaption": "{{count}}/{{quota}} séances dans ta bibliothèque",
    "quota": {
     "title": "Limite de séances atteinte",
@@ -1550,11 +1551,16 @@
     "nameLabel": "Nom de la séance",
     "namePlaceholder": "Ex : Push A",
     "submitPending": "…",
-    "submitLibrary": "Enregistrer la séance"
+    "submitLibrary": "Enregistrer la séance",
+    "submitEdit": "Enregistrer les modifications"
    },
    "suggestion": {
     "title": "Suggéré (surcharge progressive)",
     "accept": "Accepter"
+   },
+   "notFound": {
+    "title": "Séance introuvable",
+    "message": "Cette séance n'existe plus."
    }
   },
   "activityDetail": {

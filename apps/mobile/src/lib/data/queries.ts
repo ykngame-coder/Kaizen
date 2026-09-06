@@ -528,6 +528,23 @@ export function useAddUserSession() {
   });
 }
 
+export function useUpdateUserSession() {
+  const { user } = useAuth();
+  const repo = useRepository();
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ sessionId, input }: { sessionId: string; input: UserSessionInput }) =>
+      repo.updateUserSession(user!.id, sessionId, input),
+    onSuccess: (_data, { sessionId }) => {
+      qc.invalidateQueries({ queryKey: ['userSessions', user?.id] });
+      // Les blocs et exercices sont entièrement réécrits : leurs caches, qui
+      // alimentent aussi le lancement de la séance, deviennent faux sans ça.
+      qc.invalidateQueries({ queryKey: ['sessionBlocks', sessionId] });
+      qc.invalidateQueries({ queryKey: ['sessionExercises', sessionId] });
+    },
+  });
+}
+
 export function useSetSessionVisibility() {
   const { user } = useAuth();
   const repo = useRepository();
@@ -613,6 +630,19 @@ export function useAddUserProgram() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (input: UserProgramInput) => repo.addUserProgram(user!.id, input),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['userPrograms', user?.id] });
+    },
+  });
+}
+
+export function useUpdateUserProgram() {
+  const { user } = useAuth();
+  const repo = useRepository();
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ programId, input }: { programId: string; input: UserProgramInput }) =>
+      repo.updateUserProgram(user!.id, programId, input),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['userPrograms', user?.id] });
     },

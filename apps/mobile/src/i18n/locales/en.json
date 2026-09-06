@@ -1452,6 +1452,7 @@
   },
   "sessionBuilder": {
    "title": "New session",
+   "editTitle": "Edit session",
    "quotaCaption": "{{count}}/{{quota}} sessions in your library",
    "quota": {
     "title": "Session limit reached",
@@ -1550,11 +1551,16 @@
     "nameLabel": "Workout name",
     "namePlaceholder": "E.g.: Push A",
     "submitPending": "…",
-    "submitLibrary": "Save session"
+    "submitLibrary": "Save session",
+    "submitEdit": "Save changes"
    },
    "suggestion": {
     "title": "Suggested (progressive overload)",
     "accept": "Accept"
+   },
+   "notFound": {
+    "title": "Session not found",
+    "message": "This session no longer exists."
    }
   },
   "activityDetail": {

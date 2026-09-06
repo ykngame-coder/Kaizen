@@ -69,26 +69,25 @@ export async function listSessionBlocks(
   return data ?? [];
 }
 
-/** Insert a session made of one or more blocks; the quota trigger rejects past the 50 limit. */
-export async function insertUserSession(
-  client: SupotsuClient,
-  input: UserSessionInsertRow,
-  blocks: {
-    format: UserSessionBlockRow['format'];
-    timeCapSec?: number;
-    targetRounds?: number;
-    exercises: Omit<UserSessionExerciseInsertRow, 'session_id' | 'block_id'>[];
-  }[],
-): Promise<UserSessionRow> {
-  const { data, error } = await client.from('user_sessions').insert(input).select('*').single();
-  if (error) throw error;
+export interface SessionBlockWrite {
+  format: UserSessionBlockRow['format'];
+  timeCapSec?: number;
+  targetRounds?: number;
+  exercises: Omit<UserSessionExerciseInsertRow, 'session_id' | 'block_id'>[];
+}
 
+/** Writes the block/exercise rows of a session that already exists. */
+async function writeSessionBlocks(
+  client: SupotsuClient,
+  sessionId: string,
+  blocks: SessionBlockWrite[],
+): Promise<void> {
   for (let i = 0; i < blocks.length; i++) {
     const b = blocks[i]!;
     const { data: blockRow, error: blockError } = await client
       .from('user_session_blocks')
       .insert({
-        session_id: data.id,
+        session_id: sessionId,
         order: i,
         format: b.format,
         time_cap_sec: b.timeCapSec ?? null,
@@ -101,11 +100,54 @@ export async function insertUserSession(
     if (b.exercises.length > 0) {
       const { error: exError } = await client
         .from('user_session_exercises')
-        .insert(b.exercises.map((e) => ({ ...e, session_id: data.id, block_id: blockRow.id })));
+        .insert(b.exercises.map((e) => ({ ...e, session_id: sessionId, block_id: blockRow.id })));
       if (exError) throw exError;
     }
   }
+}
 
+/** Insert a session made of one or more blocks; the quota trigger rejects past the 50 limit. */
+export async function insertUserSession(
+  client: SupotsuClient,
+  input: UserSessionInsertRow,
+  blocks: SessionBlockWrite[],
+): Promise<UserSessionRow> {
+  const { data, error } = await client.from('user_sessions').insert(input).select('*').single();
+  if (error) throw error;
+  await writeSessionBlocks(client, data.id, blocks);
+  return data;
+}
+
+/**
+ * Overwrite a session's name, visibility and whole block/exercise content.
+ *
+ * Replacement, not a merge: the editor hands back the complete session, and
+ * reconciling row by row would buy nothing. Exercises are cleared by
+ * `session_id` rather than relying on the blocks' cascade — a session saved
+ * before block support has `block_id` null on every exercise, so dropping the
+ * blocks alone would strand them and they would reappear alongside the new
+ * ones.
+ */
+export async function updateUserSession(
+  client: SupotsuClient,
+  sessionId: string,
+  patch: { name: string; visibility: 'private' | 'public' },
+  blocks: SessionBlockWrite[],
+): Promise<UserSessionRow> {
+  const { data, error } = await client
+    .from('user_sessions')
+    .update({ name: patch.name, visibility: patch.visibility })
+    .eq('id', sessionId)
+    .select('*')
+    .single();
+  if (error) throw error;
+
+  const { error: exError } = await client.from('user_session_exercises').delete().eq('session_id', sessionId);
+  if (exError) throw exError;
+  const { error: blockError } = await client.from('user_session_blocks').delete().eq('session_id', sessionId);
+  if (blockError) throw blockError;
+
+  await writeSessionBlocks(client, sessionId, blocks);
   return data;
 }
 
@@ -169,6 +211,21 @@ export async function listProgramSessions(
 /** Insert a program; the quota trigger rejects past the 2 limit. */
 export async function insertUserProgram(client: SupotsuClient, input: UserProgramInsertRow): Promise<UserProgramRow> {
   const { data, error } = await client.from('user_programs').insert(input).select('*').single();
+  if (error) throw error;
+  return data;
+}
+
+/**
+ * Edit a program's own fields. Its week/day schedule lives in
+ * `user_program_sessions` and is edited on the planning screen, so it is
+ * deliberately left alone here — shortening `weeks` does not prune slots.
+ */
+export async function updateUserProgram(
+  client: SupotsuClient,
+  programId: string,
+  patch: Pick<UserProgramInsertRow, 'title' | 'focus' | 'level' | 'weeks' | 'description' | 'visibility'>,
+): Promise<UserProgramRow> {
+  const { data, error } = await client.from('user_programs').update(patch).eq('id', programId).select('*').single();
   if (error) throw error;
   return data;
 }

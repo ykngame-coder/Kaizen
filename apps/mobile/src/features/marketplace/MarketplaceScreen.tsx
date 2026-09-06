@@ -220,6 +220,11 @@ export function MarketplaceScreen(): React.JSX.Element {
                   <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: spacing[2], marginTop: spacing[2] }}>
                     <Button label="Lancer" disabled={launchSession.isPending} onPress={() => void doLaunch(s)} />
                     <Button
+                      label="Modifier"
+                      variant="secondary"
+                      onPress={() => router.push({ pathname: '/marketplace/session-builder', params: { id: s.id } })}
+                    />
+                    <Button
                       label={s.visibility === 'public' ? 'Rendre privée' : 'Partager'}
                       variant="secondary"
                       onPress={() => setSessionVisibility.mutate({ sessionId: s.id, visibility: s.visibility === 'public' ? 'private' : 'public' })}
@@ -253,10 +258,15 @@ export function MarketplaceScreen(): React.JSX.Element {
                   <Text variant="caption" color="textMuted">
                     {FOCUS_LABEL[p.focus]} · {p.weeks} semaines
                   </Text>
-                  <View style={{ flexDirection: 'row', gap: spacing[2], marginTop: spacing[2] }}>
+                  <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: spacing[2], marginTop: spacing[2] }}>
                     <Button
                       label="Planning"
                       onPress={() => router.push({ pathname: '/marketplace/program/[id]', params: { id: p.id } })}
+                    />
+                    <Button
+                      label="Modifier"
+                      variant="secondary"
+                      onPress={() => router.push({ pathname: '/marketplace/program-builder', params: { id: p.id } })}
                     />
                     <Button
                       label={p.visibility === 'public' ? 'Rendre privé' : 'Partager'}
