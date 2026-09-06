@@ -42,15 +42,36 @@ export async function insertHabitLog(
   return data;
 }
 
-/** List the user's habit completions, most recent first. */
+/**
+ * PostgREST caps any response at `max-rows` (1000 on Supabase) and reports it
+ * only in Content-Range, never as an error — so an unbounded select silently
+ * returns a truncated head of the table.
+ */
+const PAGE = 1000;
+
+/**
+ * List the user's habit completions, most recent first.
+ *
+ * Paginated on purpose. This used to be one unbounded select, which that cap
+ * quietly truncated: a duplicate-heavy account got back 1000 rows spanning two
+ * days, so every older day read as "nothing logged" and its checkbox could
+ * never show as done however many times it was ticked. The cap bites on clean
+ * data too — 6 daily habits cross 1000 rows in under six months. No date window
+ * here: the RGPD export reads through this same function and must stay complete.
+ */
 export async function listHabitLogs(client: SupotsuClient, userId: string): Promise<HabitLogRow[]> {
-  const { data, error } = await client
-    .from('habit_logs')
-    .select('*')
-    .eq('user_id', userId)
-    .order('completed_at', { ascending: false });
-  if (error) throw error;
-  return data ?? [];
+  const rows: HabitLogRow[] = [];
+  for (let from = 0; ; from += PAGE) {
+    const { data, error } = await client
+      .from('habit_logs')
+      .select('*')
+      .eq('user_id', userId)
+      .order('completed_at', { ascending: false })
+      .range(from, from + PAGE - 1);
+    if (error) throw error;
+    rows.push(...(data ?? []));
+    if (!data || data.length < PAGE) return rows;
+  }
 }
 
 /** Edit a habit's definition (name/pillar/cadence/target) — RLS scopes it to the owner. */
