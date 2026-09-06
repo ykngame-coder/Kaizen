@@ -136,6 +136,12 @@ export function HabitsScreen(): React.JSX.Element {
     [preferences.nutritionGoals, weight],
   );
   const hydrationToday = useMemo(() => sumDay(nutrition, now.toISOString()).hydrationMl, [nutrition]);
+  // Une pesée saisie à la main OU importée d'Apple Santé pour aujourd'hui
+  // valide l'habitude toute seule — même principe que les pas et les séances.
+  const weighedToday = useMemo(
+    () => health.some((m) => m.type === 'weight' && dayKey(new Date(m.measuredAt)) === todayK),
+    [health, todayK],
+  );
   const stepsToday = useMemo(() => {
     const todays = health.filter((m) => m.type === 'steps' && dayKey(new Date(m.measuredAt)) === todayK);
     return [...todays].sort((a, b) => a.measuredAt.localeCompare(b.measuredAt)).at(-1)?.value ?? 0;
@@ -151,6 +157,7 @@ export function HabitsScreen(): React.JSX.Element {
   const liveProgress = (kind: LinkedKind): { value: number; target: number } => {
     if (kind === 'hydration') return { value: hydrationToday, target: hydrationTarget };
     if (kind === 'steps') return { value: stepsToday, target: preferences.dailyStepsGoal };
+    if (kind === 'weight') return { value: weighedToday ? 1 : 0, target: 1 };
     return { value: workoutDoneToday ? 1 : 0, target: 1 };
   };
 
@@ -194,7 +201,7 @@ export function HabitsScreen(): React.JSX.Element {
       if ((perHabitDays.get(h.id) ?? new Set()).has(todayK)) continue;
       logHabit.mutate({ habitId: h.id });
     }
-  }, [isToday, habitsLoading, logsLoading, active, hydrationToday, hydrationTarget, stepsToday, preferences.dailyStepsGoal, workoutDoneToday, perHabitDays, todayK]);
+  }, [isToday, habitsLoading, logsLoading, active, hydrationToday, hydrationTarget, stepsToday, preferences.dailyStepsGoal, workoutDoneToday, weighedToday, perHabitDays, todayK]);
 
   const denom = Math.max(1, active.length);
 
