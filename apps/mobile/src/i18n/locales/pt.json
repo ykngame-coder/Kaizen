@@ -2263,15 +2263,20 @@
    "dateToday": "Hoje",
    "momentLabel": "MOMENTO",
    "descriptionLabel": "Descrição",
+   "modeLabel": "ENTRADA",
+   "mode": {
+    "per100": "Por 100 g",
+    "total": "Total"
+   },
    "calc": {
-    "heading": "Calcular a partir de uma tabela nutricional (/100 g)",
-    "hint": "Informe os valores por 100 g e a quantidade consumida — os campos abaixo serão preenchidos automaticamente.",
+    "hint": "Introduz os valores da tabela nutricional por 100 g e depois a quantidade que comeste.",
     "kcalPer100": "Calorias /100 g",
     "proteinPer100": "Proteínas /100 g",
     "carbPer100": "Carboidratos /100 g",
     "fatPer100": "Gorduras /100 g",
     "quantityLabel": "Quantidade consumida (g)",
-    "apply": "Aplicar"
+    "totalLabel": "Total para esta quantidade",
+    "totalValue": "{{kcal}} kcal · {{protein}} g P · {{carb}} g HC · {{fat}} g G"
    },
    "kcalLabel": "Calorias (kcal)",
    "proteinLabel": "Proteínas (g)",
@@ -2287,7 +2292,7 @@
     "snack": "Lanche"
    },
    "errors": {
-    "invalid": "Preencha ao menos uma descrição e calorias válidas.",
+    "invalid": "Introduz uma descrição, calorias válidas e, no modo por 100 g, a quantidade comida.",
     "saveFailed": "Não foi possível salvar."
    },
    "recent": {

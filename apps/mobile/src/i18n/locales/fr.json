@@ -2263,15 +2263,20 @@
    "dateToday": "Aujourd'hui",
    "momentLabel": "MOMENT",
    "descriptionLabel": "Description",
+   "modeLabel": "SAISIE",
+   "mode": {
+    "per100": "Par 100 g",
+    "total": "Total"
+   },
    "calc": {
-    "heading": "Calculer depuis un tableau nutritionnel (/100 g)",
-    "hint": "Renseigne les valeurs pour 100 g, puis la quantité mangée — les champs ci-dessous seront remplis automatiquement.",
+    "hint": "Renseigne les valeurs du tableau nutritionnel pour 100 g, puis la quantité mangée.",
     "kcalPer100": "Calories /100 g",
     "proteinPer100": "Protéines /100 g",
     "carbPer100": "Glucides /100 g",
     "fatPer100": "Lipides /100 g",
     "quantityLabel": "Quantité mangée (g)",
-    "apply": "Appliquer"
+    "totalLabel": "Total pour cette quantité",
+    "totalValue": "{{kcal}} kcal · {{protein}} g P · {{carb}} g G · {{fat}} g L"
    },
    "kcalLabel": "Calories (kcal)",
    "proteinLabel": "Protéines (g)",
@@ -2287,7 +2292,7 @@
     "snack": "Collation"
    },
    "errors": {
-    "invalid": "Renseigne au moins une description et des calories valides.",
+    "invalid": "Renseigne une description, des calories valides et, en saisie /100 g, la quantité mangée.",
     "saveFailed": "Enregistrement impossible."
    },
    "recent": {

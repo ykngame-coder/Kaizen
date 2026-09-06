@@ -2263,15 +2263,20 @@
    "dateToday": "Heute",
    "momentLabel": "ZEITPUNKT",
    "descriptionLabel": "Beschreibung",
+   "modeLabel": "EINGABE",
+   "mode": {
+    "per100": "Pro 100 g",
+    "total": "Gesamt"
+   },
    "calc": {
-    "heading": "Aus einer Nährwerttabelle berechnen (/100 g)",
-    "hint": "Gib die Werte pro 100 g und die gegessene Menge ein — die Felder unten werden automatisch ausgefüllt.",
+    "hint": "Gib die Nährwerte pro 100 g ein und danach die gegessene Menge.",
     "kcalPer100": "Kalorien /100 g",
     "proteinPer100": "Eiweiß /100 g",
     "carbPer100": "Kohlenhydrate /100 g",
     "fatPer100": "Fett /100 g",
     "quantityLabel": "Gegessene Menge (g)",
-    "apply": "Anwenden"
+    "totalLabel": "Gesamt für diese Menge",
+    "totalValue": "{{kcal}} kcal · {{protein}} g E · {{carb}} g KH · {{fat}} g F"
    },
    "kcalLabel": "Kalorien (kcal)",
    "proteinLabel": "Protein (g)",
@@ -2287,7 +2292,7 @@
     "snack": "Snack"
    },
    "errors": {
-    "invalid": "Gib mindestens eine Beschreibung und gültige Kalorien an.",
+    "invalid": "Gib eine Beschreibung, gültige Kalorien und im Pro-100-g-Modus die gegessene Menge an.",
     "saveFailed": "Speichern nicht möglich."
    },
    "recent": {

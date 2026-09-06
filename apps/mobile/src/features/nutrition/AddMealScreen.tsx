@@ -10,12 +10,8 @@ import { nutritionEntryInputSchema, type NutritionEntryInput } from '@supotsu/sh
 import { useAddNutritionEntry, useNutritionEntries } from '@/lib/data/queries';
 import { formatDate } from '@/lib/format';
 import { DatePickerModal } from '@/features/navigation/DatePickerModal';
+import { numOrUndef, parseDecimal, scalePer100 } from './mealMacros';
 
-// "numeric" on iOS has no decimal-point key at all — decimal-pad does, but
-// a French keyboard's decimal key types a comma, which Number() can't
-// parse, so every macro value is normalized through this first.
-const parseDecimal = (s: string): number => Number(s.trim().replace(',', '.'));
-const numOrUndef = (s: string): number | undefined => (s.trim() ? parseDecimal(s) : undefined);
 const dayKey = (d: Date): string => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 const todayKey = (): string => dayKey(new Date());
 
@@ -46,7 +42,11 @@ export function AddMealScreen(): React.JSX.Element {
   const [showRecent, setShowRecent] = useState(false);
   const [dateKey, setDateKey] = useState(todayKey());
   const [showDatePicker, setShowDatePicker] = useState(false);
-  const [showCalc, setShowCalc] = useState(false);
+  // Deux modes de saisie exclusifs, jamais les deux à l'écran : un testeur
+  // s'est plaint de « deux options » là où le calculateur ne faisait que
+  // remplir les champs du dessous. Par 100 g par défaut, comme sur une
+  // étiquette ; Total pour un plat dont on ne connaît que le total.
+  const [entryMode, setEntryMode] = useState<'per100' | 'total'>('per100');
   const [calcKcal, setCalcKcal] = useState('');
   const [calcProtein, setCalcProtein] = useState('');
   const [calcCarb, setCalcCarb] = useState('');
@@ -82,6 +82,8 @@ export function AddMealScreen(): React.JSX.Element {
     return out;
   }, [entries]);
 
+  // Un repas recopié n'apporte que des totaux — on bascule donc sur ce mode,
+  // sinon les valeurs remplies seraient invisibles derrière la saisie /100 g.
   const copyMeal = (entry: NutritionEntry): void => {
     setDescription(entry.description);
     setKcal(String(entry.kcal));
@@ -89,38 +91,44 @@ export function AddMealScreen(): React.JSX.Element {
     setCarbG(entry.carbG != null ? String(entry.carbG) : '');
     setFatG(entry.fatG != null ? String(entry.fatG) : '');
     setHydrationMl(entry.hydrationMl != null ? String(entry.hydrationMl) : '');
+    setEntryMode('total');
     setShowRecent(false);
   };
 
-  // Nutrition labels are almost always per 100 g; the tester's own portion is
-  // rarely 100 g, so scale each value by qty/100 into the real total fields
-  // instead of asking for mental math.
-  const applyCalc = (): void => {
-    const qty = parseDecimal(calcQty);
-    if (!Number.isFinite(qty) || qty <= 0) return;
-    const factor = qty / 100;
-    const scale = (per100: string): string => {
-      const v = numOrUndef(per100);
-      return v != null ? String(Math.round(v * factor * 10) / 10) : '';
-    };
-    setKcal(scale(calcKcal));
-    setProteinG(scale(calcProtein));
-    setCarbG(scale(calcCarb));
-    setFatG(scale(calcFat));
-    setShowCalc(false);
-  };
+  // Recalculé à chaque frappe : le total s'affiche en direct sous les champs,
+  // ce qui remplace l'ancien bouton « Appliquer » et son étape manuelle.
+  const per100Totals = useMemo(
+    () => scalePer100({ kcal: calcKcal, proteinG: calcProtein, carbG: calcCarb, fatG: calcFat, quantityG: calcQty }),
+    [calcKcal, calcProtein, calcCarb, calcFat, calcQty],
+  );
 
   const isToday = dateKey === todayKey();
 
   const submit = async (): Promise<void> => {
     setError(null);
+    // En mode /100 g, les valeurs enregistrées sont les totaux calculés ;
+    // `scalePer100` rend null tant que quantité et calories ne tiennent pas
+    // debout, ce qui déclenche le message d'erreur existant.
+    const macros =
+      entryMode === 'per100'
+        ? per100Totals
+        : {
+            kcal: parseDecimal(kcal),
+            proteinG: numOrUndef(proteinG),
+            carbG: numOrUndef(carbG),
+            fatG: numOrUndef(fatG),
+          };
+    if (!macros) {
+      setError(t('nutrition.addMeal.errors.invalid'));
+      return;
+    }
     const candidate = {
       mealType,
       description,
-      kcal: parseDecimal(kcal),
-      proteinG: numOrUndef(proteinG),
-      carbG: numOrUndef(carbG),
-      fatG: numOrUndef(fatG),
+      kcal: macros.kcal,
+      proteinG: macros.proteinG,
+      carbG: macros.carbG,
+      fatG: macros.fatG,
       hydrationMl: numOrUndef(hydrationMl),
       source: 'manual' as const,
       // A same-day log keeps the real time of day; a meal planned ahead has
@@ -192,62 +200,79 @@ export function AddMealScreen(): React.JSX.Element {
 
       <Input label={t('nutrition.addMeal.descriptionLabel')} value={description} onChangeText={setDescription} />
 
-      <Card>
-        <Pressable onPress={() => setShowCalc((v) => !v)} style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
-          <Text variant="heading">{t('nutrition.addMeal.calc.heading')}</Text>
-          <Text variant="heading" style={{ color: colors.textSubtle, transform: [{ rotate: showCalc ? '180deg' : '0deg' }] }}>⌄</Text>
-        </Pressable>
-        {showCalc && (
-          <View style={{ gap: spacing[2], marginTop: spacing[3] }}>
-            <Text variant="caption" color="textSubtle">{t('nutrition.addMeal.calc.hint')}</Text>
-            <Input label={t('nutrition.addMeal.calc.kcalPer100')} keyboardType="decimal-pad" value={calcKcal} onChangeText={setCalcKcal} />
-            <View style={{ flexDirection: 'row', gap: spacing[3] }}>
-              <View style={{ flex: 1 }}>
-                <Input label={t('nutrition.addMeal.calc.proteinPer100')} keyboardType="decimal-pad" value={calcProtein} onChangeText={setCalcProtein} />
-              </View>
-              <View style={{ flex: 1 }}>
-                <Input label={t('nutrition.addMeal.calc.carbPer100')} keyboardType="decimal-pad" value={calcCarb} onChangeText={setCalcCarb} />
-              </View>
-              <View style={{ flex: 1 }}>
-                <Input label={t('nutrition.addMeal.calc.fatPer100')} keyboardType="decimal-pad" value={calcFat} onChangeText={setCalcFat} />
-              </View>
+      <View style={{ gap: spacing[2] }}>
+        <Text variant="label" color="textMuted">{t('nutrition.addMeal.modeLabel')}</Text>
+        <SegmentedControl
+          options={[
+            { value: 'per100', label: t('nutrition.addMeal.mode.per100') },
+            { value: 'total', label: t('nutrition.addMeal.mode.total') },
+          ]}
+          value={entryMode}
+          onChange={setEntryMode}
+        />
+      </View>
+
+      {entryMode === 'per100' ? (
+        <>
+          <Text variant="caption" color="textSubtle">{t('nutrition.addMeal.calc.hint')}</Text>
+          <Input label={t('nutrition.addMeal.calc.kcalPer100')} keyboardType="decimal-pad" value={calcKcal} onChangeText={setCalcKcal} />
+          <View style={{ flexDirection: 'row', gap: spacing[3] }}>
+            <View style={{ flex: 1 }}>
+              <Input label={t('nutrition.addMeal.calc.proteinPer100')} keyboardType="decimal-pad" value={calcProtein} onChangeText={setCalcProtein} />
             </View>
-            <Input label={t('nutrition.addMeal.calc.quantityLabel')} keyboardType="decimal-pad" value={calcQty} onChangeText={setCalcQty} />
-            <View style={{ alignItems: 'flex-start', marginTop: spacing[1] }}>
-              <Button label={t('nutrition.addMeal.calc.apply')} variant="secondary" onPress={applyCalc} disabled={!calcQty.trim()} />
+            <View style={{ flex: 1 }}>
+              <Input label={t('nutrition.addMeal.calc.carbPer100')} keyboardType="decimal-pad" value={calcCarb} onChangeText={setCalcCarb} />
+            </View>
+            <View style={{ flex: 1 }}>
+              <Input label={t('nutrition.addMeal.calc.fatPer100')} keyboardType="decimal-pad" value={calcFat} onChangeText={setCalcFat} />
             </View>
           </View>
-        )}
-      </Card>
-
-      <Input label={t('nutrition.addMeal.kcalLabel')} keyboardType="decimal-pad" value={kcal} onChangeText={setKcal} />
-
-      <View style={{ flexDirection: 'row', gap: spacing[3] }}>
-        <View style={{ flex: 1 }}>
-          <Input
-            label={t('nutrition.addMeal.proteinLabel')}
-            keyboardType="decimal-pad"
-            value={proteinG}
-            onChangeText={setProteinG}
-          />
-        </View>
-        <View style={{ flex: 1 }}>
-          <Input
-            label={t('nutrition.addMeal.carbLabel')}
-            keyboardType="decimal-pad"
-            value={carbG}
-            onChangeText={setCarbG}
-          />
-        </View>
-        <View style={{ flex: 1 }}>
-          <Input
-            label={t('nutrition.addMeal.fatLabel')}
-            keyboardType="decimal-pad"
-            value={fatG}
-            onChangeText={setFatG}
-          />
-        </View>
-      </View>
+          <Input label={t('nutrition.addMeal.calc.quantityLabel')} keyboardType="decimal-pad" value={calcQty} onChangeText={setCalcQty} />
+          {per100Totals ? (
+            <View style={{ padding: spacing[3], borderRadius: radii.md, backgroundColor: colors.surfaceElevated }}>
+              <Text variant="caption" color="textSubtle">{t('nutrition.addMeal.calc.totalLabel')}</Text>
+              <Text variant="body" style={{ marginTop: 2 }}>
+                {t('nutrition.addMeal.calc.totalValue', {
+                  kcal: per100Totals.kcal,
+                  protein: per100Totals.proteinG ?? 0,
+                  carb: per100Totals.carbG ?? 0,
+                  fat: per100Totals.fatG ?? 0,
+                })}
+              </Text>
+            </View>
+          ) : null}
+        </>
+      ) : (
+        <>
+          <Input label={t('nutrition.addMeal.kcalLabel')} keyboardType="decimal-pad" value={kcal} onChangeText={setKcal} />
+          <View style={{ flexDirection: 'row', gap: spacing[3] }}>
+            <View style={{ flex: 1 }}>
+              <Input
+                label={t('nutrition.addMeal.proteinLabel')}
+                keyboardType="decimal-pad"
+                value={proteinG}
+                onChangeText={setProteinG}
+              />
+            </View>
+            <View style={{ flex: 1 }}>
+              <Input
+                label={t('nutrition.addMeal.carbLabel')}
+                keyboardType="decimal-pad"
+                value={carbG}
+                onChangeText={setCarbG}
+              />
+            </View>
+            <View style={{ flex: 1 }}>
+              <Input
+                label={t('nutrition.addMeal.fatLabel')}
+                keyboardType="decimal-pad"
+                value={fatG}
+                onChangeText={setFatG}
+              />
+            </View>
+          </View>
+        </>
+      )}
 
       <Input
         label={t('nutrition.addMeal.hydrationLabel')}

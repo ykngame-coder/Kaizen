@@ -2263,15 +2263,20 @@
    "dateToday": "Today",
    "momentLabel": "MEAL",
    "descriptionLabel": "Description",
+   "modeLabel": "ENTRY",
+   "mode": {
+    "per100": "Per 100 g",
+    "total": "Total"
+   },
    "calc": {
-    "heading": "Calculate from a nutrition label (/100 g)",
-    "hint": "Enter the values per 100 g, then the amount you ate — the fields below will fill in automatically.",
+    "hint": "Enter the nutrition label values per 100 g, then how much you ate.",
     "kcalPer100": "Calories /100 g",
     "proteinPer100": "Protein /100 g",
     "carbPer100": "Carbs /100 g",
     "fatPer100": "Fat /100 g",
     "quantityLabel": "Amount eaten (g)",
-    "apply": "Apply"
+    "totalLabel": "Total for this quantity",
+    "totalValue": "{{kcal}} kcal · {{protein}} g P · {{carb}} g C · {{fat}} g F"
    },
    "kcalLabel": "Calories (kcal)",
    "proteinLabel": "Protein (g)",
@@ -2287,7 +2292,7 @@
     "snack": "Snack"
    },
    "errors": {
-    "invalid": "Enter at least a description and valid calories.",
+    "invalid": "Enter a description, valid calories and, in per-100 g mode, the quantity eaten.",
     "saveFailed": "Save failed."
    },
    "recent": {
