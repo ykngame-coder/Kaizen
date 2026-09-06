@@ -1475,7 +1475,13 @@
     "addBlock": "+ Block hinzufügen",
     "tapToEdit": "zum Bearbeiten tippen",
     "targetTimeLabel": "Ziel (Min.)",
-    "targetTimePlaceholder": "optional"
+    "targetTimePlaceholder": "optional",
+    "help": {
+     "strength": "Sätze und Wiederholungen, mit Pause zwischen den Sätzen.",
+     "amrap": "So viele Runden wie möglich in der vorgegebenen Zeit.",
+     "emom": "Eine Aufgabe zu Beginn jedes Intervalls.",
+     "forTime": "Alle Runden so schnell wie möglich abschließen."
+    }
    },
    "superset": {
     "startSelect": "Übungen gruppieren",

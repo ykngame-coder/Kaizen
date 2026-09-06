@@ -1475,7 +1475,13 @@
     "addBlock": "+ Adicionar um bloco",
     "tapToEdit": "toca para editar",
     "targetTimeLabel": "Objetivo (min)",
-    "targetTimePlaceholder": "opcional"
+    "targetTimePlaceholder": "opcional",
+    "help": {
+     "strength": "Séries e repetições, com descanso entre cada série.",
+     "amrap": "O máximo de rondas possível no tempo dado.",
+     "emom": "Uma tarefa no início de cada intervalo.",
+     "forTime": "Terminar todas as rondas o mais rápido possível."
+    }
    },
    "superset": {
     "startSelect": "Agrupar exercícios",

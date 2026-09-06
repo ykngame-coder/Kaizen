@@ -1475,7 +1475,13 @@
     "addBlock": "+ Add a block",
     "tapToEdit": "tap to edit",
     "targetTimeLabel": "Target (min)",
-    "targetTimePlaceholder": "optional"
+    "targetTimePlaceholder": "optional",
+    "help": {
+     "strength": "Sets and reps, with rest between each set.",
+     "amrap": "As many rounds as possible within the time cap.",
+     "emom": "One task to do at the top of every interval.",
+     "forTime": "Finish every round as fast as you can."
+    }
    },
    "superset": {
     "startSelect": "Group exercises",

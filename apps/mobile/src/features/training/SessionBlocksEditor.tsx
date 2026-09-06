@@ -259,6 +259,11 @@ export function SessionBlocksEditor({
                       value={b.format}
                       onChange={(v) => builder.updateActiveBlock({ format: v, timeCapSec: defaultTimeCapForFormat(v) })}
                     />
+                    {/* Les quatre formats ne se devinent pas — une ligne dit
+                        ce que celui-ci fera pendant la séance. */}
+                    <Text variant="caption" color="textSubtle">
+                      {t(`sport.sessionBuilder.block.help.${b.format === 'for_time' ? 'forTime' : b.format}`)}
+                    </Text>
                     {b.format === 'amrap' ? (
                       <Input label={t('sport.sessionBuilder.block.timeCapLabel')} keyboardType="numeric" value={b.timeCapSec} onChangeText={(v) => builder.updateActiveBlock({ timeCapSec: v })} />
                     ) : null}
