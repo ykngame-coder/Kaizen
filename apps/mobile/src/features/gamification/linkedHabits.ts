@@ -18,6 +18,21 @@ export function linkedKindFor(name: string): LinkedKind | null {
   return null;
 }
 
+/**
+ * Claims the one auto-log allowed for `habitId` on `dayKey`, returning false if
+ * it was already claimed. The decision has to be synchronous: the server
+ * round-trip that would otherwise reveal "already logged" leaves a window in
+ * which the auto-log effect reruns — and it reruns on every render, including
+ * the one `mutate` itself causes — so without this claim the effect fed itself
+ * a burst of duplicate inserts.
+ */
+export function claimAutoLog(attempted: Set<string>, habitId: string, dayKey: string): boolean {
+  const key = `${habitId}:${dayKey}`;
+  if (attempted.has(key)) return false;
+  attempted.add(key);
+  return true;
+}
+
 export const LINKED_LABEL: Record<LinkedKind, string> = {
   hydration: 'ton hydratation (Nutrition)',
   steps: 'tes pas (Apple Santé / Garmin)',

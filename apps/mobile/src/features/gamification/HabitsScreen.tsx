@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { ActivityIndicator, Alert, Pressable, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
@@ -11,7 +11,7 @@ import { DayNav, useSelectedDay } from '@/features/navigation/DayNav';
 import { useActivities, useHabitLogs, useHabits, useHealthMetrics, useLogHabit, useNutritionEntries, useUnlogHabit, useWorkouts } from '@/lib/data/queries';
 import { usePreferences } from '@/lib/preferences';
 import { GoalsSection } from '@/features/goals/GoalsSection';
-import { linkedKindFor, type LinkedKind } from './linkedHabits';
+import { claimAutoLog, linkedKindFor, type LinkedKind } from './linkedHabits';
 
 const DAY_MS = 86_400_000;
 const dayKey = (d: Date): string => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
@@ -122,7 +122,7 @@ export function HabitsScreen(): React.JSX.Element {
     return () => clearTimeout(timer);
   }, [pendingHabitId, logHabit.isPending, unlogHabit.isPending]);
 
-  const active = habits.filter((h) => !h.archivedAt);
+  const active = useMemo(() => habits.filter((h) => !h.archivedAt), [habits]);
 
   // Logs indexed by day, per-habit day-sets (for streaks), per-habit
   // completion counts on the viewed day (for multi-per-day targets), and the
@@ -206,11 +206,21 @@ export function HabitsScreen(): React.JSX.Element {
     return { count, target, done: count >= target, liveConfirmed: false };
   };
 
-  // Linked habits auto-log once their real-data target is hit — guarded by
-  // perHabitDays so it only fires once (the query invalidation that follows
-  // a successful log flips `alreadyLogged`, which then skips it on rerender).
-  // Also waits for both queries to actually resolve first: while `logs` is
-  // still loading (e.g. right after app launch) it reads as [], which would
+  // Linked habits auto-log once their real-data target is hit.
+  //
+  // `perHabitDays` alone cannot guard this: it only flips once the write has
+  // round-tripped through the server and the invalidated query has come back.
+  // Until then every rerender re-entered the loop and fired another insert —
+  // and `mutate` itself causes a rerender by flipping `isPending`, so it fed
+  // itself. That flooded habit_logs with invisible duplicates (a linked habit
+  // renders live progress, never its log count) and, because `logHabit` is one
+  // shared mutation observer, a single stalled request out of the burst pinned
+  // `isPending` to true — which is what left the checkbox spinning forever.
+  // This ref closes the window: one attempt per habit per day, decided
+  // synchronously, before any await.
+  const autoLoggedRef = useRef<Set<string>>(new Set());
+  // Waits for both queries to actually resolve first: while `logs` is still
+  // loading (e.g. right after app launch) it reads as [], which would
   // otherwise look like "never logged today" and fire a duplicate log for a
   // day that was already auto-logged in an earlier session.
   useEffect(() => {
@@ -221,6 +231,7 @@ export function HabitsScreen(): React.JSX.Element {
       const live = liveProgress(kind);
       if (live.target <= 0 || live.value < live.target) continue;
       if ((perHabitDays.get(h.id) ?? new Set()).has(todayK)) continue;
+      if (!claimAutoLog(autoLoggedRef.current, h.id, todayK)) continue;
       logHabit.mutate({ habitId: h.id });
     }
   }, [isToday, habitsLoading, logsLoading, active, hydrationToday, hydrationTarget, stepsToday, preferences.dailyStepsGoal, workoutDoneToday, weighedToday, perHabitDays, todayK]);
