@@ -1536,6 +1536,10 @@
     "namePlaceholder": "E.g.: Push A",
     "submitPending": "…",
     "submitLibrary": "Save session"
+   },
+   "suggestion": {
+    "title": "Suggested (progressive overload)",
+    "accept": "Accept"
    }
   },
   "activityDetail": {

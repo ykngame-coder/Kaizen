@@ -4,11 +4,13 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { EmptyState, Icon, Screen, SegmentedControl, Text, Toggle, useTheme } from '@supotsu/ui';
 import { spacing } from '@supotsu/design-system';
+import { suggestProgression, type ProgressionSuggestion } from '@supotsu/engines';
 import { toCatalogExercise } from '@/features/exercises/catalog';
 import { BackButton } from '@/features/navigation/BackButton';
 import {
   useAddUserSession,
   useCustomExercises,
+  useExerciseHistory,
   useEditCircuitWorkout,
   useUserSessions,
   useWorkoutBlocks,
@@ -30,6 +32,7 @@ export function EditWorkoutScreen(): React.JSX.Element {
   const { data: existingSets, isLoading: loadingSets } = useWorkoutSets(id);
   const { data: existingBlocks, isLoading: loadingBlocks } = useWorkoutBlocks(id);
   const { data: customExercises = [] } = useCustomExercises();
+  const { data: history = {} } = useExerciseHistory();
   const { data: userSessions = [] } = useUserSessions();
   const editCircuitWorkout = useEditCircuitWorkout();
   const addUserSession = useAddUserSession();
@@ -38,7 +41,19 @@ export function EditWorkoutScreen(): React.JSX.Element {
   const isCustomExercise = (exId: string): boolean => exId.startsWith('custom-');
   const catalogCustom = useMemo(() => customExercises.map(toCatalogExercise), [customExercises]);
 
-  const builder = useSessionBlocks({ customExercises: catalogCustom });
+  const lastKnownFor = (exerciseId: string): { reps?: number; weightKg?: number } | undefined => {
+    const sets = history[exerciseId];
+    if (!sets || sets.length === 0) return undefined;
+    const top = [...sets].sort((a, b) => (b.weightKg ?? 0) - (a.weightKg ?? 0))[0]!;
+    return { reps: top.reps, weightKg: top.weightKg };
+  };
+
+  /** Surcharge progressive proposée d'après la dernière séance — éditable, jamais imposée. */
+  const suggestionFor = (exerciseId: string): ProgressionSuggestion | undefined =>
+    suggestProgression(history[exerciseId] ?? []);
+
+  const recentExerciseIds = useMemo(() => Object.keys(history), [history]);
+  const builder = useSessionBlocks({ customExercises: catalogCustom, recentExerciseIds, lastKnownFor });
   const [prefilled, setPrefilled] = useState(false);
   const [visibility, setVisibility] = useState<'private' | 'public'>('private');
   const [addToLibrary, setAddToLibrary] = useState(false);
@@ -178,6 +193,8 @@ export function EditWorkoutScreen(): React.JSX.Element {
         t={t}
         builder={builder}
         isCustomExercise={isCustomExercise}
+        lastKnownFor={lastKnownFor}
+        suggestionFor={suggestionFor}
         onCreateExercise={() => router.push('/sport/exercise/new')}
         error={error}
         saving={isSaving}

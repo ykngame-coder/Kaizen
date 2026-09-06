@@ -90,6 +90,12 @@ export interface UseSessionBlocksOptions {
    * e.g. auto-mapped import ids that aren't part of the normal catalogue.
    */
   resolvableExercises?: Exercise[];
+  /**
+   * Dernière performance connue pour un exercice — sert à pré-remplir un slot
+   * dès l'ajout, plutôt que de laisser l'utilisateur ressaisir ce qu'il a déjà
+   * fait. Proposition éditable : rien n'est verrouillé.
+   */
+  lastKnownFor?: (exerciseId: string) => { reps?: number; weightKg?: number; restSec?: number } | undefined;
 }
 
 /**
@@ -158,7 +164,16 @@ export function useSessionBlocks(options: UseSessionBlocksOptions = {}) {
   /** Adds a new slot for this exercise — a fresh slot every call, so adding the same exercise again doesn't overwrite its earlier slot. */
   const addExercise = (exerciseId: string): void => {
     const slotId = newSlotId(exerciseId);
-    updateActiveBlock({ selected: { ...activeSelected, [slotId]: emptySet(exerciseId) }, order: [...activeOrder, slotId] });
+    const known = options.lastKnownFor?.(exerciseId);
+    const draft: SetDraft = known
+      ? {
+          exerciseId,
+          reps: known.reps != null ? String(known.reps) : '',
+          weight: known.weightKg != null ? String(known.weightKg) : '',
+          rest: known.restSec != null ? String(known.restSec) : '',
+        }
+      : emptySet(exerciseId);
+    updateActiveBlock({ selected: { ...activeSelected, [slotId]: draft }, order: [...activeOrder, slotId] });
     setQuery('');
   };
   const removeExercise = (slotId: string): void => {

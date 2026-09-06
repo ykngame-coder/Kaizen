@@ -1536,6 +1536,10 @@
     "namePlaceholder": "Ej.: Push A",
     "submitPending": "…",
     "submitLibrary": "Guardar sesión"
+   },
+   "suggestion": {
+    "title": "Sugerido (sobrecarga progresiva)",
+    "accept": "Aceptar"
    }
   },
   "activityDetail": {

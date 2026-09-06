@@ -1536,6 +1536,10 @@
     "namePlaceholder": "Ex : Push A",
     "submitPending": "…",
     "submitLibrary": "Enregistrer la séance"
+   },
+   "suggestion": {
+    "title": "Suggéré (surcharge progressive)",
+    "accept": "Accepter"
    }
   },
   "activityDetail": {

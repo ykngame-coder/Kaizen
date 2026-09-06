@@ -5,8 +5,10 @@ import type { TFunction } from 'i18next';
 import { Badge, Button, Card, Input, SegmentedControl, Text, useTheme } from '@supotsu/ui';
 import { radii, spacing } from '@supotsu/design-system';
 import type { BlockFormat, MuscleGroup } from '@supotsu/core';
+import type { ProgressionSuggestion } from '@supotsu/engines';
 import { exerciseImageUrl, MUSCLE_ICON, MUSCLE_LABEL, type Exercise } from '@/features/exercises/catalog';
 import { defaultTimeCapForFormat, formatLabel, type SessionBlocksBuilder } from './sessionBuilder';
+import { progressionRationaleKey } from './progressionText';
 
 const MUSCLE_ORDER: MuscleGroup[] = ['chest', 'back', 'shoulders', 'biceps', 'triceps', 'quads', 'hamstrings', 'glutes', 'calves', 'core', 'full_body'];
 /** Real equipment values present in the exercise catalogue, most common first. */
@@ -27,6 +29,8 @@ export interface SessionBlocksEditorProps {
   headerAfterName?: React.ReactNode;
   /** The exerciser's last known values for one exercise, if any — powers the always-visible "Dernière fois" line. */
   lastKnownFor?: (exerciseId: string) => LastKnown | undefined;
+  /** Progression suggérée pour un exercice — proposition éditable, jamais imposée. */
+  suggestionFor?: (exerciseId: string) => ProgressionSuggestion | undefined;
   isCustomExercise: (exerciseId: string) => boolean;
   onCreateExercise: () => void;
   error?: string | null;
@@ -162,6 +166,7 @@ export function SessionBlocksEditor({
   headerTop,
   headerAfterName,
   lastKnownFor,
+  suggestionFor,
   isCustomExercise,
   onCreateExercise,
   error,
@@ -416,6 +421,8 @@ export function SessionBlocksEditor({
     const ex = builder.byId.get(draft.exerciseId);
     if (!ex) return null;
     const known = lastKnownFor?.(draft.exerciseId);
+    const suggestion = suggestionFor?.(draft.exerciseId);
+    const suggestionReason = suggestion ? progressionRationaleKey(suggestion.rationale) : undefined;
     const isStrength = activeFormat === 'strength';
     const activeBlockDraft = builder.blocks[builder.activeBlock];
     const groupId = activeBlockDraft?.supersetGroups[slotId];
@@ -472,6 +479,46 @@ export function SessionBlocksEditor({
                 })}
               </Text>
             </Pressable>
+          ) : null}
+
+          {/* « Suggéré » se distingue de « prévu » : bordure pointillée et ton
+              accent, pour qu'on ne confonde jamais une proposition avec ce qui
+              est réellement programmé. */}
+          {suggestion ? (
+            <View
+              style={{
+                marginTop: spacing[2],
+                borderWidth: 1,
+                borderStyle: 'dashed',
+                borderColor: colors.primary,
+                borderRadius: radii.md,
+                padding: spacing[3],
+                flexDirection: 'row',
+                alignItems: 'center',
+                gap: spacing[3],
+              }}
+            >
+              <View style={{ flex: 1 }}>
+                <Text variant="caption" color="textMuted">{t('sport.sessionBuilder.suggestion.title')}</Text>
+                <Text variant="body" style={{ fontWeight: '700', marginTop: 2 }}>
+                  {[
+                    suggestion.weightKg != null ? `${suggestion.weightKg} kg` : null,
+                    suggestion.reps != null ? t('sport.sessionBuilder.set.repsShort', { count: suggestion.reps }) : null,
+                  ].filter(Boolean).join(' × ')}
+                </Text>
+                <Text variant="caption" color="textSubtle" style={{ marginTop: 2 }}>
+                  {t(suggestionReason!.key, suggestionReason!.params)}
+                </Text>
+              </View>
+              <Button
+                label={t('sport.sessionBuilder.suggestion.accept')}
+                variant="secondary"
+                onPress={() => builder.updateExercise(slotId, {
+                  reps: suggestion.reps != null ? String(suggestion.reps) : draft.reps,
+                  weight: suggestion.weightKg != null ? String(suggestion.weightKg) : draft.weight,
+                })}
+              />
+            </View>
           ) : null}
 
           <View style={{ flexDirection: 'row', gap: spacing[3], marginTop: spacing[2] }}>

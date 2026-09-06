@@ -5,6 +5,7 @@ import { useTranslation } from 'react-i18next';
 import { Button, Screen, SegmentedControl, Text, Toggle, useTheme } from '@supotsu/ui';
 import { spacing } from '@supotsu/design-system';
 import { EXERCISE_LIBRARY } from '@supotsu/shared';
+import { suggestProgression, type ProgressionSuggestion } from '@supotsu/engines';
 import { toCatalogExercise } from '@/features/exercises/catalog';
 import {
   useAddCircuitWorkout,
@@ -44,10 +45,22 @@ export function NewWorkoutScreen(): React.JSX.Element {
   const resolvableExercises = useMemo(() => EXERCISE_LIBRARY.map(toCatalogExercise), []);
   const recentExerciseIds = useMemo(() => Object.keys(history), [history]);
 
+  const lastKnownFor = (exerciseId: string): { reps?: number; weightKg?: number } | undefined => {
+    const sets = history[exerciseId];
+    if (!sets || sets.length === 0) return undefined;
+    const top = [...sets].sort((a, b) => (b.weightKg ?? 0) - (a.weightKg ?? 0))[0]!;
+    return { reps: top.reps, weightKg: top.weightKg };
+  };
+
+  /** Surcharge progressive proposée d'après la dernière séance — éditable, jamais imposée. */
+  const suggestionFor = (exerciseId: string): ProgressionSuggestion | undefined =>
+    suggestProgression(history[exerciseId] ?? []);
+
   const builder = useSessionBlocks({
     customExercises: catalogCustom,
     resolvableExercises,
     recentExerciseIds,
+    lastKnownFor,
   });
 
   const [visibility, setVisibility] = useState<'private' | 'public'>('private');
@@ -88,13 +101,6 @@ export function NewWorkoutScreen(): React.JSX.Element {
     setImportSourceId(undefined);
     setPickerOpen(false);
   }, [importSourceId, importSets, allWorkouts]);
-
-  const lastKnownFor = (exerciseId: string): { reps?: number; weightKg?: number } | undefined => {
-    const sets = history[exerciseId];
-    if (!sets || sets.length === 0) return undefined;
-    const top = [...sets].sort((a, b) => (b.weightKg ?? 0) - (a.weightKg ?? 0))[0]!;
-    return { reps: top.reps, weightKg: top.weightKg };
-  };
 
   const isPending = addCircuitWorkout.isPending || addUserSession.isPending;
 
@@ -165,6 +171,7 @@ export function NewWorkoutScreen(): React.JSX.Element {
         isCustomExercise={isCustomExercise}
         onCreateExercise={() => router.push('/sport/exercise/new')}
         lastKnownFor={lastKnownFor}
+        suggestionFor={suggestionFor}
         error={error}
         saving={isPending}
         saveLabel={isPending ? t('sport.sessionBuilder.form.submitPending') : t('sport.newWorkout.form.submit')}
