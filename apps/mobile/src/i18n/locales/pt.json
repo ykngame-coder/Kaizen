@@ -1610,6 +1610,29 @@
     "increaseLoad": "Chegaste a {{highReps}} reps com {{from}} kg — passa para {{to}} kg em {{lowReps}} reps.",
     "addRepSameLoad": "Procura {{reps}} reps com {{weight}} kg (mesma carga) antes de aumentar."
    }
+  },
+  "templates": {
+   "heading": "Partir de um modelo",
+   "fullBody": {
+    "name": "Corpo inteiro",
+    "description": "Agachamento, supino, remada e core."
+   },
+   "push": {
+    "name": "Empurrar",
+    "description": "Peito, ombros e tríceps."
+   },
+   "pull": {
+    "name": "Puxar",
+    "description": "Costas e bíceps, à volta do levantamento terra."
+   },
+   "legs": {
+    "name": "Pernas",
+    "description": "Quadríceps, isquiotibiais e glúteos."
+   },
+   "wod": {
+    "name": "WOD AMRAP",
+    "description": "12 min, o máximo de rondas possível."
+   }
   }
  },
  "sommeil": {

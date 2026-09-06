@@ -1610,6 +1610,29 @@
     "increaseLoad": "You hit {{highReps}} reps at {{from}} kg — move up to {{to}} kg for {{lowReps}} reps.",
     "addRepSameLoad": "Aim for {{reps}} reps at {{weight}} kg (same load) before adding weight."
    }
+  },
+  "templates": {
+   "heading": "Start from a template",
+   "fullBody": {
+    "name": "Full body",
+    "description": "Squat, press, row and core."
+   },
+   "push": {
+    "name": "Push",
+    "description": "Chest, shoulders and triceps."
+   },
+   "pull": {
+    "name": "Pull",
+    "description": "Back and biceps, built around the deadlift."
+   },
+   "legs": {
+    "name": "Legs",
+    "description": "Quads, hamstrings and glutes."
+   },
+   "wod": {
+    "name": "AMRAP WOD",
+    "description": "12 min, as many rounds as possible."
+   }
   }
  },
  "sommeil": {

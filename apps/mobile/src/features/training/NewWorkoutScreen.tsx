@@ -22,6 +22,7 @@ import {
 } from '@/lib/data/queries';
 import { blocksToSessionInput, defaultTimeCapForFormat, newSlotId, useSessionBlocks, type SetDraft } from './sessionBuilder';
 import { SessionBlocksEditor } from './SessionBlocksEditor';
+import { SESSION_TEMPLATES, templateToBlocks } from './sessionTemplates';
 
 const SESSIONS_QUOTA = 50;
 /** Name Garmin imports are stored under (repository.ts upsertImportedWorkouts) — flags the badge below. */
@@ -230,6 +231,29 @@ export function NewWorkoutScreen(): React.JSX.Element {
                 />
               ) : null}
             </View>
+            {/* Proposé seulement sur une séance encore vierge : après coup, un
+                modèle écraserait ce qui vient d'être saisi. */}
+            {!builder.hasAnyExercise ? (
+              <View style={{ gap: spacing[2] }}>
+                <Text variant="caption" color="textMuted">{t('sport.templates.heading')}</Text>
+                <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: spacing[2] }}>
+                  {SESSION_TEMPLATES.map((tpl) => (
+                    <Pressable
+                      key={tpl.id}
+                      onPress={() => {
+                        builder.setName((prev) => (prev.trim() ? prev : t(tpl.nameKey)));
+                        builder.setBlocks(templateToBlocks(tpl));
+                        builder.setActiveBlock(0);
+                      }}
+                      style={{ paddingHorizontal: 12, paddingVertical: 8, borderRadius: 999, borderWidth: 1, borderColor: colors.border, backgroundColor: colors.surfaceElevated }}
+                    >
+                      <Text variant="caption" style={{ fontWeight: '700' }}>{t(tpl.nameKey)}</Text>
+                    </Pressable>
+                  ))}
+                </View>
+              </View>
+            ) : null}
+
             {pickerOpen ? (
               <View style={{ gap: spacing[2] }}>
                 <Text variant="caption" color="textMuted">{t('sport.newWorkout.duplicate.hint')}</Text>

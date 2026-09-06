@@ -1610,6 +1610,29 @@
     "increaseLoad": "Tu as atteint {{highReps}} reps à {{from}} kg — passe à {{to}} kg pour {{lowReps}} reps.",
     "addRepSameLoad": "Vise {{reps}} reps à {{weight}} kg (même charge) avant d’augmenter."
    }
+  },
+  "templates": {
+   "heading": "Partir d'un modèle",
+   "fullBody": {
+    "name": "Full body",
+    "description": "Squat, développé, tirage et gainage."
+   },
+   "push": {
+    "name": "Push",
+    "description": "Pectoraux, épaules et triceps."
+   },
+   "pull": {
+    "name": "Pull",
+    "description": "Dos et biceps, autour du soulevé de terre."
+   },
+   "legs": {
+    "name": "Jambes",
+    "description": "Quadriceps, ischios et fessiers."
+   },
+   "wod": {
+    "name": "WOD AMRAP",
+    "description": "12 min, le plus de tours possible."
+   }
   }
  },
  "sommeil": {

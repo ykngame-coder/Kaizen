@@ -1610,6 +1610,29 @@
     "increaseLoad": "Du hast {{highReps}} Wdh. bei {{from}} kg geschafft — geh auf {{to}} kg für {{lowReps}} Wdh.",
     "addRepSameLoad": "Ziel {{reps}} Wdh. bei {{weight}} kg (gleiches Gewicht), bevor du erhöhst."
    }
+  },
+  "templates": {
+   "heading": "Mit einer Vorlage starten",
+   "fullBody": {
+    "name": "Ganzkörper",
+    "description": "Kniebeuge, Drücken, Rudern und Rumpf."
+   },
+   "push": {
+    "name": "Push",
+    "description": "Brust, Schultern und Trizeps."
+   },
+   "pull": {
+    "name": "Pull",
+    "description": "Rücken und Bizeps, rund ums Kreuzheben."
+   },
+   "legs": {
+    "name": "Beine",
+    "description": "Quadrizeps, Beinbeuger und Gesäß."
+   },
+   "wod": {
+    "name": "AMRAP-WOD",
+    "description": "12 Min., so viele Runden wie möglich."
+   }
   }
  },
  "sommeil": {

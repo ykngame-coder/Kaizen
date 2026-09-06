@@ -1610,6 +1610,29 @@
     "increaseLoad": "Llegaste a {{highReps}} reps con {{from}} kg — sube a {{to}} kg para {{lowReps}} reps.",
     "addRepSameLoad": "Apunta a {{reps}} reps con {{weight}} kg (misma carga) antes de subir."
    }
+  },
+  "templates": {
+   "heading": "Partir de una plantilla",
+   "fullBody": {
+    "name": "Cuerpo completo",
+    "description": "Sentadilla, press, remo y core."
+   },
+   "push": {
+    "name": "Empuje",
+    "description": "Pecho, hombros y tríceps."
+   },
+   "pull": {
+    "name": "Tirón",
+    "description": "Espalda y bíceps, en torno al peso muerto."
+   },
+   "legs": {
+    "name": "Piernas",
+    "description": "Cuádriceps, isquios y glúteos."
+   },
+   "wod": {
+    "name": "WOD AMRAP",
+    "description": "12 min, el máximo de rondas posible."
+   }
   }
  },
  "sommeil": {
