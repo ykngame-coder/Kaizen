@@ -2470,7 +2470,11 @@
     "heading": "Tu media de 60 días",
     "note": "Esta media alimenta el pilar Activo de tu Score Kaizen."
    },
-   "goalLink": "Cambiar el objetivo en Ajustes"
+   "goalLink": "Cambiar el objetivo en Ajustes",
+   "daily": {
+    "heading": "Día a día",
+    "today": "Hoy"
+   }
   }
  },
  "community": {
@@ -2543,7 +2547,8 @@
     "button": "Participar en la clasificación"
    },
    "notRanked": "No estás clasificado en este período.",
-   "you": "Tú"
+   "you": "Tú",
+   "averageHint": "Media de tu puntuación diaria en {{period}} — el Dashboard muestra la puntuación de hoy."
   }
  },
  "connectors": {
@@ -2905,7 +2910,8 @@
     "coach": "Coach IA",
     "stats": "Estadísticas",
     "hydration": "Hidratación",
-    "customizeTitle": "Personalizar accesos rápidos"
+    "customizeTitle": "Personalizar accesos rápidos",
+    "community": "Comunidad"
    },
    "header": {
     "greetingWithName": "Hola {{name}}",

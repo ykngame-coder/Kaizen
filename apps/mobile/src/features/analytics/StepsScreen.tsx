@@ -7,6 +7,7 @@ import { spacing } from '@supotsu/design-system';
 import { computeStepsBaseline, stepsTrend, summarizeTrend } from '@supotsu/engines';
 import { useAddHealthMetric, useHealthMetrics } from '@/lib/data/queries';
 import { usePreferences } from '@/lib/preferences';
+import { formatDate } from '@/lib/format';
 
 const PERIODS = [
   { key: '30', label: '30 j', days: 30 },
@@ -121,6 +122,37 @@ export function StepsScreen(): React.JSX.Element {
                 />
               </View>
             ) : null}
+          </Card>
+
+          {/* Détail jour par jour : la courbe donne la forme, pas les valeurs —
+              impossible jusqu'ici de relire les pas d'un jour précis
+              (retour TestFlight). Plus récent en premier. */}
+          <Card>
+            <Text variant="heading">{t('analytics.steps.daily.heading')}</Text>
+            <View style={{ marginTop: spacing[2] }}>
+              {[...points].reverse().map((pt, i) => {
+                const key = pt.date.slice(0, 10);
+                const pct = goal > 0 ? Math.min(100, Math.round((pt.value / goal) * 100)) : 0;
+                return (
+                  <View
+                    key={key}
+                    style={{
+                      flexDirection: 'row', alignItems: 'center', gap: spacing[3],
+                      paddingVertical: spacing[2],
+                      borderBottomWidth: i < points.length - 1 ? 1 : 0, borderBottomColor: colors.border,
+                    }}
+                  >
+                    <Text variant="body" style={{ flex: 1, fontWeight: key === todayKey ? '700' : '400' }}>
+                      {key === todayKey ? t('analytics.steps.daily.today') : formatDate(pt.date)}
+                    </Text>
+                    <Text variant="caption" color={pct >= 100 ? 'accentData' : 'textSubtle'}>{pct}%</Text>
+                    <Text variant="body" style={{ fontWeight: '600', minWidth: 72, textAlign: 'right' }}>
+                      {pt.value.toLocaleString('fr-FR')}
+                    </Text>
+                  </View>
+                );
+              })}
+            </View>
           </Card>
 
           {/* Baseline 60 jours — alimente le pilier Actif */}

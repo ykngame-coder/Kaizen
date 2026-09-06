@@ -2470,7 +2470,11 @@
     "heading": "Dein 60-Tage-Durchschnitt",
     "note": "Dieser Durchschnitt fließt in die Säule Aktiv deines Score Kaizen ein."
    },
-   "goalLink": "Ziel in den Einstellungen ändern"
+   "goalLink": "Ziel in den Einstellungen ändern",
+   "daily": {
+    "heading": "Tag für Tag",
+    "today": "Heute"
+   }
   }
  },
  "community": {
@@ -2543,7 +2547,8 @@
     "button": "An der Rangliste teilnehmen"
    },
    "notRanked": "Du bist für diesen Zeitraum nicht platziert.",
-   "you": "Du"
+   "you": "Du",
+   "averageHint": "Durchschnitt deines Tageswerts über {{period}} — das Dashboard zeigt dagegen den heutigen Wert."
   }
  },
  "connectors": {
@@ -2905,7 +2910,8 @@
     "coach": "KI-Coach",
     "stats": "Statistiken",
     "hydration": "Hydration",
-    "customizeTitle": "Schnellzugriff anpassen"
+    "customizeTitle": "Schnellzugriff anpassen",
+    "community": "Community"
    },
    "header": {
     "greetingWithName": "Hallo {{name}}",

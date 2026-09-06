@@ -2470,7 +2470,11 @@
     "heading": "Your 60-day average",
     "note": "This average feeds the Active pillar of your Score Kaizen."
    },
-   "goalLink": "Change the goal in Settings"
+   "goalLink": "Change the goal in Settings",
+   "daily": {
+    "heading": "Day by day",
+    "today": "Today"
+   }
   }
  },
  "community": {
@@ -2543,7 +2547,8 @@
     "button": "Join the leaderboard"
    },
    "notRanked": "You're not ranked for this period.",
-   "you": "You"
+   "you": "You",
+   "averageHint": "Average of your daily score over {{period}} — the Dashboard shows today's score instead."
   }
  },
  "connectors": {
@@ -2905,7 +2910,8 @@
     "coach": "AI coach",
     "stats": "Stats",
     "hydration": "Hydration",
-    "customizeTitle": "Customize quick access"
+    "customizeTitle": "Customize quick access",
+    "community": "Community"
    },
    "header": {
     "greetingWithName": "Hi {{name}}",

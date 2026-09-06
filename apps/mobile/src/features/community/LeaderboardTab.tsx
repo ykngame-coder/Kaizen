@@ -63,6 +63,13 @@ export function LeaderboardTab(): React.JSX.Element {
       <SegmentedControl options={CATEGORY_OPTIONS} value={category} onChange={setCategory} />
       <SegmentedControl options={PERIOD_OPTIONS} value={period} onChange={setPeriod} />
 
+      {/* Le classement est une moyenne sur la période, là où le Dashboard et
+          les hubs montrent le score du jour. Sans le dire, l'écart entre les
+          deux passe pour une incohérence (retour TestFlight). */}
+      <Text variant="caption" color="textSubtle">
+        {t('community.leaderboard.averageHint', { period: PERIOD_OPTIONS.find((o) => o.value === period)?.label ?? '' })}
+      </Text>
+
       {isLoading ? (
         <Text variant="body" color="textMuted">
           {t('common.loading')}

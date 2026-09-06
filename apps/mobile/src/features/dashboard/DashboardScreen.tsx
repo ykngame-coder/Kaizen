@@ -650,6 +650,7 @@ export const QUICK_LINKS: { key: string; labelKey: string; icon: IconName; path:
   { key: 'sleep', labelKey: 'dashboard.screen.quickLinks.sleep', icon: 'bedtime', path: '/sommeil' },
   { key: 'coach', labelKey: 'dashboard.screen.quickLinks.coach', icon: 'sparkle', path: '/coach' },
   { key: 'stats', labelKey: 'dashboard.screen.quickLinks.stats', icon: 'chartBar', path: '/profile/analytics' },
+  { key: 'community', labelKey: 'dashboard.screen.quickLinks.community', icon: 'fire', path: '/profile/community' },
 ];
 
 function IconBtn({ icon, onPress, accessibilityLabel }: { icon: React.ReactNode; onPress: () => void; accessibilityLabel?: string }): React.JSX.Element {
