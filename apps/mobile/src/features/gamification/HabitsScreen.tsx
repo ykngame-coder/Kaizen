@@ -100,6 +100,15 @@ export function HabitsScreen(): React.JSX.Element {
   const viewedK = dayKey(new Date(selectedDate));
   const isToday = viewedK === todayK;
 
+  // Filet de sécurité : quelle que soit la cause, la roue ne doit jamais
+  // rester allumée — sinon `disabled` rend la case définitivement inutilisable.
+  useEffect(() => {
+    if (!pendingHabitId) return;
+    if (logHabit.isPending || unlogHabit.isPending) return;
+    const timer = setTimeout(() => setPendingHabitId(null), 500);
+    return () => clearTimeout(timer);
+  }, [pendingHabitId, logHabit.isPending, unlogHabit.isPending]);
+
   const active = habits.filter((h) => !h.archivedAt);
 
   // Logs indexed by day, per-habit day-sets (for streaks), per-habit
@@ -330,10 +339,16 @@ export function HabitsScreen(): React.JSX.Element {
                       <Pressable
                         onPress={() => {
                           const settle = (): void => setPendingHabitId((id) => (id === h.id ? null : id));
-                          const onError = (): void => {
+                          // Le message réel, pas un texte générique : un
+                          // rapport TestFlight sur un échec muet n'apprend rien.
+                          const onError = (e: unknown): void => {
+                            setPendingHabitId((id) => (id === h.id ? null : id));
+                            const detail = e instanceof Error ? e.message : String(e ?? '');
                             Alert.alert(
                               t('sport.gamification.habitsScreen.checklist.toggleErrorTitle'),
-                              t('sport.gamification.habitsScreen.checklist.toggleError'),
+                              detail
+                                ? `${t('sport.gamification.habitsScreen.checklist.toggleError')}\n\n${detail}`
+                                : t('sport.gamification.habitsScreen.checklist.toggleError'),
                             );
                           };
                           if (p.done) {
@@ -342,11 +357,23 @@ export function HabitsScreen(): React.JSX.Element {
                             setPendingHabitId(h.id);
                             unlogHabit.mutate(logId, { onSettled: settle, onError });
                           } else {
+                            // Calculé AVANT d'allumer la roue : évalué comme
+                            // argument de mutate(), un throw ici laissait la
+                            // roue allumée pour toujours — mutate n'était
+                            // jamais appelé, donc ni onSettled ni onError ne
+                            // se déclenchaient, et `disabled` bloquait la case
+                            // définitivement.
+                            let completedAt: string | undefined;
+                            if (!isToday) {
+                              const at = new Date(selectedDate);
+                              if (Number.isNaN(at.getTime())) {
+                                onError(new Error('Invalid selected day'));
+                                return;
+                              }
+                              completedAt = at.toISOString();
+                            }
                             setPendingHabitId(h.id);
-                            logHabit.mutate(
-                              { habitId: h.id, completedAt: isToday ? undefined : new Date(selectedDate).toISOString() },
-                              { onSettled: settle, onError },
-                            );
+                            logHabit.mutate({ habitId: h.id, completedAt }, { onSettled: settle, onError });
                           }
                         }}
                         disabled={pendingHabitId === h.id}
