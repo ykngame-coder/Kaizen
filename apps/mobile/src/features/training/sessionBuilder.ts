@@ -55,6 +55,19 @@ export function defaultTimeCapForFormat(format: BlockFormat): string {
   return '';
 }
 
+/**
+ * Forme comparable d'un texte de recherche : sans accent, en minuscules.
+ * Sans ça, chercher « elevation » ne trouve pas « Élévation latérale » — le
+ * catalogue est en français accentué et les claviers ne le sont pas toujours.
+ */
+export function normalizeSearch(text: string): string {
+  return text
+    .trim()
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/\p{Diacritic}/gu, '');
+}
+
 export function formatLabel(format: BlockFormat, t: TFunction): string {
   if (format === 'strength') return t('sport.sessionBuilder.blockFormat.strength');
   if (format === 'for_time') return t('sport.sessionBuilder.blockFormat.forTime');
@@ -167,12 +180,18 @@ export function useSessionBlocks(options: UseSessionBlocksOptions = {}) {
   // No longer excludes exercises already in the block — the same exercise
   // can now get a second slot (e.g. a second superset pair, or just logging
   // it twice with different reps/charge).
-  const q = query.trim().toLowerCase();
+  const q = normalizeSearch(query);
   const searchResults = useMemo(
     () => allExercises
       .filter((ex) => muscleFilter === 'all' || ex.primary === muscleFilter || ex.secondary.includes(muscleFilter))
       .filter((ex) => equipmentFilter === 'all' || ex.equipment === equipmentFilter)
-      .filter((ex) => !q || ex.name.toLowerCase().includes(q) || MUSCLE_LABEL[ex.primary].toLowerCase().includes(q) || ex.equipment.toLowerCase().includes(q))
+      .filter(
+        (ex) =>
+          !q ||
+          normalizeSearch(ex.name).includes(q) ||
+          normalizeSearch(MUSCLE_LABEL[ex.primary]).includes(q) ||
+          normalizeSearch(ex.equipment).includes(q),
+      )
       .slice(0, RESULTS_LIMIT),
     [allExercises, muscleFilter, equipmentFilter, q],
   );

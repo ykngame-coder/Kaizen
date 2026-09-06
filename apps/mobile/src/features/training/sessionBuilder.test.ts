@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { blocksToSessionInput, defaultTimeCapForFormat, type BlockDraft } from './sessionBuilder';
+import { blocksToSessionInput, defaultTimeCapForFormat, normalizeSearch, type BlockDraft } from './sessionBuilder';
 
 function block(overrides: Partial<BlockDraft> = {}): BlockDraft {
   return {
@@ -113,5 +113,23 @@ describe('defaultTimeCapForFormat', () => {
 
   it('laisse l’objectif For Time vide — il est facultatif', () => {
     expect(defaultTimeCapForFormat('for_time')).toBe('');
+  });
+});
+
+describe('normalizeSearch', () => {
+  it('replie les accents et la casse', () => {
+    expect(normalizeSearch('Élévation Latérale')).toBe('elevation laterale');
+  });
+
+  it('laisse un texte déjà simple inchangé', () => {
+    expect(normalizeSearch('squat')).toBe('squat');
+  });
+
+  it('rogne les espaces de bord', () => {
+    expect(normalizeSearch('  Développé  ')).toBe('developpe');
+  });
+
+  it('gère une entrée vide', () => {
+    expect(normalizeSearch('')).toBe('');
   });
 });
