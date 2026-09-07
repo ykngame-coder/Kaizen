@@ -12,6 +12,7 @@ indépendants et peuvent être lancés dans n'importe quel ordre, sauf indicatio
 | `sommeil-telephone-reveil.md` | Suivi du sommeil par le **téléphone** (actigraphie) + **réveil intelligent programmable** | À tout moment |
 | `fix-testflight-lot1.md` | **Correctifs retours TestFlight** : planning cliquable (#3), réattribuer un repas (#4), pesée auto (#5), activités top-3 (#2) ; #1 = re-tester sur build à jour | Prioritaire |
 | `creation-suivi-seance.md` | Améliorer la **création** (prefill+suggestion, ajout rapide, modèles, superset) et le **suivi/runner** (log+repos auto, réf. précédente + RPE/RIR, reprise, calculateur de disques, échauffement auto) | À tout moment |
+| `objectif-sommeil-reglable.md` | Objectif de sommeil **réglable** + dette/score/circadien réajustés à la cible + correction incohérence 7 h 45 / 8 h | À tout moment |
 | `i18n-multilingue.md` | **Multilingue** FR/EN/ES/PT/DE (infra i18n + sélecteur + extraction) — _infra déjà en place, sert de référence_ | Fait / en cours |
 | `apple-watch-niveau1.md` | App **Apple Watch** compagnon (suivre sa séance au poignet) — Niveau 1 | **Post-TestFlight** |
 | `apple-watch-niveau2.md` | Apple Watch — séance **live** (FC temps réel, calories, HealthKit workout) | **Après le Niveau 1** |
