@@ -29,6 +29,14 @@ i18n en place → toute chaîne visible via t() dans fr/en/es/pt/de.
 ============================================================
 Fichier packages/engines/src/sleep.ts :
 - Garde `SLEEP_TARGET_HOURS = 8` comme DÉFAUT de repli (rétrocompat).
+- DÉDUP (bug relevé en code-review, à corriger ICI puisqu'on touche ces fonctions) :
+  `distinctNights()` existe déjà et est appliqué à la tendance, mais PAS à la dette
+  ni à la régularité → une nuit synchronisée plusieurs fois (HealthKit + Garmin,
+  re-sync) est comptée en double. Applique `distinctNights()` en tête de
+  `sleepDebtHours` (avant la somme de dette ET le comptage `nights`) et de
+  `bedtimeSpreadMinutes` (avant le seuil MIN_NIGHTS_FOR_TREND et l'écart des heures
+  de coucher). Sans ça, dette gonflée + régularité ~100 % fabriquée à partir d'une
+  seule nuit.
 - durationScore(hours, goalHours = SLEEP_TARGET_HOURS) : 8h→100 devient goalHours→100
   (barème linéaire de 4 h à goalHours).
 - sleepDebtHours(metrics, asOf, windowDays, goalHours = SLEEP_TARGET_HOURS) :
