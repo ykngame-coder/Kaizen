@@ -209,7 +209,10 @@ function SessionForm({
         suggestionFor={suggestionFor}
         favorites={favorites}
         onToggleFavorite={onToggleFavorite}
-        onCreateExercise={() => router.push('/sport/exercise/new')}
+        // Route jumelle DANS le groupe marketplace, à ne pas remplacer par
+        // '/sport/exercise/new' : la racine est un <Slot>, donc changer de
+        // groupe démonte cette pile et fait perdre la séance en cours.
+        onCreateExercise={() => router.push('/marketplace/exercise-new')}
         error={error}
         saving={saving}
         saveLabel={
