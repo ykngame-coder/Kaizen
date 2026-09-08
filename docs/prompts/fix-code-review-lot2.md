@@ -25,6 +25,14 @@ les notes → le bug est invisible hors Supabase).
   transmet bien `input.notes`. Vérifie la colonne `notes` sur `user_sessions`
   (elle existe déjà puisque addUserSession l'écrit) → pas de migration.
 - Test : éditer une séance existante en changeant les notes → notes persistées.
+- ATOMICITÉ (2e finding sur la MÊME fonction, ~L137) : updateUserSession
+  SUPPRIME tous les exercices/blocs puis les ré-insère, SANS transaction. Un échec
+  en cours (quota, réseau, RLS) laisse la séance vidée/partielle, sans rollback.
+  → rends le remplacement ATOMIQUE : idéalement une fonction RPC Postgres
+  (SECURITY DEFINER, sc2 RLS) qui fait delete+insert dans UNE transaction ; à
+  défaut, structure le code pour ne supprimer l'ancien contenu qu'après succès des
+  insertions (ou restaure en cas d'échec). Test : simuler un échec d'insertion du
+  2e bloc → l'ancienne séance reste intacte.
 
 ============================================================
 B — Pagination des habitudes non déterministe (export/streaks incomplets) [🟠]
@@ -61,6 +69,13 @@ sauvait.
   une entrée d'eau. Message d'erreur seulement si l'entrée est réellement vide
   (ni kcal, ni macros, ni hydratation, ni description).
 - Test : loguer 500 ml d'eau sans calories → enregistré ; aliment 0 kcal → enregistré.
+- HARMONISER les DEUX modes (finding complémentaire, ~L116) : en mode « Total »,
+  un champ calories VIDE donne parseDecimal('')===0 et passe le schéma → un repas à
+  0 kcal est enregistré SILENCIEUSEMENT (alors que per100 bloque trop). Rends la
+  validation COHÉRENTE : une entrée « aliment » exige des calories réellement
+  saisies (les deux modes), tandis qu'une entrée hydratation seule / 0 kcal assumé
+  est autorisée dans les deux modes. Pas un mode laxiste + un mode trop strict.
+  Test : mode Total, macros sans calories → erreur claire ; eau seule → OK.
 
 ============================================================
 QUALITÉ & RÈGLES

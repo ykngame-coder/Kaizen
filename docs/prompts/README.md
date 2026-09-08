@@ -11,6 +11,7 @@ indépendants et peuvent être lancés dans n'importe quel ordre, sauf indicatio
 | `import-ocr-seances.md` | Import d'une séance depuis une **capture d'écran** — OCR 100 % local (Voie A) + écran de revue éditable | À tout moment |
 | `sommeil-telephone-reveil.md` | Suivi du sommeil par le **téléphone** (actigraphie) + **réveil intelligent programmable** | À tout moment |
 | `fix-testflight-lot1.md` | **Correctifs retours TestFlight** : planning cliquable (#3), réattribuer un repas (#4), pesée auto (#5), activités top-3 (#2) ; #1 = re-tester sur build à jour | Prioritaire |
+| `fix-code-review-lot3.md` | **Correctifs code-review (import santé)** : sommeil doublé entre sources HealthKit, dédup activités trop agressive (perte de séances), plage hydratation litres→ml | Prioritaire |
 | `fix-code-review-lot2.md` | **Correctifs code-review** : notes de séance perdues en prod, pagination habitudes non déterministe, saisie nutrition eau/0 kcal (+ dédup sommeil traitée dans le prompt sommeil) | Prioritaire |
 | `creation-suivi-seance.md` | Améliorer la **création** (prefill+suggestion, ajout rapide, modèles, superset) et le **suivi/runner** (log+repos auto, réf. précédente + RPE/RIR, reprise, calculateur de disques, échauffement auto) | À tout moment |
 | `objectif-sommeil-reglable.md` | Objectif de sommeil **réglable** + dette/score/circadien réajustés à la cible + correction incohérence 7 h 45 / 8 h | À tout moment |
