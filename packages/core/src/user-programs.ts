@@ -35,7 +35,10 @@ export interface UserSessionBlock {
   sessionId: UUID;
   order: number;
   format: BlockFormat;
+  /** AMRAP cap, EMOM interval length, or Tabata work duration, in seconds. */
   timeCapSec?: number;
+  /** Tabata rest duration, in seconds. */
+  restSec?: number;
   targetRounds?: number;
 }
 

@@ -16,7 +16,10 @@ export interface SetDraft {
 
 export interface BlockDraft {
   format: BlockFormat;
+  /** Plafond AMRAP, intervalle EMOM, ou secondes de travail Tabata. */
   timeCapSec: string;
+  /** Secondes de repos — Tabata uniquement. */
+  restSec: string;
   targetRounds: string;
   /** Slot ids, in display/execution order — not exercise ids (an exercise can have more than one slot). */
   order: string[];
@@ -38,7 +41,7 @@ export const emptySet = (exerciseId: string): SetDraft => ({ exerciseId, reps: '
 // every new block's live run into a 10-round circuit before the user ever
 // touched it. AMRAP/EMOM/Pour le temps still work fine with an empty value —
 // their own compute functions already fall back to `?? 1`/`?? 0`.
-export const emptyBlock = (): BlockDraft => ({ format: 'strength', timeCapSec: '12', targetRounds: '', order: [], selected: {}, supersetGroups: {} });
+export const emptyBlock = (): BlockDraft => ({ format: 'strength', timeCapSec: '12', restSec: '', targetRounds: '', order: [], selected: {}, supersetGroups: {} });
 
 /**
  * Valeur de départ du champ temps pour un format donné. Le champ ne veut pas
@@ -51,6 +54,8 @@ export const emptyBlock = (): BlockDraft => ({ format: 'strength', timeCapSec: '
 export function defaultTimeCapForFormat(format: BlockFormat): string {
   if (format === 'amrap') return '12';
   if (format === 'emom') return '60';
+  // Tabata : le champ porte les secondes de TRAVAIL, 20 s par convention.
+  if (format === 'tabata') return '20';
   // For Time : objectif facultatif — vide, pour que le placeholder s'affiche.
   return '';
 }
@@ -72,7 +77,16 @@ export function formatLabel(format: BlockFormat, t: TFunction): string {
   if (format === 'strength') return t('sport.sessionBuilder.blockFormat.strength');
   if (format === 'for_time') return t('sport.sessionBuilder.blockFormat.forTime');
   if (format === 'amrap') return 'AMRAP';
+  if (format === 'tabata') return 'Tabata';
   return 'EMOM';
+}
+
+/** Valeurs par défaut d'un Tabata canonique, appliquées en changeant de format. */
+export function defaultRestForFormat(format: BlockFormat): string {
+  return format === 'tabata' ? '10' : '';
+}
+export function defaultRoundsForFormat(format: BlockFormat): string {
+  return format === 'tabata' ? '8' : '';
 }
 
 const RESULTS_LIMIT = 60;
@@ -274,10 +288,17 @@ export function blocksToSessionInput(blocks: BlockDraft[]): SessionBlockInput[] 
       timeCapSec:
         block.format === 'amrap' || block.format === 'for_time'
           ? (Number(block.timeCapSec) || 0) * 60 || undefined
-          : block.format === 'emom'
+          : block.format === 'emom' || block.format === 'tabata'
+            // Déjà en secondes : intervalle EMOM, travail Tabata.
             ? Number(block.timeCapSec) || undefined
             : undefined,
-      targetRounds: block.format === 'emom' || block.format === 'for_time' || block.format === 'strength' ? Number(block.targetRounds) || undefined : undefined,
+      // 0 est une valeur de repos légitime (le Tabata dégénère en EMOM), donc
+      // `|| undefined` l'écraserait — d'où le test explicite sur la chaîne.
+      restSec: block.format === 'tabata' && block.restSec.trim() !== '' ? Number(block.restSec) : undefined,
+      targetRounds:
+        block.format === 'emom' || block.format === 'for_time' || block.format === 'strength' || block.format === 'tabata'
+          ? Number(block.targetRounds) || undefined
+          : undefined,
       exercises,
     });
   }

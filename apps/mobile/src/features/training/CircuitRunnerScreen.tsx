@@ -9,10 +9,11 @@ import { EXERCISES } from '@/features/exercises/catalog';
 import { activateKeepAwakeAsync, deactivateKeepAwake } from 'expo-keep-awake';
 import { useSetWorkoutStatus, useWorkoutBlocks, useBlockSets, useCompleteBlock, useCustomExercises, useWorkouts } from '@/lib/data/queries';
 import { clearRunState, loadRunState, saveRunState } from './runStore';
-import { formatClock, supersetPartners } from './blockRunnerEngine';
+import { formatClock, supersetPartners, tabataTotalSec } from './blockRunnerEngine';
 import { StrengthRunner } from './StrengthRunner';
 import { AmrapRunner } from './AmrapRunner';
 import { EmomRunner } from './EmomRunner';
+import { TabataRunner } from './TabataRunner';
 import { ForTimeRunner } from './ForTimeRunner';
 import { BlockTimeline } from './BlockTimeline';
 
@@ -157,7 +158,10 @@ export function CircuitRunnerScreen(): React.JSX.Element {
           ? elapsed
           : active.format === 'amrap'
             ? (active.timeCapSec ?? 0)
-            : (active.timeCapSec ?? 0) * (active.targetRounds ?? 0),
+            : active.format === 'tabata'
+              // Pas (travail × rounds) : le dernier round n'a pas de repos.
+              ? tabataTotalSec(active.timeCapSec ?? 0, active.restSec ?? 0, active.targetRounds ?? 0)
+              : (active.timeCapSec ?? 0) * (active.targetRounds ?? 0),
     });
     await advanceOrFinish();
   };
@@ -296,6 +300,8 @@ export function CircuitRunnerScreen(): React.JSX.Element {
         <AmrapRunner block={active} sets={sets} onFinished={(r) => void finishTimedBlock(r)} />
       ) : active.format === 'emom' ? (
         <EmomRunner block={active} sets={sets} onFinished={(r) => void finishTimedBlock(r)} />
+      ) : active.format === 'tabata' ? (
+        <TabataRunner block={active} sets={sets} onFinished={(r) => void finishTimedBlock(r)} />
       ) : (
         <ForTimeRunner block={active} sets={sets} onFinished={(r, e) => void finishTimedBlock(r, e)} />
       )}

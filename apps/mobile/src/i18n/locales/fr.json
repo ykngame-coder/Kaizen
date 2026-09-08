@@ -1483,8 +1483,12 @@
      "strength": "Séries et répétitions, avec un repos entre chaque série.",
      "amrap": "Le plus de tours possible dans le temps imparti.",
      "emom": "Une tâche à faire au début de chaque intervalle.",
-     "forTime": "Finir tous les tours le plus vite possible."
-    }
+     "forTime": "Finir tous les tours le plus vite possible.",
+     "tabata": "Travail et repos qui s'enchaînent, sur un nombre de rounds fixe."
+    },
+    "workLabel": "Travail (s)",
+    "restLabel": "Repos (s)",
+    "tabataTotal": "Durée totale : {{total}}"
    },
    "superset": {
     "startSelect": "Grouper des exercices",
@@ -1616,7 +1620,14 @@
    "blockInProgress": "en cours",
    "blockUpcoming": "à venir",
    "continueBlock": "Continuer",
-   "skipBlock": "Passer au bloc suivant"
+   "skipBlock": "Passer au bloc suivant",
+   "tabata": {
+    "roundCounter": "Round {{current}}/{{total}}",
+    "work": "TRAVAIL",
+    "rest": "REPOS",
+    "current": "Cet exercice",
+    "nextUp": "Ensuite"
+   }
   },
   "progression": {
    "rationale": {

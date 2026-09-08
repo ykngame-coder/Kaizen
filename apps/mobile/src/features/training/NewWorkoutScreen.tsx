@@ -128,13 +128,14 @@ export function NewWorkoutScreen(): React.JSX.Element {
           .map((b) => ({
             format: b.format,
             timeCapSec: b.timeCapSec != null ? String(b.format === 'amrap' || b.format === 'for_time' ? Math.round(b.timeCapSec / 60) : b.timeCapSec) : defaultTimeCapForFormat(b.format),
+            restSec: b.restSec != null ? String(b.restSec) : '',
             targetRounds: b.targetRounds != null ? String(b.targetRounds) : '',
             ...toSlots(importSets.filter((s) => s.blockId === b.id)),
           })),
       );
     } else {
       // Séance historique sans bloc : repli sur un bloc musculation unique.
-      builder.setBlocks([{ format: 'strength', timeCapSec: '12', targetRounds: '', ...toSlots(importSets) }]);
+      builder.setBlocks([{ format: 'strength', timeCapSec: '12', restSec: '', targetRounds: '', ...toSlots(importSets) }]);
     }
     builder.setActiveBlock(0);
     setImportSourceId(undefined);

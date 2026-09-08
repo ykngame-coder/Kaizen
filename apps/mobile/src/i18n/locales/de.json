@@ -1483,8 +1483,12 @@
      "strength": "Sätze und Wiederholungen, mit Pause zwischen den Sätzen.",
      "amrap": "So viele Runden wie möglich in der vorgegebenen Zeit.",
      "emom": "Eine Aufgabe zu Beginn jedes Intervalls.",
-     "forTime": "Alle Runden so schnell wie möglich abschließen."
-    }
+     "forTime": "Alle Runden so schnell wie möglich abschließen.",
+     "tabata": "Belastung und Pause im Wechsel, über eine feste Rundenzahl."
+    },
+    "workLabel": "Belastung (s)",
+    "restLabel": "Pause (s)",
+    "tabataTotal": "Gesamtdauer: {{total}}"
    },
    "superset": {
     "startSelect": "Übungen gruppieren",
@@ -1616,7 +1620,14 @@
    "blockInProgress": "läuft",
    "blockUpcoming": "kommt noch",
    "continueBlock": "Weiter",
-   "skipBlock": "Zum nächsten Block"
+   "skipBlock": "Zum nächsten Block",
+   "tabata": {
+    "roundCounter": "Runde {{current}}/{{total}}",
+    "work": "BELASTUNG",
+    "rest": "PAUSE",
+    "current": "Diese Übung",
+    "nextUp": "Als Nächstes"
+   }
   },
   "progression": {
    "rationale": {

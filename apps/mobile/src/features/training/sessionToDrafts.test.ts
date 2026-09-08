@@ -67,6 +67,29 @@ describe('sessionToBlockDrafts', () => {
     ]);
   });
 
+  it('fait l aller-retour d un Tabata sans perdre le repos', () => {
+    const blocks = [block({ id: 'b1', order: 0, format: 'tabata', timeCapSec: 20, restSec: 10, targetRounds: 8 })];
+    const exercises = [ex({ id: 'e1', order: 0, exerciseId: 'burpee', blockId: 'b1' })];
+    const drafts = sessionToBlockDrafts(blocks, exercises);
+    // Le travail reste en secondes — pas divisé par 60 comme un AMRAP.
+    expect(drafts[0]).toMatchObject({ format: 'tabata', timeCapSec: '20', restSec: '10', targetRounds: '8' });
+    expect(blocksToSessionInput(drafts)[0]).toMatchObject({
+      format: 'tabata',
+      timeCapSec: 20,
+      restSec: 10,
+      targetRounds: 8,
+    });
+  });
+
+  it('conserve un repos de 0 s, qui est une valeur voulue et non une absence', () => {
+    const drafts = sessionToBlockDrafts(
+      [block({ id: 'b1', order: 0, format: 'tabata', timeCapSec: 60, restSec: 0, targetRounds: 10 })],
+      [ex({ id: 'e1', order: 0, exerciseId: 'burpee', blockId: 'b1' })],
+    );
+    expect(drafts[0]!.restSec).toBe('0');
+    expect(blocksToSessionInput(drafts)[0]!.restSec).toBe(0);
+  });
+
   it('rattrape une séance ancienne « à plat » : sans blocs, les exercices ne doivent pas disparaître', () => {
     const drafts = sessionToBlockDrafts(
       [],

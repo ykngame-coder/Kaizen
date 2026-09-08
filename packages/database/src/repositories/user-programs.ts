@@ -71,7 +71,10 @@ export async function listSessionBlocks(
 
 export interface SessionBlockWrite {
   format: UserSessionBlockRow['format'];
+  /** AMRAP cap, EMOM interval, or Tabata work duration. */
   timeCapSec?: number;
+  /** Tabata rest. */
+  restSec?: number;
   targetRounds?: number;
   exercises: Omit<UserSessionExerciseInsertRow, 'session_id' | 'block_id'>[];
 }
@@ -91,6 +94,7 @@ async function writeSessionBlocks(
         order: i,
         format: b.format,
         time_cap_sec: b.timeCapSec ?? null,
+        rest_sec: b.restSec ?? null,
         target_rounds: b.targetRounds ?? null,
       })
       .select('*')

@@ -188,8 +188,11 @@ export type SessionExerciseInput = z.infer<typeof sessionExerciseInputSchema>;
 
 /** One block within a user-created session (mirrors workout_blocks). */
 export const sessionBlockInputSchema = z.object({
-  format: z.enum(['strength', 'amrap', 'emom', 'for_time']),
+  format: z.enum(['strength', 'amrap', 'emom', 'for_time', 'tabata']),
+  /** AMRAP cap, EMOM interval, or Tabata work duration. */
   timeCapSec: z.number().int().positive().max(36000).optional(),
+  /** Tabata rest. Nonnegative, not positive: a 0 s rest degenerates into an EMOM and is allowed. */
+  restSec: z.number().int().nonnegative().max(3600).optional(),
   targetRounds: z.number().int().positive().max(100).optional(),
   exercises: z.array(sessionExerciseInputSchema).min(1).max(50),
 });

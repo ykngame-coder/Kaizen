@@ -18,6 +18,7 @@ function formatChip(block: WorkoutBlock, t: ReturnType<typeof useTranslation>['t
     return block.timeCapSec ? `AMRAP · ${Math.round(block.timeCapSec / 60)} min` : 'AMRAP';
   }
   if (block.format === 'emom') return 'EMOM';
+  if (block.format === 'tabata') return `Tabata · ${block.timeCapSec ?? '?'}/${block.restSec ?? '?'} s`;
   if (block.format === 'for_time') return t('sport.circuitRunner.format.forTime');
   return t('sport.circuitRunner.format.strength');
 }

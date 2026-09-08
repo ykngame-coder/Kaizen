@@ -1483,8 +1483,12 @@
      "strength": "Series y repeticiones, con descanso entre cada serie.",
      "amrap": "El máximo de rondas posible en el tiempo dado.",
      "emom": "Una tarea al inicio de cada intervalo.",
-     "forTime": "Terminar todas las rondas lo más rápido posible."
-    }
+     "forTime": "Terminar todas las rondas lo más rápido posible.",
+     "tabata": "Trabajo y descanso alternados, durante un número fijo de rondas."
+    },
+    "workLabel": "Trabajo (s)",
+    "restLabel": "Descanso (s)",
+    "tabataTotal": "Duración total: {{total}}"
    },
    "superset": {
     "startSelect": "Agrupar ejercicios",
@@ -1616,7 +1620,14 @@
    "blockInProgress": "en curso",
    "blockUpcoming": "próximo",
    "continueBlock": "Continuar",
-   "skipBlock": "Pasar al siguiente bloque"
+   "skipBlock": "Pasar al siguiente bloque",
+   "tabata": {
+    "roundCounter": "Ronda {{current}}/{{total}}",
+    "work": "TRABAJO",
+    "rest": "DESCANSO",
+    "current": "Este ejercicio",
+    "nextUp": "A continuación"
+   }
   },
   "progression": {
    "rationale": {

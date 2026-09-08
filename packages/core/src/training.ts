@@ -51,7 +51,7 @@ export interface Workout extends OwnedEntity {
   notes?: string;
 }
 
-export type BlockFormat = 'strength' | 'amrap' | 'emom' | 'for_time';
+export type BlockFormat = 'strength' | 'amrap' | 'emom' | 'for_time' | 'tabata';
 
 /**
  * One ordered segment of a session (Master Prompt — circuit workout
@@ -65,9 +65,11 @@ export interface WorkoutBlock {
   workoutId: UUID;
   order: number;
   format: BlockFormat;
-  /** AMRAP cap, or EMOM interval length, in seconds. */
+  /** AMRAP cap, EMOM interval length, or Tabata work duration, in seconds. */
   timeCapSec?: number;
-  /** EMOM interval count, or "pour le temps" round count. */
+  /** Tabata rest duration, in seconds. Unused by every other format. */
+  restSec?: number;
+  /** EMOM interval count, "pour le temps" round count, or Tabata round count. */
   targetRounds?: number;
   /** Rounds actually completed — set once the block finishes. */
   completedRounds?: number;

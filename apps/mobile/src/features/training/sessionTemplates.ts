@@ -135,6 +135,8 @@ export function templateToBlocks(template: SessionTemplate): BlockDraft[] {
     return {
       format: b.format,
       timeCapSec: b.timeCap != null ? String(b.timeCap) : '',
+      // Aucun modèle prêt-à-l'emploi n'est un Tabata pour l'instant.
+      restSec: '',
       targetRounds: b.targetRounds != null ? String(b.targetRounds) : '',
       order,
       selected,

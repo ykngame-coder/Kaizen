@@ -1483,8 +1483,12 @@
      "strength": "Sets and reps, with rest between each set.",
      "amrap": "As many rounds as possible within the time cap.",
      "emom": "One task to do at the top of every interval.",
-     "forTime": "Finish every round as fast as you can."
-    }
+     "forTime": "Finish every round as fast as you can.",
+     "tabata": "Work and rest alternating, over a fixed number of rounds."
+    },
+    "workLabel": "Work (s)",
+    "restLabel": "Rest (s)",
+    "tabataTotal": "Total time: {{total}}"
    },
    "superset": {
     "startSelect": "Group exercises",
@@ -1616,7 +1620,14 @@
    "blockInProgress": "in progress",
    "blockUpcoming": "upcoming",
    "continueBlock": "Continue",
-   "skipBlock": "Skip to next block"
+   "skipBlock": "Skip to next block",
+   "tabata": {
+    "roundCounter": "Round {{current}}/{{total}}",
+    "work": "WORK",
+    "rest": "REST",
+    "current": "This exercise",
+    "nextUp": "Next up"
+   }
   },
   "progression": {
    "rationale": {

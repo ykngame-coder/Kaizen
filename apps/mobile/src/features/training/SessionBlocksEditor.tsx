@@ -7,7 +7,8 @@ import { radii, spacing } from '@supotsu/design-system';
 import type { BlockFormat, MuscleGroup } from '@supotsu/core';
 import type { ProgressionSuggestion } from '@supotsu/engines';
 import { exerciseImageUrl, MUSCLE_ICON, MUSCLE_LABEL, type Exercise } from '@/features/exercises/catalog';
-import { defaultTimeCapForFormat, formatLabel, type SessionBlocksBuilder } from './sessionBuilder';
+import { defaultRestForFormat, defaultRoundsForFormat, defaultTimeCapForFormat, formatLabel, type SessionBlocksBuilder } from './sessionBuilder';
+import { formatClock, tabataTotalSec } from './blockRunnerEngine';
 import { progressionRationaleKey } from './progressionText';
 
 const MUSCLE_ORDER: MuscleGroup[] = ['chest', 'back', 'shoulders', 'biceps', 'triceps', 'quads', 'hamstrings', 'glutes', 'calves', 'core', 'full_body'];
@@ -204,6 +205,7 @@ export function SessionBlocksEditor({
     { value: 'amrap', label: formatLabel('amrap', t) },
     { value: 'emom', label: formatLabel('emom', t) },
     { value: 'for_time', label: formatLabel('for_time', t) },
+    { value: 'tabata', label: formatLabel('tabata', t) },
   ];
 
   const exerciseSubtitle = (ex: Exercise): string =>
@@ -257,9 +259,16 @@ export function SessionBlocksEditor({
                     <SegmentedControl
                       options={FORMAT_OPTIONS}
                       value={b.format}
-                      onChange={(v) => builder.updateActiveBlock({ format: v, timeCapSec: defaultTimeCapForFormat(v) })}
+                      onChange={(v) =>
+                        builder.updateActiveBlock({
+                          format: v,
+                          timeCapSec: defaultTimeCapForFormat(v),
+                          restSec: defaultRestForFormat(v),
+                          ...(v === 'tabata' ? { targetRounds: defaultRoundsForFormat(v) } : {}),
+                        })
+                      }
                     />
-                    {/* Les quatre formats ne se devinent pas — une ligne dit
+                    {/* Les formats ne se devinent pas — une ligne dit
                         ce que celui-ci fera pendant la séance. */}
                     <Text variant="caption" color="textSubtle">
                       {t(`sport.sessionBuilder.block.help.${b.format === 'for_time' ? 'forTime' : b.format}`)}
@@ -292,6 +301,28 @@ export function SessionBlocksEditor({
                           />
                         </View>
                       </View>
+                    ) : null}
+                    {b.format === 'tabata' ? (
+                      <>
+                        <View style={{ flexDirection: 'row', gap: spacing[3] }}>
+                          <View style={{ flex: 1 }}>
+                            <Input label={t('sport.sessionBuilder.block.workLabel')} keyboardType="numeric" value={b.timeCapSec} onChangeText={(v) => builder.updateActiveBlock({ timeCapSec: v })} />
+                          </View>
+                          <View style={{ flex: 1 }}>
+                            <Input label={t('sport.sessionBuilder.block.restLabel')} keyboardType="numeric" value={b.restSec} onChangeText={(v) => builder.updateActiveBlock({ restSec: v })} />
+                          </View>
+                          <View style={{ flex: 1 }}>
+                            <Input label={t('sport.sessionBuilder.block.roundsLabel')} keyboardType="numeric" value={b.targetRounds} onChangeText={(v) => builder.updateActiveBlock({ targetRounds: v })} />
+                          </View>
+                        </View>
+                        <Text variant="caption" color="textSubtle">
+                          {t('sport.sessionBuilder.block.tabataTotal', {
+                            total: formatClock(
+                              tabataTotalSec(Number(b.timeCapSec) || 0, Number(b.restSec) || 0, Number(b.targetRounds) || 0),
+                            ),
+                          })}
+                        </Text>
+                      </>
                     ) : null}
                     {b.format === 'strength' ? (
                       <Input

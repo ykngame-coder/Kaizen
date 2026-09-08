@@ -13,7 +13,9 @@ const str = (n: number | undefined): string => (n == null ? '' : String(n));
 function timeCapDraft(block: UserSessionBlock): string {
   if (block.timeCapSec == null) return defaultTimeCapForFormat(block.format);
   if (block.format === 'amrap' || block.format === 'for_time') return String(Math.round(block.timeCapSec / 60));
-  if (block.format === 'emom') return String(block.timeCapSec);
+  // EMOM et Tabata stockent déjà des secondes : intervalle pour l'un,
+  // travail pour l'autre.
+  if (block.format === 'emom' || block.format === 'tabata') return String(block.timeCapSec);
   return defaultTimeCapForFormat(block.format);
 }
 
@@ -30,6 +32,7 @@ function draftFor(block: UserSessionBlock | null, exercises: UserSessionExercise
   return {
     format: block?.format ?? 'strength',
     timeCapSec: block ? timeCapDraft(block) : defaultTimeCapForFormat('strength'),
+    restSec: str(block?.restSec),
     targetRounds: str(block?.targetRounds),
     order,
     selected,

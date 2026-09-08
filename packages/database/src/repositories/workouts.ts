@@ -37,7 +37,10 @@ export async function insertWorkoutWithBlocks(
   workout: WorkoutInsertRow,
   blocks: {
     format: WorkoutBlockRow['format'];
+    /** AMRAP cap, EMOM interval, or Tabata work duration. */
     timeCapSec?: number;
+    /** Tabata rest. */
+    restSec?: number;
     targetRounds?: number;
     sets: Omit<WorkoutSetInsertRow, 'workout_id' | 'block_id'>[];
   }[],
@@ -54,6 +57,7 @@ export async function insertWorkoutWithBlocks(
         order: i,
         format: b.format,
         time_cap_sec: b.timeCapSec ?? null,
+        rest_sec: b.restSec ?? null,
         target_rounds: b.targetRounds ?? null,
       })
       .select('*')
@@ -311,7 +315,10 @@ export async function replaceWorkoutBlocks(
   workoutId: string,
   blocks: {
     format: WorkoutBlockRow['format'];
+    /** AMRAP cap, EMOM interval, or Tabata work duration. */
     timeCapSec?: number;
+    /** Tabata rest. */
+    restSec?: number;
     targetRounds?: number;
     sets: Omit<WorkoutSetInsertRow, 'workout_id' | 'block_id'>[];
   }[],
@@ -330,6 +337,7 @@ export async function replaceWorkoutBlocks(
         order: i,
         format: b.format,
         time_cap_sec: b.timeCapSec ?? null,
+        rest_sec: b.restSec ?? null,
         target_rounds: b.targetRounds ?? null,
       })
       .select('*')

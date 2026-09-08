@@ -454,6 +454,7 @@ function rowToWorkoutBlock(r: WorkoutBlockRow): WorkoutBlock {
     order: r.order,
     format: r.format,
     timeCapSec: r.time_cap_sec ?? undefined,
+    restSec: r.rest_sec ?? undefined,
     targetRounds: r.target_rounds ?? undefined,
     completedRounds: r.completed_rounds ?? undefined,
     resultTimeSec: r.result_time_sec ?? undefined,
@@ -665,6 +666,7 @@ function rowToUserSessionBlock(r: UserSessionBlockRow): UserSessionBlock {
     order: r.order,
     format: r.format,
     timeCapSec: r.time_cap_sec ?? undefined,
+    restSec: r.rest_sec ?? undefined,
     targetRounds: r.target_rounds ?? undefined,
   };
 }
@@ -2599,6 +2601,7 @@ function createSupabaseRepository(
         ? sourceBlocks.map((b) => ({
             format: b.format,
             timeCapSec: b.time_cap_sec ?? undefined,
+            restSec: b.rest_sec ?? undefined,
             targetRounds: b.target_rounds ?? undefined,
             exercises: exercises
               .filter((e) => e.block_id === b.id)
@@ -2709,6 +2712,7 @@ function createSupabaseRepository(
           ? sourceBlocks.map((b) => ({
               format: b.format,
               timeCapSec: b.time_cap_sec ?? undefined,
+              restSec: b.rest_sec ?? undefined,
               targetRounds: b.target_rounds ?? undefined,
               exercises: exercises
                 .filter((e) => e.block_id === b.id)

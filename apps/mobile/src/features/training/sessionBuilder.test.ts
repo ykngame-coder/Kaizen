@@ -5,6 +5,7 @@ function block(overrides: Partial<BlockDraft> = {}): BlockDraft {
   return {
     format: 'strength',
     timeCapSec: '',
+    restSec: '',
     targetRounds: '',
     order: [],
     selected: {},

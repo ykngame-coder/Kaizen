@@ -101,6 +101,7 @@ export function EditWorkoutScreen(): React.JSX.Element {
           const block: BlockDraft = {
             format: b.format,
             timeCapSec: b.timeCapSec != null ? String(b.format === 'amrap' || b.format === 'for_time' ? Math.round(b.timeCapSec / 60) : b.timeCapSec) : '12',
+            restSec: b.restSec != null ? String(b.restSec) : '',
             targetRounds: b.targetRounds != null ? String(b.targetRounds) : '',
             order: nextOrder,
             selected: nextSelected,

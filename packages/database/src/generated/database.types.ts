@@ -218,8 +218,9 @@ export interface Database {
           id: string;
           workout_id: string;
           order: number;
-          format: 'strength' | 'amrap' | 'emom' | 'for_time';
+          format: 'strength' | 'amrap' | 'emom' | 'for_time' | 'tabata';
           time_cap_sec: number | null;
+          rest_sec: number | null;
           target_rounds: number | null;
           completed_rounds: number | null;
           result_time_sec: number | null;
@@ -227,8 +228,9 @@ export interface Database {
         Insert: {
           workout_id: string;
           order?: number;
-          format: 'strength' | 'amrap' | 'emom' | 'for_time';
+          format: 'strength' | 'amrap' | 'emom' | 'for_time' | 'tabata';
           time_cap_sec?: number | null;
+          rest_sec?: number | null;
           target_rounds?: number | null;
           completed_rounds?: number | null;
           result_time_sec?: number | null;
@@ -600,15 +602,17 @@ export interface Database {
           id: string;
           session_id: string;
           order: number;
-          format: 'strength' | 'amrap' | 'emom' | 'for_time';
+          format: 'strength' | 'amrap' | 'emom' | 'for_time' | 'tabata';
           time_cap_sec: number | null;
+          rest_sec: number | null;
           target_rounds: number | null;
         };
         Insert: {
           session_id: string;
           order?: number;
-          format: 'strength' | 'amrap' | 'emom' | 'for_time';
+          format: 'strength' | 'amrap' | 'emom' | 'for_time' | 'tabata';
           time_cap_sec?: number | null;
+          rest_sec?: number | null;
           target_rounds?: number | null;
         };
         Update: Partial<Database['public']['Tables']['user_session_blocks']['Insert']>;
