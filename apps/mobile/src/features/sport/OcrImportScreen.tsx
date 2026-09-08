@@ -9,7 +9,10 @@ import { parseWorkoutText, resolveExerciseByName, type ParsedExercise } from '@s
 import { EXERCISE_LIBRARY } from '@supotsu/shared';
 import { EXERCISES } from '@/features/exercises/catalog';
 import { ocrAvailable, ocrImageToText, pickScreenshot } from '@/features/connectors/ocrClient';
-import { useAddCircuitWorkout, useAddWorkout, useCustomExercises } from '@/lib/data/queries';
+import { useCustomExercises } from '@/lib/data/queries';
+import type { BlockDraft } from '@/features/training/sessionBuilder';
+import { ocrDraftsToBlock } from './ocrToBlocks';
+import { OcrBuilderStep } from './OcrBuilderStep';
 
 const CONFIDENCE_TONE: Record<ParsedExercise['confidence'], BadgeTone> = {
   high: 'success',
@@ -69,8 +72,6 @@ export function OcrImportScreen(): React.JSX.Element {
   const { t } = useTranslation();
   const router = useRouter();
   const { colors } = useTheme();
-  const addWorkout = useAddWorkout();
-  const addCircuitWorkout = useAddCircuitWorkout();
   const { data: customExercises = [] } = useCustomExercises();
 
   const CONFIDENCE_LABEL: Record<ParsedExercise['confidence'], string> = {
@@ -84,6 +85,9 @@ export function OcrImportScreen(): React.JSX.Element {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [saveError, setSaveError] = useState<string | null>(null);
+  // Étape 2 : une fois les lignes relues et confirmées, l'édition passe au
+  // constructeur partagé — l'import n'a plus son propre éditeur.
+  const [confirmed, setConfirmed] = useState<BlockDraft | null>(null);
 
   const pickerCatalog = useMemo(() => {
     const list = [
@@ -141,7 +145,8 @@ export function OcrImportScreen(): React.JSX.Element {
     updateDraft(exIndex, { exerciseId: id, matchName, pickerOpen: false, pickerQuery: '' });
   };
 
-  const submit = async (): Promise<void> => {
+  /** Fin de la relecture : on passe la main au constructeur, rien n'est encore enregistré. */
+  const goToBuilder = (): void => {
     setSaveError(null);
     if (!drafts || drafts.length === 0) {
       setSaveError(t('sport.ocrImport.errors.noExercises'));
@@ -151,33 +156,12 @@ export function OcrImportScreen(): React.JSX.Element {
       setSaveError(t('sport.ocrImport.errors.unmatchedExercises'));
       return;
     }
-    let order = 0;
-    const sets = drafts.flatMap((d) =>
-      d.sets
-        .filter((s) => s.reps.trim() || s.weight.trim())
-        .map((s) => ({
-          exerciseId: d.exerciseId!,
-          order: order++,
-          reps: s.reps.trim() ? Number(s.reps) : undefined,
-          weightKg: s.weight.trim() ? Number(s.weight) : undefined,
-          supersetGroup: d.supersetGroup,
-        })),
-    );
-    if (sets.length === 0) {
+    const block = ocrDraftsToBlock(drafts);
+    if (block.order.length === 0) {
       setSaveError(t('sport.ocrImport.errors.noSets'));
       return;
     }
-    const sessionName = name.trim() || t('sport.ocrImport.defaultSessionName');
-    try {
-      if (drafts.some((d) => d.supersetGroup != null)) {
-        await addCircuitWorkout.mutateAsync({ name: sessionName, blocks: [{ format: 'strength', sets }] });
-      } else {
-        await addWorkout.mutateAsync({ name: sessionName, sets });
-      }
-      router.back();
-    } catch {
-      setSaveError(t('sport.ocrImport.errors.saveFailed'));
-    }
+    setConfirmed(block);
   };
 
   if (!ocrAvailable()) {
@@ -194,6 +178,10 @@ export function OcrImportScreen(): React.JSX.Element {
         </View>
       </Screen>
     );
+  }
+
+  if (confirmed) {
+    return <OcrBuilderStep initialName={name.trim() || t('sport.ocrImport.defaultSessionName')} initialBlock={confirmed} />;
   }
 
   return (
@@ -314,7 +302,7 @@ export function OcrImportScreen(): React.JSX.Element {
           <View style={{ flexDirection: 'row', gap: spacing[2], marginTop: spacing[2] }}>
             <Button label={t('common.cancel')} variant="secondary" onPress={() => router.back()} />
             <View style={{ flex: 1 }} />
-            <Button label={addWorkout.isPending || addCircuitWorkout.isPending ? t('sport.ocrImport.saving') : t('sport.ocrImport.save')} onPress={submit} disabled={addWorkout.isPending || addCircuitWorkout.isPending} />
+            <Button label={t('sport.ocrImport.continue')} onPress={goToBuilder} />
           </View>
         </>
       )}

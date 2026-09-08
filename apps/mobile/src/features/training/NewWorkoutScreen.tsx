@@ -20,7 +20,7 @@ import {
   useWorkoutSets,
   useWorkoutBlocks,
 } from '@/lib/data/queries';
-import { blocksToSessionInput, defaultTimeCapForFormat, newSlotId, useSessionBlocks, type SetDraft } from './sessionBuilder';
+import { blocksToSessionInput, blocksToWorkoutInput, defaultTimeCapForFormat, newSlotId, useSessionBlocks, type SetDraft } from './sessionBuilder';
 import { SessionBlocksEditor } from './SessionBlocksEditor';
 import { SESSION_TEMPLATES, templateToBlocks } from './sessionTemplates';
 
@@ -162,27 +162,7 @@ export function NewWorkoutScreen(): React.JSX.Element {
       // workout_blocks row).
       await addCircuitWorkout.mutateAsync({
         name: builder.name.trim(),
-        blocks: builder.blocks.map((b) => ({
-          format: b.format,
-          timeCapSec:
-            b.format === 'amrap' || b.format === 'for_time'
-              ? (Number(b.timeCapSec) || 0) * 60 || undefined
-              : b.format === 'emom'
-                ? Number(b.timeCapSec) || undefined
-                : undefined,
-          targetRounds: b.format === 'emom' || b.format === 'for_time' || b.format === 'strength' ? Number(b.targetRounds) || undefined : undefined,
-          sets: b.order.map((slotId, i) => {
-            const s = b.selected[slotId]!;
-            return {
-              exerciseId: s.exerciseId,
-              order: i,
-              reps: s.reps ? Number(s.reps) : undefined,
-              weightKg: s.weight ? Number(s.weight) : undefined,
-              restSec: b.format === 'strength' && s.rest ? Number(s.rest) : undefined,
-              supersetGroup: b.supersetGroups[slotId],
-            };
-          }),
-        })),
+        blocks: blocksToWorkoutInput(builder.blocks),
       });
       if (addToLibrary && !atQuota) {
         await addUserSession.mutateAsync({

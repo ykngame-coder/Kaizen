@@ -267,6 +267,61 @@ export type SessionBlocksBuilder = ReturnType<typeof useSessionBlocks>;
  * user_session_blocks). Blocks with zero exercises are dropped since
  * userSessionInputSchema requires at least one exercise per block.
  */
+/** Seconds a block's time field means once saved — minutes for AMRAP/For Time, already-seconds for EMOM/Tabata. */
+function timeCapSecondsOf(block: BlockDraft): number | undefined {
+  if (block.format === 'amrap' || block.format === 'for_time') {
+    return (Number(block.timeCapSec) || 0) * 60 || undefined;
+  }
+  if (block.format === 'emom' || block.format === 'tabata') return Number(block.timeCapSec) || undefined;
+  return undefined;
+}
+
+const HAS_ROUNDS: BlockFormat[] = ['emom', 'for_time', 'strength', 'tabata'];
+
+/**
+ * Drafts → the blocks of a dated workout.
+ *
+ * The counterpart of `blocksToSessionInput`, extracted because NewWorkoutScreen
+ * and EditWorkoutScreen each carried their own copy of this mapping — and both
+ * copies were missed when Tabata was added, so a Tabata block created there
+ * silently lost its work, rest and rounds. One place to update per format now.
+ */
+export function blocksToWorkoutInput(blocks: BlockDraft[]): {
+  format: BlockFormat;
+  timeCapSec?: number;
+  restSec?: number;
+  targetRounds?: number;
+  sets: {
+    exerciseId: string;
+    order: number;
+    reps?: number;
+    weightKg?: number;
+    restSec?: number;
+    isWarmup?: boolean;
+    supersetGroup?: number;
+  }[];
+}[] {
+  return blocks.map((b) => ({
+    format: b.format,
+    timeCapSec: timeCapSecondsOf(b),
+    // 0 est un repos légitime (Tabata dégénéré en EMOM), donc test explicite.
+    restSec: b.format === 'tabata' && b.restSec.trim() !== '' ? Number(b.restSec) : undefined,
+    targetRounds: HAS_ROUNDS.includes(b.format) ? Number(b.targetRounds) || undefined : undefined,
+    sets: b.order.map((slotId, i) => {
+      const s = b.selected[slotId]!;
+      return {
+        exerciseId: s.exerciseId,
+        order: i,
+        reps: s.reps ? Number(s.reps) : undefined,
+        weightKg: s.weight ? Number(s.weight) : undefined,
+        restSec: b.format === 'strength' && s.rest ? Number(s.rest) : undefined,
+        isWarmup: s.isWarmup,
+        supersetGroup: b.supersetGroups[slotId],
+      };
+    }),
+  }));
+}
+
 export function blocksToSessionInput(blocks: BlockDraft[]): SessionBlockInput[] {
   const out: SessionBlockInput[] = [];
   for (const block of blocks) {

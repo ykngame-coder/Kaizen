@@ -19,7 +19,7 @@ import {
   useWorkoutSets,
   useWorkouts,
 } from '@/lib/data/queries';
-import { blocksToSessionInput, emptyBlock, newSlotId, useSessionBlocks, type BlockDraft, type SetDraft } from './sessionBuilder';
+import { blocksToSessionInput, blocksToWorkoutInput, emptyBlock, newSlotId, useSessionBlocks, type BlockDraft, type SetDraft } from './sessionBuilder';
 import { SessionBlocksEditor } from './SessionBlocksEditor';
 
 const SESSIONS_QUOTA = 50;
@@ -148,27 +148,7 @@ export function EditWorkoutScreen(): React.JSX.Element {
         workoutId: workout.id,
         name: builder.name.trim(),
         notes: workout.notes,
-        blocks: builder.blocks.map((b) => ({
-          format: b.format,
-          timeCapSec:
-            b.format === 'amrap' || b.format === 'for_time'
-              ? (Number(b.timeCapSec) || 0) * 60 || undefined
-              : b.format === 'emom'
-                ? Number(b.timeCapSec) || undefined
-                : undefined,
-          targetRounds: b.format === 'emom' || b.format === 'for_time' || b.format === 'strength' ? Number(b.targetRounds) || undefined : undefined,
-          sets: b.order.map((slotId, index) => {
-            const s = b.selected[slotId]!;
-            return {
-              exerciseId: s.exerciseId,
-              order: index,
-              reps: s.reps ? Number(s.reps) : undefined,
-              weightKg: s.weight ? Number(s.weight) : undefined,
-              restSec: b.format === 'strength' && s.rest ? Number(s.rest) : undefined,
-              supersetGroup: b.supersetGroups[slotId],
-            };
-          }),
-        })),
+        blocks: blocksToWorkoutInput(builder.blocks),
       });
       if (addToLibrary && !atQuota) {
         await addUserSession.mutateAsync({

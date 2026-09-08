@@ -550,18 +550,17 @@
    "repsLabel": "Repetições",
    "weightLabel": "Carga (kg)",
    "addSet": "+ Adicionar uma série",
-   "save": "Salvar o treino",
-   "saving": "…",
    "errors": {
     "noExercises": "Nenhum exercício para salvar.",
     "unmatchedExercises": "Alguns exercícios não foram reconhecidos — escolha-os na lista antes de salvar.",
-    "noSets": "Adicione pelo menos uma série antes de salvar.",
-    "saveFailed": "Não foi possível salvar."
+    "noSets": "Adicione pelo menos uma série antes de salvar."
    },
    "defaultSessionName": "Treino importado",
    "superset": {
     "badge": "Superserie"
-   }
+   },
+   "continue": "Continuar",
+   "builderSubtitle": "Ajusta a sessão importada e guarda-a."
   },
   "circuitRunner": {
    "format": {

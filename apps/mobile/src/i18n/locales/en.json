@@ -550,18 +550,17 @@
    "repsLabel": "Reps",
    "weightLabel": "Weight (kg)",
    "addSet": "+ Add a set",
-   "save": "Save workout",
-   "saving": "…",
    "errors": {
     "noExercises": "No exercises to save.",
     "unmatchedExercises": "Some exercises aren't recognized — select them from the list before saving.",
-    "noSets": "Add at least one set before saving.",
-    "saveFailed": "Couldn't save."
+    "noSets": "Add at least one set before saving."
    },
    "defaultSessionName": "Imported workout",
    "superset": {
     "badge": "Superset"
-   }
+   },
+   "continue": "Continue",
+   "builderSubtitle": "Adjust the imported session, then save it."
   },
   "circuitRunner": {
    "format": {

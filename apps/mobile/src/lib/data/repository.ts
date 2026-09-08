@@ -180,7 +180,10 @@ export interface NewWorkout {
 
 export interface NewCircuitBlockInput {
   format: BlockFormat;
+  /** AMRAP cap, EMOM interval, or Tabata work duration. */
   timeCapSec?: number;
+  /** Tabata rest. */
+  restSec?: number;
   targetRounds?: number;
   sets: Omit<SetEntry, 'id' | 'workoutId' | 'blockId'>[];
 }

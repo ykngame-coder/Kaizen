@@ -550,18 +550,17 @@
    "repsLabel": "Répétitions",
    "weightLabel": "Charge (kg)",
    "addSet": "+ Ajouter une série",
-   "save": "Enregistrer la séance",
-   "saving": "…",
    "errors": {
     "noExercises": "Aucun exercice à enregistrer.",
     "unmatchedExercises": "Certains exercices ne sont pas reconnus — choisis-les dans la liste avant d’enregistrer.",
-    "noSets": "Ajoute au moins une série avant d’enregistrer.",
-    "saveFailed": "Enregistrement impossible."
+    "noSets": "Ajoute au moins une série avant d’enregistrer."
    },
    "defaultSessionName": "Séance importée",
    "superset": {
     "badge": "Superset"
-   }
+   },
+   "continue": "Continuer",
+   "builderSubtitle": "Ajuste la séance lue, puis enregistre-la."
   },
   "circuitRunner": {
    "format": {

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { blocksToSessionInput, defaultTimeCapForFormat, normalizeSearch, type BlockDraft } from './sessionBuilder';
+import { blocksToSessionInput, blocksToWorkoutInput, defaultTimeCapForFormat, normalizeSearch, type BlockDraft } from './sessionBuilder';
 
 function block(overrides: Partial<BlockDraft> = {}): BlockDraft {
   return {
@@ -132,5 +132,41 @@ describe('normalizeSearch', () => {
 
   it('gère une entrée vide', () => {
     expect(normalizeSearch('')).toBe('');
+  });
+});
+
+/**
+ * Régression : ce mapping vivait en double, recopié dans NewWorkoutScreen et
+ * EditWorkoutScreen. Les deux copies ont été oubliées à l'ajout de Tabata, si
+ * bien qu'un bloc Tabata créé là perdait travail, repos et rounds en silence.
+ */
+describe('blocksToWorkoutInput', () => {
+  const withSlot = (over: Partial<BlockDraft>): BlockDraft => {
+    const slot = 'slot-1';
+    return block({ order: [slot], selected: { [slot]: { exerciseId: 'squat', reps: '5', weight: '60', rest: '90' } }, ...over });
+  };
+
+  it('conserve travail, repos et rounds d un Tabata', () => {
+    const [out] = blocksToWorkoutInput([withSlot({ format: 'tabata', timeCapSec: '20', restSec: '10', targetRounds: '8' })]);
+    expect(out).toMatchObject({ format: 'tabata', timeCapSec: 20, restSec: 10, targetRounds: 8 });
+  });
+
+  it('garde un repos de 0 s au lieu de l effacer', () => {
+    const [out] = blocksToWorkoutInput([withSlot({ format: 'tabata', timeCapSec: '60', restSec: '0', targetRounds: '10' })]);
+    expect(out!.restSec).toBe(0);
+  });
+
+  it('convertit en secondes pour AMRAP, laisse EMOM en secondes', () => {
+    expect(blocksToWorkoutInput([withSlot({ format: 'amrap', timeCapSec: '12' })])[0]!.timeCapSec).toBe(720);
+    expect(blocksToWorkoutInput([withSlot({ format: 'emom', timeCapSec: '60' })])[0]!.timeCapSec).toBe(60);
+  });
+
+  it('ne pose un repos de série que sur un bloc musculation', () => {
+    expect(blocksToWorkoutInput([withSlot({ format: 'strength' })])[0]!.sets[0]!.restSec).toBe(90);
+    expect(blocksToWorkoutInput([withSlot({ format: 'amrap', timeCapSec: '12' })])[0]!.sets[0]!.restSec).toBeUndefined();
+  });
+
+  it('n attribue aucun round aux formats qui n en ont pas', () => {
+    expect(blocksToWorkoutInput([withSlot({ format: 'amrap', timeCapSec: '12', targetRounds: '5' })])[0]!.targetRounds).toBeUndefined();
   });
 });

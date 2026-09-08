@@ -550,18 +550,17 @@
    "repsLabel": "Wiederholungen",
    "weightLabel": "Gewicht (kg)",
    "addSet": "+ Satz hinzufügen",
-   "save": "Training speichern",
-   "saving": "…",
    "errors": {
     "noExercises": "Keine Übung zum Speichern.",
     "unmatchedExercises": "Manche Übungen wurden nicht erkannt — wähle sie aus der Liste, bevor du speicherst.",
-    "noSets": "Füge mindestens einen Satz hinzu, bevor du speicherst.",
-    "saveFailed": "Speichern nicht möglich."
+    "noSets": "Füge mindestens einen Satz hinzu, bevor du speicherst."
    },
    "defaultSessionName": "Importiertes Training",
    "superset": {
     "badge": "Superset"
-   }
+   },
+   "continue": "Weiter",
+   "builderSubtitle": "Pass die eingelesene Einheit an und speichere sie."
   },
   "circuitRunner": {
    "format": {
