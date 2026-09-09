@@ -32,6 +32,24 @@ export function muscleColorFor(statuses: MuscleStatus[], colors: ThemeColors): (
   };
 }
 
+/**
+ * L'instant auquel évaluer la récupération pour un jour consulté.
+ *
+ * Le sélecteur de jour porte 23:59:59.999. Pris tel quel pour aujourd'hui, il
+ * projette la récupération jusqu'à treize heures en avant et rend chaque muscle
+ * plus frais d'un cran que ce que montre l'écran Récupération, qui évalue à
+ * maintenant. On borne donc à maintenant : consulter un jour passé garde sa fin
+ * de journée, aujourd'hui et demain valent maintenant.
+ *
+ * PlanningScreen ne passe pas par ici : y projeter la récupération est
+ * justement ce qu'on lui demande.
+ */
+export function recoveryAsOf(selectedDay: string, now: string): string {
+  const day = new Date(selectedDay).getTime();
+  if (!Number.isFinite(day)) return now;
+  return day > new Date(now).getTime() ? now : selectedDay;
+}
+
 export function muscleStatesFor(sessions: MuscleSession[], asOf: string): MuscleStatus[] {
   return computeMuscleStates(sessions, asOf);
 }

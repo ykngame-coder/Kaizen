@@ -22,7 +22,7 @@ import { useManualHealthKitSync } from '@/features/connectors/useHealthKitAutoSy
 import { HubRow } from '@/features/navigation/HubRow';
 import { DayNav, useSelectedDay } from '@/features/navigation/DayNav';
 import { MuscleBody } from '@/features/muscles/MuscleBody';
-import { muscleColorFor, muscleStatesFor } from '@/features/muscles/muscleColor';
+import { muscleColorFor, muscleStatesFor, recoveryAsOf } from '@/features/muscles/muscleColor';
 import { ComprendreCard } from '@/features/knowledge/ComprendreCard';
 import { ObjectifsCard } from '@/features/goals/ObjectifsCard';
 import { isTodayLocal } from '@/features/community/leaderboardHelpers';
@@ -148,7 +148,10 @@ export function SportScreen(): React.JSX.Element {
     recordDailyScore.mutate({ column: 'sport', value: Math.round(sport.value) });
   }, [leaderboardPrefs?.leaderboardOptIn, asOf, sport?.value]);
 
-  const muscleStates = useMemo(() => muscleStatesFor(muscleSessions, asOf), [muscleSessions, asOf]);
+  // Borné à maintenant : `asOf` porte 23:59:59.999, et projeter la
+  // récupération sur la fin de journée affichait chaque muscle un cran plus
+  // frais que l'écran Récupération, qui évalue à l'instant présent.
+  const muscleStates = useMemo(() => muscleStatesFor(muscleSessions, recoveryAsOf(asOf, new Date().toISOString())), [muscleSessions, asOf]);
   const colorFor = useMemo(() => muscleColorFor(muscleStates, colors), [muscleStates, colors]);
 
   const muscleLabel: Partial<Record<MuscleGroup, string>> = useMemo(
