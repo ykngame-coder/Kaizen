@@ -2089,7 +2089,8 @@
     "pending": "Pendiente",
     "searchFood": "Buscar un alimento",
     "manualEntry": "Entrada manual",
-    "summary": "{{name}} y {{count}} más"
+    "summary": "{{name}} y {{count}} más",
+    "macros": "{{protein}} P · {{carb}} HC · {{fat}} G"
    },
    "score": {
     "title": "Nutrition Score",

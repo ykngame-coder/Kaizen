@@ -2089,7 +2089,8 @@
     "pending": "En attente",
     "searchFood": "Chercher un aliment",
     "manualEntry": "Saisie manuelle",
-    "summary": "{{name}} et {{count}} de plus"
+    "summary": "{{name}} et {{count}} de plus",
+    "macros": "{{protein}} P · {{carb}} G · {{fat}} L"
    },
    "score": {
     "title": "Nutrition Score",

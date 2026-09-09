@@ -2089,7 +2089,8 @@
     "pending": "Pendente",
     "searchFood": "Buscar um alimento",
     "manualEntry": "Entrada manual",
-    "summary": "{{name}} e mais {{count}}"
+    "summary": "{{name}} e mais {{count}}",
+    "macros": "{{protein}} P · {{carb}} HC · {{fat}} G"
    },
    "score": {
     "title": "Pontuação Nutricional",

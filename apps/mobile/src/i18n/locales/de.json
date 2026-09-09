@@ -2089,7 +2089,8 @@
     "pending": "Ausstehend",
     "searchFood": "Lebensmittel suchen",
     "manualEntry": "Manuelle Eingabe",
-    "summary": "{{name}} und {{count}} weitere"
+    "summary": "{{name}} und {{count}} weitere",
+    "macros": "{{protein}} E · {{carb}} KH · {{fat}} F"
    },
    "score": {
     "title": "Nutrition Score",

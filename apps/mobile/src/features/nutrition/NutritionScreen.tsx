@@ -26,6 +26,7 @@ import { DayNav, useSelectedDay } from '@/features/navigation/DayNav';
 import { ComprendreCard } from '@/features/knowledge/ComprendreCard';
 import { isTodayLocal } from '@/features/community/leaderboardHelpers';
 import { resolveNutritionCardOrder } from './nutritionCards';
+import { sumMealMacros } from './mealMacroTotals';
 
 const DAY_MS = 86_400_000;
 const dayKey = (iso: string): string => {
@@ -247,7 +248,7 @@ export function NutritionScreen(): React.JSX.Element {
       // fresh "Eau" row here for every tap.
       const es = today.filter((e) => e.mealType === type && !isHydrationOnlyEntry(e));
       const kcal = es.reduce((s, e) => s + e.kcal, 0);
-      return { type, count: es.length, kcal, entries: es };
+      return { type, count: es.length, kcal, macros: sumMealMacros(es), entries: es };
     });
   }, [today]);
 
@@ -323,7 +324,23 @@ export function NutritionScreen(): React.JSX.Element {
             <View key={m.type} style={{ paddingVertical: spacing[2], borderBottomWidth: i < meals.length - 1 ? 1 : 0, borderBottomColor: colors.border }}>
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing[2] }}>
                 <Text variant="caption" color="textSubtle" style={{ flex: 1, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 0.6 }}>{t(`nutrition.screen.meal.${m.type}`)}</Text>
-                {m.count > 0 ? <Text variant="caption" color="textSubtle">{Math.round(m.kcal)} kcal</Text> : null}
+                {m.count > 0 ? (
+                  <View style={{ alignItems: 'flex-end' }}>
+                    <Text variant="caption" color="textSubtle">{Math.round(m.kcal)} kcal</Text>
+                    {/* Masquée quand aucune entrée ne porte de macro : « 0 P ·
+                        0 G · 0 L » se lirait comme « ce repas n'en apporte
+                        aucun » au lieu de « on ne sait pas ». */}
+                    {m.macros.hasAny ? (
+                      <Text variant="caption" color="textSubtle" style={{ marginTop: 1, opacity: 0.75 }}>
+                        {t('nutrition.screen.meals.macros', {
+                          protein: m.macros.proteinG,
+                          carb: m.macros.carbG,
+                          fat: m.macros.fatG,
+                        })}
+                      </Text>
+                    ) : null}
+                  </View>
+                ) : null}
               </View>
               <Pressable
                 onPress={() => router.push({ pathname: '/nutrition/meal/day', params: { type: m.type, date: dayKey(selectedDate) } })}
