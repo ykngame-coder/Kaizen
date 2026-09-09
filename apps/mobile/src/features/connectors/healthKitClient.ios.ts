@@ -152,34 +152,46 @@ export async function syncHealthKit(): Promise<{
     }
   }
 
-  // Steps get a dedicated cumulative-sum query instead of summing raw
-  // samples: the pedometer logs overlapping-window entries from more than
-  // one HealthKit source even on an iPhone with no paired Watch, and naively
-  // adding every returned sample's value double-counts the overlap (a real
-  // TestFlight report: Apple Santé showed 13 700 steps, Kaizen showed
-  // 24 632 — almost 2x). cumulativeSum is HealthKit's own merge-aware
-  // aggregate — the same one the Health app itself uses — so it reports the
-  // correct total. Scoped to just today since that's the only thing the
-  // Dashboard tile shows; measuredAt is "now", not midnight, so a second
-  // sync later today lands as its own row rather than being silently
-  // dropped by the dedupe-on-(user,type,measured_at,source) upsert.
+  // Steps get a dedicated statistics query instead of summing raw samples:
+  // the pedometer logs overlapping-window entries from more than one HealthKit
+  // source even on an iPhone with no paired Watch, and naively adding every
+  // returned sample's value double-counts the overlap (a real TestFlight
+  // report: Apple Santé showed 13 700 steps, Kaizen showed 24 632 — almost
+  // 2x). cumulativeSum is HealthKit's own merge-aware aggregate — the same one
+  // the Health app itself uses — so it reports the correct total.
+  //
+  // A COLLECTION, one bucket per local day, not a single total for today:
+  // querying only today and stamping it `now` froze each past day on whatever
+  // total the last sync of that day happened to see, losing every step walked
+  // afterwards (Apple Santé 6 647 for 2 sept., Kaizen 5 740). Each day is now
+  // stamped at local noon — stable across syncs, safely clear of any midnight
+  // or DST boundary — so re-syncing REFRESHES the day instead of adding a row
+  // (see insertHealthMetrics, which routes steps through the updating upsert).
   const stepMetrics: ImportedHealthMetric[] = [];
   try {
-    const startOfToday = new Date();
-    startOfToday.setHours(0, 0, 0, 0);
-    const stats = await HealthKit.queryStatisticsForQuantity(STEP_COUNT_TYPE, ['cumulativeSum'], {
-      filter: { date: { startDate: startOfToday } },
-      unit: 'count',
-    });
-    const total = stats.sumQuantity?.quantity;
-    if (typeof total === 'number' && Number.isFinite(total) && total > 0) {
+    const anchor = new Date();
+    anchor.setHours(0, 0, 0, 0);
+    const buckets = await HealthKit.queryStatisticsCollectionForQuantity(
+      STEP_COUNT_TYPE,
+      ['cumulativeSum'],
+      anchor,
+      { day: 1 },
+      { filter: dateFilter, unit: 'count' },
+    );
+    for (const b of buckets) {
+      const total = b.sumQuantity?.quantity;
+      if (typeof total !== 'number' || !Number.isFinite(total) || total <= 0) continue;
+      // Un seau sans borne de début n'est rattachable à aucun jour : le
+      // dater d'aujourd'hui écraserait le total du jour en cours.
+      if (!b.startDate) continue;
+      const day = new Date(b.startDate);
       stepMetrics.push({
         type: 'steps',
         value: Math.round(total),
         unit: 'count',
         source: 'apple_health',
         reliability: 'high',
-        measuredAt: new Date().toISOString(),
+        measuredAt: new Date(day.getFullYear(), day.getMonth(), day.getDate(), 12, 0, 0, 0).toISOString(),
       });
     }
   } catch {

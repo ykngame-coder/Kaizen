@@ -18,14 +18,21 @@ export async function insertHealthMetrics(
   rows: HealthMetricInsertRow[],
 ): Promise<void> {
   if (rows.length === 0) return;
-  // sleep_duration is a computed once-per-night aggregate keyed by a stable
-  // per-night timestamp (see aggregateHealthKitSleep) — a resync should
-  // refresh it, since HealthKit keeps finalizing a night's data across
-  // repeated background syncs, not silently no-op like every other metric
-  // type (a fresh weigh-in, an HRV reading, ...) whose insert-only,
-  // ignore-exact-duplicate semantics are what actually keeps those idempotent.
-  const sleepDuration = rows.filter((r) => r.type === 'sleep_duration');
-  const rest = rows.filter((r) => r.type !== 'sleep_duration');
+  // sleep_duration and steps are computed once-per-day aggregates keyed by a
+  // stable per-day timestamp (see aggregateHealthKitSleep / the step
+  // statistics collection) — a resync must REFRESH them, because the day they
+  // describe keeps growing after the first sync of that day. Steps used to
+  // land in the ignore-duplicates branch, which froze a day on whatever total
+  // the last sync of that day happened to see: Apple Santé said 6 647 steps
+  // for 2 sept., Kaizen said 5 740, and the gap was simply everything walked
+  // after that sync.
+  //
+  // Every other type (a weigh-in, an HRV reading, ...) is a point-in-time
+  // measurement, and its insert-only, ignore-exact-duplicate semantics are
+  // what keeps re-imports idempotent.
+  const REFRESHED_TYPES = new Set(['sleep_duration', 'steps']);
+  const sleepDuration = rows.filter((r) => REFRESHED_TYPES.has(r.type));
+  const rest = rows.filter((r) => !REFRESHED_TYPES.has(r.type));
   if (rest.length > 0) {
     const { error } = await client
       .from('health_metrics')
