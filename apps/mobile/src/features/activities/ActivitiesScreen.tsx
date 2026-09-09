@@ -4,7 +4,7 @@ import { useRouter } from 'expo-router';
 import { Button, Card, EmptyState, Icon, KPICard, Screen, Text } from '@supotsu/ui';
 import { spacing } from '@supotsu/design-system';
 import { useActivities } from '@/lib/data/queries';
-import { activityLabel, formatDate, formatDistance, formatDuration } from '@/lib/format';
+import { activityTitle, formatDate, formatDistance, formatDuration } from '@/lib/format';
 
 /** Activities history + weekly stats (Master Prompt P3, MVP P20.3). */
 export function ActivitiesScreen(): React.JSX.Element {
@@ -65,7 +65,7 @@ export function ActivitiesScreen(): React.JSX.Element {
                       alignItems: 'center',
                     }}
                   >
-                    <Text variant="subtitle">{a.type === 'other' && a.notes ? a.notes : activityLabel(a.type)}</Text>
+                    <Text variant="subtitle">{activityTitle(a.type, a.notes)}</Text>
                     <Text variant="caption" color="textMuted">
                       {formatDate(a.startedAt)}
                     </Text>

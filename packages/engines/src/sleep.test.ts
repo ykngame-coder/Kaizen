@@ -5,7 +5,7 @@ import {
   bedtimeSpreadMinutes,
   computeSleepScore,
   computeSleepScore2,
-  latestSession,
+  sessionForDay,
   sleepBand,
   sleepCoaching,
   sleepDebtHours,
@@ -139,22 +139,59 @@ describe('sleepTrend / averageSleepHours', () => {
   });
 });
 
-describe('latestSession', () => {
-  it('picks the most recent session at/before asOf', () => {
-    const older = session({ startedAt: nightsAgo(1) });
-    const newer = session({ startedAt: nightsAgo(0) });
-    expect(latestSession([older, newer], ASOF)).toBe(newer);
+/**
+ * Une nuit appartient au jour où l'on se réveille — même règle que
+ * `nightKey(endDate)` côté import Apple Santé, qui rattache la nuit au jour
+ * local de son réveil. La carte, le graphique et le score doivent donc
+ * s'accorder.
+ *
+ * Régression : `latestSession` rendait « la plus récente jusqu'à » et non
+ * « celle du jour », si bien que deux jours voisins affichaient la même durée
+ * et le même sommeil profond alors que le score, lui, changeait.
+ */
+describe('sessionForDay', () => {
+  // Nuit du 19 au 20 juillet : couché le 19 à 23 h, réveillé le 20 à 7 h.
+  const night20 = session({
+    id: 'n20',
+    startedAt: new Date(2026, 6, 19, 23, 0).toISOString(),
+    endedAt: new Date(2026, 6, 20, 7, 0).toISOString(),
+  });
+  const night19 = session({
+    id: 'n19',
+    startedAt: new Date(2026, 6, 18, 23, 30).toISOString(),
+    endedAt: new Date(2026, 6, 19, 6, 30).toISOString(),
+  });
+  const all = [night19, night20];
+
+  it('rattache la nuit au jour du réveil, pas du coucher', () => {
+    expect(sessionForDay(all, new Date(2026, 6, 20, 12, 0).toISOString())?.id).toBe('n20');
+    expect(sessionForDay(all, new Date(2026, 6, 19, 12, 0).toISOString())?.id).toBe('n19');
   });
 
-  it('ignores sessions after the browsed day instead of always taking the globally latest one (regression: "Durée totale" used to show the same night regardless of which day was browsed)', () => {
-    const past = session({ startedAt: nightsAgo(2) });
-    const future = session({ startedAt: nightsAgo(0) });
-    expect(latestSession([past, future], nightsAgo(2))).toBe(past);
+  it('rend des nuits DIFFÉRENTES pour deux jours voisins — le coeur du bug', () => {
+    const hier = sessionForDay(all, new Date(2026, 6, 19, 23, 59).toISOString());
+    const aujourdhui = sessionForDay(all, new Date(2026, 6, 20, 23, 59).toISOString());
+    expect(hier?.id).not.toBe(aujourdhui?.id);
   });
 
-  it('returns undefined with no sessions', () => {
-    expect(latestSession([], ASOF)).toBeUndefined();
-    expect(latestSession(undefined, ASOF)).toBeUndefined();
+  it('ne rend rien pour un jour sans nuit, au lieu de reprendre la précédente', () => {
+    expect(sessionForDay(all, new Date(2026, 6, 21, 12, 0).toISOString())).toBeUndefined();
+    expect(sessionForDay(all, new Date(2026, 6, 17, 12, 0).toISOString())).toBeUndefined();
+  });
+
+  it('ne remonte jamais une nuit postérieure au jour consulté', () => {
+    expect(sessionForDay([night20], new Date(2026, 6, 19, 12, 0).toISOString())).toBeUndefined();
+  });
+
+  it('garde la plus longue quand deux sessions tombent le même jour', () => {
+    const courte = session({ id: 'courte', asleepMin: 60, endedAt: new Date(2026, 6, 20, 3, 0).toISOString() });
+    const longue = session({ id: 'longue', asleepMin: 430, endedAt: new Date(2026, 6, 20, 7, 0).toISOString() });
+    expect(sessionForDay([courte, longue], new Date(2026, 6, 20, 12, 0).toISOString())?.id).toBe('longue');
+  });
+
+  it('supporte l absence de données', () => {
+    expect(sessionForDay([], ASOF)).toBeUndefined();
+    expect(sessionForDay(undefined, ASOF)).toBeUndefined();
   });
 });
 

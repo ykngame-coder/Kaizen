@@ -318,15 +318,31 @@ export function sleepPhaseQuality(session: SleepSession): PhaseQuality | null {
 }
 
 /** The most recent sleep session at/before `asOf`, or undefined. */
-export function latestSession(
+/**
+ * The night belonging to `day`, or undefined when that day has none.
+ *
+ * A night is attributed to the local day it ENDS on — the day you wake up —
+ * which is the same rule `nightKey(endDate)` applies when Apple Health samples
+ * are aggregated into a `sleep_duration` metric. Card, 7-night chart and score
+ * therefore agree on which night belongs to which day.
+ *
+ * This replaces a `latestSession(sessions, asOf)` that returned the most recent
+ * session at or *before* `asOf`. That is an upper bound, not a day: browsing to
+ * a day with no recorded night silently reused the previous one, so two
+ * adjacent days showed an identical duration and deep-sleep figure while the
+ * score — computed per day from metrics — differed. Reported twice.
+ */
+export function sessionForDay(
   sessions: SleepSession[] | undefined,
-  asOf: ISODateString,
+  day: ISODateString,
 ): SleepSession | undefined {
   if (!sessions?.length) return undefined;
-  const cutoff = new Date(asOf).getTime();
+  const target = localDayKey(day);
   return sessions
-    .filter((s) => new Date(s.startedAt).getTime() <= cutoff)
-    .sort((a, b) => b.startedAt.localeCompare(a.startedAt))[0];
+    .filter((s) => localDayKey(s.endedAt) === target)
+    // Deux sessions le même jour (sieste + nuit, ou fragments) : la plus longue
+    // est celle que l'utilisateur appelle « sa nuit ».
+    .sort((a, b) => b.asleepMin - a.asleepMin)[0];
 }
 
 export function computeSleepScore2(
@@ -353,7 +369,10 @@ export function computeSleepScore2(
   // 2) Qualité — the real stage composition when a sleep session is available
   //    (deep %, REM %, efficiency); otherwise fall back to the device efficiency
   //    metric. Both paths are surfaced honestly in the detail line.
-  const session = latestSession(sessions, asOf);
+  // sessionForDay, pas « la plus récente connue » : la composante durée est
+  // déjà calculée jour par jour, alors prendre les phases d'une nuit plus
+  // ancienne mélangeait deux nuits dans un même score.
+  const session = sessionForDay(sessions, asOf);
   const phase = session ? sleepPhaseQuality(session) : null;
   const efficiency = latest(metrics, 'sleep_efficiency', asOf);
   const qualityValue =

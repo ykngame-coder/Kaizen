@@ -9,7 +9,7 @@ import { EXERCISE_LIBRARY } from '@supotsu/shared';
 import { EXERCISES, MUSCLE_LABEL } from '@/features/exercises/catalog';
 import { BackButton } from '@/features/navigation/BackButton';
 import { useActivities, useCustomExercises, useDeleteActivity, useUpdateActivityMuscles, useWorkoutBlocks, useWorkoutSets, useWorkouts } from '@/lib/data/queries';
-import { activityLabel, formatDate, formatDistance, formatDuration } from '@/lib/format';
+import { activityTitle, formatDate, formatDistance, formatDuration } from '@/lib/format';
 import { BlockSummaryCard } from '@/features/training/WorkoutDetailScreen';
 
 const MUSCLES: MuscleGroup[] = ['chest', 'back', 'shoulders', 'biceps', 'triceps', 'quads', 'hamstrings', 'glutes', 'calves', 'core', 'full_body'];
@@ -138,7 +138,7 @@ export function ActivityDetailScreen(): React.JSX.Element {
   return (
     <Screen scroll>
       <BackButton />
-      <Text variant="title">{activity.type === 'other' && activity.notes ? activity.notes : activityLabel(activity.type)}</Text>
+      <Text variant="title">{activityTitle(activity.type, activity.notes)}</Text>
       <Text variant="caption" color="textMuted" style={{ marginTop: 2 }}>
         {formatDate(activity.startedAt)} · {activity.source}
       </Text>

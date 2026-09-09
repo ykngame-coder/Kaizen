@@ -17,7 +17,7 @@ import {
   useRecordDailyScore,
   useWorkouts,
 } from '@/lib/data/queries';
-import { formatDate } from '@/lib/format';
+import { activityTitle, formatDate, splitDuration } from '@/lib/format';
 import { useManualHealthKitSync } from '@/features/connectors/useHealthKitAutoSync';
 import { HubRow } from '@/features/navigation/HubRow';
 import { DayNav, useSelectedDay } from '@/features/navigation/DayNav';
@@ -46,8 +46,7 @@ const NAV_KEYS: { key: string; icon: IconName; path?: Href; soon?: boolean }[] =
 
 /** hh h mm from seconds. */
 function fmtDur(sec: number, t: TFunction): string {
-  const h = Math.floor(sec / 3600);
-  const m = Math.round((sec % 3600) / 60);
+  const { h, m } = splitDuration(sec);
   return h > 0
     ? t('sport.screen.duration.hoursMinutes', { h, m: String(m).padStart(2, '0') })
     : t('sport.screen.duration.minutes', { m });
@@ -205,7 +204,9 @@ export function SportScreen(): React.JSX.Element {
     const w = workouts
       .filter((x) => x.status === 'completed' && x.completedAt)
       .map((x) => ({ kind: 'workout' as const, id: x.id, date: x.completedAt!, name: x.name, durationSec: x.durationSec, rpe: x.rpe, status: x.status }));
-    const a = activities.map((x) => ({ kind: 'activity' as const, id: x.id, date: x.startedAt, name: x.type, durationSec: x.durationSec, rpe: undefined, status: undefined }));
+    // activityTitle, pas x.type : une activité importée est de type `other`
+    // et porte son vrai nom dans les notes — le hub affichait « other » brut.
+    const a = activities.map((x) => ({ kind: 'activity' as const, id: x.id, date: x.startedAt, name: activityTitle(x.type, x.notes), durationSec: x.durationSec, rpe: undefined, status: undefined }));
     return [...w, ...a].sort((x, y) => y.date.localeCompare(x.date)).slice(0, 3);
   }, [workouts, activities]);
 
