@@ -42,6 +42,15 @@ export function Screen({
       <ScrollView
         style={{ flex: 1, backgroundColor: colors.background }}
         contentContainerStyle={[{ padding: padded ? spacing[4] : 0, paddingTop: topPadding, gap: spacing[4] }, style]}
+        // Sans ça, le clavier recouvrait les champs au lieu de les faire
+        // remonter : sur le formulaire de repas, les macros passaient sous le
+        // pavé numérique dès qu'on tapait les calories.
+        automaticallyAdjustKeyboardInsets
+        // « on doit à chaque fois cliquer dans un champ extérieur pour pouvoir
+        // écrire un macro » : par défaut, un tap clavier ouvert ne fait que le
+        // fermer, et il en faut un second pour atteindre le champ visé.
+        keyboardShouldPersistTaps="handled"
+        keyboardDismissMode="on-drag"
         refreshControl={
           onRefresh ? (
             <RefreshControl

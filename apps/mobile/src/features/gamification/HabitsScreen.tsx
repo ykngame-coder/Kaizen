@@ -429,7 +429,12 @@ export function HabitsScreen(): React.JSX.Element {
                 fontWeight:800 onto Barlow (a regular-weight font file with no
                 800 cut) made iOS synthesize the bold and mangled the digits
                 into illegible glyphs, exactly what a tester reported. */}
-            <Text variant="data" style={{ fontSize: 48, color: colors.text, flexShrink: 0 }}>{disciplineScore}<Text variant="subtitle" color="textSubtle">/100</Text></Text>
+            {/* lineHeight explicite : sans lui, iOS calcule une boîte de ligne
+                à partir de la police par défaut et rogne les glyphes d'Archivo
+                Black, dont les hampes dépassent — « le score discipline est
+                coupé ». Non reproduit sur la capture reçue, mais la ligne
+                au-dessus rappelle que ce chiffre a déjà mal rendu une fois. */}
+            <Text variant="data" style={{ fontSize: 48, lineHeight: 58, color: colors.text, flexShrink: 0 }}>{disciplineScore}<Text variant="subtitle" color="textSubtle">/100</Text></Text>
             <Text variant="body" color="textMuted" style={{ flex: 1, lineHeight: 20 }}>
               {disciplineScore >= 80
                 ? t('sport.gamification.habitsScreen.disciplineScore.excellent')
