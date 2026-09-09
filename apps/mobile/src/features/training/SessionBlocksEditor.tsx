@@ -629,6 +629,17 @@ export function SessionBlocksEditor({
               <Stepper label={t('sport.sessionBuilder.set.restLabel')} value={draft.rest} step={15} unit="s" onChange={(v) => builder.updateExercise(slotId, { rest: v })} />
             </View>
           ) : null}
+          {/* Une série de plus pour le même exercice : le modèle l'acceptait
+              déjà (les slots sont indépendants de l'exercice), mais rien ne
+              permettait d'en créer une — d'où « Ajouter un bouton pour ajouter
+              une série à un exercice ». */}
+          <View style={{ alignItems: 'flex-start', marginTop: spacing[3] }}>
+            <Button
+              label={t('sport.sessionBuilder.set.addSet')}
+              variant="secondary"
+              onPress={() => builder.duplicateSet(slotId)}
+            />
+          </View>
         </Card>
       </View>
     );

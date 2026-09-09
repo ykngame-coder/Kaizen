@@ -20,7 +20,8 @@
   "loading": "Chargement…",
   "hubCustomize": {
    "subtitle": "Reste appuyé sur ☰ pour déplacer une card ; l'interrupteur l'affiche ou la masque."
-  }
+  },
+  "calendar": "Calendrier"
  },
  "home": {
   "dailyBriefing": {
@@ -445,7 +446,8 @@
     "noneThatDay": "Aucune séance prévue ce jour-là",
     "chooseFocus": "Choisis un focus selon ta récupération",
     "viewPlanning": "Voir le planning ›",
-    "createSession": "Créer une séance ›"
+    "createSession": "Créer une séance ›",
+    "planSession": "Planifier une séance ›"
    },
    "score": {
     "heading": "Score Sport",
@@ -1526,7 +1528,8 @@
     "restPlaceholder": "Ex : 90",
     "lastTime": "Dernière fois : {{value}}",
     "repsShort_one": "{{count}} rep",
-    "repsShort_other": "{{count}} reps"
+    "repsShort_other": "{{count}} reps",
+    "addSet": "+ Ajouter une série"
    },
    "exercise": {
     "customPrefix": "✨ Perso · "

@@ -23,6 +23,7 @@ import { useManualHealthKitSync } from '@/features/connectors/useHealthKitAutoSy
 import { CalorieCalculatorForm } from './CalorieCalculatorForm';
 import { usePreferences } from '@/lib/preferences';
 import { DayNav, useSelectedDay } from '@/features/navigation/DayNav';
+import { HubHeaderButton } from '@/features/navigation/HubHeaderButton';
 import { ComprendreCard } from '@/features/knowledge/ComprendreCard';
 import { isTodayLocal } from '@/features/community/leaderboardHelpers';
 import { resolveNutritionCardOrder } from './nutritionCards';
@@ -488,15 +489,9 @@ export function NutritionScreen(): React.JSX.Element {
             <Text variant="caption" color="textSubtle">{t('nutrition.screen.subtitle')}</Text>
           </View>
           <View style={{ position: 'absolute', right: 0, top: 0, flexDirection: 'row', gap: spacing[2] }}>
-            <Pressable onPress={() => router.push('/nutrition-customize')} accessibilityLabel={t('nutrition.customize.title')} style={({ pressed }) => ({ opacity: pressed ? 0.6 : 1 })}>
-              <View style={{ width: 38, height: 38, borderRadius: 19, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border, alignItems: 'center', justifyContent: 'center' }}><Icon name="tune" size={16} color={colors.text} /></View>
-            </Pressable>
-            <Pressable onPress={() => router.push('/sport/calendar')} style={({ pressed }) => ({ opacity: pressed ? 0.6 : 1 })}>
-              <View style={{ width: 38, height: 38, borderRadius: 19, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border, alignItems: 'center', justifyContent: 'center' }}><Icon name="calendar" size={16} color={colors.text} /></View>
-            </Pressable>
-            <Pressable onPress={() => router.push('/search')} style={({ pressed }) => ({ opacity: pressed ? 0.6 : 1 })}>
-              <View style={{ width: 38, height: 38, borderRadius: 19, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border, alignItems: 'center', justifyContent: 'center' }}><Icon name="search" size={16} color={colors.text} /></View>
-            </Pressable>
+            <HubHeaderButton icon={<Icon name="tune" size={16} color={colors.text} />} accessibilityLabel={t('nutrition.customize.title')} onPress={() => router.push('/nutrition-customize')} />
+            <HubHeaderButton icon={<Icon name="calendar" size={16} color={colors.text} />} accessibilityLabel={t('common.calendar')} onPress={() => router.push('/sport/calendar')} />
+            <HubHeaderButton icon={<Icon name="search" size={16} color={colors.text} />} onPress={() => router.push('/search')} />
           </View>
         </View>
         <DayNav value={selectedDate} onChange={setSelectedDate} />

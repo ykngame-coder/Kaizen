@@ -195,6 +195,24 @@ export function useSessionBlocks(options: UseSessionBlocksOptions = {}) {
     delete nextSelected[slotId];
     updateActiveBlock({ selected: nextSelected, order: activeOrder.filter((id) => id !== slotId) });
   };
+  /**
+   * Une série de plus pour le même exercice, insérée juste après celle-ci et
+   * pré-remplie à l'identique — on enchaîne le plus souvent 3×8 à la même
+   * charge, et corriger une valeur est plus rapide que tout ressaisir.
+   *
+   * Le modèle acceptait déjà plusieurs séries (les slots sont des identifiants
+   * synthétiques, distincts de l'exercice), il n'y avait simplement aucun
+   * moyen d'en créer une depuis l'écran.
+   */
+  const duplicateSet = (slotId: string): void => {
+    const source = activeSelected[slotId];
+    if (!source) return;
+    const newId = newSlotId(source.exerciseId);
+    const at = activeOrder.indexOf(slotId);
+    const order = [...activeOrder];
+    order.splice(at < 0 ? order.length : at + 1, 0, newId);
+    updateActiveBlock({ selected: { ...activeSelected, [newId]: { ...source } }, order });
+  };
   const updateExercise = (slotId: string, patch: Partial<SetDraft>): void => {
     updateActiveBlock({ selected: { ...activeSelected, [slotId]: { ...activeSelected[slotId]!, ...patch } } });
   };
@@ -252,7 +270,7 @@ export function useSessionBlocks(options: UseSessionBlocksOptions = {}) {
     activeOrder, activeSelected,
     query, setQuery, muscleFilter, setMuscleFilter, equipmentFilter, setEquipmentFilter,
     allExercises, byId, searchResults, recentExercises,
-    addExercise, removeExercise, updateExercise, reorderExercise,
+    addExercise, removeExercise, updateExercise, duplicateSet, reorderExercise,
     isSingleStrength, hasAnyExercise,
   };
 }

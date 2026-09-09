@@ -20,7 +20,8 @@
   "loading": "Lädt…",
   "hubCustomize": {
    "subtitle": "Halte ☰ gedrückt, um eine Karte zu verschieben; der Schalter zeigt oder verbirgt sie."
-  }
+  },
+  "calendar": "Kalender"
  },
  "home": {
   "dailyBriefing": {
@@ -445,7 +446,8 @@
     "noneThatDay": "An diesem Tag ist kein Training geplant",
     "chooseFocus": "Wähle einen Fokus je nach deiner Erholung",
     "viewPlanning": "Planung ansehen ›",
-    "createSession": "Training erstellen ›"
+    "createSession": "Training erstellen ›",
+    "planSession": "Einheit planen ›"
    },
    "score": {
     "heading": "Sport-Score",
@@ -1526,7 +1528,8 @@
     "restPlaceholder": "Bsp.: 90",
     "lastTime": "Letztes Mal: {{value}}",
     "repsShort_one": "{{count}} Wdh.",
-    "repsShort_other": "{{count}} Wdh."
+    "repsShort_other": "{{count}} Wdh.",
+    "addSet": "+ Satz hinzufügen"
    },
    "exercise": {
     "customPrefix": "✨ Eigene · "

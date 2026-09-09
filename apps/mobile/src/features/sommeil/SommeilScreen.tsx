@@ -27,6 +27,7 @@ import { useActivities, useHealthMetrics, useLeaderboardPrefs, useRecordDailySco
 import { useManualHealthKitSync } from '@/features/connectors/useHealthKitAutoSync';
 import { formatClock, formatClockFromIso, usePreferences, type TimeFormat } from '@/lib/preferences';
 import { DayNav, useSelectedDay } from '@/features/navigation/DayNav';
+import { HubHeaderButton } from '@/features/navigation/HubHeaderButton';
 import { ComprendreCard } from '@/features/knowledge/ComprendreCard';
 import { ObjectifsCard } from '@/features/goals/ObjectifsCard';
 import { isTodayLocal } from '@/features/community/leaderboardHelpers';
@@ -664,16 +665,9 @@ export function SommeilScreen(): React.JSX.Element {
           </Text>
         </View>
         <View style={{ position: 'absolute', right: 0, top: 0, flexDirection: 'row', gap: spacing[2] }}>
-          <Pressable onPress={() => router.push('/sommeil-customize')} accessibilityLabel={t('sommeil.customize.title')} style={({ pressed }) => ({ opacity: pressed ? 0.6 : 1 })}>
-            <View style={{ width: 38, height: 38, borderRadius: 19, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border, alignItems: 'center', justifyContent: 'center' }}>
-              <Icon name="tune" size={16} color={colors.text} />
-            </View>
-          </Pressable>
-          <Pressable onPress={() => router.push('/search')} style={({ pressed }) => ({ opacity: pressed ? 0.6 : 1 })}>
-            <View style={{ width: 38, height: 38, borderRadius: 19, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border, alignItems: 'center', justifyContent: 'center' }}>
-              <Icon name="search" size={16} color={colors.text} />
-            </View>
-          </Pressable>
+          <HubHeaderButton icon={<Icon name="tune" size={16} color={colors.text} />} accessibilityLabel={t('sommeil.customize.title')} onPress={() => router.push('/sommeil-customize')} />
+          <HubHeaderButton icon={<Icon name="calendar" size={16} color={colors.text} />} accessibilityLabel={t('common.calendar')} onPress={() => router.push('/sport/calendar')} />
+          <HubHeaderButton icon={<Icon name="search" size={16} color={colors.text} />} onPress={() => router.push('/search')} />
         </View>
       </View>
       <DayNav value={selectedDate} onChange={setSelectedDate} />

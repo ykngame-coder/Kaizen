@@ -20,7 +20,8 @@
   "loading": "Loading…",
   "hubCustomize": {
    "subtitle": "Press and hold ☰ to move a card; the switch shows or hides it."
-  }
+  },
+  "calendar": "Calendar"
  },
  "home": {
   "dailyBriefing": {
@@ -445,7 +446,8 @@
     "noneThatDay": "No workout planned that day",
     "chooseFocus": "Choose a focus based on your recovery",
     "viewPlanning": "View planning ›",
-    "createSession": "Create a workout ›"
+    "createSession": "Create a workout ›",
+    "planSession": "Schedule a session ›"
    },
    "score": {
     "heading": "Sport Score",
@@ -1526,7 +1528,8 @@
     "restPlaceholder": "E.g.: 90",
     "lastTime": "Last time: {{value}}",
     "repsShort_one": "{{count}} rep",
-    "repsShort_other": "{{count}} reps"
+    "repsShort_other": "{{count}} reps",
+    "addSet": "+ Add a set"
    },
    "exercise": {
     "customPrefix": "✨ Custom · "

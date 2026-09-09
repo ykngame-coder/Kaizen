@@ -23,6 +23,7 @@ import { HubRow } from '@/features/navigation/HubRow';
 import { DayNav, useSelectedDay } from '@/features/navigation/DayNav';
 import { MuscleBody } from '@/features/muscles/MuscleBody';
 import { muscleColorFor, muscleStatesFor, recoveryAsOf } from '@/features/muscles/muscleColor';
+import { HubHeaderButton } from '@/features/navigation/HubHeaderButton';
 import { ComprendreCard } from '@/features/knowledge/ComprendreCard';
 import { ObjectifsCard } from '@/features/goals/ObjectifsCard';
 import { isTodayLocal } from '@/features/community/leaderboardHelpers';
@@ -53,6 +54,13 @@ function fmtDur(sec: number, t: TFunction): string {
 }
 
 /** "Aujourd'hui" / "Lun. 12 août" — the planned session always falls on the selected day. */
+/** Jour LOCAL au format AAAA-MM-JJ. `.slice(0, 10)` donnerait la date UTC, qui
+ *  bascule d'un jour dès que le sélecteur porte sa fin de journée. */
+const localDayKey = (iso: string): string => {
+  const d = new Date(iso);
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+};
+
 function planLabel(plannedFor: string | undefined, todayKey: string, t: TFunction): string {
   if (!plannedFor) return t('sport.screen.planLabel.tbd');
   const key = plannedFor.slice(0, 10);
@@ -306,24 +314,9 @@ export function SportScreen(): React.JSX.Element {
             </Text>
           </View>
           <View style={{ position: 'absolute', right: 0, top: 0, flexDirection: 'row', gap: spacing[2] }}>
-            <Pressable
-              onPress={() => router.push('/sport-customize')}
-              accessibilityLabel={t('sport.customize.title')}
-              style={({ pressed }) => ({ opacity: pressed ? 0.6 : 1 })}
-            >
-              <View style={{ width: 38, height: 38, borderRadius: 19, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border, alignItems: 'center', justifyContent: 'center' }}>
-                <Icon name="tune" size={16} color={colors.text} />
-              </View>
-            </Pressable>
-            <Pressable
-              onPress={() => router.push('/sport/exercises')}
-              accessibilityLabel={t('sport.screen.searchExercise')}
-              style={({ pressed }) => ({ opacity: pressed ? 0.6 : 1 })}
-            >
-              <View style={{ width: 38, height: 38, borderRadius: 19, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border, alignItems: 'center', justifyContent: 'center' }}>
-                <Icon name="search" size={16} color={colors.text} />
-              </View>
-            </Pressable>
+            <HubHeaderButton icon={<Icon name="tune" size={16} color={colors.text} />} accessibilityLabel={t('sport.customize.title')} onPress={() => router.push('/sport-customize')} />
+            <HubHeaderButton icon={<Icon name="calendar" size={16} color={colors.text} />} accessibilityLabel={t('common.calendar')} onPress={() => router.push('/sport/calendar')} />
+            <HubHeaderButton icon={<Icon name="search" size={16} color={colors.text} />} accessibilityLabel={t('sport.screen.searchExercise')} onPress={() => router.push('/sport/exercises')} />
           </View>
         </View>
         <DayNav value={selectedDate} onChange={setSelectedDate} />
@@ -374,6 +367,17 @@ export function SportScreen(): React.JSX.Element {
                   >
                     <Text variant="body" style={{ fontWeight: '600' }}>{plannedToday ? t('sport.screen.session.viewPlanning') : t('sport.screen.session.createSession')}</Text>
                   </Pressable>
+                  {/* « Ajouter planifier une séance sous créer pour planifier
+                      directement une séance déjà créée » : créer partait sur un
+                      constructeur vierge, sans chemin vers la bibliothèque. */}
+                  {!plannedToday ? (
+                    <Pressable
+                      onPress={() => router.push({ pathname: '/sport/planning', params: { date: localDayKey(selectedDate) } })}
+                      style={({ pressed }) => ({ marginTop: spacing[2], height: 46, borderRadius: radii.xl, borderWidth: 1, borderColor: colors.border, alignItems: 'center', justifyContent: 'center', transform: [{ scale: pressed ? 0.98 : 1 }] })}
+                    >
+                      <Text variant="body" style={{ fontWeight: '600' }}>{t('sport.screen.session.planSession')}</Text>
+                    </Pressable>
+                  ) : null}
                 </Card>
               );
             }

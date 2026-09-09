@@ -20,7 +20,8 @@
   "loading": "Cargando…",
   "hubCustomize": {
    "subtitle": "Mantén pulsado ☰ para mover una tarjeta; el interruptor la muestra u oculta."
-  }
+  },
+  "calendar": "Calendario"
  },
  "home": {
   "dailyBriefing": {
@@ -445,7 +446,8 @@
     "noneThatDay": "No hay ninguna sesión prevista ese día",
     "chooseFocus": "Elige un enfoque según tu recuperación",
     "viewPlanning": "Ver la planificación ›",
-    "createSession": "Crear una sesión ›"
+    "createSession": "Crear una sesión ›",
+    "planSession": "Planificar una sesión ›"
    },
    "score": {
     "heading": "Puntuación Deporte",
@@ -1526,7 +1528,8 @@
     "restPlaceholder": "Ej.: 90",
     "lastTime": "Última vez: {{value}}",
     "repsShort_one": "{{count}} rep",
-    "repsShort_other": "{{count}} reps"
+    "repsShort_other": "{{count}} reps",
+    "addSet": "+ Añadir una serie"
    },
    "exercise": {
     "customPrefix": "✨ Personalizado · "

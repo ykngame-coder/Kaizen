@@ -27,6 +27,7 @@ import { getCloudAvatarUrl, loadAvatarUri } from '@/lib/profileAvatar';
 import { usePreferences } from '@/lib/preferences';
 import { secureStorage } from '@/lib/secure-storage';
 import { useManualHealthKitSync } from '@/features/connectors/useHealthKitAutoSync';
+import { HubHeaderButton } from '@/features/navigation/HubHeaderButton';
 import { resolveDashboardCardOrder } from './dashboardCards';
 import { resolveCardOrder, type HubCardDef } from '@/lib/hubCards';
 
@@ -560,15 +561,16 @@ export function DashboardScreen(): React.JSX.Element {
         {/* Header */}
         <View>
           <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', gap: spacing[2] }}>
-            <IconBtn
+            <HubHeaderButton
               icon={refreshing ? <ActivityIndicator size="small" color={colors.text} /> : <Icon name="sync" size={16} />}
               onPress={onRefresh}
               accessibilityLabel={t('dashboard.screen.header.syncA11y')}
             />
             <View style={{ flexDirection: 'row', gap: spacing[2] }}>
-              <IconBtn icon={<Icon name="search" size={16} />} onPress={() => router.push('/search')} />
-              <IconBtn icon={<Icon name="tune" size={16} />} onPress={() => router.push('/dashboard-customize')} />
-              <IconBtn icon={<Icon name="notifications" size={16} />} onPress={() => router.push('/profile/notifications')} />
+              <HubHeaderButton icon={<Icon name="search" size={16} />} onPress={() => router.push('/search')} />
+              <HubHeaderButton icon={<Icon name="calendar" size={16} />} accessibilityLabel={t('common.calendar')} onPress={() => router.push('/sport/calendar')} />
+              <HubHeaderButton icon={<Icon name="tune" size={16} />} onPress={() => router.push('/dashboard-customize')} />
+              <HubHeaderButton icon={<Icon name="notifications" size={16} />} onPress={() => router.push('/profile/notifications')} />
               <Pressable onPress={() => router.push('/profile')}>
                 <View style={{ width: 38, height: 38, borderRadius: 19, overflow: 'hidden', alignItems: 'center', justifyContent: 'center' }}>
                   {avatarUri ? (
@@ -653,14 +655,6 @@ export const QUICK_LINKS: { key: string; labelKey: string; icon: IconName; path:
   { key: 'community', labelKey: 'dashboard.screen.quickLinks.community', icon: 'fire', path: '/profile/community' },
 ];
 
-function IconBtn({ icon, onPress, accessibilityLabel }: { icon: React.ReactNode; onPress: () => void; accessibilityLabel?: string }): React.JSX.Element {
-  const { colors } = useTheme();
-  return (
-    <Pressable onPress={onPress} accessibilityLabel={accessibilityLabel} style={({ pressed }) => ({ transform: [{ scale: pressed ? 0.94 : 1 }] })}>
-      <View style={{ width: 38, height: 38, borderRadius: 19, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border, alignItems: 'center', justifyContent: 'center' }}>{typeof icon === 'string' ? <Text style={{ fontSize: 16 }}>{icon}</Text> : icon}</View>
-    </Pressable>
-  );
-}
 function StateRow({ label, value, color }: { label: string; value: string; color?: string }): React.JSX.Element {
   const { colors } = useTheme();
   return (
