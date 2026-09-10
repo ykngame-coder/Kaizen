@@ -12,6 +12,7 @@ import { formatDate } from '@/lib/format';
 import { DatePickerModal } from '@/features/navigation/DatePickerModal';
 import { numOrUndef, scalePer100 } from './mealMacros';
 import { resolveMealEntry } from './resolveMealEntry';
+import { per100From } from './per100From';
 
 const dayKey = (d: Date): string => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 const todayKey = (): string => dayKey(new Date());
@@ -87,13 +88,30 @@ export function AddMealScreen(): React.JSX.Element {
   // sinon les valeurs remplies seraient invisibles derrière la saisie /100 g.
   const copyMeal = (entry: NutritionEntry): void => {
     setDescription(entry.description);
+    setHydrationMl(entry.hydrationMl != null ? String(entry.hydrationMl) : '');
+    setShowRecent(false);
+
+    // Repas saisi pour 100 g : on rouvre dans ce mode avec les valeurs de
+    // l'étiquette et la quantité d'origine, pour n'avoir qu'à changer la
+    // quantité si on en remange une autre portion.
+    const per100 = per100From(entry, entry.quantityG);
+    if (per100) {
+      setCalcKcal(per100.kcal);
+      setCalcProtein(per100.proteinG);
+      setCalcCarb(per100.carbG);
+      setCalcFat(per100.fatG);
+      setCalcQty(per100.quantityG);
+      setEntryMode('per100');
+      return;
+    }
+
+    // Sans quantité — toute entrée antérieure, et toute saisie en « Total » —
+    // on recopie les totaux tels quels : il n'y a rien à reconstituer.
     setKcal(String(entry.kcal));
     setProteinG(entry.proteinG != null ? String(entry.proteinG) : '');
     setCarbG(entry.carbG != null ? String(entry.carbG) : '');
     setFatG(entry.fatG != null ? String(entry.fatG) : '');
-    setHydrationMl(entry.hydrationMl != null ? String(entry.hydrationMl) : '');
     setEntryMode('total');
-    setShowRecent(false);
   };
 
   // Recalculé à chaque frappe : le total s'affiche en direct sous les champs,
@@ -128,6 +146,9 @@ export function AddMealScreen(): React.JSX.Element {
       carbG: macros.carbG,
       fatG: macros.fatG,
       hydrationMl: numOrUndef(hydrationMl),
+      // Conservée seulement en saisie « par 100 g » : c'est elle qui permettra
+      // de rouvrir ce repas avec les valeurs de son étiquette.
+      quantityG: entryMode === 'per100' ? numOrUndef(calcQty) : undefined,
       source: 'manual' as const,
       // A same-day log keeps the real time of day; a meal planned ahead has
       // no meaningful time yet, so it's parked at noon on the chosen day.

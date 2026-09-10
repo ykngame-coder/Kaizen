@@ -1660,6 +1660,13 @@
     "name": "WOD AMRAP",
     "description": "12 min, le plus de tours possible."
    }
+  },
+  "finishSession": {
+   "title": "Séance terminée",
+   "duration": "Durée : {{duration}}",
+   "confirm": "Enregistrer",
+   "skip": "Passer",
+   "saving": "…"
   }
  },
  "sommeil": {

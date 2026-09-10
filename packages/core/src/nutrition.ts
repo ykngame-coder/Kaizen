@@ -17,6 +17,12 @@ export interface NutritionEntry extends OwnedEntity {
   fatG?: number;
   /** Water for this entry, in millilitres (hydration is part of nutrition). */
   hydrationMl?: number;
+  /**
+   * Quantité mangée, en grammes, quand la saisie s'est faite pour 100 g.
+   * Permet de reconstituer les valeurs de l'étiquette en recopiant le repas —
+   * les stocker en plus créerait deux sources pour la même vérité.
+   */
+  quantityG?: number;
   source: DataSource;
   loggedAt: ISODateString;
 }

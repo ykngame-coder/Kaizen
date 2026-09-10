@@ -1250,7 +1250,8 @@ export function useSetWorkoutStatus() {
       workoutId: string;
       status: Workout['status'];
       completedAt?: string | null;
-    }) => repo.setWorkoutStatus(user!.id, input.workoutId, input.status, input.completedAt),
+      finish?: { rpe?: number; durationSec?: number };
+    }) => repo.setWorkoutStatus(user!.id, input.workoutId, input.status, input.completedAt, input.finish),
     onSuccess: (_data, input) => {
       qc.invalidateQueries({ queryKey: ['plannedWorkouts', user?.id] });
       qc.invalidateQueries({ queryKey: ['workouts', user?.id] });

@@ -1660,6 +1660,13 @@
     "name": "WOD AMRAP",
     "description": "12 min, o máximo de rondas possível."
    }
+  },
+  "finishSession": {
+   "title": "Sessão terminada",
+   "duration": "Duração: {{duration}}",
+   "confirm": "Guardar",
+   "skip": "Ignorar",
+   "saving": "…"
   }
  },
  "sommeil": {

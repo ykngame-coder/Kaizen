@@ -85,6 +85,8 @@ export const nutritionEntryInputSchema = z.object({
   // Allows small negative values — a "-250 ml" correction entry (undoing an
   // over-tap) is a legitimate log row, not just a positive intake amount.
   hydrationMl: z.number().min(-10000).max(10000).optional(),
+  /** Quantité mangée en grammes — seulement pour une saisie « par 100 g ». */
+  quantityG: z.number().positive().max(10000).optional(),
   source: dataSourceSchema.default('manual'),
   loggedAt: z.string().datetime(),
 });

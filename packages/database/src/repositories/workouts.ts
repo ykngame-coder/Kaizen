@@ -231,9 +231,13 @@ export async function updateWorkoutStatus(
   workoutId: string,
   status: WorkoutRow['status'],
   completedAt?: string | null,
+  /** Effort ressenti et durée mesurée, renseignés à la fin d'une séance. */
+  finish?: { rpe?: number; durationSec?: number },
 ): Promise<WorkoutRow> {
   const patch: Database['public']['Tables']['workouts']['Update'] = { status };
   if (completedAt !== undefined) patch.completed_at = completedAt;
+  if (finish?.rpe !== undefined) patch.rpe = finish.rpe;
+  if (finish?.durationSec !== undefined) patch.duration_sec = finish.durationSec;
   const { data, error } = await client
     .from('workouts')
     .update(patch)

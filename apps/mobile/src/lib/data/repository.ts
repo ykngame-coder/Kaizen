@@ -278,6 +278,8 @@ export interface DataRepository {
     workoutId: string,
     status: Workout['status'],
     completedAt?: string | null,
+    /** Renseignés à la fin d'une séance : effort ressenti et durée mesurée. */
+    finish?: { rpe?: number; durationSec?: number },
   ): Promise<Workout>;
   /** Attach a connected watch's avg/max heart rate to a completed workout — best-effort. */
   setWorkoutHeartRate(userId: string, workoutId: string, summary: { avgHeartRate: number; maxHeartRate: number }): Promise<void>;
@@ -541,6 +543,7 @@ function rowToNutrition(r: NutritionEntryRow): NutritionEntry {
     carbG: r.carb_g ?? undefined,
     fatG: r.fat_g ?? undefined,
     hydrationMl: r.hydration_ml ?? undefined,
+    quantityG: r.quantity_g ?? undefined,
     source: r.source as NutritionEntry['source'],
     loggedAt: r.logged_at,
     createdAt: r.created_at,
@@ -1176,7 +1179,7 @@ function createDemoRepository(): DataRepository {
       }
       return created;
     },
-    async setWorkoutStatus(userId, workoutId, status, completedAt) {
+    async setWorkoutStatus(userId, workoutId, status, completedAt, finish) {
       const items = await readJson<Workout>(wkKey(userId));
       const now = new Date().toISOString();
       let updated: Workout | undefined;
@@ -1186,6 +1189,8 @@ function createDemoRepository(): DataRepository {
           ...w,
           status,
           completedAt: completedAt === undefined ? w.completedAt : completedAt ?? undefined,
+          rpe: finish?.rpe ?? w.rpe,
+          durationSec: finish?.durationSec ?? w.durationSec,
           updatedAt: now,
         };
         return updated;
@@ -2413,6 +2418,7 @@ function createSupabaseRepository(
         carb_g: input.carbG ?? null,
         fat_g: input.fatG ?? null,
         hydration_ml: input.hydrationMl ?? null,
+        quantity_g: input.quantityG ?? null,
         source: input.source,
         logged_at: input.loggedAt,
       });
@@ -2944,8 +2950,8 @@ function createSupabaseRepository(
           });
       return rowToWorkout(row);
     },
-    async setWorkoutStatus(_userId, workoutId, status, completedAt) {
-      const row = await updateWorkoutStatusDb(client, workoutId, status, completedAt);
+    async setWorkoutStatus(_userId, workoutId, status, completedAt, finish) {
+      const row = await updateWorkoutStatusDb(client, workoutId, status, completedAt, finish);
       return rowToWorkout(row);
     },
     async setWorkoutHeartRate(_userId, workoutId, summary) {

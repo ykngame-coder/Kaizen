@@ -1660,6 +1660,13 @@
     "name": "AMRAP-WOD",
     "description": "12 Min., so viele Runden wie möglich."
    }
+  },
+  "finishSession": {
+   "title": "Einheit beendet",
+   "duration": "Dauer: {{duration}}",
+   "confirm": "Speichern",
+   "skip": "Überspringen",
+   "saving": "…"
   }
  },
  "sommeil": {

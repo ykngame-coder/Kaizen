@@ -1660,6 +1660,13 @@
     "name": "AMRAP WOD",
     "description": "12 min, as many rounds as possible."
    }
+  },
+  "finishSession": {
+   "title": "Session finished",
+   "duration": "Duration: {{duration}}",
+   "confirm": "Save",
+   "skip": "Skip",
+   "saving": "…"
   }
  },
  "sommeil": {

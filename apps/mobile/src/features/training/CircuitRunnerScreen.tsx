@@ -14,6 +14,7 @@ import { StrengthRunner } from './StrengthRunner';
 import { AmrapRunner } from './AmrapRunner';
 import { EmomRunner } from './EmomRunner';
 import { TabataRunner } from './TabataRunner';
+import { FinishSessionSheet } from './FinishSessionSheet';
 import { ForTimeRunner } from './ForTimeRunner';
 import { BlockTimeline } from './BlockTimeline';
 
@@ -69,12 +70,19 @@ export function CircuitRunnerScreen(): React.JSX.Element {
       setWorkoutStatus.mutate({ workoutId: id, status: 'in_progress' });
     }
     void (async () => {
-      if ((await loadRunState(id)) === null) {
-        await saveRunState(id, { startedAtMs: Date.now(), activeBlockIndex: 0 });
+      const existing = await loadRunState(id);
+      if (existing === null) {
+        const startedAtMs = Date.now();
+        await saveRunState(id, { startedAtMs, activeBlockIndex: 0 });
+        setSessionStartMs(startedAtMs);
+      } else {
+        // Reprise après une sortie d'app : la durée court depuis le vrai début.
+        setSessionStartMs(existing.startedAtMs);
       }
     })();
   }, [id, workouts.length]);
 
+  const [sessionStartMs, setSessionStartMs] = useState<number | null>(null);
   const [activeIndex, setActiveIndex] = useState(0);
   const [roundsCompleted, setRoundsCompleted] = useState(0);
   const [stepIndex, setStepIndex] = useState(0);
@@ -130,6 +138,22 @@ export function CircuitRunnerScreen(): React.JSX.Element {
   };
 
   /** Passe au bloc suivant, ou termine la séance si c'était le dernier. */
+  const [finishOpen, setFinishOpen] = useState(false);
+
+  /** Clôture réelle, une fois l'effort renseigné (ou explicitement passé). */
+  const closeSession = async (finish: { rpe?: number; durationSec: number }): Promise<void> => {
+    if (!active) return;
+    await setWorkoutStatus.mutateAsync({
+      workoutId: active.workoutId,
+      status: 'completed',
+      completedAt: new Date().toISOString(),
+      finish,
+    });
+    await clearRunState(active.workoutId);
+    setFinishOpen(false);
+    router.replace({ pathname: '/sport/workout/[id]', params: { id: active.workoutId } });
+  };
+
   const advanceOrFinish = async (): Promise<void> => {
     if (!active) return;
     if (activeIndex + 1 < blocks.length) {
@@ -137,9 +161,10 @@ export function CircuitRunnerScreen(): React.JSX.Element {
       // Retour au fil : on voit ce qui vient d'être bouclé et ce qui reste.
       setShowTimeline(true);
     } else {
-      await setWorkoutStatus.mutateAsync({ workoutId: active.workoutId, status: 'completed', completedAt: new Date().toISOString() });
-      await clearRunState(active.workoutId);
-      router.replace({ pathname: '/sport/workout/[id]', params: { id: active.workoutId } });
+      // On ne clôt plus en silence : la feuille demande l'effort ressenti et
+      // enregistre la durée mesurée, deux champs qui restaient vides sur la
+      // fiche de séance faute d'être demandés au seul moment où on les connaît.
+      setFinishOpen(true);
     }
   };
 
@@ -305,6 +330,13 @@ export function CircuitRunnerScreen(): React.JSX.Element {
       ) : (
         <ForTimeRunner block={active} sets={sets} onFinished={(r, e) => void finishTimedBlock(r, e)} />
       )}
+      <FinishSessionSheet
+        visible={finishOpen}
+        elapsedSec={sessionStartMs ? Math.max(0, Math.round((Date.now() - sessionStartMs) / 1000)) : 0}
+        saving={setWorkoutStatus.isPending}
+        onConfirm={(f) => void closeSession(f)}
+        onSkip={(f) => void closeSession(f)}
+      />
     </Screen>
   );
 }

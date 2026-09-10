@@ -336,6 +336,7 @@ export interface Database {
           carb_g: number | null;
           fat_g: number | null;
           hydration_ml: number | null;
+          quantity_g: number | null;
           source: string;
           logged_at: string;
           created_at: string;
@@ -350,6 +351,7 @@ export interface Database {
           carb_g?: number | null;
           fat_g?: number | null;
           hydration_ml?: number | null;
+          quantity_g?: number | null;
           source?: string;
           logged_at: string;
         };
