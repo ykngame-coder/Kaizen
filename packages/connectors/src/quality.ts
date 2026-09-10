@@ -38,7 +38,10 @@ const HEALTH_RANGES: Record<HealthMetricType, [number, number]> = {
   weight: [20, 400],
   body_fat: [2, 70],
   muscle_mass: [10, 120],
-  hydration: [0, 10],
+  // En MILLILITRES, comme tous les producteurs (2000, 3000…) et comme le reste
+  // de l'app. La plage était [0, 10] — des litres — donc toute hydratation
+  // réelle était rejetée comme hors plage.
+  hydration: [0, 20_000],
   steps: [0, 100_000],
 };
 

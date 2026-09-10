@@ -1,5 +1,6 @@
 import type { ActivityType, HealthMetricType, SleepSegment, SleepStage } from '@supotsu/core';
 import type { ImportedActivity, ImportedHealthMetric, ImportedSleepSession } from './types';
+import { mergeSleepTimeline, type StageInterval } from './sleepMerge';
 
 /**
  * Apple Health (HealthKit) normalization (Master Prompt P22, P38). Pure functions
@@ -164,15 +165,22 @@ export function estimateActivityHeartRateWindow(startedAt: string, durationSec: 
  * actually asleep, awake intervals excluded). Fragmented samples are summed.
  */
 export function aggregateHealthKitSleep(samples: HKSleepSample[]): ImportedHealthMetric[] {
-  const perNight = new Map<string, number>();
+  // Regroupe d'abord par nuit, PUIS fusionne les intervalles : additionner les
+  // échantillons bruts comptait deux fois une nuit présente via la Watch ET via
+  // une autre app (AutoSleep, Garmin → Apple Santé), soit ~14 h pour 7 h dormies.
+  const perNight = new Map<string, StageInterval[]>();
   for (const s of samples) {
     if (!ASLEEP_VALUES.has(s.value)) continue;
-    const seconds = (new Date(s.endDate).getTime() - new Date(s.startDate).getTime()) / 1000;
-    if (seconds <= 0) continue;
+    const stage = STAGE_FOR_VALUE[s.value] ?? 'light';
     const key = nightKey(s.endDate);
-    perNight.set(key, (perNight.get(key) ?? 0) + seconds);
+    const list = perNight.get(key) ?? [];
+    list.push({ stage, startedAt: s.startDate, endedAt: s.endDate });
+    perNight.set(key, list);
   }
-  return [...perNight.entries()].map(([key, seconds]) => ({
+  return [...perNight.entries()]
+    .map(([key, intervals]) => [key, mergeSleepTimeline(intervals).asleepMin * 60] as const)
+    .filter(([, seconds]) => seconds > 0)
+    .map(([key, seconds]) => ({
     type: 'sleep_duration' as HealthMetricType,
     value: Number((seconds / 3600).toFixed(2)),
     unit: 'h',
@@ -185,13 +193,9 @@ export function aggregateHealthKitSleep(samples: HKSleepSample[]): ImportedHealt
 interface NightAccumulator {
   start: string;
   end: string;
-  deepMin: number;
-  lightMin: number;
-  remMin: number;
-  awakeMin: number;
-  inBedMin: number;
   hasInBed: boolean;
-  segments: SleepSegment[];
+  /** Intervalles bruts, toutes sources : fusionnés à la sortie, pas ici. */
+  intervals: StageInterval[];
 }
 
 /** HealthKit sleep-analysis sample value → our stage; `undefined` for values that aren't a specific stage (in-bed, unknown). */
@@ -215,50 +219,36 @@ export function aggregateHealthKitSleepSessions(samples: HKSleepSample[]): Impor
     const minutes = (new Date(s.endDate).getTime() - new Date(s.startDate).getTime()) / 60000;
     if (minutes <= 0) continue;
     const key = nightKey(s.endDate);
-    const acc = perNight.get(key) ?? {
-      start: s.startDate,
-      end: s.endDate,
-      deepMin: 0,
-      lightMin: 0,
-      remMin: 0,
-      awakeMin: 0,
-      inBedMin: 0,
-      hasInBed: false,
-      segments: [],
-    };
+    const acc = perNight.get(key) ?? { start: s.startDate, end: s.endDate, hasInBed: false, intervals: [] };
     acc.start = s.startDate < acc.start ? s.startDate : acc.start;
     acc.end = s.endDate > acc.end ? s.endDate : acc.end;
-    switch (s.value) {
-      case 4: acc.deepMin += minutes; break;
-      case 5: acc.remMin += minutes; break;
-      case 3: case 1: acc.lightMin += minutes; break;
-      case 2: acc.awakeMin += minutes; break;
-      case 0: acc.inBedMin += minutes; acc.hasInBed = true; break;
-      default: break;
-    }
-    const stage = STAGE_FOR_VALUE[s.value];
+    if (s.value === 0) acc.hasInBed = true;
+    // On accumule les INTERVALLES ; les minutes par stade sont calculées après
+    // fusion, sinon deux sources sur la même nuit doublent chaque stade.
+    const stage = s.value === 0 ? 'inBed' : STAGE_FOR_VALUE[s.value];
     if (stage) {
-      acc.segments.push({ stage, startedAt: new Date(s.startDate).toISOString(), endedAt: new Date(s.endDate).toISOString() });
+      acc.intervals.push({ stage, startedAt: new Date(s.startDate).toISOString(), endedAt: new Date(s.endDate).toISOString() });
     }
     perNight.set(key, acc);
   }
 
   const out: ImportedSleepSession[] = [];
   for (const n of perNight.values()) {
-    const asleepMin = n.deepMin + n.lightMin + n.remMin;
-    if (asleepMin <= 0) continue;
+    const m = mergeSleepTimeline(n.intervals);
+    if (m.asleepMin <= 0) continue;
     out.push({
       source: 'apple_health',
       reliability: 'high',
       startedAt: new Date(n.start).toISOString(),
       endedAt: new Date(n.end).toISOString(),
-      deepMin: Math.round(n.deepMin),
-      lightMin: Math.round(n.lightMin),
-      remMin: Math.round(n.remMin),
-      segments: n.segments.sort((a, b) => a.startedAt.localeCompare(b.startedAt)),
-      awakeMin: Math.round(n.awakeMin),
-      asleepMin: Math.round(asleepMin),
-      inBedMin: Math.round(n.hasInBed ? n.inBedMin : asleepMin + n.awakeMin),
+      deepMin: Math.round(m.deepMin),
+      lightMin: Math.round(m.lightMin),
+      remMin: Math.round(m.remMin),
+      // Déjà triés et sans chevauchement : c'est ce que rend la fusion.
+      segments: m.segments.filter((g) => g.stage !== 'inBed') as SleepSegment[],
+      awakeMin: Math.round(m.awakeMin),
+      asleepMin: Math.round(m.asleepMin),
+      inBedMin: Math.round(n.hasInBed ? m.inBedMin : m.asleepMin + m.awakeMin),
     });
   }
   return out;
