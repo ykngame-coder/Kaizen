@@ -15,6 +15,13 @@ const clamp = (n: number, min = 0, max = 100): number => Math.max(min, Math.min(
 /** Recommended nightly sleep, in hours (Master Prompt P14.4). */
 export const SLEEP_TARGET_HOURS = 8;
 
+/** « 7 h 45 », « 8 h » — heures décimales rendues lisibles. */
+export function formatGoalHours(hours: number): string {
+  const h = Math.floor(hours);
+  const m = Math.round((hours - h) * 60);
+  return m === 0 ? `${h} h` : `${h} h ${String(m).padStart(2, '0')}`;
+}
+
 function within(m: HealthMetric, asOf: ISODateString, days: number): boolean {
   const age = (new Date(asOf).getTime() - new Date(m.measuredAt).getTime()) / DAY_MS;
   return age >= 0 && age < days;
@@ -33,8 +40,10 @@ function latest(
 }
 
 /** Score a single night's duration: 8h ⇒ 100, linear to 0 at 4h, capped. */
-function durationScore(hours: number): number {
-  return clamp(((hours - 4) / (SLEEP_TARGET_HOURS - 4)) * 100);
+function durationScore(hours: number, goalHours: number = SLEEP_TARGET_HOURS): number {
+  // Barème linéaire de 4 h à l'objectif : atteindre SA cible vaut 100, quelle
+  // qu'elle soit. La constante n'est plus qu'un repli.
+  return clamp(((hours - 4) / (Math.max(4.5, goalHours) - 4)) * 100);
 }
 
 export type SleepBand = 'excellent' | 'correct' | 'moyen' | 'faible';
@@ -115,8 +124,9 @@ export function sleepTrend(
   metrics: HealthMetric[],
   asOf: ISODateString,
   days = 7,
+  goalHours: number = SLEEP_TARGET_HOURS,
 ): SleepNight[] {
-  return distinctNights(metrics, asOf, days).map((m) => ({ date: m.measuredAt, hours: m.value, score: Math.round(durationScore(m.value)) }));
+  return distinctNights(metrics, asOf, days).map((m) => ({ date: m.measuredAt, hours: m.value, score: Math.round(durationScore(m.value, goalHours)) }));
 }
 
 /** Mean nightly hours over `days`, or undefined when no nights are logged. */
@@ -177,7 +187,6 @@ const REGULARITY_TOLERANCE_MIN = 90;
  */
 const DEBT_WINDOW_DAYS = 30;
 /** A full night's deficit *per week*, sustained across the debt window, maps sleep debt to a score of 0 — same severity bar as before, just extended to the longer window. */
-const DEBT_CAP_HOURS = SLEEP_TARGET_HOURS * (DEBT_WINDOW_DAYS / 7);
 /** Minimum nights required before regularity / debt are meaningful. */
 const MIN_NIGHTS_FOR_TREND = 3;
 
@@ -217,8 +226,10 @@ const COMPONENT_WEIGHT: Record<SleepComponentKey, number> = {
 
 /** Bedtimes (measuredAt of each sleep_duration night) within the window, minutes-of-day. */
 function bedtimeMinutes(metrics: HealthMetric[], asOf: ISODateString, days: number): number[] {
-  return metrics
-    .filter((m) => m.type === 'sleep_duration' && within(m, asOf, days))
+  // distinctNights, pas le brut : une nuit synchronisée deux fois (HealthKit +
+  // Garmin, ou un simple re-sync) comptait double et fabriquait une régularité
+  // proche de 100 % à partir d'une seule nuit vue plusieurs fois.
+  return distinctNights(metrics, asOf, days)
     .map((m) => {
       const d = new Date(m.measuredAt);
       return d.getUTCHours() * 60 + d.getUTCMinutes();
@@ -265,15 +276,21 @@ export function sleepDebtHours(
   metrics: HealthMetric[],
   asOf: ISODateString,
   days = 7,
+  goalHours: number = SLEEP_TARGET_HOURS,
 ): { debt: number; nights: number } {
-  const nights = metrics.filter((m) => m.type === 'sleep_duration' && within(m, asOf, days));
-  const debt = nights.reduce((s, m) => s + Math.max(0, SLEEP_TARGET_HOURS - m.value), 0);
+  // distinctNights : sans ça une nuit re-synchronisée gonflait la dette autant
+  // de fois qu'elle apparaissait.
+  const nights = distinctNights(metrics, asOf, days);
+  const debt = nights.reduce((s, m) => s + Math.max(0, goalHours - m.value), 0);
   return { debt: Number(debt.toFixed(1)), nights: nights.length };
 }
 
 /** Sleep debt 0-100: no shortfall ⇒ 100, a full night behind (8h) ⇒ 0. */
-function debtScore(debtHours: number): number {
-  return clamp(100 - (debtHours / DEBT_CAP_HOURS) * 100);
+function debtScore(debtHours: number, goalHours: number = SLEEP_TARGET_HOURS): number {
+  // Plafond dérivé de l'objectif : sinon un objectif à 7 h serait noté avec le
+  // barème d'un objectif à 8 h.
+  const cap = goalHours * (DEBT_WINDOW_DAYS / 7);
+  return clamp(100 - (debtHours / cap) * 100);
 }
 
 /**
@@ -350,19 +367,20 @@ export function computeSleepScore2(
   asOf: ISODateString,
   windowDays = 7,
   sessions?: SleepSession[],
+  goalHours: number = SLEEP_TARGET_HOURS,
 ): SleepScore2Result {
   const components: SleepScoreComponent[] = [];
 
-  // 1) Quantité — last night's duration vs the 8h target.
+  // 1) Quantité — last night's duration vs the user's own target.
   const hours = latest(metrics, 'sleep_duration', asOf);
   components.push({
     key: 'quantity',
     label: COMPONENT_LABEL.quantity,
     weight: COMPONENT_WEIGHT.quantity,
-    value: hours !== undefined ? Math.round(durationScore(hours)) : null,
+    value: hours !== undefined ? Math.round(durationScore(hours, goalHours)) : null,
     detail:
       hours !== undefined
-        ? `${hours.toFixed(1)} h dormies sur ${SLEEP_TARGET_HOURS} h visées.`
+        ? `${hours.toFixed(1)} h dormies sur ${formatGoalHours(goalHours)} visées.`
         : 'Nécessite une nuit enregistrée (toute source).',
   });
 
@@ -409,12 +427,12 @@ export function computeSleepScore2(
 
   // 4) Dette — cumulative shortfall over the last month (its own window,
   //    independent of windowDays — see DEBT_WINDOW_DAYS above).
-  const { debt, nights } = sleepDebtHours(metrics, asOf, DEBT_WINDOW_DAYS);
+  const { debt, nights } = sleepDebtHours(metrics, asOf, DEBT_WINDOW_DAYS, goalHours);
   components.push({
     key: 'debt',
     label: COMPONENT_LABEL.debt,
     weight: COMPONENT_WEIGHT.debt,
-    value: nights >= MIN_NIGHTS_FOR_TREND ? Math.round(debtScore(debt)) : null,
+    value: nights >= MIN_NIGHTS_FOR_TREND ? Math.round(debtScore(debt, goalHours)) : null,
     detail:
       nights >= MIN_NIGHTS_FOR_TREND
         ? debt > 0

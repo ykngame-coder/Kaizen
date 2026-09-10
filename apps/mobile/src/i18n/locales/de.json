@@ -1408,7 +1408,7 @@
       "sub": "{{count}} Training(s)"
      },
      "sleep": {
-      "label": "Schlaf ≥ 7 Std 45",
+      "label": "Schlaf ≥ {{goal}}",
       "sub": "Ø {{hours}} Std"
      },
      "recovery": {
@@ -1422,7 +1422,7 @@
     },
     "plan": {
      "sessions": "{{count}} Trainingseinheiten",
-     "sleepTarget": "7 Std 45 Schlaf anstreben",
+     "sleepTarget": "{{goal}} Schlaf anstreben",
      "sleepMaintain": "Deinen Schlafrhythmus beibehalten",
      "hydration": "Über deinem Hydratationsziel bleiben",
      "mobility": "Eine Mobilitätseinheit hinzufügen"
@@ -2858,7 +2858,7 @@
      "pending": "{{count}} Gewohnheit(en) erledigen"
     },
     "sleep": {
-     "value": "Schlaf {{duration}} (Ziel 7 Std. 45)",
+     "value": "Schlaf {{duration}} (Ziel {{goal}})",
      "record": "Erfasse deine Nacht"
     },
     "title": "Prioritäten des Tages"
@@ -3187,7 +3187,13 @@
      "label": "Tägliches Schrittziel",
      "suggestion": "Dein Durchschnitt: {{steps}} Schritte — als Ziel verwenden?"
     },
-    "haptics": "Haptisches Feedback"
+    "haptics": "Haptisches Feedback",
+    "sleepGoal": {
+     "label": "Schlafziel",
+     "hint": "Fließt in Dauer-Score, Schlafschuld und Zirkadianrhythmus ein.",
+     "less": "Ziel senken",
+     "more": "Ziel erhöhen"
+    }
    },
    "dangerZone": {
     "deleteError": "Löschen nicht möglich.",

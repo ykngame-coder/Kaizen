@@ -326,3 +326,55 @@ describe('sleepCoaching', () => {
     expect(coaching?.action.key).toMatch(/^engines\.sleep\.coaching\.action\./);
   });
 });
+
+/**
+ * L'objectif était figé à 8 h : score de durée, dette et plafond de dette en
+ * dépendaient tous en dur. Ces tests vérifient que la cible se propage vraiment
+ * — un même sommeil doit être noté différemment selon l'objectif visé.
+ */
+describe('objectif de sommeil réglable', () => {
+  const sevenHourNights = [sleep(7, 1), sleep(7, 2), sleep(7, 3), sleep(7, 4)];
+
+  it('note 100 une nuit qui atteint SON objectif, pas seulement 8 h', () => {
+    const at7 = computeSleepScore2([sleep(7, 0)], ASOF, 7, undefined, 7);
+    const at9 = computeSleepScore2([sleep(7, 0)], ASOF, 7, undefined, 9);
+    const q7 = at7.components.find((c) => c.key === 'quantity')?.value;
+    const q9 = at9.components.find((c) => c.key === 'quantity')?.value;
+    expect(q7).toBe(100);
+    expect(q9).toBeLessThan(100);
+  });
+
+  it('ne crée aucune dette quand les nuits atteignent l objectif visé', () => {
+    expect(sleepDebtHours(sevenHourNights, ASOF, 30, 7).debt).toBe(0);
+    expect(sleepDebtHours(sevenHourNights, ASOF, 30, 9).debt).toBeGreaterThan(0);
+  });
+
+  it('déplace le score global quand seul l objectif change', () => {
+    const strict = computeSleepScore2(sevenHourNights, ASOF, 7, undefined, 9);
+    const lenient = computeSleepScore2(sevenHourNights, ASOF, 7, undefined, 7);
+    expect(lenient.value).toBeGreaterThan(strict.value);
+  });
+
+  it('garde 8 h par défaut, pour ne rien changer à l existant', () => {
+    expect(sleepDebtHours(sevenHourNights, ASOF, 30).debt).toBe(sleepDebtHours(sevenHourNights, ASOF, 30, 8).debt);
+  });
+});
+
+/**
+ * Régression : `distinctNights` n'était appliqué qu'à la tendance. Une nuit
+ * synchronisée deux fois (HealthKit + Garmin, ou un simple re-sync) gonflait la
+ * dette et fabriquait une régularité élevée à partir d'une seule nuit.
+ */
+describe('déduplication des nuits', () => {
+  it('ne compte pas deux fois la même nuit dans la dette', () => {
+    const once = sleepDebtHours([sleep(6, 1)], ASOF, 30);
+    const twice = sleepDebtHours([sleep(6, 1), sleep(6, 1)], ASOF, 30);
+    expect(twice.debt).toBe(once.debt);
+    expect(twice.nights).toBe(once.nights);
+  });
+
+  it('ne fabrique pas de régularité à partir d une nuit vue plusieurs fois', () => {
+    const duplicated = [sleep(7, 1), sleep(7, 1), sleep(7, 1)];
+    expect(bedtimeSpreadMinutes(duplicated, ASOF, 7)).toBeUndefined();
+  });
+});

@@ -67,6 +67,13 @@ export interface Preferences {
   /** User-chosen daily step target (steps have no auto-estimated goal, unlike nutrition). */
   dailyStepsGoal: number;
   /**
+   * Objectif de sommeil, en heures décimales (7.75 = 7 h 45). Alimente le score
+   * de durée, la dette et le rythme circadien : la cible affichée est celle qui
+   * sert au calcul, ce qui n'était pas le cas quand des textes annonçaient
+   * « 7 h 45 » pendant que les moteurs visaient 8 h en dur.
+   */
+  sleepGoalHours: number;
+  /**
    * Per-hub card order + visibility. Undefined until the user customizes
    * that hub — each hub screen falls back to its own default order/
    * visibility, so a field only needs writing when the user actually
@@ -101,6 +108,7 @@ const DEFAULTS: Preferences = {
   haptics: true,
   biometricLock: false,
   dailyStepsGoal: 10_000,
+  sleepGoalHours: 8,
   language: 'auto',
   effortMetric: 'rpe',
   barWeightKg: 20,

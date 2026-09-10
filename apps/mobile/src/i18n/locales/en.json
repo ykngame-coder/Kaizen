@@ -1408,7 +1408,7 @@
       "sub": "{{count}} workout(s)"
      },
      "sleep": {
-      "label": "Sleep ≥ 7h 45m",
+      "label": "Sleep ≥ {{goal}}",
       "sub": "{{hours}}h on average"
      },
      "recovery": {
@@ -1422,7 +1422,7 @@
     },
     "plan": {
      "sessions": "{{count}} training sessions",
-     "sleepTarget": "Aim for 7h 45m of sleep",
+     "sleepTarget": "Aim for {{goal}} of sleep",
      "sleepMaintain": "Maintain your sleep routine",
      "hydration": "Stay above your hydration target",
      "mobility": "Add a mobility session"
@@ -2858,7 +2858,7 @@
      "pending": "Check off {{count}} habit(s)"
     },
     "sleep": {
-     "value": "Sleep {{duration}} (target 7 h 45)",
+     "value": "Sleep {{duration}} (target {{goal}})",
      "record": "Log your night"
     },
     "title": "Priorities of the day"
@@ -3187,7 +3187,13 @@
      "label": "Daily steps goal",
      "suggestion": "Your average: {{steps}} steps — use as goal?"
     },
-    "haptics": "Haptic feedback"
+    "haptics": "Haptic feedback",
+    "sleepGoal": {
+     "label": "Sleep goal",
+     "hint": "Drives the duration score, sleep debt and circadian rhythm.",
+     "less": "Lower the goal",
+     "more": "Raise the goal"
+    }
    },
    "dangerZone": {
     "deleteError": "Couldn't delete.",

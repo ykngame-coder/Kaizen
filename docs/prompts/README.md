@@ -17,7 +17,7 @@ indépendants et peuvent être lancés dans n'importe quel ordre, sauf indicatio
 | `fix-code-review-lot3.md` | **Correctifs code-review (import santé)** : sommeil doublé entre sources HealthKit, dédup activités trop agressive (perte de séances), plage hydratation litres→ml | ✅ Fait (2026-09-10) |
 | `fix-code-review-lot2.md` | **Correctifs code-review** : notes de séance perdues en prod, pagination habitudes non déterministe, saisie nutrition eau/0 kcal (+ dédup sommeil traitée dans le prompt sommeil) | ✅ Fait (2026-09-10) |
 | `creation-suivi-seance.md` | Améliorer la **création** (prefill+suggestion, ajout rapide, modèles, superset) et le **suivi/runner** (log+repos auto, réf. précédente + RPE/RIR, reprise, calculateur de disques, échauffement auto) | ✅ Fait |
-| `objectif-sommeil-reglable.md` | Objectif de sommeil **réglable** + dette/score/circadien réajustés à la cible + correction incohérence 7 h 45 / 8 h | ⬜ À faire |
+| `objectif-sommeil-reglable.md` | Objectif de sommeil **réglable** + dette/score/circadien réajustés à la cible + correction incohérence 7 h 45 / 8 h | ✅ Fait (2026-09-10) |
 | `i18n-multilingue.md` | **Multilingue** FR/EN/ES/PT/DE (infra i18n + sélecteur + extraction) — _infra déjà en place, sert de référence_ | ✅ Fait |
 | `apple-watch-niveau1.md` | App **Apple Watch** compagnon (suivre sa séance au poignet) — Niveau 1 | ⬜ À faire — après TestFlight |
 | `apple-watch-niveau2.md` | Apple Watch — séance **live** (FC temps réel, calories, HealthKit workout) | ⬜ À faire — après le niveau 1 |

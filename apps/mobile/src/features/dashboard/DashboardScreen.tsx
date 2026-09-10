@@ -19,6 +19,7 @@ import {
   sleepTrend,
   sumDay,
   weightTrend,
+  formatGoalHours,
 } from '@supotsu/engines';
 import { useActivities, useHabitLogs, useHabits, useHealthMetrics, useLeaderboardPrefs, useNutritionEntries, usePlannedWorkouts, useRecordDailyScore, useSleepSessions } from '@/lib/data/queries';
 import { useAuth } from '@/features/auth/AuthProvider';
@@ -203,7 +204,7 @@ export function DashboardScreen(): React.JSX.Element {
     return { value: today.value, band: recoveryBand(today.value) };
   }, [health, asOf]);
 
-  const nights = useMemo(() => [...sleepTrend(health, asOf, 7)].sort((a, b) => a.date.localeCompare(b.date)), [health, asOf]);
+  const nights = useMemo(() => [...sleepTrend(health, asOf, 7, preferences.sleepGoalHours)].sort((a, b) => a.date.localeCompare(b.date)), [health, asOf]);
   const lastNight = nights.at(-1);
   const prevNight = nights.at(-2);
   const sleepDelta = lastNight && prevNight ? Math.round((lastNight.hours - prevNight.hours) * 60) : null;
@@ -359,7 +360,7 @@ export function DashboardScreen(): React.JSX.Element {
     { done: waterLeftMl <= 0, label: waterLeftMl > 0 ? t('dashboard.screen.priorities.water.pending', { liters: (waterLeftMl / 1000).toFixed(1) }) : t('dashboard.screen.priorities.water.done'), path: '/nutrition' },
     { done: proteinLeft <= 0, label: proteinLeft > 0 ? t('dashboard.screen.priorities.protein.pending', { target: Math.round(targets.proteinG), remaining: proteinLeft }) : t('dashboard.screen.priorities.protein.done'), path: '/nutrition' },
     { done: pendingHabits.length === 0 && activeHabits.length > 0, label: activeHabits.length === 0 ? t('dashboard.screen.priorities.habits.none') : pendingHabits.length === 0 ? t('dashboard.screen.priorities.habits.allDone') : t('dashboard.screen.priorities.habits.pending', { count: pendingHabits.length }), path: '/profile/habits' },
-    { done: !!lastNight && lastNight.hours >= 7.75, label: lastNight ? t('dashboard.screen.priorities.sleep.value', { duration: fmtSleep(lastNight.hours, t) }) : t('dashboard.screen.priorities.sleep.record'), path: '/sommeil' },
+    { done: !!lastNight && lastNight.hours >= preferences.sleepGoalHours, label: lastNight ? t('dashboard.screen.priorities.sleep.value', { duration: fmtSleep(lastNight.hours, t), goal: formatGoalHours(preferences.sleepGoalHours) }) : t('dashboard.screen.priorities.sleep.record'), path: '/sommeil' },
   ];
   const priorities = priorityBase.map((p, i) => ({ ...p, done: p.done || manualDone.has(i) }));
 

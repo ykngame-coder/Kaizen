@@ -39,6 +39,8 @@ export interface PredictionOptions {
   /** Acute:chronic workload ratio from the Load Engine, if available. */
   acwr?: number | null;
   windowDays?: number;
+  /** Objectif de sommeil de l utilisateur, en heures décimales. */
+  sleepGoalHours?: number;
 }
 
 function riskFromScore(score: number): FatigueRisk {
@@ -65,6 +67,7 @@ export function predictNextDayEnergy(
   options: PredictionOptions = {},
 ): SleepPredictionResult {
   const windowDays = options.windowDays ?? 7;
+  const goalHours = options.sleepGoalHours;
   const recovery = computeRecoveryScore(metrics, asOf);
   if (recovery.confidence === 'to_confirm') {
     return { value: null, confidence: 'to_confirm', sourcesUsed: ['supotsu'], generatedAt: asOf };
@@ -73,7 +76,7 @@ export function predictNextDayEnergy(
   const drivers: I18nText[] = [];
   let score = recovery.value;
 
-  const { debt } = sleepDebtHours(metrics, asOf, windowDays);
+  const { debt } = sleepDebtHours(metrics, asOf, windowDays, goalHours);
   if (debt > 0) {
     const penalty = Math.min(DEBT_PENALTY_CAP, debt * DEBT_PENALTY_PER_HOUR);
     score -= penalty;

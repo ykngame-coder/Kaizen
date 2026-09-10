@@ -26,6 +26,8 @@ export interface RecommendationInput {
   asOf: ISODateString;
   /** Optional — improves the sleep-quality component of Score 2.0 when available. */
   sleepSessions?: SleepSession[];
+  /** The user's own sleep target, in decimal hours. */
+  sleepGoalHours?: number;
 }
 
 /**
@@ -39,7 +41,7 @@ export function buildRecommendations(input: RecommendationInput): PrioritizedRec
 
   const acwr = computeAcwr(activities, asOf);
   const recovery = computeRecoveryScore(healthMetrics, asOf);
-  const sleep = computeSleepScore2(healthMetrics, asOf, 7, sleepSessions);
+  const sleep = computeSleepScore2(healthMetrics, asOf, 7, sleepSessions, input.sleepGoalHours);
   const wellness = computeWellnessIndex(wellnessCheckins, asOf);
 
   // 1 — Injury risk from a training-load spike (safety first).

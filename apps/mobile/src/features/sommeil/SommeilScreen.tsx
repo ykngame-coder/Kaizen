@@ -384,6 +384,7 @@ export function SommeilScreen(): React.JSX.Element {
   // instant qu'on pouvait confondre avec un « maintenant » ou un horodatage :
   // chaque usage doit dire lequel des trois il veut.
   const asOf = selectedDate.endOfDay;
+  const goalHours = preferences.sleepGoalHours;
 
   const qc = useQueryClient();
   const syncHealth = useManualHealthKitSync();
@@ -399,8 +400,8 @@ export function SommeilScreen(): React.JSX.Element {
   // l'autre pendant que le score, lui, changeait.
   const lastSession = sessionForDay(sessions, asOf);
   const score = useMemo(
-    () => computeSleepScore2(metrics, asOf, 7, sessions),
-    [metrics, asOf, sessions],
+    () => computeSleepScore2(metrics, asOf, 7, sessions, goalHours),
+    [metrics, asOf, sessions, goalHours],
   );
   const { data: leaderboardPrefs } = useLeaderboardPrefs();
   const recordDailyScore = useRecordDailyScore();
@@ -412,7 +413,7 @@ export function SommeilScreen(): React.JSX.Element {
     if (!Number.isFinite(score.value)) return;
     recordDailyScore.mutate({ column: 'sleep', value: Math.round(score.value) });
   }, [leaderboardPrefs?.leaderboardOptIn, asOf, score.confidence, score.value]);
-  const trend = useMemo(() => sleepTrend(metrics, asOf, 7), [metrics, asOf]);
+  const trend = useMemo(() => sleepTrend(metrics, asOf, 7, goalHours), [metrics, asOf, goalHours]);
   const chrono = useMemo(() => [...trend].sort((a, b) => a.date.localeCompare(b.date)), [trend]);
   const chronoMax = Math.max(1, ...chrono.map((n) => n.hours));
   const avg = useMemo(() => averageSleepHours(metrics, asOf, 7), [metrics, asOf]);
@@ -424,10 +425,10 @@ export function SommeilScreen(): React.JSX.Element {
     const points: number[] = [];
     for (let i = DEBT_TREND_DAYS - 1; i >= 0; i -= 1) {
       const dayIso = new Date(new Date(asOf).getTime() - i * DAY_MS).toISOString();
-      points.push(sleepDebtHours(metrics, dayIso, 30).debt);
+      points.push(sleepDebtHours(metrics, dayIso, 30, goalHours).debt);
     }
     return points;
-  }, [metrics, asOf]);
+  }, [metrics, asOf, goalHours]);
   const debtStats = useMemo(() => {
     if (debtSeries.length < 2) return null;
     return {

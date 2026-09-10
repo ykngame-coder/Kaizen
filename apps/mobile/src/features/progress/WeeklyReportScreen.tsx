@@ -4,11 +4,12 @@ import { useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { Button, Card, Icon, ProgressRing, Screen, Sparkline, Text, useTheme } from '@supotsu/ui';
 import { radii, spacing } from '@supotsu/design-system';
-import { averageSleepHours, computeRecoveryScore, recoveryBand, sleepTrend, sumDay } from '@supotsu/engines';
+import { averageSleepHours, computeRecoveryScore, recoveryBand, sleepTrend, sumDay, formatGoalHours } from '@supotsu/engines';
 import { useActivities, useHabitLogs, useHabits, useHealthMetrics, useNutritionEntries, useRecords } from '@/lib/data/queries';
 import { useAuth } from '@/features/auth/AuthProvider';
 import { createDataRepository, exportUserData } from '@/lib/data/repository';
 import { formatDate } from '@/lib/format';
+import { usePreferences } from '@/lib/preferences';
 
 const DAY_MS = 86_400_000;
 const dayKey = (d: Date): string => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
@@ -44,6 +45,7 @@ function KV({ label, value, color, last }: { label: string; value: string; color
 
 /** Rapport hebdomadaire (mockup #20) — real 7-day aggregates, daily breakdowns, plan. */
 export function WeeklyReportScreen(): React.JSX.Element {
+  const { preferences } = usePreferences();
   const { t } = useTranslation();
   const router = useRouter();
   const { colors } = useTheme();
@@ -85,7 +87,7 @@ export function WeeklyReportScreen(): React.JSX.Element {
       labels.push(D_SHORT[d.getDay()]!);
       const rec = computeRecoveryScore(health, d.toISOString());
       recByDay.push(rec.confidence !== 'to_confirm' ? rec.value : null);
-      const nights = sleepTrend(health, d.toISOString(), 1);
+      const nights = sleepTrend(health, d.toISOString(), 1, preferences.sleepGoalHours);
       sleepByDay.push(nights.at(-1)?.hours ?? null);
       kcalByDay.push(sumDay(nutrition, d.toISOString()).kcal);
     }
@@ -118,7 +120,7 @@ export function WeeklyReportScreen(): React.JSX.Element {
     // Objectives (derived, real)
     const objectives = [
       { label: t('sport.progress.weeklyReport.objectives.activity.label'), sub: t('sport.progress.weeklyReport.objectives.activity.sub', { count: acts.length }), ok: acts.length >= 3, val: `${acts.length}/3` },
-      { label: t('sport.progress.weeklyReport.objectives.sleep.label'), sub: avgSleep ? t('sport.progress.weeklyReport.objectives.sleep.sub', { hours: avgSleep.toFixed(1) }) : t('sport.progress.weeklyReport.objectives.noData'), ok: !!avgSleep && avgSleep >= 7.75, val: avgSleep ? `${Math.round((avgSleep / 7.75) * 100)} %` : '—' },
+      { label: t('sport.progress.weeklyReport.objectives.sleep.label', { goal: formatGoalHours(preferences.sleepGoalHours) }), sub: avgSleep ? t('sport.progress.weeklyReport.objectives.sleep.sub', { hours: avgSleep.toFixed(1) }) : t('sport.progress.weeklyReport.objectives.noData'), ok: !!avgSleep && avgSleep >= preferences.sleepGoalHours, val: avgSleep ? `${Math.round((avgSleep / preferences.sleepGoalHours) * 100)} %` : '—' },
       { label: t('sport.progress.weeklyReport.objectives.recovery.label'), sub: avgRec != null ? t('sport.progress.weeklyReport.objectives.recovery.sub', { value: avgRec }) : t('sport.progress.weeklyReport.objectives.noData'), ok: avgRec != null && avgRec >= 70, val: avgRec != null ? `${avgRec}` : '—' },
       { label: t('sport.progress.weeklyReport.objectives.habits.label'), sub: t('sport.progress.weeklyReport.objectives.habits.sub', { count: validated }), ok: target > 0 && validated >= target * 0.7, val: target > 0 ? `${Math.round((validated / target) * 100)} %` : '—' },
     ];
@@ -275,7 +277,7 @@ export function WeeklyReportScreen(): React.JSX.Element {
         <SectionTitle>{t('sport.progress.weeklyReport.planHeading')}</SectionTitle>
         {[
           { i: '🏋️', txt: t('sport.progress.weeklyReport.plan.sessions', { count: Math.max(3, r.sessions) }) },
-          { i: '😴', txt: r.avgSleep && r.avgSleep < 7.75 ? t('sport.progress.weeklyReport.plan.sleepTarget') : t('sport.progress.weeklyReport.plan.sleepMaintain') },
+          { i: '😴', txt: r.avgSleep && r.avgSleep < preferences.sleepGoalHours ? t('sport.progress.weeklyReport.plan.sleepTarget', { goal: formatGoalHours(preferences.sleepGoalHours) }) : t('sport.progress.weeklyReport.plan.sleepMaintain') },
           { i: '💧', txt: t('sport.progress.weeklyReport.plan.hydration') },
           { i: '🧘', txt: t('sport.progress.weeklyReport.plan.mobility') },
         ].map((p, i) => (

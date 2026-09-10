@@ -1408,7 +1408,7 @@
       "sub": "{{count}} treino(s)"
      },
      "sleep": {
-      "label": "Sono ≥ 7h45",
+      "label": "Sono ≥ {{goal}}",
       "sub": "{{hours}}h em média"
      },
      "recovery": {
@@ -1422,7 +1422,7 @@
     },
     "plan": {
      "sessions": "{{count}} treinos",
-     "sleepTarget": "Buscar 7h45 de sono",
+     "sleepTarget": "Visar {{goal}} de sono",
      "sleepMaintain": "Manter seu ritmo de sono",
      "hydration": "Manter-se acima da sua meta de hidratação",
      "mobility": "Adicionar um treino de mobilidade"
@@ -2858,7 +2858,7 @@
      "pending": "Concluir {{count}} hábito(s)"
     },
     "sleep": {
-     "value": "Sono {{duration}} (meta 7 h 45)",
+     "value": "Sono {{duration}} (objetivo {{goal}})",
      "record": "Registre sua noite"
     },
     "title": "Prioridades do dia"
@@ -3187,7 +3187,13 @@
      "label": "Meta diária de passos",
      "suggestion": "A tua média: {{steps}} passos — usar como objetivo?"
     },
-    "haptics": "Retorno háptico"
+    "haptics": "Retorno háptico",
+    "sleepGoal": {
+     "label": "Objetivo de sono",
+     "hint": "Alimenta a pontuação de duração, a dívida e o ritmo circadiano.",
+     "less": "Reduzir o objetivo",
+     "more": "Aumentar o objetivo"
+    }
    },
    "dangerZone": {
     "deleteError": "Não foi possível excluir.",

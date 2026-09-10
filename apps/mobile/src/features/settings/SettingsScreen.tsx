@@ -4,7 +4,7 @@ import { useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { Badge, Button, Card, Icon, Input, ListRow, Screen, SegmentedControl, Text, Toggle, useTheme } from '@supotsu/ui';
 import { spacing } from '@supotsu/design-system';
-import { computeStepsBaseline } from '@supotsu/engines';
+import { computeStepsBaseline, formatGoalHours } from '@supotsu/engines';
 import { useAuth } from '@/features/auth/AuthProvider';
 import { usePreferences, type LanguagePreference, type TimeFormat, type UnitSystem } from '@/lib/preferences';
 import { createDataRepository, exportUserData } from '@/lib/data/repository';
@@ -172,6 +172,30 @@ export function SettingsScreen(): React.JSX.Element {
         <SegmentedControl options={TIME_OPTIONS} value={preferences.timeFormat} onChange={(v) => setPreference('timeFormat', v)} />
         <Text variant="body" style={{ fontWeight: '600', marginTop: spacing[4], marginBottom: spacing[2] }}>{t('settings.screen.preferences.languageLabel')}</Text>
         <SegmentedControl vertical options={LANGUAGE_OPTIONS} value={preferences.language} onChange={(v) => setPreference('language', v)} />
+        {/* Objectif de sommeil : la cible affichée est celle qui sert au score
+            et à la dette. Pas de 15 min, bornes 6 h–10 h. */}
+        <Text variant="body" style={{ fontWeight: '600', marginTop: spacing[4], marginBottom: spacing[2] }}>{t('settings.screen.preferences.sleepGoal.label')}</Text>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing[3] }}>
+          <Pressable
+            onPress={() => setPreference('sleepGoalHours', Math.max(6, Number((preferences.sleepGoalHours - 0.25).toFixed(2))))}
+            hitSlop={10}
+            accessibilityLabel={t('settings.screen.preferences.sleepGoal.less')}
+            style={({ pressed }) => ({ opacity: pressed ? 0.5 : 1, paddingHorizontal: spacing[3], paddingVertical: spacing[2] })}
+          >
+            <Text variant="heading">−</Text>
+          </Pressable>
+          <Text variant="subtitle" style={{ minWidth: 90, textAlign: 'center' }}>{formatGoalHours(preferences.sleepGoalHours)}</Text>
+          <Pressable
+            onPress={() => setPreference('sleepGoalHours', Math.min(10, Number((preferences.sleepGoalHours + 0.25).toFixed(2))))}
+            hitSlop={10}
+            accessibilityLabel={t('settings.screen.preferences.sleepGoal.more')}
+            style={({ pressed }) => ({ opacity: pressed ? 0.5 : 1, paddingHorizontal: spacing[3], paddingVertical: spacing[2] })}
+          >
+            <Text variant="heading">+</Text>
+          </Pressable>
+        </View>
+        <Text variant="caption" color="textSubtle" style={{ marginTop: spacing[1] }}>{t('settings.screen.preferences.sleepGoal.hint')}</Text>
+
         <Text variant="body" style={{ fontWeight: '600', marginTop: spacing[4], marginBottom: spacing[2] }}>{t('settings.screen.preferences.dailyStepsGoal.label')}</Text>
         <Input
           value={String(preferences.dailyStepsGoal)}

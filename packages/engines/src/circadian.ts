@@ -65,6 +65,8 @@ export interface CircadianOptions {
   /** Minutes to add to UTC to get the user's local time (e.g. +120 for UTC+2). */
   tzOffsetMinutes?: number;
   windowDays?: number;
+  /** Objectif de sommeil de l'utilisateur, en heures décimales. Défaut : la constante. */
+  goalHours?: number;
 }
 
 const clampMin = (m: number): number => ((Math.round(m) % 1440) + 1440) % 1440;
@@ -215,6 +217,7 @@ export function computeCircadianProfile(
 ): CircadianResult {
   const tz = options.tzOffsetMinutes ?? 0;
   const windowDays = options.windowDays ?? 30;
+  const goalHours = options.goalHours ?? SLEEP_TARGET_HOURS;
   const nights = nightsInWindow(metrics, asOf, windowDays, tz);
 
   if (nights.length < MIN_NIGHTS) {
@@ -227,7 +230,7 @@ export function computeCircadianProfile(
 
   // Keep the habitual wake; back out a bedtime that hits the sleep target.
   const idealWakeMin = habitualWakeMin;
-  const idealBedMin = clampMin(idealWakeMin - SLEEP_TARGET_HOURS * 60);
+  const idealBedMin = clampMin(idealWakeMin - goalHours * 60);
 
   const weekMid = circularMeanMin(nights.filter((n) => !n.weekend).map((n) => n.midMin));
   const endMid = circularMeanMin(nights.filter((n) => n.weekend).map((n) => n.midMin));
@@ -268,7 +271,7 @@ const CHRONOTYPE_OBSERVATION_KEY: Record<Chronotype, string> = {
 };
 
 /** Explainable headline for the circadian profile (Observation → Analyse → Action). */
-export function circadianExplanation(profile: CircadianProfile): Explanation {
+export function circadianExplanation(profile: CircadianProfile, goalHours: number = SLEEP_TARGET_HOURS): Explanation {
   return {
     observation: {
       key: CHRONOTYPE_OBSERVATION_KEY[profile.chronotype],
@@ -280,7 +283,7 @@ export function circadianExplanation(profile: CircadianProfile): Explanation {
         : { key: 'engines.circadian.profile.analysis.nights', params: { nights: profile.nights } },
     action: {
       key: 'engines.circadian.profile.action',
-      params: { hours: SLEEP_TARGET_HOURS, bedtime: profile.idealBedtime, wake: profile.idealWake },
+      params: { hours: goalHours, bedtime: profile.idealBedtime, wake: profile.idealWake },
     },
   };
 }

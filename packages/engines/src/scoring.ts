@@ -474,6 +474,8 @@ export interface DailySnapshotExtras {
   strengthVolume?: StrengthVolumePoint[];
   /** The user's own daily step target (Réglages) — defaults to 10 000, the app-wide default. */
   dailyStepsGoal?: number;
+  /** The user's own sleep target, in decimal hours — defaults to SLEEP_TARGET_HOURS. */
+  sleepGoalHours?: number;
 }
 
 /**
@@ -504,7 +506,7 @@ export function buildDailySnapshot(
   const sport = hasSport ? sportResult.value : null;
   const sportBreakdown = hasSport ? sportResult.breakdown : null;
 
-  const sleepResult = computeSleepScore2(healthMetrics, asOf, 7, extras.sleepSessions);
+  const sleepResult = computeSleepScore2(healthMetrics, asOf, 7, extras.sleepSessions, extras.sleepGoalHours)
   const hasSleep = sleepResult.confidence !== 'to_confirm';
   const sleep = hasSleep ? sleepResult.value : null;
 

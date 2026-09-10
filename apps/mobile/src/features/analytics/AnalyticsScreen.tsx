@@ -24,6 +24,7 @@ import { useActivities, useHealthMetrics, useNutritionEntries, useRecords, useWe
 import { useAuth } from '@/features/auth/AuthProvider';
 import { createDataRepository, exportUserData } from '@/lib/data/repository';
 import { formatDate } from '@/lib/format';
+import { usePreferences } from '@/lib/preferences';
 
 const DAY_MS = 86_400_000;
 type PeriodKey = (typeof ANALYTICS_PERIODS)[number]['key'];
@@ -57,6 +58,7 @@ function Kpi({ label, value, unit, color }: { label: string; value: string; unit
 /** Statistiques (mockup #13) — KPIs, evolution, distribution, load, correlations, records, heatmap, compare, export. */
 export function AnalyticsScreen(): React.JSX.Element {
   const { t } = useTranslation();
+  const { preferences } = usePreferences();
   const router = useRouter();
   const { colors } = useTheme();
   const { user } = useAuth();
@@ -168,7 +170,7 @@ export function AnalyticsScreen(): React.JSX.Element {
       const vals = metrics.filter((m) => m.type === type && new Date(m.measuredAt).getTime() >= now.getTime() - a * DAY_MS && new Date(m.measuredAt).getTime() < now.getTime() - b * DAY_MS).map((m) => m.value);
       return vals.length ? mean(vals) : null;
     };
-    const nights = sleepTrend(metrics, asOf, 60);
+    const nights = sleepTrend(metrics, asOf, 60, preferences.sleepGoalHours);
     const sleepNow = mean(nights.filter((n) => new Date(n.date).getTime() >= now.getTime() - 30 * DAY_MS).map((n) => n.hours));
     const sleepPrev = mean(nights.filter((n) => new Date(n.date).getTime() < now.getTime() - 30 * DAY_MS).map((n) => n.hours));
     return {

@@ -81,7 +81,7 @@ export function CalendarScreen(): React.JSX.Element {
   const recovery = useMemo(() => computeRecoveryScore(health, asOf), [health, asOf]);
   const acwr = useMemo(() => computeAcwr(activities, asOf), [activities, asOf]);
   const todayActs = activities.filter((a) => dayKey(new Date(a.startedAt)) === dayKey(now));
-  const lastNight = sleepTrend(health, asOf, 1).at(-1);
+  const lastNight = sleepTrend(health, asOf, 1, preferences.sleepGoalHours).at(-1);
   const todayKcal = sumDay(nutrition, asOf).kcal;
 
   const grid = useMemo(() => {
