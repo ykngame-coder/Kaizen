@@ -16,7 +16,12 @@ import type { EngineResult } from './result';
  */
 
 const DAY_MS = 86_400_000;
-const dayKey = (iso: ISODateString): string => iso.slice(0, 10);
+const dayKey = (iso: ISODateString): string => {
+  // Jour civil LOCAL. `iso.slice(0, 10)` donnait le jour UTC, qui décale d'un
+  // jour sur tout fuseau à décalage négatif — et après minuit chez nous.
+  const d = new Date(iso);
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+};
 const startOfDayUTC = (iso: ISODateString): number => {
   const d = new Date(iso);
   return Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate());

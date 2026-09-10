@@ -12,7 +12,9 @@ const DAY_MS = 86_400_000;
 
 /** Local calendar day key (YYYY-MM-DD) for a timestamp. */
 function dayKey(iso: ISODateString): string {
-  return iso.slice(0, 10);
+  // Jour civil LOCAL — voir gamification.ts, même correction.
+  const d = new Date(iso);
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 }
 
 /** Map a 1–5 rating to 0–100 (1 ⇒ 0, 5 ⇒ 100). */

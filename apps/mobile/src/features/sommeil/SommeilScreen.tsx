@@ -380,7 +380,10 @@ export function SommeilScreen(): React.JSX.Element {
   const { data: sessions = [] } = useSleepSessions();
   const { data: checkins = [] } = useWellnessCheckins();
   const [selectedDate, setSelectedDate] = useSelectedDay();
-  const asOf = selectedDate;
+  // Borne SUPÉRIEURE explicite du jour consulté. Le sélecteur ne rend plus un
+  // instant qu'on pouvait confondre avec un « maintenant » ou un horodatage :
+  // chaque usage doit dire lequel des trois il veut.
+  const asOf = selectedDate.endOfDay;
 
   const qc = useQueryClient();
   const syncHealth = useManualHealthKitSync();

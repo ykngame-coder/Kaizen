@@ -30,10 +30,6 @@ import { resolveNutritionCardOrder } from './nutritionCards';
 import { sumMealMacros } from './mealMacroTotals';
 
 const DAY_MS = 86_400_000;
-const dayKey = (iso: string): string => {
-  const d = new Date(iso);
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
-};
 
 function latestMetric(m: { type: HealthMetricType; value: number; measuredAt: string }[], type: HealthMetricType): number | undefined {
   return m.filter((x) => x.type === type).sort((a, b) => a.measuredAt.localeCompare(b.measuredAt)).at(-1)?.value;
@@ -155,7 +151,10 @@ export function NutritionScreen(): React.JSX.Element {
   const { data: health = [] } = useHealthMetrics();
   const addEntry = useAddNutritionEntry();
   const [selectedDate, setSelectedDate] = useSelectedDay();
-  const asOf = selectedDate;
+  // Borne SUPÉRIEURE explicite du jour consulté. Le sélecteur ne rend plus un
+  // instant qu'on pouvait confondre avec un « maintenant » ou un horodatage :
+  // chaque usage doit dire lequel des trois il veut.
+  const asOf = selectedDate.endOfDay;
 
   const qc = useQueryClient();
   const syncHealth = useManualHealthKitSync();
@@ -344,13 +343,13 @@ export function NutritionScreen(): React.JSX.Element {
                 ) : null}
               </View>
               <Pressable
-                onPress={() => router.push({ pathname: '/nutrition/meal/day', params: { type: m.type, date: dayKey(selectedDate) } })}
+                onPress={() => router.push({ pathname: '/nutrition/meal/day', params: { type: m.type, date: selectedDate.key } })}
                 style={({ pressed }) => ({ flexDirection: 'row', alignItems: 'center', gap: spacing[3], paddingVertical: spacing[2], opacity: pressed ? 0.6 : 1 })}
               >
                 <View style={{ width: 40, height: 40, borderRadius: 12, backgroundColor: colors.surfaceElevated, alignItems: 'center', justifyContent: 'center' }}><Icon name={MEAL_ICON[m.type] ?? 'bowl'} size={19} color={colors.text} /></View>
                 <Text variant="body" color={m.count > 0 ? 'text' : 'textSubtle'} style={{ flex: 1 }} numberOfLines={1}>{summary}</Text>
                 <Pressable
-                  onPress={() => router.push({ pathname: '/nutrition/meal/new', params: { date: dayKey(selectedDate), mealType: m.type } })}
+                  onPress={() => router.push({ pathname: '/nutrition/meal/new', params: { date: selectedDate.key, mealType: m.type } })}
                   accessibilityLabel={t('nutrition.mealDay.addButton')}
                   hitSlop={8}
                   style={{ width: 28, height: 28, borderRadius: 14, backgroundColor: colors.surfaceElevated, alignItems: 'center', justifyContent: 'center' }}
@@ -366,7 +365,7 @@ export function NutritionScreen(): React.JSX.Element {
             <Button label={t('nutrition.screen.meals.searchFood')} onPress={() => router.push('/nutrition/food/search')} fullWidth />
           </View>
           <View style={{ flex: 1 }}>
-            <Button label={t('nutrition.screen.meals.manualEntry')} variant="secondary" onPress={() => router.push({ pathname: '/nutrition/meal/new', params: { date: dayKey(selectedDate) } })} fullWidth />
+            <Button label={t('nutrition.screen.meals.manualEntry')} variant="secondary" onPress={() => router.push({ pathname: '/nutrition/meal/new', params: { date: selectedDate.key } })} fullWidth />
           </View>
         </View>
       </Card>
@@ -510,7 +509,7 @@ export function NutritionScreen(): React.JSX.Element {
           <React.Fragment key={c.id}>{cardNodes[c.id]}</React.Fragment>
         ))}
       </Screen>
-      <Fab icon="+" accessibilityLabel={t('nutrition.screen.fab.addFood')} onPress={() => router.push({ pathname: '/nutrition/meal/new', params: { date: dayKey(selectedDate) } })} />
+      <Fab icon="+" accessibilityLabel={t('nutrition.screen.fab.addFood')} onPress={() => router.push({ pathname: '/nutrition/meal/new', params: { date: selectedDate.key } })} />
     </View>
   );
 }

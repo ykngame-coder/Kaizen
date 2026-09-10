@@ -7,27 +7,15 @@ import { radii, spacing } from '@supotsu/design-system';
 import type { Habit, HealthMetricType } from '@supotsu/core';
 import { estimateTargets, sumDay } from '@supotsu/engines';
 import { BackButton } from '@/features/navigation/BackButton';
-import { DayNav, useSelectedDay } from '@/features/navigation/DayNav';
+import { DayNav } from '@/features/navigation/DayNav';
+import { dayKeyOf, useSelectedDay } from '@/features/navigation/day';
 import { useActivities, useHabitLogs, useHabits, useHealthMetrics, useLogHabit, useNutritionEntries, useUnlogHabit, useWorkouts } from '@/lib/data/queries';
 import { usePreferences } from '@/lib/preferences';
 import { GoalsSection } from '@/features/goals/GoalsSection';
 import { claimAutoLog, linkedKindFor, type LinkedKind } from './linkedHabits';
 
 const DAY_MS = 86_400_000;
-const dayKey = (d: Date): string => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 
-/**
- * Midi local du jour consulté, en ISO. Le sélecteur de jour porte 23:59:59.999
- * en heure locale — l'instant le plus fragile qui soit : un décalage d'une
- * heure (heure d'été, fuseau réinterprété) le bascule au lendemain, et la
- * coche se retrouve sur le mauvais jour. Midi ne bouge de jour sous aucun
- * décalage réaliste.
- */
-function noonOf(iso: string): string | null {
-  const d = new Date(iso);
-  if (Number.isNaN(d.getTime())) return null;
-  return new Date(d.getFullYear(), d.getMonth(), d.getDate(), 12, 0, 0, 0).toISOString();
-}
 
 // 'habits' (the default pillar) and 'performance' have no thematic icon of
 // their own, so both fell back to the same '✅' checkmark — which reads as
@@ -55,8 +43,8 @@ function latestMetric(m: { type: HealthMetricType; value: number; measuredAt: st
 function streakOf(days: Set<string>, now: Date): number {
   let streak = 0;
   const cursor = new Date(now);
-  if (!days.has(dayKey(cursor))) cursor.setDate(cursor.getDate() - 1);
-  while (days.has(dayKey(cursor))) {
+  if (!days.has(dayKeyOf(cursor))) cursor.setDate(cursor.getDate() - 1);
+  while (days.has(dayKeyOf(cursor))) {
     streak += 1;
     cursor.setDate(cursor.getDate() - 1);
   }
@@ -109,9 +97,9 @@ export function HabitsScreen(): React.JSX.Element {
   // log/unlog used to fail silently, which reads as "le clic ne fait rien".
   const [pendingHabitId, setPendingHabitId] = useState<string | null>(null);
   const now = new Date();
-  const todayK = dayKey(now);
-  const viewedK = dayKey(new Date(selectedDate));
-  const isToday = viewedK === todayK;
+  const todayK = dayKeyOf(now);
+  const viewedK = selectedDate.key;
+  const isToday = selectedDate.isToday;
 
   // Filet de sécurité : quelle que soit la cause, la roue ne doit jamais
   // rester allumée — sinon `disabled` rend la case définitivement inutilisable.
@@ -134,7 +122,7 @@ export function HabitsScreen(): React.JSX.Element {
     const counts = new Map<string, number>();
     const latest = new Map<string, { id: string; completedAt: string }>();
     for (const l of logs) {
-      const k = dayKey(new Date(l.completedAt));
+      const k = dayKeyOf(new Date(l.completedAt));
       if (!day.has(k)) day.set(k, new Set());
       day.get(k)!.add(l.habitId);
       if (!perHabit.has(l.habitId)) perHabit.set(l.habitId, new Set());
@@ -161,19 +149,19 @@ export function HabitsScreen(): React.JSX.Element {
   // Une pesée saisie à la main OU importée d'Apple Santé pour aujourd'hui
   // valide l'habitude toute seule — même principe que les pas et les séances.
   const weighedToday = useMemo(
-    () => health.some((m) => m.type === 'weight' && dayKey(new Date(m.measuredAt)) === todayK),
+    () => health.some((m) => m.type === 'weight' && dayKeyOf(new Date(m.measuredAt)) === todayK),
     [health, todayK],
   );
   const stepsToday = useMemo(() => {
-    const todays = health.filter((m) => m.type === 'steps' && dayKey(new Date(m.measuredAt)) === todayK);
+    const todays = health.filter((m) => m.type === 'steps' && dayKeyOf(new Date(m.measuredAt)) === todayK);
     return [...todays].sort((a, b) => a.measuredAt.localeCompare(b.measuredAt)).at(-1)?.value ?? 0;
   }, [health, todayK]);
   // A completed strength/circuit session OR any imported activity (Apple
   // Santé/Garmin cardio included) counts as "séance faite" for today.
   const workoutDoneToday = useMemo(() => {
-    const structured = workouts.some((w) => w.status === 'completed' && w.completedAt && dayKey(new Date(w.completedAt)) === todayK);
+    const structured = workouts.some((w) => w.status === 'completed' && w.completedAt && dayKeyOf(new Date(w.completedAt)) === todayK);
     if (structured) return true;
-    return activities.some((a) => dayKey(new Date(a.startedAt)) === todayK);
+    return activities.some((a) => dayKeyOf(new Date(a.startedAt)) === todayK);
   }, [workouts, activities, todayK]);
 
   const liveProgress = (kind: LinkedKind): { value: number; target: number } => {
@@ -243,9 +231,9 @@ export function HabitsScreen(): React.JSX.Element {
   const cal = useMemo(() => {
     return Array.from({ length: 30 }, (_, i) => {
       const d = new Date(now.getTime() - (29 - i) * DAY_MS);
-      const done = byDay.get(dayKey(d))?.size ?? 0;
+      const done = byDay.get(dayKeyOf(d))?.size ?? 0;
       const frac = done / denom;
-      return { frac, isToday: dayKey(d) === todayK };
+      return { frac, isToday: dayKeyOf(d) === todayK };
     });
   }, [byDay, denom, now, todayK]);
 
@@ -387,15 +375,10 @@ export function HabitsScreen(): React.JSX.Element {
                             // jamais appelé, donc ni onSettled ni onError ne
                             // se déclenchaient, et `disabled` bloquait la case
                             // définitivement.
-                            let completedAt: string | undefined;
-                            if (!isToday) {
-                              const at = noonOf(selectedDate);
-                              if (!at) {
-                                onError(new Error('Invalid selected day'));
-                                return;
-                              }
-                              completedAt = at;
-                            }
+                            // Midi local du jour consulté : le sélecteur le
+                            // fournit désormais, plus besoin de le recalculer
+                            // depuis un instant de fin de journée.
+                            const completedAt = isToday ? undefined : selectedDate.noon;
                             setPendingHabitId(h.id);
                             logHabit.mutate({ habitId: h.id, completedAt }, { onSettled: settle, onError });
                           }

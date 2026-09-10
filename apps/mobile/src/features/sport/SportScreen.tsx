@@ -54,12 +54,6 @@ function fmtDur(sec: number, t: TFunction): string {
 }
 
 /** "Aujourd'hui" / "Lun. 12 août" — the planned session always falls on the selected day. */
-/** Jour LOCAL au format AAAA-MM-JJ. `.slice(0, 10)` donnerait la date UTC, qui
- *  bascule d'un jour dès que le sélecteur porte sa fin de journée. */
-const localDayKey = (iso: string): string => {
-  const d = new Date(iso);
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
-};
 
 function planLabel(plannedFor: string | undefined, todayKey: string, t: TFunction): string {
   if (!plannedFor) return t('sport.screen.planLabel.tbd');
@@ -117,7 +111,10 @@ export function SportScreen(): React.JSX.Element {
   const { data: muscleSessions = [] } = useMuscleSessions();
   const { data: planned = [] } = usePlannedWorkouts();
   const [selectedDate, setSelectedDate] = useSelectedDay();
-  const asOf = selectedDate;
+  // Borne SUPÉRIEURE explicite du jour consulté. Le sélecteur ne rend plus un
+  // instant qu'on pouvait confondre avec un « maintenant » ou un horodatage :
+  // chaque usage doit dire lequel des trois il veut.
+  const asOf = selectedDate.endOfDay;
   const { preferences } = usePreferences();
   const cardOrder = useMemo(() => resolveSportCardOrder(preferences.sportCards), [preferences.sportCards]);
 
@@ -127,7 +124,7 @@ export function SportScreen(): React.JSX.Element {
   const onRefresh = async (): Promise<void> => { setRefreshing(true); await syncHealth(); await qc.invalidateQueries(); setRefreshing(false); };
 
   const todayKey = new Date().toISOString().slice(0, 10);
-  const selectedDayKey = selectedDate.slice(0, 10);
+  const selectedDayKey = selectedDate.key;
 
   const plannedToday = useMemo(
     () => [...planned]
@@ -372,7 +369,7 @@ export function SportScreen(): React.JSX.Element {
                       constructeur vierge, sans chemin vers la bibliothèque. */}
                   {!plannedToday ? (
                     <Pressable
-                      onPress={() => router.push({ pathname: '/sport/planning', params: { date: localDayKey(selectedDate) } })}
+                      onPress={() => router.push({ pathname: '/sport/planning', params: { date: selectedDate.key } })}
                       style={({ pressed }) => ({ marginTop: spacing[2], height: 46, borderRadius: radii.xl, borderWidth: 1, borderColor: colors.border, alignItems: 'center', justifyContent: 'center', transform: [{ scale: pressed ? 0.98 : 1 }] })}
                     >
                       <Text variant="body" style={{ fontWeight: '600' }}>{t('sport.screen.session.planSession')}</Text>
