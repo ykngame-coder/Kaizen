@@ -67,6 +67,11 @@ export async function listHabitLogs(client: SupotsuClient, userId: string): Prom
       .select('*')
       .eq('user_id', userId)
       .order('completed_at', { ascending: false })
+      // Clé secondaire indispensable : `completed_at` n'est pas unique, et sans
+      // départage l'ordre de deux lignes de même horodatage peut changer d'une
+      // page à l'autre — donc des lignes sautées ou vues deux fois au bord des
+      // pages, ce qui ruine la complétude promise (export RGPD, séries).
+      .order('id', { ascending: false })
       .range(from, from + PAGE - 1);
     if (error) throw error;
     rows.push(...(data ?? []));

@@ -10,7 +10,8 @@ import { nutritionEntryInputSchema, type NutritionEntryInput } from '@supotsu/sh
 import { useAddNutritionEntry, useNutritionEntries } from '@/lib/data/queries';
 import { formatDate } from '@/lib/format';
 import { DatePickerModal } from '@/features/navigation/DatePickerModal';
-import { numOrUndef, parseDecimal, scalePer100 } from './mealMacros';
+import { numOrUndef, scalePer100 } from './mealMacros';
+import { resolveMealEntry } from './resolveMealEntry';
 
 const dayKey = (d: Date): string => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 const todayKey = (): string => dayKey(new Date());
@@ -106,22 +107,19 @@ export function AddMealScreen(): React.JSX.Element {
 
   const submit = async (): Promise<void> => {
     setError(null);
-    // En mode /100 g, les valeurs enregistrées sont les totaux calculés ;
-    // `scalePer100` rend null tant que quantité et calories ne tiennent pas
-    // debout, ce qui déclenche le message d'erreur existant.
-    const macros =
-      entryMode === 'per100'
-        ? per100Totals
-        : {
-            kcal: parseDecimal(kcal),
-            proteinG: numOrUndef(proteinG),
-            carbG: numOrUndef(carbG),
-            fatG: numOrUndef(fatG),
-          };
-    if (!macros) {
+    // Même règle dans les deux modes : un aliment exige des calories saisies,
+    // une hydratation seule se suffit. Voir resolveMealEntry.
+    const resolved = resolveMealEntry(
+      entryMode,
+      { kcal: calcKcal, proteinG: calcProtein, carbG: calcCarb, fatG: calcFat, quantityG: calcQty },
+      { kcal, proteinG, carbG, fatG },
+      hydrationMl,
+    );
+    if (!resolved.ok) {
       setError(t('nutrition.addMeal.errors.invalid'));
       return;
     }
+    const macros = resolved.macros;
     const candidate = {
       mealType,
       description,

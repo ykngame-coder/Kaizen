@@ -123,7 +123,7 @@ export async function insertUserSession(
 }
 
 /**
- * Overwrite a session's name, visibility and whole block/exercise content.
+ * Overwrite a session's name, visibility, notes and whole block/exercise content.
  *
  * Replacement, not a merge: the editor hands back the complete session, and
  * reconciling row by row would buy nothing. Exercises are cleared by
@@ -131,28 +131,109 @@ export async function insertUserSession(
  * before block support has `block_id` null on every exercise, so dropping the
  * blocks alone would strand them and they would reappear alongside the new
  * ones.
+ *
+ * The replacement is several statements with no transaction between them, so a
+ * failure partway (quota, network, RLS) would leave the session emptied. The
+ * old content is therefore read back first and restored if anything downstream
+ * throws, so a failed edit leaves the session exactly as it was.
  */
 export async function updateUserSession(
   client: SupotsuClient,
   sessionId: string,
-  patch: { name: string; visibility: 'private' | 'public' },
+  patch: { name: string; visibility: 'private' | 'public'; notes?: string | null },
   blocks: SessionBlockWrite[],
 ): Promise<UserSessionRow> {
+  // Snapshot avant toute destruction — c'est ce qui permet de revenir en
+  // arrière si une insertion échoue à mi-chemin.
+  const previousBlocks = await listSessionBlocks(client, sessionId);
+  const previousExercises = await listSessionExercises(client, sessionId);
+  const previous = await getUserSession(client, sessionId);
+
   const { data, error } = await client
     .from('user_sessions')
-    .update({ name: patch.name, visibility: patch.visibility })
+    .update({ name: patch.name, visibility: patch.visibility, notes: patch.notes ?? null })
     .eq('id', sessionId)
     .select('*')
     .single();
   if (error) throw error;
 
-  const { error: exError } = await client.from('user_session_exercises').delete().eq('session_id', sessionId);
-  if (exError) throw exError;
-  const { error: blockError } = await client.from('user_session_blocks').delete().eq('session_id', sessionId);
-  if (blockError) throw blockError;
+  try {
+    const { error: exError } = await client.from('user_session_exercises').delete().eq('session_id', sessionId);
+    if (exError) throw exError;
+    const { error: blockError } = await client.from('user_session_blocks').delete().eq('session_id', sessionId);
+    if (blockError) throw blockError;
 
-  await writeSessionBlocks(client, sessionId, blocks);
+    await writeSessionBlocks(client, sessionId, blocks);
+  } catch (e) {
+    await restoreSessionContent(client, sessionId, previous, previousBlocks, previousExercises);
+    throw e;
+  }
   return data;
+}
+
+/**
+ * Put back a session's previous content after a failed replacement. Best
+ * effort: if the restore itself fails there is nothing further to try, and the
+ * original error — the one worth showing — must not be masked by this one.
+ */
+async function restoreSessionContent(
+  client: SupotsuClient,
+  sessionId: string,
+  previous: UserSessionRow | null,
+  blocks: UserSessionBlockRow[],
+  exercises: UserSessionExerciseRow[],
+): Promise<void> {
+  try {
+    await client.from('user_session_exercises').delete().eq('session_id', sessionId);
+    await client.from('user_session_blocks').delete().eq('session_id', sessionId);
+    if (previous) {
+      await client
+        .from('user_sessions')
+        .update({ name: previous.name, visibility: previous.visibility, notes: previous.notes })
+        .eq('id', sessionId);
+    }
+    for (const b of blocks) {
+      const { data: row } = await client
+        .from('user_session_blocks')
+        .insert({ session_id: sessionId, order: b.order, format: b.format, time_cap_sec: b.time_cap_sec, target_rounds: b.target_rounds, rest_sec: b.rest_sec })
+        .select('*')
+        .single();
+      if (!row) continue;
+      const its = exercises.filter((e) => e.block_id === b.id);
+      if (its.length > 0) {
+        await client.from('user_session_exercises').insert(
+          its.map((e) => ({
+            session_id: sessionId,
+            block_id: row.id,
+            exercise_id: e.exercise_id,
+            order: e.order,
+            reps: e.reps,
+            weight_kg: e.weight_kg,
+            duration_sec: e.duration_sec,
+            rest_sec: e.rest_sec,
+          })),
+        );
+      }
+    }
+    // Séance héritée : des exercices sans bloc, qu'il faut remettre tels quels.
+    const orphans = exercises.filter((e) => !e.block_id);
+    if (orphans.length > 0) {
+      await client.from('user_session_exercises').insert(
+        orphans.map((e) => ({
+          session_id: sessionId,
+          block_id: null,
+          exercise_id: e.exercise_id,
+          order: e.order,
+          reps: e.reps,
+          weight_kg: e.weight_kg,
+          duration_sec: e.duration_sec,
+          rest_sec: e.rest_sec,
+        })),
+      );
+    }
+  } catch {
+    /* voir le commentaire ci-dessus */
+  }
 }
 
 export async function updateUserSessionVisibility(

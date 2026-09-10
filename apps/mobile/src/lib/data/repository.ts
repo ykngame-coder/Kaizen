@@ -2584,7 +2584,7 @@ function createSupabaseRepository(
       const row = await updateUserSessionDb(
         client,
         sessionId,
-        { name: input.name, visibility: input.visibility },
+        { name: input.name, visibility: input.visibility, notes: input.notes ?? null },
         toSessionBlocksWrite(input),
       );
       return rowToUserSession(row);
