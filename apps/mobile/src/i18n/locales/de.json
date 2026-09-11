@@ -1629,7 +1629,15 @@
     "rest": "PAUSE",
     "current": "Diese Übung",
     "nextUp": "Als Nächstes"
-   }
+   },
+   "setDone": "Satz erledigt ✓",
+   "saveAndContinue": "Speichern & weiter",
+   "skipLogging": "Ohne Speichern weiter",
+   "skipRest": "Pause überspringen",
+   "restTag": "Pause",
+   "restContext": "{{total}}s Erholung",
+   "logContext": "Satz {{n}} erledigt",
+   "targetWeight": "Ziel: {{weight}} kg"
   },
   "progression": {
    "rationale": {

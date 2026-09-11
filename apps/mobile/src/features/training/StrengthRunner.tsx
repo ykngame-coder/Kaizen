@@ -1,16 +1,16 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { Pressable, ScrollView, TextInput, View } from 'react-native';
+import { Pressable, TextInput, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
-import { Button, Card, ProgressRing, Text, triggerHaptic, useTheme } from '@supotsu/ui';
+import { Text, triggerHaptic, useTheme } from '@supotsu/ui';
 import { radii, spacing } from '@supotsu/design-system';
 import type { SetEntry } from '@supotsu/core';
 import { computePlates } from '@supotsu/engines';
 import { EXERCISE_LIBRARY } from '@supotsu/shared';
 import { EXERCISES } from '@/features/exercises/catalog';
-import { useAddSetsToWorkout, useClearSetLog, useCustomExercises, useExerciseHistory, useLogSet } from '@/lib/data/queries';
+import { useAddSetsToWorkout, useCustomExercises, useExerciseHistory, useLogSet } from '@/lib/data/queries';
 import { usePreferences } from '@/lib/preferences';
 import { buildRunProgress, restRemainingSec, warmupProposal } from './runnerState';
-import { formatClock } from './blockRunnerEngine';
+import { RunnerFocus } from './RunnerFocus';
 
 const EFFORT_VALUES = [7, 8, 9, 10];
 
@@ -33,7 +33,6 @@ export function StrengthRunner({ workoutId, sets, onBlockFinished }: StrengthRun
   const { data: customExercises = [] } = useCustomExercises();
   const { data: history = {} } = useExerciseHistory();
   const logSet = useLogSet();
-  const clearSetLog = useClearSetLog();
   const addSets = useAddSetsToWorkout();
 
   const exerciseName = useMemo(() => {
@@ -53,11 +52,18 @@ export function StrengthRunner({ workoutId, sets, onBlockFinished }: StrengthRun
   const [repsDraft, setRepsDraft] = useState('');
   const [weightDraft, setWeightDraft] = useState('');
   const [effort, setEffort] = useState<number | undefined>(undefined);
+  /**
+   * Trois temps distincts, comme dans la référence : faire la série, puis
+   * l'enregistrer, puis récupérer. `validate()` faisait les trois d'un coup,
+   * avec la saisie noyée dans la ligne active.
+   */
+  const [phase, setPhase] = useState<'work' | 'log'>('work');
 
   useEffect(() => {
     setRepsDraft(activeSet?.reps != null ? String(activeSet.reps) : '');
     setWeightDraft(activeSet?.weightKg != null ? String(activeSet.weightKg) : '');
     setEffort(undefined);
+    setPhase('work');
   }, [activeSet?.id]);
 
   useEffect(() => {
@@ -151,208 +157,139 @@ export function StrengthRunner({ workoutId, sets, onBlockFinished }: StrengthRun
     return solution ? { ...solution, requestedKg: weight } : undefined;
   }, [weightDraft, activeSet?.weightKg, preferences.barWeightKg, preferences.availablePlates]);
 
-  return (
-    <View style={{ flex: 1, gap: spacing[3] }}>
-      <View>
-        <Text variant="heading">
-          {progress.activeExerciseId ? exerciseName(progress.activeExerciseId) : t('sport.runner.allDone')}
-        </Text>
-        {progress.activeExerciseId ? (
-          <Text variant="caption" color="textSubtle">
-            {t('sport.runner.setCounter', {
-              done: progress.activeSetIndexInExercise + 1,
-              total: progress.workingSetsInExercise,
-            })}
-          </Text>
-        ) : null}
-        {/* Ligne omise plutôt qu'un tiret quand l'exercice n'a pas d'historique. */}
-        {previous ? (
-          <Text variant="caption" color="textMuted" style={{ marginTop: 2 }}>
-            {t('sport.runner.previous', { weight: previous.weightKg, reps: previous.reps })}
-          </Text>
-        ) : null}
-      </View>
+  const isResting = restEndsAtMs !== undefined && restLeft > 0;
+  const setLabel = t('sport.runner.setCounter', {
+    done: progress.activeSetIndexInExercise + 1,
+    total: progress.workingSetsInExercise,
+  });
 
-      <ScrollView style={{ flex: 1 }} contentContainerStyle={{ gap: spacing[2] }}>
-        {ordered.map((s, index) => {
-          const isActive = s.id === progress.activeSetId;
-          const isDone = !!s.completedAt;
-          return (
-            <Card
-              key={s.id}
+  if (!activeSet || !progress.activeExerciseId) {
+    return (
+      <RunnerFocus
+        title={t('sport.runner.allDone')}
+        value="✓"
+        actionLabel={t('sport.runner.validate')}
+        onAction={onBlockFinished}
+      />
+    );
+  }
+
+  // Repos : le décompte devient l'information dominante, et l'action sert à
+  // l'écourter — on ne reste pas bloqué à regarder un chrono.
+  if (isResting) {
+    return (
+      <RunnerFocus
+        tag={t('sport.runner.restTag')}
+        title={exerciseName(progress.activeExerciseId)}
+        total={progress.workingSetsInExercise}
+        current={progress.activeSetIndexInExercise + 1}
+        context={t('sport.runner.restContext', { total: restTotalSec })}
+        value={`${restLeft}s`}
+        accent={colors.success}
+        actionLabel={t('sport.runner.skipRest')}
+        onAction={() => setRestEndsAtMs(undefined)}
+      />
+    );
+  }
+
+  // Saisie : son propre écran, seulement le poids et les répétitions (plus
+  // l'effort), au lieu de champs glissés dans une liste.
+  if (phase === 'log') {
+    return (
+      <RunnerFocus
+        tag={activeSet.isWarmup ? t('sport.runner.warmup') : undefined}
+        title={exerciseName(progress.activeExerciseId)}
+        total={progress.workingSetsInExercise}
+        current={progress.activeSetIndexInExercise + 1}
+        context={t('sport.runner.logContext', { n: progress.activeSetIndexInExercise + 1 })}
+        value={`${repsDraft || '—'} × ${weightDraft || '—'} kg`}
+        actionLabel={t('sport.runner.saveAndContinue')}
+        onAction={() => {
+          validate();
+          setPhase('work');
+        }}
+        actionDisabled={logSet.isPending}
+        secondaryLabel={t('sport.runner.skipLogging')}
+        onSecondary={() => {
+          setPhase('work');
+          const restSec = activeSet.restSec ?? preferences.defaultRestSec;
+          buzzedRef.current = false;
+          setRestTotalSec(restSec);
+          setNowMs(Date.now());
+          setRestEndsAtMs(Date.now() + restSec * 1000);
+        }}
+      >
+        <View style={{ flexDirection: 'row', gap: spacing[3] }}>
+          <View style={{ flex: 1 }}>
+            <Text variant="label" color="textMuted" style={{ marginBottom: spacing[2] }}>{t('sport.runner.repsA11y')}</Text>
+            <TextInput
+              value={repsDraft}
+              onChangeText={setRepsDraft}
+              keyboardType="numeric"
+              accessibilityLabel={t('sport.runner.repsA11y')}
+              style={{ color: colors.text, fontSize: 22, borderWidth: 1, borderColor: colors.border, borderRadius: radii.lg, paddingVertical: spacing[3], textAlign: 'center' }}
+            />
+          </View>
+          <View style={{ flex: 1 }}>
+            <Text variant="label" color="textMuted" style={{ marginBottom: spacing[2] }}>{t('sport.runner.weightA11y')}</Text>
+            <TextInput
+              value={weightDraft}
+              onChangeText={setWeightDraft}
+              keyboardType="numeric"
+              accessibilityLabel={t('sport.runner.weightA11y')}
+              style={{ color: colors.text, fontSize: 22, borderWidth: 1, borderColor: colors.border, borderRadius: radii.lg, paddingVertical: spacing[3], textAlign: 'center' }}
+            />
+          </View>
+        </View>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing[2], marginTop: spacing[3], flexWrap: 'wrap' }}>
+          <Text variant="caption" color="textMuted">
+            {preferences.effortMetric === 'rir' ? t('sport.runner.rir') : t('sport.runner.rpe')}
+          </Text>
+          {EFFORT_VALUES.map((v) => (
+            <Pressable
+              key={v}
+              onPress={() => setEffort(v === effort ? undefined : v)}
               style={{
-                borderWidth: isActive ? 2 : 1,
-                borderColor: isActive ? colors.primary : colors.border,
-                backgroundColor: isDone ? colors.surfaceElevated : colors.surface,
+                paddingHorizontal: spacing[3],
+                paddingVertical: spacing[1],
+                borderRadius: radii.md,
+                backgroundColor: effort === v ? colors.primary : colors.surfaceElevated,
               }}
             >
-              <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing[3] }}>
-                <Pressable
-                  accessibilityRole="checkbox"
-                  accessibilityState={{ checked: isDone }}
-                  accessibilityLabel={t('sport.runner.toggleSetA11y', { n: index + 1 })}
-                  onPress={() => (isDone ? clearSetLog.mutate({ setId: s.id, workoutId }) : undefined)}
-                  style={{
-                    width: 26,
-                    height: 26,
-                    borderRadius: 7,
-                    borderWidth: 2,
-                    borderColor: isDone ? colors.success : colors.border,
-                    backgroundColor: isDone ? colors.success : 'transparent',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                  }}
-                >
-                  {isDone ? <Text variant="caption" style={{ color: colors.background }}>✓</Text> : null}
-                </Pressable>
-
-                <Text variant="caption" color={s.isWarmup ? 'warning' : 'textSubtle'} style={{ width: 76 }}>
-                  {s.isWarmup ? t('sport.runner.warmup') : String(index + 1)}
-                </Text>
-
-                {isActive ? (
-                  <>
-                    <TextInput
-                      value={repsDraft}
-                      onChangeText={setRepsDraft}
-                      keyboardType="numeric"
-                      accessibilityLabel={t('sport.runner.repsA11y')}
-                      style={{ flex: 1, color: colors.text, borderWidth: 1, borderColor: colors.border, borderRadius: radii.md, paddingHorizontal: spacing[2], paddingVertical: spacing[1], textAlign: 'center' }}
-                    />
-                    <TextInput
-                      value={weightDraft}
-                      onChangeText={setWeightDraft}
-                      keyboardType="numeric"
-                      accessibilityLabel={t('sport.runner.weightA11y')}
-                      style={{ flex: 1, color: colors.text, borderWidth: 1, borderColor: colors.border, borderRadius: radii.md, paddingHorizontal: spacing[2], paddingVertical: spacing[1], textAlign: 'center' }}
-                    />
-                  </>
-                ) : (
-                  <Text variant="body" color="textMuted" style={{ flex: 2 }}>
-                    {s.reps != null ? t('sport.circuitRunner.reps', { reps: s.reps }) : '—'}
-                    {s.weightKg != null ? t('sport.circuitRunner.weightSuffix', { weight: s.weightKg }) : ''}
-                  </Text>
-                )}
-              </View>
-
-              {isActive ? (
-                <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing[2], marginTop: spacing[3] }}>
-                  <Text variant="caption" color="textMuted">{t('sport.runner.effort')}</Text>
-                  {EFFORT_VALUES.map((v) => (
-                    <Pressable
-                      key={v}
-                      onPress={() => setEffort(v === effort ? undefined : v)}
-                      style={{
-                        paddingHorizontal: spacing[3],
-                        paddingVertical: spacing[1],
-                        borderRadius: radii.md,
-                        backgroundColor: effort === v ? colors.primary : colors.surfaceElevated,
-                      }}
-                    >
-                      <Text variant="caption" style={{ color: effort === v ? colors.background : colors.text }}>{v}</Text>
-                    </Pressable>
-                  ))}
-                  <Text variant="caption" color="textSubtle" style={{ marginLeft: 'auto' }}>
-                    {preferences.effortMetric === 'rir' ? t('sport.runner.rir') : t('sport.runner.rpe')}
-                  </Text>
-                </View>
-              ) : null}
-            </Card>
-          );
-        })}
-      </ScrollView>
-
-      {warmup.length > 0 ? (
-        <View style={{ alignItems: 'flex-start' }}>
-          <Button
-            label={t('sport.runner.addWarmup', { count: warmup.length })}
-            variant="secondary"
-            onPress={addWarmup}
-            disabled={addSets.isPending}
-          />
+              <Text variant="caption" style={{ color: effort === v ? colors.background : colors.text }}>{v}</Text>
+            </Pressable>
+          ))}
         </View>
-      ) : null}
+      </RunnerFocus>
+    );
+  }
 
-      {restEndsAtMs !== undefined && restLeft > 0 ? (
-        <Card>
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing[3] }}>
-            <View style={{ alignItems: 'center', justifyContent: 'center' }}>
-              <ProgressRing
-                value={restTotalSec > 0 ? ((restTotalSec - restLeft) / restTotalSec) * 100 : 0}
-                size={72}
-              />
-              <View style={{ position: 'absolute' }}>
-                <Text variant="caption" style={{ fontWeight: '700' }}>{formatClock(restLeft)}</Text>
-              </View>
-            </View>
-            <View style={{ flex: 1 }}>
-              <Text variant="body" style={{ fontWeight: '700' }}>{t('sport.runner.resting')}</Text>
-              <Text variant="caption" color="textSubtle">{t('sport.runner.restAuto')}</Text>
-            </View>
-            <View style={{ gap: spacing[2] }}>
-              <Button
-                label={t('sport.runner.restPlus15')}
-                variant="secondary"
-                onPress={() => setRestEndsAtMs((e) => (e === undefined ? e : e + 15_000))}
-              />
-              <Button
-                label={t('sport.runner.restSkip')}
-                variant="secondary"
-                onPress={() => setRestEndsAtMs(undefined)}
-              />
-            </View>
-          </View>
-        </Card>
-      ) : null}
-
-      {/* Masquée sans charge chargeable : haltères et poids du corps n'ont pas de disques. */}
+  // Série en cours : l'objectif prévu domine, une seule action.
+  return (
+    <RunnerFocus
+      tag={activeSet.isWarmup ? t('sport.runner.warmup') : undefined}
+      title={exerciseName(progress.activeExerciseId)}
+      total={progress.workingSetsInExercise}
+      current={progress.activeSetIndexInExercise + 1}
+      context={setLabel}
+      value={activeSet.reps != null ? t('sport.circuitRunner.reps', { reps: activeSet.reps }) : '—'}
+      valueHint={
+        activeSet.weightKg != null
+          ? t('sport.runner.targetWeight', { weight: activeSet.weightKg })
+          : previous
+            ? t('sport.runner.previous', { weight: previous.weightKg, reps: previous.reps })
+            : undefined
+      }
+      actionLabel={t('sport.runner.setDone')}
+      onAction={() => setPhase('log')}
+      secondaryLabel={warmup.length > 0 ? t('sport.runner.addWarmup', { count: warmup.length }) : undefined}
+      onSecondary={warmup.length > 0 ? addWarmup : undefined}
+    >
       {plates ? (
-        <Card>
-          <View style={{ flexDirection: 'row', alignItems: 'baseline', justifyContent: 'space-between' }}>
-            <Text variant="body" style={{ fontWeight: '700' }}>
-              {t('sport.runner.plates', { weight: plates.achievedKg })}
-            </Text>
-            <Text variant="caption" color="textSubtle">
-              {t('sport.runner.platesBar', { bar: preferences.barWeightKg })}
-            </Text>
-          </View>
-          <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: spacing[2], marginTop: spacing[2] }}>
-            {plates.perSide.length === 0 ? (
-              <Text variant="caption" color="textMuted">{t('sport.runner.platesBarOnly')}</Text>
-            ) : (
-              plates.perSide.map((p) => (
-                <View
-                  key={p.plateKg}
-                  style={{ paddingHorizontal: spacing[3], paddingVertical: spacing[1], borderRadius: radii.full, backgroundColor: colors.surfaceElevated, borderWidth: 1, borderColor: colors.border }}
-                >
-                  <Text variant="caption">{p.count > 1 ? `${p.plateKg} × ${p.count}` : `${p.plateKg}`}</Text>
-                </View>
-              ))
-            )}
-          </View>
-          {/* La cible n'est pas toujours chargeable avec les disques déclarés : le dire. */}
-          {Math.abs(plates.achievedKg - plates.requestedKg) > 0.01 ? (
-            <Text variant="caption" color="warning" style={{ marginTop: spacing[2] }}>
-              {t('sport.runner.platesApprox', { requested: plates.requestedKg, achieved: plates.achievedKg })}
-            </Text>
-          ) : null}
-        </Card>
+        <Text variant="caption" color="textSubtle" style={{ textAlign: 'center' }}>
+          {plates.perSide.map((pl) => `${pl}`).join(' · ')}
+        </Text>
       ) : null}
-
-      <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing[3] }}>
-        {progress.nextExerciseId ? (
-          <Text variant="caption" color="textMuted" style={{ flex: 1 }}>
-            {t('sport.runner.next', { name: exerciseName(progress.nextExerciseId) })}
-          </Text>
-        ) : (
-          <View style={{ flex: 1 }} />
-        )}
-        <Button
-          label={t('sport.runner.validate')}
-          onPress={validate}
-          disabled={!activeSet || logSet.isPending}
-        />
-      </View>
-    </View>
+    </RunnerFocus>
   );
 }

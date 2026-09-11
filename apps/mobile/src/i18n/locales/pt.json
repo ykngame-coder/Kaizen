@@ -1629,7 +1629,15 @@
     "rest": "DESCANSO",
     "current": "Este exercício",
     "nextUp": "A seguir"
-   }
+   },
+   "setDone": "Série terminada ✓",
+   "saveAndContinue": "Guardar e continuar",
+   "skipLogging": "Ignorar sem guardar",
+   "skipRest": "Ignorar o descanso",
+   "restTag": "Descanso",
+   "restContext": "Recuperação de {{total}}s",
+   "logContext": "Série {{n}} terminada",
+   "targetWeight": "Objetivo: {{weight}} kg"
   },
   "progression": {
    "rationale": {
