@@ -3,7 +3,7 @@
     "name": "Kaizen Supotsu",
     "slug": "supotsu",
     "owner": "ykn-kaizen",
-    "version": "1.0.0",
+    "version": "1.1.0",
     "orientation": "portrait",
     "scheme": "supotsu",
     "userInterfaceStyle": "automatic",
@@ -17,7 +17,7 @@
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.supotsu.app",
-      "buildNumber": "52",
+      "buildNumber": "0",
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false
       }
