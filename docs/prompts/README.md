@@ -20,6 +20,7 @@ indépendants et peuvent être lancés dans n'importe quel ordre, sauf indicatio
 | `fix-audits-1-2.md` | **Reste des audits 1 & 2** : sommeil aberrant en base (5 315 lignes, max 32,31 h), durcissement SQL/Supabase, Garmin déployé ≠ repo + idempotence, HealthKit 3 ans relus, secrets eas.json, perf RLS | ⬜ À faire — **prioritaire** |
 | `objectif-sommeil-reglable.md` | Objectif de sommeil **réglable** + dette/score/circadien réajustés à la cible + correction incohérence 7 h 45 / 8 h | ✅ Fait (2026-09-10) |
 | `exercices-wger.md` | Étendre la **bibliothèque d'exercices** avec wger (multilingue, offline, mapping + attribution CC-BY-SA), sans casser les IDs existants | ⬜ À faire |
+| `durcir-defi-communautaire.md` | **Durcir le score des défis** : forcer UTC dans la RPC `challenge_leaderboard`, afficher les rangs ex-æquo (score déjà correct, c'est du blindage) | ⬜ À faire |
 | `i18n-multilingue.md` | **Multilingue** FR/EN/ES/PT/DE (infra i18n + sélecteur + extraction) — _infra déjà en place, sert de référence_ | ✅ Fait |
 | `apple-watch-niveau1.md` | App **Apple Watch** compagnon (suivre sa séance au poignet) — Niveau 1 | ⬜ À faire — après TestFlight |
 | `apple-watch-niveau2.md` | Apple Watch — séance **live** (FC temps réel, calories, HealthKit workout) | ⬜ À faire — après le niveau 1 |
