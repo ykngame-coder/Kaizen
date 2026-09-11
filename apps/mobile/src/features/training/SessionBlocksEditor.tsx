@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Image, Pressable, ScrollView, TextInput, View } from 'react-native';
+import { Image, Modal, Pressable, ScrollView, TextInput, View } from 'react-native';
 import DraggableFlatList, { type RenderItemParams } from 'react-native-draggable-flatlist';
 import type { TFunction } from 'i18next';
 import { Badge, Button, Card, Input, SegmentedControl, Text, useTheme } from '@supotsu/ui';
@@ -185,7 +185,7 @@ export function SessionBlocksEditor({
 }: SessionBlocksEditorProps): React.JSX.Element {
   const { colors } = useTheme();
   const [blocksOpen, setBlocksOpen] = useState(!builder.isSingleStrength);
-  const [addOpen, setAddOpen] = useState(true);
+  const [addOpen, setAddOpen] = useState(false);
   const [selectedOpen, setSelectedOpen] = useState(true);
   /** Exercices cochés dans les résultats, ajoutés d'un seul geste. */
   const [pendingAdd, setPendingAdd] = useState<string[]>([]);
@@ -350,133 +350,6 @@ export function SessionBlocksEditor({
         </View>
       </Collapsible>
 
-      <Collapsible
-        open={addOpen}
-        onToggle={() => setAddOpen((v) => !v)}
-        heading={t('sport.sessionBuilder.addExercise.title')}
-        summary={builder.blocks.length > 1 ? t('sport.sessionBuilder.addExercise.activeBlock', { n: builder.activeBlock + 1, format: formatLabel(activeFormat, t) }) : t('sport.sessionBuilder.addExercise.resultCount', { count: builder.searchResults.length })}
-      >
-        <Input
-          label={t('sport.sessionBuilder.addExercise.searchLabel')}
-          placeholder={t('sport.sessionBuilder.addExercise.searchPlaceholder')}
-          value={builder.query}
-          onChangeText={builder.setQuery}
-        />
-
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ flexDirection: 'row', gap: spacing[2], marginTop: spacing[3] }}>
-          <FilterChip label={t('sport.sessionBuilder.addExercise.allMuscles')} active={builder.muscleFilter === 'all'} onPress={() => builder.setMuscleFilter('all')} />
-          {MUSCLE_ORDER.map((m) => (
-            <FilterChip key={m} label={MUSCLE_LABEL[m]} active={builder.muscleFilter === m} onPress={() => builder.setMuscleFilter(m)} />
-          ))}
-        </ScrollView>
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ flexDirection: 'row', gap: spacing[2], marginTop: spacing[2] }}>
-          <FilterChip label={t('sport.sessionBuilder.addExercise.allEquipment')} active={builder.equipmentFilter === 'all'} onPress={() => builder.setEquipmentFilter('all')} />
-          {EQUIPMENT_ORDER.map((eq) => (
-            <FilterChip key={eq} label={eq} active={builder.equipmentFilter === eq} onPress={() => builder.setEquipmentFilter(eq)} />
-          ))}
-        </ScrollView>
-
-        {favoriteExercises.length > 0 ? (
-          <>
-            <Text variant="label" color="textMuted" style={{ marginTop: spacing[4] }}>
-              {t('sport.sessionBuilder.addExercise.favoritesHeading')}
-            </Text>
-            <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: spacing[2], marginTop: spacing[2] }}>
-              {favoriteExercises.map((ex) => (
-                <Pressable
-                  key={ex.id}
-                  onPress={() => builder.addExercise(ex.id)}
-                  style={{ flexDirection: 'row', alignItems: 'center', gap: spacing[2], paddingHorizontal: 10, paddingVertical: 6, borderRadius: radii.full, backgroundColor: colors.surfaceElevated, borderWidth: 1, borderColor: colors.accentData }}
-                >
-                  <Thumb exercise={ex} size={22} />
-                  <Text variant="caption" style={{ fontWeight: '600' }}>{ex.name}</Text>
-                </Pressable>
-              ))}
-            </View>
-          </>
-        ) : null}
-
-        {builder.recentExercises.length > 0 ? (
-          <>
-            <Text variant="label" color="textMuted" style={{ marginTop: spacing[4] }}>
-              {t('sport.sessionBuilder.addExercise.recentHeading')}
-            </Text>
-            <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: spacing[2], marginTop: spacing[2] }}>
-              {builder.recentExercises.map((ex) => (
-                <Pressable
-                  key={ex.id}
-                  onPress={() => builder.addExercise(ex.id)}
-                  style={{ flexDirection: 'row', alignItems: 'center', gap: spacing[2], paddingHorizontal: 10, paddingVertical: 6, borderRadius: radii.full, backgroundColor: colors.surfaceElevated, borderWidth: 1, borderColor: colors.border }}
-                >
-                  <Thumb exercise={ex} size={22} />
-                  <Text variant="caption" style={{ fontWeight: '600' }}>{ex.name}</Text>
-                </Pressable>
-              ))}
-            </View>
-          </>
-        ) : null}
-
-        <Text variant="label" color="textMuted" style={{ marginTop: spacing[4] }}>
-          {t('sport.sessionBuilder.addExercise.resultsHeading')}
-        </Text>
-        {builder.searchResults.length === 0 ? (
-          <Text variant="caption" color="textSubtle" style={{ marginTop: spacing[1] }}>
-            {t('sport.sessionBuilder.addExercise.noResults', { query: builder.query })}{' '}
-            <Text variant="caption" color="primary" onPress={onCreateExercise}>
-              {t('sport.sessionBuilder.addExercise.createLink')}
-            </Text>
-          </Text>
-        ) : (
-          <View style={{ gap: spacing[2], marginTop: spacing[2] }}>
-            {builder.searchResults.map((ex) => {
-              const isPicked = pendingAdd.includes(ex.id);
-              const isFav = favorites.includes(ex.id);
-              return (
-              <Pressable
-                key={ex.id}
-                onPress={() => setPendingAdd((prev) => (isPicked ? prev.filter((id) => id !== ex.id) : [...prev, ex.id]))}
-                style={({ pressed }) => ({ opacity: pressed ? 0.7 : 1 })}
-              >
-                <Card style={{ borderWidth: isPicked ? 2 : undefined, borderColor: isPicked ? colors.primary : undefined }}>
-                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing[3] }}>
-                    <Thumb exercise={ex} />
-                    <View style={{ flex: 1 }}>
-                      <Text variant="subtitle">{ex.name}</Text>
-                      <Text variant="caption" color="textMuted">{exerciseSubtitle(ex)}</Text>
-                    </View>
-                    <Pressable
-                      onPress={() => void onToggleFavorite?.(ex.id)}
-                      hitSlop={10}
-                      accessibilityLabel={t('sport.sessionBuilder.addExercise.favoriteA11y', { name: ex.name })}
-                    >
-                      <Text variant="heading" style={{ color: isFav ? colors.accentData : colors.textSubtle }}>
-                        {isFav ? '★' : '☆'}
-                      </Text>
-                    </Pressable>
-                    <Text variant="heading" style={{ color: isPicked ? colors.primary : colors.textSubtle }}>
-                      {isPicked ? '✓' : '+'}
-                    </Text>
-                  </View>
-                </Card>
-              </Pressable>
-              );
-            })}
-          </View>
-        )}
-
-        {/* Ajout groupé : sélectionner plusieurs exercices puis les ajouter d'un coup. */}
-        {pendingAdd.length > 0 ? (
-          <View style={{ marginTop: spacing[3] }}>
-            <Button
-              label={t('sport.sessionBuilder.addExercise.addSelected', { count: pendingAdd.length })}
-              onPress={() => {
-                for (const id of pendingAdd) builder.addExercise(id);
-                setPendingAdd([]);
-              }}
-            />
-          </View>
-        ) : null}
-      </Collapsible>
 
       <Pressable onPress={() => setSelectedOpen((v) => !v)}>
         <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
@@ -645,6 +518,161 @@ export function SessionBlocksEditor({
     );
   };
 
+  /**
+   * Le catalogue vit dans une feuille, plus dans la page.
+   *
+   * Il était posé AU-DESSUS de la liste des exercices choisis : pour voir sa
+   * sélection il fallait dérouler tout le catalogue — « il faut scroll tout en
+   * bas sous la liste des exercices pour voir ceux sélectionnés ». Et comme la
+   * recherche, les filtres par muscle et par équipement et les récents vivaient
+   * tous dedans, ils passaient inaperçus.
+   *
+   * Le JSX est inchangé : seul son contenant et sa position le sont.
+   */
+  const picker = (
+    <Modal visible={addOpen} transparent animationType="slide" onRequestClose={() => setAddOpen(false)}>
+      <View style={{ flex: 1, justifyContent: 'flex-end', backgroundColor: 'rgba(0,0,0,0.6)' }}>
+        <Pressable style={{ flex: 1 }} onPress={() => setAddOpen(false)} accessibilityLabel={t('common.cancel')} />
+        <View style={{ maxHeight: '82%', backgroundColor: colors.surface, borderTopLeftRadius: radii.xl, borderTopRightRadius: radii.xl, padding: spacing[4] }}>
+          <View style={{ width: 36, height: 4, borderRadius: 2, backgroundColor: colors.border, alignSelf: 'center', marginBottom: spacing[3] }} />
+          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: spacing[2] }}>
+            <Text variant="heading">{t('sport.sessionBuilder.addExercise.title')}</Text>
+            <Pressable onPress={() => setAddOpen(false)} hitSlop={10}>
+              <Text variant="body" color="primary">{t('common.close')}</Text>
+            </Pressable>
+          </View>
+          <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={{ paddingBottom: spacing[5] }}>
+            <Text variant="caption" color="textSubtle" style={{ marginBottom: spacing[3] }}>
+              {builder.blocks.length > 1
+                ? t('sport.sessionBuilder.addExercise.activeBlock', { n: builder.activeBlock + 1, format: formatLabel(activeFormat, t) })
+                : t('sport.sessionBuilder.addExercise.resultCount', { count: builder.searchResults.length })}
+            </Text>
+              <Input
+                label={t('sport.sessionBuilder.addExercise.searchLabel')}
+                placeholder={t('sport.sessionBuilder.addExercise.searchPlaceholder')}
+                value={builder.query}
+                onChangeText={builder.setQuery}
+              />
+
+              <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ flexDirection: 'row', gap: spacing[2], marginTop: spacing[3] }}>
+                <FilterChip label={t('sport.sessionBuilder.addExercise.allMuscles')} active={builder.muscleFilter === 'all'} onPress={() => builder.setMuscleFilter('all')} />
+                {MUSCLE_ORDER.map((m) => (
+                  <FilterChip key={m} label={MUSCLE_LABEL[m]} active={builder.muscleFilter === m} onPress={() => builder.setMuscleFilter(m)} />
+                ))}
+              </ScrollView>
+              <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ flexDirection: 'row', gap: spacing[2], marginTop: spacing[2] }}>
+                <FilterChip label={t('sport.sessionBuilder.addExercise.allEquipment')} active={builder.equipmentFilter === 'all'} onPress={() => builder.setEquipmentFilter('all')} />
+                {EQUIPMENT_ORDER.map((eq) => (
+                  <FilterChip key={eq} label={eq} active={builder.equipmentFilter === eq} onPress={() => builder.setEquipmentFilter(eq)} />
+                ))}
+              </ScrollView>
+
+              {favoriteExercises.length > 0 ? (
+                <>
+                  <Text variant="label" color="textMuted" style={{ marginTop: spacing[4] }}>
+                    {t('sport.sessionBuilder.addExercise.favoritesHeading')}
+                  </Text>
+                  <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: spacing[2], marginTop: spacing[2] }}>
+                    {favoriteExercises.map((ex) => (
+                      <Pressable
+                        key={ex.id}
+                        onPress={() => builder.addExercise(ex.id)}
+                        style={{ flexDirection: 'row', alignItems: 'center', gap: spacing[2], paddingHorizontal: 10, paddingVertical: 6, borderRadius: radii.full, backgroundColor: colors.surfaceElevated, borderWidth: 1, borderColor: colors.accentData }}
+                      >
+                        <Thumb exercise={ex} size={22} />
+                        <Text variant="caption" style={{ fontWeight: '600' }}>{ex.name}</Text>
+                      </Pressable>
+                    ))}
+                  </View>
+                </>
+              ) : null}
+
+              {builder.recentExercises.length > 0 ? (
+                <>
+                  <Text variant="label" color="textMuted" style={{ marginTop: spacing[4] }}>
+                    {t('sport.sessionBuilder.addExercise.recentHeading')}
+                  </Text>
+                  <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: spacing[2], marginTop: spacing[2] }}>
+                    {builder.recentExercises.map((ex) => (
+                      <Pressable
+                        key={ex.id}
+                        onPress={() => builder.addExercise(ex.id)}
+                        style={{ flexDirection: 'row', alignItems: 'center', gap: spacing[2], paddingHorizontal: 10, paddingVertical: 6, borderRadius: radii.full, backgroundColor: colors.surfaceElevated, borderWidth: 1, borderColor: colors.border }}
+                      >
+                        <Thumb exercise={ex} size={22} />
+                        <Text variant="caption" style={{ fontWeight: '600' }}>{ex.name}</Text>
+                      </Pressable>
+                    ))}
+                  </View>
+                </>
+              ) : null}
+
+              <Text variant="label" color="textMuted" style={{ marginTop: spacing[4] }}>
+                {t('sport.sessionBuilder.addExercise.resultsHeading')}
+              </Text>
+              {builder.searchResults.length === 0 ? (
+                <Text variant="caption" color="textSubtle" style={{ marginTop: spacing[1] }}>
+                  {t('sport.sessionBuilder.addExercise.noResults', { query: builder.query })}{' '}
+                  <Text variant="caption" color="primary" onPress={onCreateExercise}>
+                    {t('sport.sessionBuilder.addExercise.createLink')}
+                  </Text>
+                </Text>
+              ) : (
+                <View style={{ gap: spacing[2], marginTop: spacing[2] }}>
+                  {builder.searchResults.map((ex) => {
+                    const isPicked = pendingAdd.includes(ex.id);
+                    const isFav = favorites.includes(ex.id);
+                    return (
+                    <Pressable
+                      key={ex.id}
+                      onPress={() => setPendingAdd((prev) => (isPicked ? prev.filter((id) => id !== ex.id) : [...prev, ex.id]))}
+                      style={({ pressed }) => ({ opacity: pressed ? 0.7 : 1 })}
+                    >
+                      <Card style={{ borderWidth: isPicked ? 2 : undefined, borderColor: isPicked ? colors.primary : undefined }}>
+                        <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing[3] }}>
+                          <Thumb exercise={ex} />
+                          <View style={{ flex: 1 }}>
+                            <Text variant="subtitle">{ex.name}</Text>
+                            <Text variant="caption" color="textMuted">{exerciseSubtitle(ex)}</Text>
+                          </View>
+                          <Pressable
+                            onPress={() => void onToggleFavorite?.(ex.id)}
+                            hitSlop={10}
+                            accessibilityLabel={t('sport.sessionBuilder.addExercise.favoriteA11y', { name: ex.name })}
+                          >
+                            <Text variant="heading" style={{ color: isFav ? colors.accentData : colors.textSubtle }}>
+                              {isFav ? '★' : '☆'}
+                            </Text>
+                          </Pressable>
+                          <Text variant="heading" style={{ color: isPicked ? colors.primary : colors.textSubtle }}>
+                            {isPicked ? '✓' : '+'}
+                          </Text>
+                        </View>
+                      </Card>
+                    </Pressable>
+                    );
+                  })}
+                </View>
+              )}
+
+              {/* Ajout groupé : sélectionner plusieurs exercices puis les ajouter d'un coup. */}
+              {pendingAdd.length > 0 ? (
+                <View style={{ marginTop: spacing[3] }}>
+                  <Button
+                    label={t('sport.sessionBuilder.addExercise.addSelected', { count: pendingAdd.length })}
+                    onPress={() => {
+                      for (const id of pendingAdd) builder.addExercise(id);
+                      setPendingAdd([]);
+                    }}
+                  />
+                </View>
+              ) : null}
+          </ScrollView>
+        </View>
+      </View>
+    </Modal>
+  );
+
   return (
     <View style={{ flex: 1 }}>
       <DraggableFlatList
@@ -657,8 +685,16 @@ export function SessionBlocksEditor({
         ListHeaderComponent={header}
         contentContainerStyle={{ paddingBottom: spacing[3], gap: spacing[2] }}
       />
+      {picker}
       <View style={{ paddingTop: spacing[3], borderTopWidth: 1, borderTopColor: colors.border }}>
-        {error ? <Badge label={error} tone="error" /> : null}
+        {/* Ancré sous la séance : on ajoute depuis l'objet qu'on fabrique. */}
+        <Button
+          label={t('sport.sessionBuilder.addExercise.open')}
+          variant="secondary"
+          onPress={() => setAddOpen(true)}
+          fullWidth
+        />
+        {error ? <View style={{ marginTop: spacing[2] }}><Badge label={error} tone="error" /></View> : null}
         <View style={{ flexDirection: 'row', gap: spacing[2], marginTop: error ? spacing[2] : 0 }}>
           <Button label={cancelLabel} variant="secondary" onPress={onCancel} />
           <View style={{ flex: 1 }}>

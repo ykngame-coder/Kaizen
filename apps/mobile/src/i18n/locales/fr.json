@@ -1501,6 +1501,7 @@
    },
    "addExercise": {
     "title": "Ajouter un exercice",
+    "open": "Ajouter un exercice",
     "searchLabel": "Rechercher un exercice",
     "searchPlaceholder": "Ex : développé, quads, curl…",
     "allMuscles": "Tous",

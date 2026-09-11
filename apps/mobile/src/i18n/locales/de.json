@@ -1501,6 +1501,7 @@
    },
    "addExercise": {
     "title": "Übung hinzufügen",
+    "open": "Übung hinzufügen",
     "searchLabel": "Übung suchen",
     "searchPlaceholder": "Bsp.: Drücken, Quadrizeps, Curl…",
     "allMuscles": "Alle",

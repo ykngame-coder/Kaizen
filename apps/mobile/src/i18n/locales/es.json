@@ -1501,6 +1501,7 @@
    },
    "addExercise": {
     "title": "Añadir un ejercicio",
+    "open": "Añadir un ejercicio",
     "searchLabel": "Buscar un ejercicio",
     "searchPlaceholder": "Ej.: press, cuádriceps, curl…",
     "allMuscles": "Todos",
