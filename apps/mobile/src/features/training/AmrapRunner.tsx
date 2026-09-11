@@ -1,8 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { Pressable, ScrollView, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
-import { Badge, Button, Card, Text, triggerHaptic, useTheme } from '@supotsu/ui';
-import { spacing } from '@supotsu/design-system';
+import { triggerHaptic } from '@supotsu/ui';
 import type { SetEntry, WorkoutBlock } from '@supotsu/core';
 import { EXERCISE_LIBRARY } from '@supotsu/shared';
 import { EXERCISES } from '@/features/exercises/catalog';
@@ -10,6 +8,8 @@ import { useCustomExercises } from '@/lib/data/queries';
 import { computeAmrapState, formatClock } from './blockRunnerEngine';
 import { cadenceSecPerRound } from './runnerState';
 import { useRunClock } from './useRunClock';
+import { RunnerFocus } from './RunnerFocus';
+import { MovementChecklist } from './MovementChecklist';
 
 export interface TimedRunnerProps {
   block: WorkoutBlock;
@@ -24,7 +24,6 @@ export interface TimedRunnerProps {
  */
 export function AmrapRunner({ block, sets, onFinished }: TimedRunnerProps): React.JSX.Element {
   const { t } = useTranslation();
-  const { colors } = useTheme();
   const { data: customExercises = [] } = useCustomExercises();
   const clock = useRunClock(block.id);
 
@@ -55,61 +54,32 @@ export function AmrapRunner({ block, sets, onFinished }: TimedRunnerProps): Reac
     setTicked({});
   };
 
+  // Le mouvement en cours = le premier non coché. C'est ce qu'on fait à
+  // l'instant, donc ce qui mérite le titre — les autres restent dans la liste.
+  const current = sets.find((x) => !ticked[x.id]) ?? sets[0];
+
   return (
-    <View style={{ flex: 1, gap: spacing[4] }}>
-      <View style={{ alignItems: 'center', gap: spacing[2] }}>
-        <Text variant="caption" color="textSubtle">{t('sport.runner.remaining')}</Text>
-        <Text variant="display">{formatClock(state.displaySec)}</Text>
-        <View style={{ flexDirection: 'row', gap: spacing[2] }}>
-          <Badge label={t('sport.runner.roundsDone', { done: rounds })} tone="info" />
-          {/* Masquée tant qu'aucun tour n'est fini : une moyenne sur zéro ne dit rien. */}
-          {cadence !== undefined ? (
-            <Badge label={t('sport.runner.cadence', { sec: cadence })} tone="neutral" />
-          ) : null}
-        </View>
-      </View>
-
-      <ScrollView style={{ flex: 1 }} contentContainerStyle={{ gap: spacing[2] }}>
-        {sets.map((s) => {
-          const isTicked = !!ticked[s.id];
-          return (
-            <Pressable key={s.id} onPress={() => setTicked((p) => ({ ...p, [s.id]: !p[s.id] }))}>
-              <Card style={{ borderWidth: 1, borderColor: isTicked ? colors.success : colors.border }}>
-                <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing[3] }}>
-                  <View
-                    style={{
-                      width: 26,
-                      height: 26,
-                      borderRadius: 7,
-                      borderWidth: 2,
-                      borderColor: isTicked ? colors.success : colors.border,
-                      backgroundColor: isTicked ? colors.success : 'transparent',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                    }}
-                  >
-                    {isTicked ? <Text variant="caption" style={{ color: colors.background }}>✓</Text> : null}
-                  </View>
-                  <Text variant="body" style={{ fontWeight: '700' }}>
-                    {s.reps != null ? `${s.reps} ` : ''}{exerciseName(s.exerciseId)}
-                  </Text>
-                </View>
-              </Card>
-            </Pressable>
-          );
-        })}
-      </ScrollView>
-
-      <View style={{ flexDirection: 'row', gap: spacing[3] }}>
-        <Button
-          label={clock.isPaused ? t('sport.runner.resumeClock') : t('sport.runner.pause')}
-          variant="secondary"
-          onPress={clock.togglePause}
-        />
-        <View style={{ flex: 1 }}>
-          <Button label={t('sport.runner.roundDone')} onPress={finishRound} />
-        </View>
-      </View>
-    </View>
+    <RunnerFocus
+      tag="AMRAP"
+      title={current ? exerciseName(current.exerciseId) : t('sport.runner.roundDone')}
+      context={t('sport.runner.remaining')}
+      value={formatClock(state.displaySec)}
+      valueHint={
+        cadence !== undefined
+          ? `${t('sport.runner.roundsDone', { done: rounds })} · ${t('sport.runner.cadence', { sec: cadence })}`
+          : t('sport.runner.roundsDone', { done: rounds })
+      }
+      actionLabel={t('sport.runner.roundDone')}
+      onAction={finishRound}
+      secondaryLabel={clock.isPaused ? t('sport.runner.resumeClock') : t('sport.runner.pause')}
+      onSecondary={clock.togglePause}
+    >
+      <MovementChecklist
+        sets={sets}
+        ticked={ticked}
+        onToggle={(id) => setTicked((p) => ({ ...p, [id]: !p[id] }))}
+        exerciseName={exerciseName}
+      />
+    </RunnerFocus>
   );
 }

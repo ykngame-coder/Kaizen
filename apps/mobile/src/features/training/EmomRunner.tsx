@@ -1,14 +1,13 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { Pressable, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
-import { Button, Card, Text, triggerHaptic, useTheme } from '@supotsu/ui';
-import { spacing } from '@supotsu/design-system';
+import { triggerHaptic, useTheme } from '@supotsu/ui';
 import { EXERCISE_LIBRARY } from '@supotsu/shared';
 import { EXERCISES } from '@/features/exercises/catalog';
 import { useCustomExercises } from '@/lib/data/queries';
 import { computeEmomState, formatClock } from './blockRunnerEngine';
 import { emomMinuteTask } from './runnerState';
 import { useRunClock } from './useRunClock';
+import { RunnerFocus } from './RunnerFocus';
 import type { TimedRunnerProps } from './AmrapRunner';
 
 /**
@@ -51,78 +50,25 @@ export function EmomRunner({ block, sets, onFinished }: TimedRunnerProps): React
   }, [state.isFinished]);
 
   return (
-    <View style={{ flex: 1, gap: spacing[4] }}>
-      <View style={{ alignItems: 'center', gap: spacing[2] }}>
-        <Text variant="caption" color="textSubtle">
-          {t('sport.runner.minuteCounter', { current: state.currentRound, total })}
-        </Text>
-        <Text variant="display">{formatClock(state.displaySec)}</Text>
-        <Text variant="caption" color="textSubtle">{t('sport.runner.beforeNextMinute')}</Text>
-
-        {/* Une pastille par intervalle : faite, en cours, à venir. */}
-        <View style={{ flexDirection: 'row', gap: spacing[1], flexWrap: 'wrap', justifyContent: 'center' }}>
-          {Array.from({ length: total }, (_, i) => {
-            const n = i + 1;
-            const color =
-              n < state.currentRound ? colors.success : n === state.currentRound ? colors.primary : colors.surfaceElevated;
-            return <View key={n} style={{ width: 22, height: 8, borderRadius: 4, backgroundColor: color }} />;
-          })}
-        </View>
-      </View>
-
-      {isResting ? (
-        <Card style={{ borderWidth: 1, borderColor: colors.success }}>
-          <Text variant="body" style={{ color: colors.success, textAlign: 'center' }}>
-            {t('sport.runner.restUntilMinute', { next: Math.min(total, state.currentRound + 1) })}
-          </Text>
-        </Card>
-      ) : (
-        <Card>
-          <Text variant="caption" color="textSubtle">{t('sport.runner.thisMinute')}</Text>
-          <Pressable
-            onPress={() => {
-              triggerHaptic();
-              setDoneMinute(state.currentRound);
-            }}
-            style={{ flexDirection: 'row', alignItems: 'center', gap: spacing[3], marginTop: spacing[2] }}
-          >
-            <View
-              style={{
-                width: 30,
-                height: 30,
-                borderRadius: 8,
-                borderWidth: 2,
-                borderColor: colors.border,
-                alignItems: 'center',
-                justifyContent: 'center',
-              }}
-            />
-            <Text variant="heading">
-              {task?.reps != null ? `${task.reps} ` : ''}{task ? exerciseName(task.exerciseId) : '—'}
-            </Text>
-          </Pressable>
-        </Card>
-      )}
-
-      <View style={{ flex: 1 }} />
-
-      <View style={{ flexDirection: 'row', gap: spacing[3] }}>
-        <Button
-          label={clock.isPaused ? t('sport.runner.resumeClock') : t('sport.runner.pause')}
-          variant="secondary"
-          onPress={clock.togglePause}
-        />
-        <View style={{ flex: 1 }}>
-          <Button
-            label={t('sport.runner.minuteDone')}
-            onPress={() => {
-              triggerHaptic();
-              setDoneMinute(state.currentRound);
-            }}
-            disabled={isResting}
-          />
-        </View>
-      </View>
-    </View>
+    <RunnerFocus
+      tag="EMOM"
+      title={task ? exerciseName(task.exerciseId) : '—'}
+      total={total}
+      current={state.currentRound}
+      context={t('sport.runner.minuteCounter', { current: state.currentRound, total })}
+      value={formatClock(state.displaySec)}
+      valueHint={isResting ? t('sport.runner.restUntilMinute', { next: Math.min(total, state.currentRound + 1) }) : t('sport.runner.beforeNextMinute')}
+      accent={isResting ? colors.success : undefined}
+      // Cocher n'avance pas la minute — seul le chrono le fait. L'action
+      // marque donc « c'est fait », et bascule l'affichage en repos.
+      actionLabel={t('sport.runner.minuteDone')}
+      onAction={() => {
+        triggerHaptic();
+        setDoneMinute(state.currentRound);
+      }}
+      actionDisabled={isResting}
+      secondaryLabel={clock.isPaused ? t('sport.runner.resumeClock') : t('sport.runner.pause')}
+      onSecondary={clock.togglePause}
+    />
   );
 }

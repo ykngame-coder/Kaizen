@@ -1,14 +1,13 @@
 import React, { useEffect, useMemo, useRef } from 'react';
-import { View } from 'react-native';
 import { useTranslation } from 'react-i18next';
-import { Button, Card, Text, triggerHaptic, useTheme } from '@supotsu/ui';
-import { spacing } from '@supotsu/design-system';
+import { triggerHaptic, useTheme } from '@supotsu/ui';
 import { EXERCISE_LIBRARY } from '@supotsu/shared';
 import { EXERCISES } from '@/features/exercises/catalog';
 import { useCustomExercises } from '@/lib/data/queries';
 import { computeTabataState, formatClock } from './blockRunnerEngine';
 import { emomMinuteTask } from './runnerState';
 import { useRunClock } from './useRunClock';
+import { RunnerFocus } from './RunnerFocus';
 import type { TimedRunnerProps } from './AmrapRunner';
 
 const DEFAULT_WORK_SEC = 20;
@@ -62,53 +61,27 @@ export function TabataRunner({ block, sets, onFinished }: TimedRunnerProps): Rea
   }, [state.isFinished]);
 
   return (
-    <View style={{ flex: 1, gap: spacing[4] }}>
-      <View style={{ alignItems: 'center', gap: spacing[2] }}>
-        <Text variant="caption" color="textSubtle">
-          {t('sport.runner.tabata.roundCounter', { current: state.currentRound, total })}
-        </Text>
-        <Text variant="heading" style={{ color: isRest ? colors.success : colors.primary }}>
-          {isRest ? t('sport.runner.tabata.rest') : t('sport.runner.tabata.work')}
-        </Text>
-        <Text variant="display" style={{ color: isRest ? colors.success : colors.text }}>
-          {formatClock(state.displaySec)}
-        </Text>
-
-        {/* Une pastille par round : fait, en cours, à venir. */}
-        <View style={{ flexDirection: 'row', gap: spacing[1], flexWrap: 'wrap', justifyContent: 'center' }}>
-          {Array.from({ length: total }, (_, i) => {
-            const n = i + 1;
-            const color =
-              n < state.currentRound ? colors.success : n === state.currentRound ? colors.primary : colors.surfaceElevated;
-            return <View key={n} style={{ width: 22, height: 8, borderRadius: 4, backgroundColor: color }} />;
-          })}
-        </View>
-      </View>
-
-      <Card style={isRest ? { borderWidth: 1, borderColor: colors.success } : undefined}>
-        <Text variant="caption" color="textSubtle">
-          {isRest ? t('sport.runner.tabata.nextUp') : t('sport.runner.tabata.current')}
-        </Text>
-        <Text variant="heading" style={{ marginTop: spacing[2] }}>
-          {isRest
-            ? nextTask
-              ? exerciseName(nextTask.exerciseId)
-              : '—'
-            : task
-              ? `${task.reps != null ? `${task.reps} ` : ''}${exerciseName(task.exerciseId)}`
-              : '—'}
-        </Text>
-      </Card>
-
-      <View style={{ flex: 1 }} />
-
-      <View style={{ flexDirection: 'row', gap: spacing[3] }}>
-        <Button
-          label={clock.isPaused ? t('sport.runner.resumeClock') : t('sport.runner.pause')}
-          variant="secondary"
-          onPress={clock.togglePause}
-        />
-      </View>
-    </View>
+    <RunnerFocus
+      tag={isRest ? t('sport.runner.tabata.rest') : t('sport.runner.tabata.work')}
+      title={
+        isRest
+          ? nextTask
+            ? exerciseName(nextTask.exerciseId)
+            : '—'
+          : task
+            ? exerciseName(task.exerciseId)
+            : '—'
+      }
+      total={total}
+      current={state.currentRound}
+      context={t('sport.runner.tabata.roundCounter', { current: state.currentRound, total })}
+      value={formatClock(state.displaySec)}
+      // Pendant le repos on annonce ce qui arrive : c'est l'information utile
+      // à cet instant, pas ce qu'on vient de finir.
+      valueHint={isRest ? t('sport.runner.tabata.nextUp') : task?.reps != null ? String(task.reps) : undefined}
+      accent={isRest ? colors.success : undefined}
+      actionLabel={clock.isPaused ? t('sport.runner.resumeClock') : t('sport.runner.pause')}
+      onAction={clock.togglePause}
+    />
   );
 }
