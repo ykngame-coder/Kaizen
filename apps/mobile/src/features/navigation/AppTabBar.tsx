@@ -65,11 +65,7 @@ export function AppTabBar(): React.JSX.Element | null {
             onPress={() => router.navigate(tab.path)}
             style={{ flex: 1, alignItems: 'center', gap: 2 }}
           >
-            {tab.key === 'profile' ? (
-              <Text style={{ color: tint, fontSize: 18 }}>☰</Text>
-            ) : (
-              <TabIcon route={tab.key} color={tint} size={20} />
-            )}
+            <TabIcon route={tab.key} color={tint} size={20} />
             <Text style={{ color: tint, fontSize: 10, fontWeight: active ? '700' : '500' }}>
               {t(`common.tab.${tab.key}`)}
             </Text>

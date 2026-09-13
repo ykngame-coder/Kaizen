@@ -1,9 +1,12 @@
 import React from 'react';
 import { View } from 'react-native';
+import Animated, { useAnimatedProps, useDerivedValue, withTiming } from 'react-native-reanimated';
 import Svg, { Circle, Defs, LinearGradient, Stop } from 'react-native-svg';
-import { gradients } from '@supotsu/design-system';
+import { duration, gradients } from '@supotsu/design-system';
 import { Text } from './Text';
 import { useTheme } from './theme';
+
+const AnimatedCircle = Animated.createAnimatedComponent(Circle);
 
 /** One coloured zone of a multi-segment gauge; `weight` sets its share. */
 export interface RingSegment {
@@ -43,7 +46,8 @@ let ringGradientSeq = 0;
  * Circular gauge (Garmin Connect / Bevel style). Either a single arc that fills
  * clockwise from the top, or a multi-segment scale of coloured zones with a
  * marker dot at the current value. Built on react-native-svg so it renders
- * identically on iOS/Android/web.
+ * identically on iOS/Android/web. The arc/marker eases toward `value` with
+ * Reanimated instead of snapping, matching Toggle's spring-driven knob.
  */
 export function ProgressRing({
   value,
@@ -66,6 +70,18 @@ export function ProgressRing({
       ? gradient
       : (gradients.brand.slice(0, 2) as [string, string])
     : null;
+
+  const animatedPct = useDerivedValue(() => withTiming(pct, { duration: duration.slow }), [pct]);
+
+  const markerProps = useAnimatedProps(() => {
+    const angle = ((-90 + (animatedPct.value / 100) * 360) * Math.PI) / 180;
+    return { cx: cx + r * Math.cos(angle), cy: cx + r * Math.sin(angle) };
+  });
+
+  const arcProps = useAnimatedProps(() => {
+    const dash = (animatedPct.value / 100) * circumference;
+    return { strokeDasharray: `${dash} ${circumference - dash}` };
+  });
 
   let ring: React.JSX.Element[];
   if (segments && segments.length > 0) {
@@ -93,23 +109,20 @@ export function ProgressRing({
       );
       start += arc;
     });
-    // Marker dot at the value position (clockwise from 12 o'clock).
-    const angle = ((-90 + (pct / 100) * 360) * Math.PI) / 180;
+    // Marker dot at the value position (clockwise from 12 o'clock), eased in.
     ring.push(
-      <Circle
+      <AnimatedCircle
         key="marker"
-        cx={cx + r * Math.cos(angle)}
-        cy={cx + r * Math.sin(angle)}
         r={thickness * 0.62}
         fill={colors.text}
         stroke={colors.surface}
         strokeWidth={2}
+        animatedProps={markerProps}
       />,
     );
   } else {
-    const dash = (pct / 100) * circumference;
     ring = [
-      <Circle
+      <AnimatedCircle
         key="arc"
         cx={cx}
         cy={cx}
@@ -118,8 +131,8 @@ export function ProgressRing({
         strokeWidth={thickness}
         fill="none"
         strokeLinecap="round"
-        strokeDasharray={`${dash} ${circumference - dash}`}
         transform={`rotate(-90 ${cx} ${cx})`}
+        animatedProps={arcProps}
       />,
     ];
   }

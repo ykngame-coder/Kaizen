@@ -79,15 +79,16 @@ export function Button({
     >
       {({ pressed }) => {
         const opacity = disabled ? 0.5 : pressed ? 0.85 : 1;
+        const transform = [{ scale: pressed ? 0.96 : 1 }];
         if (isGradient) {
           return (
-            <View style={{ ...fillStyle, opacity }}>
+            <View style={{ ...fillStyle, opacity, transform }}>
               <Gradient fill start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} />
               {content}
             </View>
           );
         }
-        return <View style={{ ...fillStyle, opacity }}>{content}</View>;
+        return <View style={{ ...fillStyle, opacity, transform }}>{content}</View>;
       }}
     </Pressable>
   );

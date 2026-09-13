@@ -1,5 +1,4 @@
 import React from 'react';
-import { Text } from 'react-native';
 import { Tabs } from 'expo-router';
 import { useTheme } from '@supotsu/ui';
 import { TabIcon } from '@/features/navigation/TabIcon';
@@ -21,12 +20,7 @@ export default function TabsLayout(): React.JSX.Element {
           backgroundColor: colors.surface,
           borderTopColor: colors.border,
         },
-        tabBarIcon: ({ color }) =>
-          route.name === 'profile' ? (
-            <Text style={{ color, fontSize: 18 }}>☰</Text>
-          ) : (
-            <TabIcon route={route.name} color={color} size={18} />
-          ),
+        tabBarIcon: ({ color }) => <TabIcon route={route.name} color={color} size={18} />,
       })}
     >
       {/* The 5 hubs shown in the persistent AppTabBar */}

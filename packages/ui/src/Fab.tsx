@@ -34,7 +34,7 @@ export function Fab({
         accessibilityRole="button"
         accessibilityLabel={accessibilityLabel}
         onPress={onPress}
-        style={({ pressed }) => ({ transform: [{ scale: pressed ? 0.94 : 1 }] })}
+        style={({ pressed }) => ({ transform: [{ scale: pressed ? 0.96 : 1 }] })}
       >
         <LinearGradient
           colors={gradients.brand as unknown as readonly [string, string, ...string[]]}

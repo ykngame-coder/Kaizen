@@ -101,6 +101,9 @@ export const textVariants = {
     fontFamily: 'ArchivoBlack_400Regular',
     fontSize: fontSize['3xl'],
     lineHeight: lh(fontSize['3xl'], lineHeight.tight),
+    // Mutable array: RN's `TextStyle.fontVariant` type rejects the readonly
+    // tuple `as const` would otherwise produce here.
+    fontVariant: Array.from(['tabular-nums'] as const),
   },
 } as const;
 

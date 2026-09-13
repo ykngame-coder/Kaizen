@@ -2,6 +2,7 @@ import React from 'react';
 import { View } from 'react-native';
 import { spacing } from '@supotsu/design-system';
 import { Card } from './Card';
+import { Icon, type IconName } from './Icon';
 import { Text } from './Text';
 import { useTheme } from './theme';
 
@@ -17,7 +18,7 @@ export interface KPICardProps {
   caption?: string;
 }
 
-const TREND_GLYPH: Record<Trend, string> = { up: '▲', down: '▼', flat: '＝' };
+const TREND_ICON: Record<Trend, IconName> = { up: 'trendingUp', down: 'trendingDown', flat: 'trendingFlat' };
 
 /** Score / stat tile for the dashboard (Master Prompt P28.8 KPI Card). */
 export function KPICard({ label, value, unit, trend, caption }: KPICardProps): React.JSX.Element {
@@ -38,9 +39,9 @@ export function KPICard({ label, value, unit, trend, caption }: KPICardProps): R
           </Text>
         ) : null}
         {trend ? (
-          <Text variant="subtitle" style={{ color: trendColor, marginBottom: spacing[1] }}>
-            {TREND_GLYPH[trend]}
-          </Text>
+          <View style={{ marginBottom: spacing[1] }}>
+            <Icon name={TREND_ICON[trend]} size={16} color={trendColor} />
+          </View>
         ) : null}
       </View>
       {caption ? (

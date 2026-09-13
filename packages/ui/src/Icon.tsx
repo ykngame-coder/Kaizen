@@ -22,6 +22,9 @@ const REGISTRY = {
   notifications: material('notifications'),
   settings: material('settings'),
   chat: community('chat-outline'),
+  menu: material('menu'),
+  dashboard: material('dashboard'),
+  chevronRight: material('chevron-right'),
 
   // Profile hub
   target: community('target'),
@@ -42,6 +45,7 @@ const REGISTRY = {
   alarm: material('alarm'),
   trendingDown: community('trending-down'),
   trendingUp: community('trending-up'),
+  trendingFlat: community('trending-neutral'),
   water: community('cup-water'),
   sleep: community('sleep'),
   footsteps: community('shoe-print'),

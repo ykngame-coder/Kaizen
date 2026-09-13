@@ -1,5 +1,6 @@
-import React from 'react';
-import { View } from 'react-native';
+import React, { useEffect, useRef } from 'react';
+import { Animated, View } from 'react-native';
+import { duration } from '@supotsu/design-system';
 import { useTheme } from './theme';
 
 export interface MeterProps {
@@ -17,6 +18,12 @@ export interface MeterProps {
 export function Meter({ value, color, track, height = 8 }: MeterProps): React.JSX.Element {
   const { colors } = useTheme();
   const pct = Math.max(0, Math.min(100, value));
+  const anim = useRef(new Animated.Value(pct)).current;
+
+  useEffect(() => {
+    Animated.timing(anim, { toValue: pct, duration: duration.slow, useNativeDriver: false }).start();
+  }, [pct, anim]);
+
   return (
     <View
       style={{
@@ -26,9 +33,9 @@ export function Meter({ value, color, track, height = 8 }: MeterProps): React.JS
         overflow: 'hidden',
       }}
     >
-      <View
+      <Animated.View
         style={{
-          width: `${pct}%`,
+          width: anim.interpolate({ inputRange: [0, 100], outputRange: ['0%', '100%'] }),
           height: '100%',
           backgroundColor: color ?? colors.primary,
           borderRadius: height / 2,

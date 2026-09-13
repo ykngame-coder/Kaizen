@@ -41,7 +41,7 @@ export function SegmentedControl<T extends string>({
             accessibilityRole="radio"
             accessibilityState={{ selected }}
             onPress={() => onChange(option.value)}
-            style={{
+            style={({ pressed }) => ({
               flexGrow: vertical ? 0 : 1,
               backgroundColor: selected ? colors.primary : colors.surfaceElevated,
               borderColor: selected ? colors.primary : colors.border,
@@ -50,7 +50,8 @@ export function SegmentedControl<T extends string>({
               paddingVertical: spacing[3],
               paddingHorizontal: spacing[4],
               alignItems: 'center',
-            }}
+              opacity: pressed ? 0.8 : 1,
+            })}
           >
             <Text variant="subtitle" color={selected ? 'onPrimary' : 'text'}>
               {option.label}

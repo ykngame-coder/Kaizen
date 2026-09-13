@@ -1,6 +1,7 @@
 import React from 'react';
 import { Pressable, View } from 'react-native';
 import { radii, spacing } from '@supotsu/design-system';
+import { Icon } from './Icon';
 import { Text } from './Text';
 import { useTheme } from './theme';
 
@@ -88,9 +89,9 @@ export function ListRow({
           </Text>
         ) : null)}
       {showChevron ? (
-        <Text variant="body" color="textSubtle" style={{ marginLeft: spacing[1] }}>
-          ›
-        </Text>
+        <View style={{ marginLeft: spacing[1] }}>
+          <Icon name="chevronRight" size={20} color={colors.textSubtle} />
+        </View>
       ) : null}
     </View>
   );
