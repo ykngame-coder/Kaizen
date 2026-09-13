@@ -1,24 +1,18 @@
 import React, { useMemo, useState } from 'react';
-import { Pressable, View } from 'react-native';
+import { View } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { Badge, Button, Card, EmptyState, Icon, Input, Screen, Text, useTheme } from '@supotsu/ui';
 import { radii, spacing } from '@supotsu/design-system';
-import { useAddNutritionEntry, useDeleteNutritionEntry, useNutritionEntries, useUpdateNutritionEntry } from '@/lib/data/queries';
+import { useCopyNutritionEntries, useDeleteNutritionEntry, useNutritionEntries, useUpdateNutritionEntry } from '@/lib/data/queries';
 import { formatDate } from '@/lib/format';
 import { formatClockFromIso, usePreferences } from '@/lib/preferences';
 import { BackButton } from '@/features/navigation/BackButton';
-import type { MealType } from '@supotsu/core';
+import { dayKeyOf, selectedDayFrom, shiftDay } from '@/features/navigation/day';
+import { copyInputOf, movePatchOf, resolveMeal, type MealTarget } from './copyEntries';
+import { DayMealSheet, dayLabelOf } from './DayMealSheet';
 
 const MEAL_ICON: Record<string, string> = { breakfast: '🥣', lunch: '🍗', dinner: '🍝', snack: '🍎' };
-const MEAL_TYPES: MealType[] = ['breakfast', 'lunch', 'dinner', 'snack'];
-
-/** Même horodatage, décalé de N jours — l'heure de la journée est conservée. */
-function shiftDays(iso: string, days: number): string {
-  const d = new Date(iso);
-  d.setDate(d.getDate() + days);
-  return d.toISOString();
-}
 
 /** Small stat block — omits itself when there's no value to show. */
 function Stat({ label, value }: { label: string; value: string | null | undefined }): React.JSX.Element | null {
@@ -42,7 +36,11 @@ export function MealDetailScreen(): React.JSX.Element {
   const { data: entries = [], isLoading } = useNutritionEntries();
   const deleteEntry = useDeleteNutritionEntry();
   const updateEntry = useUpdateNutritionEntry();
-  const addEntry = useAddNutritionEntry();
+  const copyEntries = useCopyNutritionEntries();
+  const [sheet, setSheet] = useState<'copy' | 'move' | null>(null);
+  const [sheetError, setSheetError] = useState<string | null>(null);
+  // La copie part vers un autre jour : rien ne change à l'écran, il faut le dire.
+  const [copied, setCopied] = useState<string | null>(null);
   const [confirmingDelete, setConfirmingDelete] = useState(false);
   const [editing, setEditing] = useState(false);
   const [kcalInput, setKcalInput] = useState('');
@@ -78,6 +76,27 @@ export function MealDetailScreen(): React.JSX.Element {
       </Screen>
     );
   }
+
+  const closeSheet = (): void => {
+    setSheet(null);
+    setSheetError(null);
+  };
+
+  const confirmSheet = async (dayKey: string, meal: MealTarget): Promise<void> => {
+    setSheetError(null);
+    try {
+      if (sheet === 'copy') {
+        await copyEntries.mutateAsync([copyInputOf(entry, dayKey, meal)]);
+        setCopied(t('nutrition.copy.done.copied', { count: 1, day: dayLabelOf(dayKey, t, { inline: true }) }));
+      } else {
+        const patch = movePatchOf(entry, dayKey, meal);
+        if (patch) await updateEntry.mutateAsync(patch);
+      }
+      closeSheet();
+    } catch {
+      setSheetError(t(sheet === 'copy' ? 'nutrition.copy.failed' : 'nutrition.copy.moveFailed'));
+    }
+  };
 
   const onDelete = async (): Promise<void> => {
     await deleteEntry.mutateAsync(entry.id);
@@ -165,87 +184,46 @@ export function MealDetailScreen(): React.JSX.Element {
         </Card>
       ) : !editing ? (
         <>
-        {/* Réattribuer à un autre repas — une entrée loguée au petit-déjeuner
-            alors qu'elle relevait du déjeuner se déplace ici, sans avoir à la
-            supprimer et la ressaisir. Les macros ne sont pas touchées. */}
-        <Card>
-          <Text variant="label" color="textMuted">{t('nutrition.mealDetail.moveHeading')}</Text>
-          <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: spacing[2], marginTop: spacing[2] }}>
-            {MEAL_TYPES.map((m) => {
-              const current = m === entry.mealType;
-              return (
-                <Pressable
-                  key={m}
-                  disabled={current || updateEntry.isPending}
-                  onPress={() => updateEntry.mutate({ entryId: entry.id, mealType: m })}
-                  style={{
-                    flexDirection: 'row', alignItems: 'center', gap: 6,
-                    paddingHorizontal: 12, paddingVertical: 8, borderRadius: radii.full,
-                    backgroundColor: current ? colors.primary : colors.surfaceElevated,
-                    borderWidth: 1, borderColor: current ? colors.primary : colors.border,
-                    opacity: !current && updateEntry.isPending ? 0.5 : 1,
-                  }}
-                >
-                  <Text style={{ fontSize: 13 }}>{MEAL_ICON[m]}</Text>
-                  <Text variant="caption" style={{ color: current ? colors.onPrimary : colors.text, fontWeight: '600' }}>
-                    {t(`nutrition.journal.meal.${m}`)}
-                  </Text>
-                </Pressable>
-              );
-            })}
+        {/* Copier et déplacer passent par la même feuille repas × jour que
+            la sélection de la journée. Remplace les pastilles de repas, les
+            boutons ±1 jour et la copie qui ne sortait pas du jour. */}
+        {copied ? <Badge label={copied} tone="success" /> : null}
+        <View style={{ flexDirection: 'row', gap: spacing[2] }}>
+          <View style={{ flex: 1 }}>
+            <Button label={t('nutrition.copy.copyAction')} variant="secondary" onPress={() => { setCopied(null); setSheet('copy'); }} fullWidth />
           </View>
-
-          {/* Décaler d'un jour : une entrée saisie le lendemain matin pour la
-              veille se recale sans ressaisie. L'heure est conservée. */}
-          <View style={{ flexDirection: 'row', gap: spacing[2], marginTop: spacing[3] }}>
-            <Button
-              label={t('nutrition.mealDetail.movePrevDay')}
-              variant="secondary"
-              disabled={updateEntry.isPending}
-              onPress={() => updateEntry.mutate({ entryId: entry.id, loggedAt: shiftDays(entry.loggedAt, -1) })}
-            />
-            <Button
-              label={t('nutrition.mealDetail.moveNextDay')}
-              variant="secondary"
-              disabled={updateEntry.isPending}
-              onPress={() => updateEntry.mutate({ entryId: entry.id, loggedAt: shiftDays(entry.loggedAt, 1) })}
-            />
+          <View style={{ flex: 1 }}>
+            <Button label={t('nutrition.copy.moveAction')} variant="secondary" onPress={() => setSheet('move')} fullWidth />
           </View>
-        </Card>
-
-        {/* Copier plutôt que déplacer — même aliment dans un second repas. */}
-        <Card>
-          <Text variant="label" color="textMuted">{t('nutrition.mealDetail.copyHeading')}</Text>
-          <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: spacing[2], marginTop: spacing[2] }}>
-            {MEAL_TYPES.map((m) => (
-              <Pressable
-                key={m}
-                disabled={addEntry.isPending}
-                onPress={() => addEntry.mutate({
-                  mealType: m,
-                  description: entry.description,
-                  kcal: entry.kcal,
-                  proteinG: entry.proteinG,
-                  carbG: entry.carbG,
-                  fatG: entry.fatG,
-                  hydrationMl: entry.hydrationMl,
-                  source: 'manual',
-                  loggedAt: entry.loggedAt,
-                })}
-                style={{
-                  flexDirection: 'row', alignItems: 'center', gap: 6,
-                  paddingHorizontal: 12, paddingVertical: 8, borderRadius: radii.full,
-                  backgroundColor: colors.surfaceElevated,
-                  borderWidth: 1, borderColor: colors.border,
-                  opacity: addEntry.isPending ? 0.5 : 1,
-                }}
-              >
-                <Text style={{ fontSize: 13 }}>{MEAL_ICON[m]}</Text>
-                <Text variant="caption" style={{ fontWeight: '600' }}>{t(`nutrition.journal.meal.${m}`)}</Text>
-              </Pressable>
-            ))}
-          </View>
-        </Card>
+        </View>
+        <DayMealSheet
+          visible={sheet !== null}
+          onClose={closeSheet}
+          title={sheet === 'move' ? t('nutrition.copy.moveTitle', { count: 1 }) : t('nutrition.copy.copyTitle', { count: 1 })}
+          direction="to"
+          initialDayKey={sheet === 'copy' ? shiftDay(selectedDayFrom(dayKeyOf(entry.loggedAt)), 1).key : dayKeyOf(entry.loggedAt)}
+          initialMeal={entry.mealType}
+          preview={(dayKey, meal) => {
+            const patch = movePatchOf(entry, dayKey, meal);
+            const name = entry.description || t(`nutrition.journal.meal.${entry.mealType}`);
+            const to = t(`nutrition.journal.meal.${resolveMeal(entry, meal)}`);
+            if (sheet === 'move') {
+              return {
+                rows: [{ key: entry.id, name, detail: patch ? `${t(`nutrition.journal.meal.${entry.mealType}`)} → ${to}` : t('nutrition.copy.stays'), kcal: entry.kcal }],
+                confirmLabel: patch ? t('nutrition.copy.moveTo', { day: dayLabelOf(dayKey, t, { inline: true }) }) : t('nutrition.copy.alreadyThere'),
+                disabled: !patch,
+              };
+            }
+            return {
+              rows: [{ key: entry.id, name, detail: `→ ${to}`, kcal: entry.kcal }],
+              confirmLabel: t('nutrition.copy.copyTo', { day: dayLabelOf(dayKey, t, { inline: true }) }),
+              disabled: false,
+            };
+          }}
+          onConfirm={(dayKey, meal) => void confirmSheet(dayKey, meal)}
+          busy={copyEntries.isPending || updateEntry.isPending}
+          error={sheetError}
+        />
 
         <View style={{ flexDirection: 'row', gap: spacing[3] }}>
           <Button label={t('common.back')} variant="secondary" onPress={() => router.back()} />

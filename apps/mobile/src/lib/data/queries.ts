@@ -215,6 +215,54 @@ export function useUpdateNutritionEntry() {
   });
 }
 
+/** Copie plusieurs aliments en une écriture — voir `copyInputOf`. */
+export function useCopyNutritionEntries() {
+  const { user } = useAuth();
+  const repo = useRepository();
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (inputs: NutritionEntryInput[]) => repo.addNutritionEntries(user!.id, inputs),
+    onSuccess: (_data, inputs) => {
+      qc.invalidateQueries({ queryKey: ['nutrition', user?.id] });
+      // Une copie est un vrai repas mangé : Santé doit la voir, comme un ajout.
+      for (const input of inputs) void mirrorToHealthKit(() => saveNutritionToHealthKit(input));
+    },
+  });
+}
+
+/**
+ * Déplace plusieurs aliments. Une écriture par aliment — il n'existe pas de
+ * mise à jour groupée avec des valeurs différentes par ligne sans passer par
+ * une fonction SQL. Les échecs sont donc comptés et rendus plutôt que tus :
+ * l'écran peut dire « 2 sur 3 déplacés ».
+ */
+export function useMoveNutritionEntries() {
+  const { user } = useAuth();
+  const repo = useRepository();
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (patches: { entryId: string; mealType?: MealType; loggedAt?: string }[]) => {
+      const results = await Promise.allSettled(patches.map((p) => repo.updateNutritionEntry(user!.id, p.entryId, p)));
+      return { moved: results.filter((r) => r.status === 'fulfilled').length, total: patches.length };
+    },
+    onSettled: () => {
+      qc.invalidateQueries({ queryKey: ['nutrition', user?.id] });
+    },
+  });
+}
+
+export function useDeleteNutritionEntries() {
+  const { user } = useAuth();
+  const repo = useRepository();
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (entryIds: string[]) => repo.deleteNutritionEntries(user!.id, entryIds),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['nutrition', user?.id] });
+    },
+  });
+}
+
 export function useHabits() {
   const { user } = useAuth();
   const repo = useRepository();

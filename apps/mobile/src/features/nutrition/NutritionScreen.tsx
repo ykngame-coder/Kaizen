@@ -17,7 +17,7 @@ import {
   type MacroGoals,
 } from '@supotsu/engines';
 import type { TrendPoint } from '@supotsu/engines';
-import type { HealthMetricType } from '@supotsu/core';
+import type { HealthMetricType, MealType } from '@supotsu/core';
 import { useAddNutritionEntry, useHealthMetrics, useLeaderboardPrefs, useNutritionEntries, useRecordDailyScore } from '@/lib/data/queries';
 import { useManualHealthKitSync } from '@/features/connectors/useHealthKitAutoSync';
 import { CalorieCalculatorForm } from './CalorieCalculatorForm';
@@ -28,6 +28,7 @@ import { ComprendreCard } from '@/features/knowledge/ComprendreCard';
 import { isTodayLocal } from '@/features/community/leaderboardHelpers';
 import { resolveNutritionCardOrder } from './nutritionCards';
 import { sumMealMacros } from './mealMacroTotals';
+import { CopyFromSheet } from './CopyFromSheet';
 
 const DAY_MS = 86_400_000;
 
@@ -151,6 +152,8 @@ export function NutritionScreen(): React.JSX.Element {
   const { data: health = [] } = useHealthMetrics();
   const addEntry = useAddNutritionEntry();
   const [selectedDate, setSelectedDate] = useSelectedDay();
+  // Le repas dont on a touché l'icône « Copier depuis » — la feuille est ouverte tant qu'il y en a un.
+  const [copyInto, setCopyInto] = useState<MealType | null>(null);
   // Borne SUPÉRIEURE explicite du jour consulté. Le sélecteur ne rend plus un
   // instant qu'on pouvait confondre avec un « maintenant » ou un horodatage :
   // chaque usage doit dire lequel des trois il veut.
@@ -312,7 +315,15 @@ export function NutritionScreen(): React.JSX.Element {
     ),
     meals: (
       <Card>
-        <SectionTitle>{t('nutrition.screen.meals.title')}</SectionTitle>
+        <SectionTitle
+          right={
+            <Pressable onPress={() => router.push({ pathname: '/nutrition/meal/edit', params: { date: selectedDate.key } })} hitSlop={8}>
+              <Text variant="caption" color="primary" style={{ fontWeight: '600' }}>{t('nutrition.dayEdit.open')}</Text>
+            </Pressable>
+          }
+        >
+          {t('nutrition.screen.meals.title')}
+        </SectionTitle>
         {meals.map((m, i) => {
           const first = m.entries[0];
           const summary = first
@@ -348,6 +359,14 @@ export function NutritionScreen(): React.JSX.Element {
               >
                 <View style={{ width: 40, height: 40, borderRadius: 12, backgroundColor: colors.surfaceElevated, alignItems: 'center', justifyContent: 'center' }}><Icon name={MEAL_ICON[m.type] ?? 'bowl'} size={19} color={colors.text} /></View>
                 <Text variant="body" color={m.count > 0 ? 'text' : 'textSubtle'} style={{ flex: 1 }} numberOfLines={1}>{summary}</Text>
+                <Pressable
+                  onPress={() => setCopyInto(m.type)}
+                  accessibilityLabel={t('nutrition.copy.copyFromA11y')}
+                  hitSlop={8}
+                  style={{ width: 28, height: 28, borderRadius: 14, backgroundColor: colors.surfaceElevated, alignItems: 'center', justifyContent: 'center' }}
+                >
+                  <Icon name="copy" size={14} color={colors.textMuted} />
+                </Pressable>
                 <Pressable
                   onPress={() => router.push({ pathname: '/nutrition/meal/new', params: { date: selectedDate.key, mealType: m.type } })}
                   accessibilityLabel={t('nutrition.mealDay.addButton')}
@@ -509,6 +528,7 @@ export function NutritionScreen(): React.JSX.Element {
           <React.Fragment key={c.id}>{cardNodes[c.id]}</React.Fragment>
         ))}
       </Screen>
+      <CopyFromSheet targetMeal={copyInto} targetDayKey={selectedDate.key} entries={entries} onClose={() => setCopyInto(null)} />
       <Fab icon="+" accessibilityLabel={t('nutrition.screen.fab.addFood')} onPress={() => router.push({ pathname: '/nutrition/meal/new', params: { date: selectedDate.key } })} />
     </View>
   );

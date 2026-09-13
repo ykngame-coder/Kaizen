@@ -2351,11 +2351,7 @@
    "editErrorInvalid": "Gib gültige Kalorien an.",
    "editErrorSaveFailed": "Speichern nicht möglich.",
    "confirmDelete": "Diese Mahlzeit endgültig löschen?",
-   "delete": "Löschen",
-   "moveHeading": "In eine andere Mahlzeit verschieben",
-   "copyHeading": "In eine andere Mahlzeit kopieren",
-   "movePrevDay": "◀ Vortag",
-   "moveNextDay": "Folgetag ▶"
+   "delete": "Löschen"
   },
   "barcodeScan": {
    "webTitle": "Barcode scannen",
@@ -2378,6 +2374,73 @@
     "message": "Füge dieser Mahlzeit ein Lebensmittel hinzu, um es hier zu sehen."
    },
    "addButton": "Hinzufügen"
+  },
+  "copy": {
+   "yesterday": "Gestern",
+   "today": "Heute",
+   "tomorrow": "Morgen",
+   "inline": {
+    "yesterday": "gestern",
+    "today": "heute",
+    "tomorrow": "morgen"
+   },
+   "from": "Von",
+   "to": "Nach",
+   "origin": "Ursprüngliche Mahlzeit",
+   "mealWheel": "Mahlzeit",
+   "dayWheel": "Tag",
+   "total": "Gesamt",
+   "emptySource": "An diesem Tag nichts für diese Mahlzeit erfasst.",
+   "copyCount_one": "{{count}} Lebensmittel kopieren",
+   "copyCount_other": "{{count}} Lebensmittel kopieren",
+   "nothing": "Nichts zu kopieren",
+   "failed": "Kopieren fehlgeschlagen. Es wurde nichts hinzugefügt.",
+   "moveFailed": "Verschieben fehlgeschlagen. Bitte erneut versuchen.",
+   "deleteFailed": "Löschen fehlgeschlagen. Es wurde nichts entfernt.",
+   "intoMeal": {
+    "breakfast": "Ins Frühstück kopieren",
+    "lunch": "Ins Mittagessen kopieren",
+    "dinner": "Ins Abendessen kopieren",
+    "snack": "In den Snack kopieren"
+   },
+   "copyTo": "Auf {{day}} kopieren",
+   "moveTo": "Auf {{day}} verschieben",
+   "alreadyThere": "Bereits dort",
+   "stays": "bleibt",
+   "copyAction": "Kopieren nach…",
+   "moveAction": "Verschieben nach…",
+   "deleteAction": "Löschen",
+   "copyTitle_one": "{{count}} Lebensmittel kopieren",
+   "copyTitle_other": "{{count}} Lebensmittel kopieren",
+   "moveTitle_one": "{{count}} Lebensmittel verschieben",
+   "moveTitle_other": "{{count}} Lebensmittel verschieben",
+   "copyFromA11y": "Von einem anderen Tag kopieren",
+   "done": {
+    "copied_one": "{{count}} Lebensmittel auf {{day}} kopiert",
+    "copied_other": "{{count}} Lebensmittel auf {{day}} kopiert",
+    "moved_one": "{{count}} Lebensmittel auf {{day}} verschoben",
+    "moved_other": "{{count}} Lebensmittel auf {{day}} verschoben",
+    "movedPartial": "{{moved}} von {{total}} verschoben – für den Rest bitte erneut versuchen.",
+    "deleted_one": "{{count}} Lebensmittel gelöscht",
+    "deleted_other": "{{count}} Lebensmittel gelöscht"
+   },
+   "deleteConfirm": {
+    "title_one": "{{count}} Lebensmittel löschen?",
+    "title_other": "{{count}} Lebensmittel löschen?",
+    "message": "Das kann nicht rückgängig gemacht werden."
+   }
+  },
+  "dayEdit": {
+   "open": "Bearbeiten",
+   "done": "Fertig",
+   "title": "Tag bearbeiten",
+   "emptyMeal": "leer",
+   "empty": {
+    "title": "An diesem Tag nichts erfasst",
+    "message": "Füge unter Ernährung ein Lebensmittel hinzu und komm dann hierher zurück, um es zu kopieren oder zu verschieben."
+   },
+   "selection_one": "{{count}} Lebensmittel · {{kcal}} kcal",
+   "selection_other": "{{count}} Lebensmittel · {{kcal}} kcal"
   }
  },
  "analytics": {

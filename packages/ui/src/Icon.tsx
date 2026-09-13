@@ -99,6 +99,8 @@ const REGISTRY = {
   lightbulb: community('lightbulb-on-outline'),
   trash: community('trash-can-outline'),
   pencil: community('pencil-outline'),
+  copy: community('content-copy'),
+  check: material('check'),
 } as const;
 
 export type IconName = keyof typeof REGISTRY;

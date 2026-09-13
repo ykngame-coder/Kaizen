@@ -18,23 +18,62 @@ export async function insertNutritionEntry(
   return data;
 }
 
-/** List the user's intake entries, most recent first. */
+/**
+ * Insère plusieurs aliments en UNE requête — tout ou rien. Copier un repas de
+ * trois aliments ne doit jamais en laisser deux si le réseau lâche au milieu.
+ */
+export async function insertNutritionEntries(
+  client: SupotsuClient,
+  rows: NutritionEntryInsertRow[],
+): Promise<NutritionEntryRow[]> {
+  if (rows.length === 0) return [];
+  const { data, error } = await client.from('nutrition_entries').insert(rows).select('*');
+  if (error) throw error;
+  return data ?? [];
+}
+
+const PAGE = 1000;
+
+/**
+ * List the user's intake entries, most recent first.
+ *
+ * Paginée : PostgREST plafonne toute réponse à `max-rows` (1000 chez
+ * Supabase) sans le signaler comme une erreur — c'est ce qui effaçait les
+ * habitudes des jours passés. Au-delà de 1000 aliments, les plus anciens
+ * disparaissaient de même, et c'est précisément eux que « Copier depuis » va
+ * chercher. `id` en clé secondaire : `logged_at` n'est pas unique, et sans
+ * ordre total une ligne peut passer d'une page à l'autre et être lue deux fois
+ * ou jamais.
+ */
 export async function listNutritionEntries(
   client: SupotsuClient,
   userId: string,
 ): Promise<NutritionEntryRow[]> {
-  const { data, error } = await client
-    .from('nutrition_entries')
-    .select('*')
-    .eq('user_id', userId)
-    .order('logged_at', { ascending: false });
-  if (error) throw error;
-  return data ?? [];
+  const rows: NutritionEntryRow[] = [];
+  for (let from = 0; ; from += PAGE) {
+    const { data, error } = await client
+      .from('nutrition_entries')
+      .select('*')
+      .eq('user_id', userId)
+      .order('logged_at', { ascending: false })
+      .order('id', { ascending: false })
+      .range(from, from + PAGE - 1);
+    if (error) throw error;
+    rows.push(...(data ?? []));
+    if (!data || data.length < PAGE) return rows;
+  }
 }
 
 /** Delete a single logged intake (e.g. a mislogged or duplicate meal). */
 export async function deleteNutritionEntry(client: SupotsuClient, entryId: string): Promise<void> {
   const { error } = await client.from('nutrition_entries').delete().eq('id', entryId);
+  if (error) throw error;
+}
+
+/** Supprime plusieurs aliments en une requête — tout ou rien. */
+export async function deleteNutritionEntries(client: SupotsuClient, entryIds: string[]): Promise<void> {
+  if (entryIds.length === 0) return;
+  const { error } = await client.from('nutrition_entries').delete().in('id', entryIds);
   if (error) throw error;
 }
 

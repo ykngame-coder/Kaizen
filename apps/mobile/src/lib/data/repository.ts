@@ -90,6 +90,8 @@ import {
   insertSleepSessions,
   listSleepSessions as listSleepSessionsDb,
   insertNutritionEntry,
+  insertNutritionEntries,
+  deleteNutritionEntries as deleteNutritionEntriesDb,
   listNutritionEntries as listNutritionEntriesDb,
   deleteNutritionEntry as deleteNutritionEntryDb,
   updateNutritionEntry as updateNutritionEntryDb,
@@ -340,7 +342,11 @@ export interface DataRepository {
   saveAthleteProfile(userId: string, input: AthleteProfileInput): Promise<void>;
   listNutritionEntries(userId: string): Promise<NutritionEntry[]>;
   addNutritionEntry(userId: string, input: NutritionEntryInput): Promise<NutritionEntry>;
+  /** Plusieurs aliments d'un coup, tout ou rien — copier un repas, une journée. */
+  addNutritionEntries(userId: string, inputs: NutritionEntryInput[]): Promise<NutritionEntry[]>;
   deleteNutritionEntry(userId: string, entryId: string): Promise<void>;
+  /** Plusieurs aliments d'un coup, tout ou rien. */
+  deleteNutritionEntries(userId: string, entryIds: string[]): Promise<void>;
   /** Adjust a logged entry's calories/macros, or move it to another meal (e.g. logged under breakfast, actually lunch). */
   updateNutritionEntry(userId: string, entryId: string, patch: { kcal?: number; proteinG?: number; carbG?: number; fatG?: number; mealType?: MealType; loggedAt?: string }): Promise<NutritionEntry>;
   listHabits(userId: string): Promise<Habit[]>;
@@ -1595,6 +1601,7 @@ function createDemoRepository(): DataRepository {
         carbG: input.carbG,
         fatG: input.fatG,
         hydrationMl: input.hydrationMl,
+        quantityG: input.quantityG,
         source: input.source,
         loggedAt: input.loggedAt,
         createdAt: now,
@@ -1604,9 +1611,36 @@ function createDemoRepository(): DataRepository {
       await writeJson(nutKey(userId), [entry, ...items]);
       return entry;
     },
+    async addNutritionEntries(userId, inputs) {
+      const now = new Date().toISOString();
+      const entries: NutritionEntry[] = inputs.map((input) => ({
+        id: randomId(),
+        userId,
+        mealType: input.mealType,
+        description: input.description,
+        kcal: input.kcal,
+        proteinG: input.proteinG,
+        carbG: input.carbG,
+        fatG: input.fatG,
+        hydrationMl: input.hydrationMl,
+        quantityG: input.quantityG,
+        source: input.source,
+        loggedAt: input.loggedAt,
+        createdAt: now,
+        updatedAt: now,
+      }));
+      const items = await readJson<NutritionEntry>(nutKey(userId));
+      await writeJson(nutKey(userId), [...entries, ...items]);
+      return entries;
+    },
     async deleteNutritionEntry(userId, entryId) {
       const items = await readJson<NutritionEntry>(nutKey(userId));
       await writeJson(nutKey(userId), items.filter((e) => e.id !== entryId));
+    },
+    async deleteNutritionEntries(userId, entryIds) {
+      const gone = new Set(entryIds);
+      const items = await readJson<NutritionEntry>(nutKey(userId));
+      await writeJson(nutKey(userId), items.filter((e) => !gone.has(e.id)));
     },
     async updateNutritionEntry(userId, entryId, patch) {
       const items = await readJson<NutritionEntry>(nutKey(userId));
@@ -2424,8 +2458,30 @@ function createSupabaseRepository(
       });
       return rowToNutrition(row);
     },
+    async addNutritionEntries(userId, inputs) {
+      const rows = await insertNutritionEntries(
+        client,
+        inputs.map((input) => ({
+          user_id: userId,
+          meal_type: input.mealType,
+          description: input.description,
+          kcal: input.kcal,
+          protein_g: input.proteinG ?? null,
+          carb_g: input.carbG ?? null,
+          fat_g: input.fatG ?? null,
+          hydration_ml: input.hydrationMl ?? null,
+          quantity_g: input.quantityG ?? null,
+          source: input.source,
+          logged_at: input.loggedAt,
+        })),
+      );
+      return rows.map(rowToNutrition);
+    },
     async deleteNutritionEntry(_userId, entryId) {
       await deleteNutritionEntryDb(client, entryId);
+    },
+    async deleteNutritionEntries(_userId, entryIds) {
+      await deleteNutritionEntriesDb(client, entryIds);
     },
     async updateNutritionEntry(_userId, entryId, patch) {
       // Patch partiel : n'envoyer que ce qui est fourni. Écrire

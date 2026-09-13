@@ -2351,11 +2351,7 @@
    "editErrorInvalid": "Enter valid calories.",
    "editErrorSaveFailed": "Couldn't save the changes.",
    "confirmDelete": "Permanently delete this meal?",
-   "delete": "Delete",
-   "moveHeading": "Move to another meal",
-   "copyHeading": "Copy to another meal",
-   "movePrevDay": "◀ Previous day",
-   "moveNextDay": "Next day ▶"
+   "delete": "Delete"
   },
   "barcodeScan": {
    "webTitle": "Scan a barcode",
@@ -2378,6 +2374,73 @@
     "message": "Add a food to this meal to see it here."
    },
    "addButton": "Add"
+  },
+  "copy": {
+   "yesterday": "Yesterday",
+   "today": "Today",
+   "tomorrow": "Tomorrow",
+   "inline": {
+    "yesterday": "yesterday",
+    "today": "today",
+    "tomorrow": "tomorrow"
+   },
+   "from": "From",
+   "to": "To",
+   "origin": "Original meal",
+   "mealWheel": "Meal",
+   "dayWheel": "Day",
+   "total": "Total",
+   "emptySource": "Nothing logged for this meal that day.",
+   "copyCount_one": "Copy {{count}} item",
+   "copyCount_other": "Copy {{count}} items",
+   "nothing": "Nothing to copy",
+   "failed": "Copy failed. Nothing was added.",
+   "moveFailed": "Move failed. Try again.",
+   "deleteFailed": "Delete failed. Nothing was removed.",
+   "intoMeal": {
+    "breakfast": "Copy into breakfast",
+    "lunch": "Copy into lunch",
+    "dinner": "Copy into dinner",
+    "snack": "Copy into snack"
+   },
+   "copyTo": "Copy to {{day}}",
+   "moveTo": "Move to {{day}}",
+   "alreadyThere": "Already there",
+   "stays": "stays put",
+   "copyAction": "Copy to…",
+   "moveAction": "Move to…",
+   "deleteAction": "Delete",
+   "copyTitle_one": "Copy {{count}} item",
+   "copyTitle_other": "Copy {{count}} items",
+   "moveTitle_one": "Move {{count}} item",
+   "moveTitle_other": "Move {{count}} items",
+   "copyFromA11y": "Copy from another day",
+   "done": {
+    "copied_one": "{{count}} item copied to {{day}}",
+    "copied_other": "{{count}} items copied to {{day}}",
+    "moved_one": "{{count}} item moved to {{day}}",
+    "moved_other": "{{count}} items moved to {{day}}",
+    "movedPartial": "{{moved}} of {{total}} moved — try again for the rest.",
+    "deleted_one": "{{count}} item deleted",
+    "deleted_other": "{{count}} items deleted"
+   },
+   "deleteConfirm": {
+    "title_one": "Delete {{count}} item?",
+    "title_other": "Delete {{count}} items?",
+    "message": "This can't be undone."
+   }
+  },
+  "dayEdit": {
+   "open": "Edit",
+   "done": "Done",
+   "title": "Edit day",
+   "emptyMeal": "empty",
+   "empty": {
+    "title": "Nothing logged that day",
+    "message": "Add a food from Nutrition, then come back here to copy or move it."
+   },
+   "selection_one": "{{count}} item · {{kcal}} kcal",
+   "selection_other": "{{count}} items · {{kcal}} kcal"
   }
  },
  "analytics": {

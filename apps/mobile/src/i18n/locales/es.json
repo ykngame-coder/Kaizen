@@ -2351,11 +2351,7 @@
    "editErrorInvalid": "Indica calorías válidas.",
    "editErrorSaveFailed": "No se pudo guardar.",
    "confirmDelete": "¿Eliminar definitivamente esta comida?",
-   "delete": "Eliminar",
-   "moveHeading": "Mover a otra comida",
-   "copyHeading": "Copiar a otra comida",
-   "movePrevDay": "◀ Día anterior",
-   "moveNextDay": "Día siguiente ▶"
+   "delete": "Eliminar"
   },
   "barcodeScan": {
    "webTitle": "Escanear un código de barras",
@@ -2378,6 +2374,73 @@
     "message": "Añade un alimento a esta comida para verlo aquí."
    },
    "addButton": "Añadir"
+  },
+  "copy": {
+   "yesterday": "Ayer",
+   "today": "Hoy",
+   "tomorrow": "Mañana",
+   "inline": {
+    "yesterday": "ayer",
+    "today": "hoy",
+    "tomorrow": "mañana"
+   },
+   "from": "Desde",
+   "to": "Hacia",
+   "origin": "Comida original",
+   "mealWheel": "Comida",
+   "dayWheel": "Día",
+   "total": "Total",
+   "emptySource": "Nada registrado en esta comida ese día.",
+   "copyCount_one": "Copiar {{count}} alimento",
+   "copyCount_other": "Copiar {{count}} alimentos",
+   "nothing": "Nada que copiar",
+   "failed": "La copia ha fallado. No se ha añadido nada.",
+   "moveFailed": "No se ha podido mover. Inténtalo de nuevo.",
+   "deleteFailed": "No se ha podido eliminar. No se ha borrado nada.",
+   "intoMeal": {
+    "breakfast": "Copiar al desayuno",
+    "lunch": "Copiar al almuerzo",
+    "dinner": "Copiar a la cena",
+    "snack": "Copiar al snack"
+   },
+   "copyTo": "Copiar a {{day}}",
+   "moveTo": "Mover a {{day}}",
+   "alreadyThere": "Ya está ahí",
+   "stays": "no se mueve",
+   "copyAction": "Copiar a…",
+   "moveAction": "Mover a…",
+   "deleteAction": "Eliminar",
+   "copyTitle_one": "Copiar {{count}} alimento",
+   "copyTitle_other": "Copiar {{count}} alimentos",
+   "moveTitle_one": "Mover {{count}} alimento",
+   "moveTitle_other": "Mover {{count}} alimentos",
+   "copyFromA11y": "Copiar desde otro día",
+   "done": {
+    "copied_one": "{{count}} alimento copiado a {{day}}",
+    "copied_other": "{{count}} alimentos copiados a {{day}}",
+    "moved_one": "{{count}} alimento movido a {{day}}",
+    "moved_other": "{{count}} alimentos movidos a {{day}}",
+    "movedPartial": "{{moved}} de {{total}} movidos — inténtalo de nuevo con el resto.",
+    "deleted_one": "{{count}} alimento eliminado",
+    "deleted_other": "{{count}} alimentos eliminados"
+   },
+   "deleteConfirm": {
+    "title_one": "¿Eliminar {{count}} alimento?",
+    "title_other": "¿Eliminar {{count}} alimentos?",
+    "message": "Esta acción es definitiva."
+   }
+  },
+  "dayEdit": {
+   "open": "Editar",
+   "done": "OK",
+   "title": "Editar el día",
+   "emptyMeal": "vacía",
+   "empty": {
+    "title": "Nada registrado ese día",
+    "message": "Añade un alimento desde Nutrición y vuelve aquí para copiarlo o moverlo."
+   },
+   "selection_one": "{{count}} alimento · {{kcal}} kcal",
+   "selection_other": "{{count}} alimentos · {{kcal}} kcal"
   }
  },
  "analytics": {
