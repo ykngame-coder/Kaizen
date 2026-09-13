@@ -15,6 +15,7 @@ import {
   type ImportedHealthMetric,
   type ImportedSleepSession,
 } from '@supotsu/connectors';
+import { syncWindow, trimToWindow } from './syncWindow';
 import type { ActivityType } from '@supotsu/core';
 import type { ActivityInput, NutritionEntryInput } from '@supotsu/shared';
 
@@ -112,8 +113,14 @@ const WRITE_TYPES: HealthKit.SampleTypeIdentifierWriteable[] = [
   WORKOUT_TYPE,
 ];
 
-/** Request read authorization, then pull + normalize recent Health data. No persistence here — the caller persists via `useImportHealth`. */
-export async function syncHealthKit(): Promise<{
+/**
+ * Request read authorization, then pull + normalize recent Health data. No persistence here — the caller persists via `useImportHealth`.
+ *
+ * `days` : les N derniers jours seulement, aujourd'hui compris (synchro
+ * manuelle). Par défaut, tout l'historique (`LOOKBACK_DAYS`). Dans les deux
+ * cas la fenêtre est alignée sur minuit — voir `syncWindow`.
+ */
+export async function syncHealthKit(options: { days?: number } = {}): Promise<{
   activities: ImportedActivity[];
   healthMetrics: ImportedHealthMetric[];
   sleepSessions: ImportedSleepSession[];
@@ -127,7 +134,7 @@ export async function syncHealthKit(): Promise<{
     toShare: WRITE_TYPES,
   });
 
-  const since = new Date(Date.now() - LOOKBACK_DAYS * 24 * 60 * 60 * 1000);
+  const { since, keepFrom } = syncWindow(options.days ?? LOOKBACK_DAYS);
   const dateFilter = { date: { startDate: since } };
 
   const quantitySamples: HKQuantitySample[] = [];
@@ -253,7 +260,7 @@ export async function syncHealthKit(): Promise<{
     if (a) activities.push(a);
   }
 
-  return { activities, healthMetrics, sleepSessions };
+  return trimToWindow({ activities, healthMetrics, sleepSessions }, keepFrom);
 }
 
 /**

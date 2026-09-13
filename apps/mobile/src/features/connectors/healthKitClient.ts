@@ -10,7 +10,7 @@ export function healthKitAvailable(): boolean {
   return false;
 }
 
-export async function syncHealthKit(): Promise<{
+export async function syncHealthKit(_options: { days?: number } = {}): Promise<{
   activities: ImportedActivity[];
   healthMetrics: ImportedHealthMetric[];
   sleepSessions: ImportedSleepSession[];

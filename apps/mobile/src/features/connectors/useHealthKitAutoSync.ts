@@ -22,6 +22,14 @@ export async function isHealthKitConnected(): Promise<boolean> {
 const HEART_RATE_BACKFILL_DAYS = 3;
 
 /**
+ * Synchro manuelle (bouton de l'Accueil, tirer-pour-rafraîchir) : les 7
+ * derniers jours seulement. Relire trois ans à chaque appui prenait du temps
+ * pour rien — l'historique complet reste relu à l'ouverture de l'app et depuis
+ * l'écran Appareils.
+ */
+const MANUAL_SYNC_DAYS = 7;
+
+/**
  * Re-checks the last few days of completed workouts/activities still
  * missing heart rate and retries the same window-estimate-and-query step —
  * catching up once a watch's data has landed in Apple Santé after the
@@ -122,7 +130,7 @@ export function useManualHealthKitSync(): () => Promise<void> {
   return async () => {
     if (Platform.OS !== 'ios' || !healthKitAvailable() || !(await isHealthKitConnected())) return;
     try {
-      const { activities, healthMetrics, sleepSessions } = await syncHealthKit();
+      const { activities, healthMetrics, sleepSessions } = await syncHealthKit({ days: MANUAL_SYNC_DAYS });
       if (activities.length + healthMetrics.length + sleepSessions.length > 0) {
         await importHealth.mutateAsync({ activities, healthMetrics, records: [], sleepSessions, workouts: [], replaceSleepSource: 'apple_health' });
       }
