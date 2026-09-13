@@ -87,7 +87,7 @@ export function useHealthKitAutoSync(): void {
       try {
         const { activities, healthMetrics, sleepSessions } = await syncHealthKit();
         if (activities.length + healthMetrics.length + sleepSessions.length > 0) {
-          await importRef.current.mutateAsync({ activities, healthMetrics, records: [], sleepSessions, workouts: [] });
+          await importRef.current.mutateAsync({ activities, healthMetrics, records: [], sleepSessions, workouts: [], replaceSleepSource: 'apple_health' });
         }
       } catch {
         // Best-effort — the manual button on the Devices screen is the fallback.
@@ -124,7 +124,7 @@ export function useManualHealthKitSync(): () => Promise<void> {
     try {
       const { activities, healthMetrics, sleepSessions } = await syncHealthKit();
       if (activities.length + healthMetrics.length + sleepSessions.length > 0) {
-        await importHealth.mutateAsync({ activities, healthMetrics, records: [], sleepSessions, workouts: [] });
+        await importHealth.mutateAsync({ activities, healthMetrics, records: [], sleepSessions, workouts: [], replaceSleepSource: 'apple_health' });
       }
     } catch {
       // Best-effort — the caller still invalidates queries and re-reads whatever's stored.

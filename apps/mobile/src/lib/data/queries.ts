@@ -833,6 +833,8 @@ export function useImportHealth() {
       records: ImportedRecord[];
       sleepSessions: ImportedSleepSession[];
       workouts: ImportedWorkout[];
+      /** Synchro HealthKit seulement — voir `ImportPayload.replaceSleepSource`. */
+      replaceSleepSource?: 'apple_health';
     }) => {
       // HealthKit's own external_id dedup only catches the exact same sample
       // synced twice — it does nothing when the same real-world session was

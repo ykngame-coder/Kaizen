@@ -169,6 +169,73 @@ describe('nightKey timezone handling (regression: UTC-sliced date used to split 
   });
 });
 
+/**
+ * Régression (retour TestFlight, build 52) : la chronologie affichait
+ * « 23:47 → 23:59 · 8 h 48 au lit, 9 h 40 dormies » sur un axe de 24 h.
+ *
+ * Les échantillons étaient regroupés par JOUR DE FIN : tout ce qui se termine
+ * le jour J formait une « nuit » — la vraie nuit, une sieste l'après-midi, ET
+ * le début de la nuit suivante (coucher à 21 h 30, échantillons terminés avant
+ * minuit). Plus dormi qu'au lit, puisque « au lit » ne mesurait que la vraie
+ * nuit. Et la nuit suivante, coupée à minuit, perdait son début.
+ */
+describe('regroupement des nuits par continuité, pas par jour de fin', () => {
+  const originalTz = process.env.TZ;
+  afterEach(() => {
+    process.env.TZ = originalTz;
+  });
+
+  // Heures locales de Paris (UTC+2 en juillet).
+  const at = (d: number, h: number, m = 0): string => new Date(Date.UTC(2026, 6, d, h - 2, m)).toISOString();
+  const day = [
+    // Nuit 1 : couché le 20 à 23:47, levé le 21 à 08:35.
+    { value: 0, startDate: at(20, 23, 47), endDate: at(21, 8, 35) },
+    { value: 3, startDate: at(20, 23, 55), endDate: at(21, 2, 0) },
+    { value: 4, startDate: at(21, 2, 0), endDate: at(21, 3, 0) },
+    { value: 5, startDate: at(21, 3, 0), endDate: at(21, 4, 0) },
+    { value: 3, startDate: at(21, 4, 0), endDate: at(21, 8, 30) },
+    // Sieste le 21 à 15:00.
+    { value: 3, startDate: at(21, 15, 0), endDate: at(21, 15, 40) },
+    // Nuit 2 : couché le 21 à 21:20 — des échantillons se terminent AVANT minuit.
+    { value: 0, startDate: at(21, 21, 20), endDate: at(22, 7, 0) },
+    { value: 3, startDate: at(21, 21, 30), endDate: at(21, 23, 30) },
+    { value: 4, startDate: at(21, 23, 30), endDate: at(22, 1, 0) },
+    { value: 5, startDate: at(22, 1, 0), endDate: at(22, 6, 50) },
+  ];
+
+  it('sépare la nuit, la sieste et la nuit suivante', () => {
+    process.env.TZ = 'Europe/Paris';
+    const sessions = aggregateHealthKitSleepSessions(day).sort((a, b) => a.startedAt.localeCompare(b.startedAt));
+    expect(sessions.map((s) => [s.startedAt, s.endedAt])).toEqual([
+      [at(20, 23, 47), at(21, 8, 35)],
+      [at(21, 15, 0), at(21, 15, 40)],
+      [at(21, 21, 20), at(22, 7, 0)],
+    ]);
+  });
+
+  it('ne dort jamais plus longtemps qu il n est resté au lit', () => {
+    process.env.TZ = 'Europe/Paris';
+    for (const s of aggregateHealthKitSleepSessions(day)) expect(s.asleepMin).toBeLessThanOrEqual(s.inBedMin);
+  });
+
+  it('garde la nuit suivante entière malgré minuit', () => {
+    process.env.TZ = 'Europe/Paris';
+    const night2 = aggregateHealthKitSleepSessions(day).find((s) => s.startedAt === at(21, 21, 20));
+    // 21:30 → 06:50 sans interruption.
+    expect(night2?.asleepMin).toBe(9 * 60 + 20);
+  });
+
+  it('range le début de la nuit suivante avec elle dans la durée du jour', () => {
+    process.env.TZ = 'Europe/Paris';
+    const byDay = new Map(aggregateHealthKitSleep(day).map((m) => [m.measuredAt, m.value]));
+    const noon = (d: number): string => new Date(2026, 6, d, 12).toISOString();
+    // Le 21 : nuit 1 (08:35 − 23:55) + sieste (40 min) = 8 h 35 + 0 h 40.
+    expect(byDay.get(noon(21))).toBe(Number(((8 * 60 + 35 + 40) / 60).toFixed(2)));
+    // Le 22 : la nuit 2 entière, pas seulement sa partie d'après minuit.
+    expect(byDay.get(noon(22))).toBe(Number(((9 * 60 + 20) / 60).toFixed(2)));
+  });
+});
+
 describe('mapHealthKitWorkoutType', () => {
   it('maps known workout types and defaults to other', () => {
     expect(mapHealthKitWorkoutType(37)).toBe('running');

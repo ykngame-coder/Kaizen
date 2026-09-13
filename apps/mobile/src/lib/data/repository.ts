@@ -26,6 +26,7 @@ import type {
   Visibility,
   WellnessCheckin,
   GeneralLeaderboardEntry,
+  DataSource,
 } from '@supotsu/core';
 import type {
   ActivityInput,
@@ -88,6 +89,9 @@ import {
   deleteHealthMetric as deleteHealthMetricDb,
   insertSleepSession,
   insertSleepSessions,
+  listSleepSessionKeys,
+  deleteSleepSessions,
+  staleSleepSessionIds,
   listSleepSessions as listSleepSessionsDb,
   insertNutritionEntry,
   insertNutritionEntries,
@@ -252,6 +256,14 @@ export interface ImportPayload {
   records: ImportedRecord[];
   sleepSessions: ImportedSleepSession[];
   workouts: ImportedWorkout[];
+  /**
+   * Les sessions de sommeil de cette source forment le lot COMPLET à partir de
+   * la première d'entre elles : les autres lignes de la source sur cette
+   * période sont supprimées. Réservé à la synchro HealthKit, qui relit tout son
+   * historique à chaque passage — voir `staleSleepSessionIds`. Un import de
+   * fichier, partiel par nature, ne doit jamais le passer.
+   */
+  replaceSleepSource?: DataSource;
 }
 
 /**
@@ -2196,7 +2208,18 @@ function createDemoRepository(): DataRepository {
         const mapped = importedToSleepSession(userId, s);
         byKeyS.set(`${mapped.source}|${mapped.startedAt}`, mapped);
       }
-      await writeJson(sleepKey(userId), [...byKeyS.values()]);
+      const replaced = payload.replaceSleepSource;
+      const syncedS = replaced ? payload.sleepSessions.filter((x) => x.source === replaced) : [];
+      const staleS = new Set(
+        replaced
+          ? staleSleepSessionIds(
+              [...byKeyS.values()].map((x) => ({ id: x.id, started_at: x.startedAt, source: x.source })),
+              syncedS,
+              replaced,
+            )
+          : [],
+      );
+      await writeJson(sleepKey(userId), [...byKeyS.values()].filter((x) => !staleS.has(x.id)));
 
       const importedIdsKey = `supotsu.importedWorkoutIds.${userId}`;
       const importedIds = new Set(await readJson<string>(importedIdsKey));
@@ -2894,6 +2917,16 @@ function createSupabaseRepository(
           segments: (s.segments ?? null) as unknown as SleepSessionRow['segments'],
         })),
       );
+      // Après l'upsert, jamais avant : si l'écriture échoue, rien n'est supprimé.
+      if (payload.replaceSleepSource) {
+        const source = payload.replaceSleepSource;
+        const synced = payload.sleepSessions.filter((x) => x.source === source);
+        if (synced.length > 0) {
+          const from = new Date(Math.min(...synced.map((x) => new Date(x.startedAt).getTime()))).toISOString();
+          const existing = await listSleepSessionKeys(client, userId, source, from);
+          await deleteSleepSessions(client, staleSleepSessionIds(existing, synced, source));
+        }
+      }
       const setsByExternalId = new Map(
         payload.workouts.map((w) => [
           w.externalId,

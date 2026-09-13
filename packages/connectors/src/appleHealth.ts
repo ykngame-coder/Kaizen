@@ -161,20 +161,72 @@ export function estimateActivityHeartRateWindow(startedAt: string, durationSec: 
 }
 
 /**
+ * Au-delà de ce trou sans AUCUN échantillon (ni sommeil, ni éveil, ni « au
+ * lit »), deux échantillons appartiennent à deux sessions distinctes.
+ *
+ * Trois heures : bien plus long que tout trou à l'intérieur d'une nuit — un
+ * réveil nocturne est lui-même enregistré comme « éveillé », et le « au lit »
+ * couvre la nuit entière —, bien plus court que l'écart entre un lever et une
+ * sieste d'après-midi, ou entre une sieste et le coucher suivant.
+ */
+const SESSION_GAP_MS = 3 * 60 * 60 * 1000;
+
+/**
+ * Découpe les échantillons en sessions de sommeil CONTINUES.
+ *
+ * Remplace un regroupement par jour de fin (`nightKey(s.endDate)`) : tout ce
+ * qui se terminait le jour J formait une seule « nuit » — la vraie nuit, une
+ * sieste, et le début de la nuit suivante dès qu'on se couchait assez tôt
+ * pour qu'un échantillon se termine avant minuit. La chronologie s'étalait
+ * alors sur 24 h, et on « dormait » plus longtemps qu'on n'était au lit.
+ *
+ * Toutes les sources ensemble : une nuit vue par la Watch et par une autre app
+ * reste UNE session, dont les intervalles sont fusionnés ensuite.
+ */
+function splitIntoSessions(samples: HKSleepSample[]): HKSleepSample[][] {
+  const sorted = samples
+    .filter((s) => new Date(s.endDate).getTime() > new Date(s.startDate).getTime())
+    .sort((a, b) => new Date(a.startDate).getTime() - new Date(b.startDate).getTime());
+  const sessions: HKSleepSample[][] = [];
+  let current: HKSleepSample[] = [];
+  let currentEnd = -Infinity;
+  for (const s of sorted) {
+    const start = new Date(s.startDate).getTime();
+    if (current.length > 0 && start - currentEnd > SESSION_GAP_MS) {
+      sessions.push(current);
+      current = [];
+      currentEnd = -Infinity;
+    }
+    current.push(s);
+    currentEnd = Math.max(currentEnd, new Date(s.endDate).getTime());
+  }
+  if (current.length > 0) sessions.push(current);
+  return sessions;
+}
+
+/** Fin d'une session : le dernier instant couvert par l'un de ses échantillons. */
+const sessionEnd = (session: HKSleepSample[]): string =>
+  session.reduce((end, s) => (s.endDate > end ? s.endDate : end), session[0]!.endDate);
+
+/**
  * Aggregate sleep-stage samples into one sleep_duration metric per night (hours
  * actually asleep, awake intervals excluded). Fragmented samples are summed.
+ *
+ * Le jour d'une session est celui de son RÉVEIL : une nuit commencée la veille
+ * au soir compte entière pour le lendemain, et une sieste pour son propre jour.
  */
 export function aggregateHealthKitSleep(samples: HKSleepSample[]): ImportedHealthMetric[] {
   // Regroupe d'abord par nuit, PUIS fusionne les intervalles : additionner les
   // échantillons bruts comptait deux fois une nuit présente via la Watch ET via
   // une autre app (AutoSleep, Garmin → Apple Santé), soit ~14 h pour 7 h dormies.
   const perNight = new Map<string, StageInterval[]>();
-  for (const s of samples) {
-    if (!ASLEEP_VALUES.has(s.value)) continue;
-    const stage = STAGE_FOR_VALUE[s.value] ?? 'light';
-    const key = nightKey(s.endDate);
+  for (const session of splitIntoSessions(samples)) {
+    const key = nightKey(sessionEnd(session));
     const list = perNight.get(key) ?? [];
-    list.push({ stage, startedAt: s.startDate, endedAt: s.endDate });
+    for (const s of session) {
+      if (!ASLEEP_VALUES.has(s.value)) continue;
+      list.push({ stage: STAGE_FOR_VALUE[s.value] ?? 'light', startedAt: s.startDate, endedAt: s.endDate });
+    }
     perNight.set(key, list);
   }
   return [...perNight.entries()]
@@ -203,7 +255,7 @@ const STAGE_FOR_VALUE: Record<number, SleepStage> = { 4: 'deep', 5: 'rem', 3: 'l
 
 /**
  * Aggregate sleep-stage samples into one `ImportedSleepSession` per night —
- * same grouping as `aggregateHealthKitSleep` (by the night's end date) but
+ * same grouping as `aggregateHealthKitSleep` (continuous sessions) but
  * keeping the per-stage breakdown instead of collapsing to a single
  * duration, so the native HealthKit sync path can feed the same
  * Phases-de-sommeil card the file-import path (Health Auto Export) already
@@ -214,26 +266,25 @@ const STAGE_FOR_VALUE: Record<number, SleepStage> = { 4: 'deep', 5: 'rem', 3: 'l
  * the hypnogram timeline on Sommeil.
  */
 export function aggregateHealthKitSleepSessions(samples: HKSleepSample[]): ImportedSleepSession[] {
-  const perNight = new Map<string, NightAccumulator>();
-  for (const s of samples) {
-    const minutes = (new Date(s.endDate).getTime() - new Date(s.startDate).getTime()) / 60000;
-    if (minutes <= 0) continue;
-    const key = nightKey(s.endDate);
-    const acc = perNight.get(key) ?? { start: s.startDate, end: s.endDate, hasInBed: false, intervals: [] };
-    acc.start = s.startDate < acc.start ? s.startDate : acc.start;
-    acc.end = s.endDate > acc.end ? s.endDate : acc.end;
-    if (s.value === 0) acc.hasInBed = true;
-    // On accumule les INTERVALLES ; les minutes par stade sont calculées après
-    // fusion, sinon deux sources sur la même nuit doublent chaque stade.
-    const stage = s.value === 0 ? 'inBed' : STAGE_FOR_VALUE[s.value];
-    if (stage) {
-      acc.intervals.push({ stage, startedAt: new Date(s.startDate).toISOString(), endedAt: new Date(s.endDate).toISOString() });
+  const nights: NightAccumulator[] = [];
+  for (const session of splitIntoSessions(samples)) {
+    const acc: NightAccumulator = { start: session[0]!.startDate, end: session[0]!.endDate, hasInBed: false, intervals: [] };
+    for (const s of session) {
+      acc.start = s.startDate < acc.start ? s.startDate : acc.start;
+      acc.end = s.endDate > acc.end ? s.endDate : acc.end;
+      if (s.value === 0) acc.hasInBed = true;
+      // On accumule les INTERVALLES ; les minutes par stade sont calculées après
+      // fusion, sinon deux sources sur la même nuit doublent chaque stade.
+      const stage = s.value === 0 ? 'inBed' : STAGE_FOR_VALUE[s.value];
+      if (stage) {
+        acc.intervals.push({ stage, startedAt: new Date(s.startDate).toISOString(), endedAt: new Date(s.endDate).toISOString() });
+      }
     }
-    perNight.set(key, acc);
+    nights.push(acc);
   }
 
   const out: ImportedSleepSession[] = [];
-  for (const n of perNight.values()) {
+  for (const n of nights) {
     const m = mergeSleepTimeline(n.intervals);
     if (m.asleepMin <= 0) continue;
     out.push({

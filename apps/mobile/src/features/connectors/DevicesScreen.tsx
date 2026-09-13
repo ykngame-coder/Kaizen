@@ -386,7 +386,7 @@ export function HealthKitCard(): React.JSX.Element {
       if (activities.length + healthMetrics.length + sleepSessions.length === 0) {
         setNote(t('connectors.devices.healthKit.noNewData'));
       } else {
-        await importHealth.mutateAsync({ activities, healthMetrics, records: [], sleepSessions, workouts: [] });
+        await importHealth.mutateAsync({ activities, healthMetrics, records: [], sleepSessions, workouts: [], replaceSleepSource: 'apple_health' });
         setNote(t('connectors.devices.healthKit.imported', { activitiesCount: activities.length, healthCount: healthMetrics.length, sleepCount: sleepSessions.length }));
       }
     } catch (e) {
