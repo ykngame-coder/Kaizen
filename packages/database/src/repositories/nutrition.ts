@@ -1,5 +1,6 @@
 import type { SupotsuClient } from '../client';
 import type { Database } from '../generated/database.types';
+import { fetchAllPages } from '../paginate';
 
 export type NutritionEntryRow = Database['public']['Tables']['nutrition_entries']['Row'];
 export type NutritionEntryInsertRow = Database['public']['Tables']['nutrition_entries']['Insert'];
@@ -32,8 +33,6 @@ export async function insertNutritionEntries(
   return data ?? [];
 }
 
-const PAGE = 1000;
-
 /**
  * List the user's intake entries, most recent first.
  *
@@ -49,19 +48,15 @@ export async function listNutritionEntries(
   client: SupotsuClient,
   userId: string,
 ): Promise<NutritionEntryRow[]> {
-  const rows: NutritionEntryRow[] = [];
-  for (let from = 0; ; from += PAGE) {
-    const { data, error } = await client
+  return fetchAllPages((from, to) =>
+    client
       .from('nutrition_entries')
       .select('*')
       .eq('user_id', userId)
       .order('logged_at', { ascending: false })
       .order('id', { ascending: false })
-      .range(from, from + PAGE - 1);
-    if (error) throw error;
-    rows.push(...(data ?? []));
-    if (!data || data.length < PAGE) return rows;
-  }
+      .range(from, to),
+  );
 }
 
 /** Delete a single logged intake (e.g. a mislogged or duplicate meal). */
