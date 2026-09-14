@@ -60,6 +60,37 @@ describe('computeMuscleStates', () => {
     expect(out.find((m) => m.muscle === 'calves')!.freshness).toBe(100);
   });
 
+  describe('effacement progressif sur 7 jours (demi-vie 36 h)', () => {
+    const quads = (sessions: Parameters<typeof computeMuscleStates>[0]) =>
+      computeMuscleStates(sessions, ASOF).find((m) => m.muscle === 'quads')!;
+    const run = (d: number, load?: number) => ({ trainedAt: daysAgo(d), primaryMuscles: ['quads' as const], secondaryMuscles: [], load });
+
+    it('une séance isolée est de nouveau « reposé » en ~2,5 jours', () => {
+      expect(quads([run(2)]).state).not.toBe('rested');
+      expect(quads([run(3)]).state).toBe('rested');
+    });
+
+    it('une séance vieille de 5 jours pèse encore un peu — elle comptait zéro avant', () => {
+      expect(quads([run(5)]).freshness).toBeLessThan(100);
+    });
+
+    it('au-delà de 7 jours, plus rien', () => {
+      expect(quads([run(7.5)]).freshness).toBe(100);
+    });
+
+    it('quatre séances en 7 jours s additionnent jusqu à « fatigué »', () => {
+      expect(quads([run(0), run(2), run(4), run(6)]).state).toBe('fatigued');
+      // Une seule, le même jour, n'y suffit pas.
+      expect(quads([run(0)]).state).not.toBe('fatigued');
+    });
+
+    it('la charge pondère la fatigue : une demi-séance fatigue moitié moins', () => {
+      const full = 100 - quads([run(0)]).freshness;
+      const half = 100 - quads([run(0, 0.5)]).freshness;
+      expect(half).toBeCloseTo(full / 2, 0);
+    });
+  });
+
   it('does not count a recovery session as "last trained" — only real load does', () => {
     const out = computeMuscleStates(
       [{ trainedAt: daysAgo(0), primaryMuscles: ['glutes'], secondaryMuscles: [], recovery: true }],

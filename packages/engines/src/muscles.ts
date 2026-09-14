@@ -4,8 +4,20 @@ import type { ISODateString, MuscleGroup } from '@supotsu/core';
  * Muscle Map Engine (Master Prompt P36) — Fitbod/Garmin-style. Computes, per
  * muscle group, a "freshness" 0-100 from recent training: a muscle worked hard
  * or recently is fatigued (needs rest); one untouched for a few days is fresh.
- * Pure — sessions in, statuses out. Recovery window ≈ 72 h (linear decay).
+ * Pure — sessions in, statuses out.
+ *
+ * Récupération : effacement progressif, demi-vie 36 h, sur 7 jours (choisi le
+ * 2026-09-14 contre la ligne droite sur 3 jours). Une séance isolée redevient
+ * « reposé » en ~2,5 jours, comme avant ; mais une semaine chargée s'additionne
+ * — quatre séances en 7 jours atteignent « fatigué », ce que la ligne droite
+ * sur 3 jours ne voyait presque pas. Étirer la ligne droite à 7 jours aurait
+ * laissé une seule course visible toute la semaine.
  */
+
+/** Demi-vie de la fatigue laissée par une séance, en jours. */
+export const FATIGUE_HALF_LIFE_DAYS = 1.5;
+/** Au-delà, une séance ne compte plus. */
+export const FATIGUE_WINDOW_DAYS = 7;
 
 const DAY_MS = 86_400_000;
 const clamp = (n: number, min = 0, max = 100): number => Math.max(min, Math.min(max, n));
@@ -38,6 +50,12 @@ export interface MuscleSession {
    * reflect what actually needs work, not the last time you stretched it.
    */
   recovery?: boolean;
+  /**
+   * Poids de la séance (1 par défaut). Une séance structurée compte pour 1 ;
+   * une activité importée est pondérée par sa durée, son intensité et le poids
+   * de son type — une marche de 10 min ne fatigue pas comme un semi-marathon.
+   */
+  load?: number;
 }
 
 function stateFor(freshness: number): MuscleState {
@@ -48,9 +66,9 @@ function stateFor(freshness: number): MuscleState {
 }
 
 /**
- * Per-muscle status as of `asOf`. Sessions in the last ~4 days contribute
- * fatigue weighted by role (primary 1.0, secondary 0.5, full_body 0.5 to all)
- * and by recency (linear decay to zero at 3 days).
+ * Per-muscle status as of `asOf`. Sessions in the last 7 days contribute
+ * fatigue weighted by role (primary 1.0, secondary 0.5, full_body 0.5 to all),
+ * by the session's `load`, and by recency (half-life 36 h).
  */
 export function computeMuscleStates(sessions: MuscleSession[], asOf: ISODateString): MuscleStatus[] {
   const now = new Date(asOf).getTime();
@@ -58,7 +76,7 @@ export function computeMuscleStates(sessions: MuscleSession[], asOf: ISODateStri
   const lastAgo = new Map<MuscleGroup, number>();
 
   const hit = (muscle: MuscleGroup, weight: number, daysAgo: number, isLoad: boolean): void => {
-    const decay = Math.max(0, 1 - daysAgo / 3);
+    const decay = daysAgo <= FATIGUE_WINDOW_DAYS ? Math.pow(0.5, daysAgo / FATIGUE_HALF_LIFE_DAYS) : 0;
     if (decay > 0) fatigue.set(muscle, (fatigue.get(muscle) ?? 0) + weight * decay);
     if (isLoad) {
       const prev = lastAgo.get(muscle);
@@ -68,11 +86,11 @@ export function computeMuscleStates(sessions: MuscleSession[], asOf: ISODateStri
 
   for (const s of sessions) {
     const daysAgo = (now - new Date(s.trainedAt).getTime()) / DAY_MS;
-    if (daysAgo < 0 || daysAgo > 4) continue;
+    if (daysAgo < 0 || daysAgo > FATIGUE_WINDOW_DAYS) continue;
     // Recovery (mobility/stretching) sessions ease fatigue at half the rate a
     // real session would add it — a gentle nudge toward freshness, not a
     // substitute for rest.
-    const sign = s.recovery ? -0.5 : 1;
+    const sign = (s.recovery ? -0.5 : 1) * (s.load ?? 1);
     const apply = (muscles: MuscleGroup[], weight: number): void => {
       for (const m of muscles) {
         if (m === 'full_body') for (const bm of BODY_MUSCLES) hit(bm, weight * 0.5 * sign, daysAgo, !s.recovery);
