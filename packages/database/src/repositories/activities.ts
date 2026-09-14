@@ -1,6 +1,7 @@
 import type { SupotsuClient } from '../client';
 import type { Database } from '../generated/database.types';
 import { fetchAllPages } from '../paginate';
+import { DELETE_CHUNK } from './replace';
 
 export type ActivityRow = Database['public']['Tables']['activities']['Row'];
 export type ActivityInsertRow = Database['public']['Tables']['activities']['Insert'];
@@ -70,6 +71,28 @@ export async function upsertActivities(
   // Rows without an external id can't be deduped; insert them plainly.
   for (const part of chunk(withoutId, 500)) {
     const { error } = await client.from('activities').insert(part);
+    if (error) throw error;
+  }
+}
+
+/**
+ * Supprime des activités importées par identifiant externe — une séance
+ * effacée dans Apple Santé doit disparaître de Supotsu aussi. Limité à une
+ * source : un identifiant n'a de sens que dans la sienne.
+ */
+export async function deleteActivitiesByExternalIds(
+  client: SupotsuClient,
+  userId: string,
+  source: string,
+  externalIds: string[],
+): Promise<void> {
+  for (let i = 0; i < externalIds.length; i += DELETE_CHUNK) {
+    const { error } = await client
+      .from('activities')
+      .delete()
+      .eq('user_id', userId)
+      .eq('source', source)
+      .in('external_id', externalIds.slice(i, i + DELETE_CHUNK));
     if (error) throw error;
   }
 }

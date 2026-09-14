@@ -6,6 +6,7 @@ import { useImportHealth } from '@/lib/data/queries';
 import { useAuth } from '@/features/auth/AuthProvider';
 import { secureStorage } from '@/lib/secure-storage';
 import { createDataRepository, type DataRepository } from '@/lib/data/repository';
+import { fullReplaceWindows } from './replaceWindows';
 
 const CONNECTED_KEY = 'supotsu.healthkit.connected';
 
@@ -95,7 +96,7 @@ export function useHealthKitAutoSync(): void {
       try {
         const { activities, healthMetrics, sleepSessions } = await syncHealthKit();
         if (activities.length + healthMetrics.length + sleepSessions.length > 0) {
-          await importRef.current.mutateAsync({ activities, healthMetrics, records: [], sleepSessions, workouts: [], replaceSleepSource: 'apple_health' });
+          await importRef.current.mutateAsync({ activities, healthMetrics, records: [], sleepSessions, workouts: [], replace: fullReplaceWindows({ healthMetrics, sleepSessions }, new Date()) });
         }
       } catch {
         // Best-effort — the manual button on the Devices screen is the fallback.
@@ -132,7 +133,7 @@ export function useManualHealthKitSync(): () => Promise<void> {
     try {
       const { activities, healthMetrics, sleepSessions } = await syncHealthKit({ days: MANUAL_SYNC_DAYS });
       if (activities.length + healthMetrics.length + sleepSessions.length > 0) {
-        await importHealth.mutateAsync({ activities, healthMetrics, records: [], sleepSessions, workouts: [], replaceSleepSource: 'apple_health' });
+        await importHealth.mutateAsync({ activities, healthMetrics, records: [], sleepSessions, workouts: [], replace: fullReplaceWindows({ healthMetrics, sleepSessions }, new Date()) });
       }
     } catch {
       // Best-effort — the caller still invalidates queries and re-reads whatever's stored.

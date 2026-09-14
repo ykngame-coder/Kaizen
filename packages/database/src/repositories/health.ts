@@ -1,6 +1,7 @@
 import type { SupotsuClient } from '../client';
 import type { Database } from '../generated/database.types';
 import { fetchAllPages } from '../paginate';
+import { DELETE_CHUNK, type KeyedRow } from './replace';
 
 export type HealthMetricRow = Database['public']['Tables']['health_metrics']['Row'];
 export type HealthMetricInsertRow = Database['public']['Tables']['health_metrics']['Insert'];
@@ -66,4 +67,37 @@ export async function listHealthMetrics(
 export async function deleteHealthMetric(client: SupotsuClient, metricId: string): Promise<void> {
   const { error } = await client.from('health_metrics').delete().eq('id', metricId);
   if (error) throw error;
+}
+
+/** Les clés des mesures d'une source et d'un type sur [from, to) — de quoi calculer `staleRowIds`. */
+export async function listHealthMetricKeys(
+  client: SupotsuClient,
+  userId: string,
+  source: string,
+  type: string,
+  fromIso: string,
+  toIso: string,
+): Promise<KeyedRow[]> {
+  const rows = await fetchAllPages((from, to) =>
+    client
+      .from('health_metrics')
+      .select('id, measured_at')
+      .eq('user_id', userId)
+      .eq('source', source)
+      .eq('type', type)
+      .gte('measured_at', fromIso)
+      .lt('measured_at', toIso)
+      .order('measured_at', { ascending: true })
+      .order('id', { ascending: true })
+      .range(from, to),
+  );
+  return rows.map((r) => ({ id: r.id, at: r.measured_at }));
+}
+
+/** Supprime des mesures par identifiant, par lots. */
+export async function deleteHealthMetrics(client: SupotsuClient, ids: string[]): Promise<void> {
+  for (let i = 0; i < ids.length; i += DELETE_CHUNK) {
+    const { error } = await client.from('health_metrics').delete().in('id', ids.slice(i, i + DELETE_CHUNK));
+    if (error) throw error;
+  }
 }

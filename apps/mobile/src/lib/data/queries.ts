@@ -24,7 +24,7 @@ import type {
   ImportedWorkout,
 } from '@supotsu/connectors';
 import { useAuth } from '@/features/auth/AuthProvider';
-import { createDataRepository, type HealthMetricInput, type NewCircuitBlockInput, type NewCircuitWorkout, type NewRunnerSet, type NewSleepSession, type NewWorkout, type PlannedInput, type SetLogInput } from './repository';
+import { createDataRepository, type HealthMetricInput, type NewCircuitBlockInput, type NewCircuitWorkout, type NewRunnerSet, type NewSleepSession, type NewWorkout, type PlannedInput, type ReplaceWindow, type SetLogInput } from './repository';
 import { isHealthKitConnected } from '@/features/connectors/useHealthKitAutoSync';
 import { queryHeartRateSummary, saveActivityToHealthKit, saveNutritionToHealthKit, saveWorkoutToHealthKit } from '@/features/connectors/healthKitClient';
 import { periodToDays, type DailyScoreColumn, type LeaderboardCategory, type LeaderboardPeriod } from '@/features/community/leaderboardHelpers';
@@ -833,8 +833,9 @@ export function useImportHealth() {
       records: ImportedRecord[];
       sleepSessions: ImportedSleepSession[];
       workouts: ImportedWorkout[];
-      /** Synchro HealthKit seulement — voir `ImportPayload.replaceSleepSource`. */
-      replaceSleepSource?: 'apple_health';
+      /** Synchro Santé seulement — voir `ImportPayload.replace`. */
+      replace?: ReplaceWindow[];
+      deletedActivityExternalIds?: string[];
     }) => {
       // HealthKit's own external_id dedup only catches the exact same sample
       // synced twice — it does nothing when the same real-world session was

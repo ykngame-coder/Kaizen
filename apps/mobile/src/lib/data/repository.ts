@@ -91,7 +91,10 @@ import {
   insertSleepSessions,
   listSleepSessionKeys,
   deleteSleepSessions,
-  staleSleepSessionIds,
+  staleRowIds,
+  listHealthMetricKeys,
+  deleteHealthMetrics,
+  deleteActivitiesByExternalIds,
   listSleepSessions as listSleepSessionsDb,
   insertNutritionEntry,
   insertNutritionEntries,
@@ -257,14 +260,27 @@ export interface ImportPayload {
   sleepSessions: ImportedSleepSession[];
   workouts: ImportedWorkout[];
   /**
-   * Les sessions de sommeil de cette source forment le lot COMPLET à partir de
-   * la première d'entre elles : les autres lignes de la source sur cette
-   * période sont supprimées. Réservé à la synchro HealthKit, qui relit tout son
-   * historique à chaque passage — voir `staleSleepSessionIds`. Un import de
-   * fichier, partiel par nature, ne doit jamais le passer.
+   * Fenêtres que ce lot REMPLACE : pour chacune, nos lignes `apple_health` de ce
+   * type sur [from, to) absentes du lot sont supprimées — voir `staleRowIds`.
+   * Réservé à la synchro Santé ; un import de fichier, partiel par nature, ne
+   * doit jamais le passer.
    */
-  replaceSleepSource?: DataSource;
+  replace?: ReplaceWindow[];
+  /** Séances effacées dans Apple Santé — identifiants `applehealth-<uuid>`. */
+  deletedActivityExternalIds?: string[];
 }
+
+/** Ce qu'une fenêtre de remplacement vise : les sessions de sommeil, ou un type de mesure. */
+export type ReplaceKind = 'sleep_session' | HealthMetricType;
+
+export interface ReplaceWindow {
+  kind: ReplaceKind;
+  from: string;
+  to: string;
+}
+
+/** La seule source que `replace` et `deletedActivityExternalIds` touchent. */
+const REPLACE_SOURCE: DataSource = 'apple_health';
 
 /**
  * Unified data access for activities & workouts. A real Supabase implementation
@@ -2185,7 +2201,23 @@ function createDemoRepository(): DataRepository {
       const newH = payload.healthMetrics
         .map((m) => importedToHealth(userId, m))
         .filter((h) => !seen.has(`${h.type}|${h.measuredAt}`));
-      await writeJson(hmKey(userId), [...newH, ...existingH]);
+      const allH = [...newH, ...existingH];
+      const staleH = new Set(
+        (payload.replace ?? [])
+          .filter((w) => w.kind !== 'sleep_session')
+          .flatMap((w) =>
+            staleRowIds(
+              allH.filter((h) => h.source === REPLACE_SOURCE && h.type === w.kind).map((h) => ({ id: h.id, at: h.measuredAt })),
+              payload.healthMetrics.filter((m) => m.source === REPLACE_SOURCE && m.type === w.kind).map((m) => m.measuredAt),
+              w.from,
+              w.to,
+            ),
+          ),
+      );
+      // `deletedActivityExternalIds` n'a pas d'équivalent ici : le stockage
+      // local ne garde pas l'identifiant externe des activités, et HealthKit
+      // n'alimente que l'implémentation Supabase.
+      await writeJson(hmKey(userId), allH.filter((h) => !staleH.has(h.id)));
 
       const existingR = await readJson<PersonalRecord>(recKey(userId));
       const seenR = new Set(existingR.map((r) => `${r.source}|${r.externalId ?? r.label + r.achievedAt}`));
@@ -2208,16 +2240,19 @@ function createDemoRepository(): DataRepository {
         const mapped = importedToSleepSession(userId, s);
         byKeyS.set(`${mapped.source}|${mapped.startedAt}`, mapped);
       }
-      const replaced = payload.replaceSleepSource;
-      const syncedS = replaced ? payload.sleepSessions.filter((x) => x.source === replaced) : [];
+      // Même remplacement que l'implémentation Supabase, sur les tableaux locaux.
+      const keepS = payload.sleepSessions.filter((x) => x.source === REPLACE_SOURCE).map((x) => x.startedAt);
       const staleS = new Set(
-        replaced
-          ? staleSleepSessionIds(
-              [...byKeyS.values()].map((x) => ({ id: x.id, started_at: x.startedAt, source: x.source })),
-              syncedS,
-              replaced,
-            )
-          : [],
+        (payload.replace ?? [])
+          .filter((w) => w.kind === 'sleep_session')
+          .flatMap((w) =>
+            staleRowIds(
+              [...byKeyS.values()].filter((x) => x.source === REPLACE_SOURCE).map((x) => ({ id: x.id, at: x.startedAt })),
+              keepS,
+              w.from,
+              w.to,
+            ),
+          ),
       );
       await writeJson(sleepKey(userId), [...byKeyS.values()].filter((x) => !staleS.has(x.id)));
 
@@ -2917,15 +2952,22 @@ function createSupabaseRepository(
           segments: (s.segments ?? null) as unknown as SleepSessionRow['segments'],
         })),
       );
-      // Après l'upsert, jamais avant : si l'écriture échoue, rien n'est supprimé.
-      if (payload.replaceSleepSource) {
-        const source = payload.replaceSleepSource;
-        const synced = payload.sleepSessions.filter((x) => x.source === source);
-        if (synced.length > 0) {
-          const from = new Date(Math.min(...synced.map((x) => new Date(x.startedAt).getTime()))).toISOString();
-          const existing = await listSleepSessionKeys(client, userId, source, from);
-          await deleteSleepSessions(client, staleSleepSessionIds(existing, synced, source));
+      // Après les upserts, jamais avant : si l'écriture échoue, rien n'est supprimé.
+      for (const w of payload.replace ?? []) {
+        if (w.kind === 'sleep_session') {
+          const keep = payload.sleepSessions.filter((x) => x.source === REPLACE_SOURCE).map((x) => x.startedAt);
+          if (!keep.length) continue;
+          const existing = await listSleepSessionKeys(client, userId, REPLACE_SOURCE, w.from, w.to);
+          await deleteSleepSessions(client, staleRowIds(existing, keep, w.from, w.to));
+        } else {
+          const keep = payload.healthMetrics.filter((m) => m.source === REPLACE_SOURCE && m.type === w.kind).map((m) => m.measuredAt);
+          if (!keep.length) continue;
+          const existing = await listHealthMetricKeys(client, userId, REPLACE_SOURCE, w.kind, w.from, w.to);
+          await deleteHealthMetrics(client, staleRowIds(existing, keep, w.from, w.to));
         }
+      }
+      if (payload.deletedActivityExternalIds?.length) {
+        await deleteActivitiesByExternalIds(client, userId, REPLACE_SOURCE, payload.deletedActivityExternalIds);
       }
       const setsByExternalId = new Map(
         payload.workouts.map((w) => [

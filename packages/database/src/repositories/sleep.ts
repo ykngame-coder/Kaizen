@@ -1,6 +1,7 @@
 import type { SupotsuClient } from '../client';
 import type { Database } from '../generated/database.types';
 import { fetchAllPages } from '../paginate';
+import { DELETE_CHUNK, type KeyedRow } from './replace';
 
 export type SleepSessionRow = Database['public']['Tables']['sleep_sessions']['Row'];
 export type SleepSessionInsertRow = Database['public']['Tables']['sleep_sessions']['Insert'];
@@ -59,61 +60,33 @@ export async function listSleepSessions(
   );
 }
 
-/**
- * Les sessions à supprimer pour qu'une synchro REMPLACE celles de sa source au
- * lieu de s'y ajouter : toutes les lignes de `source` commençant à partir de
- * la première session synchronisée, et qui ne font plus partie du lot.
- *
- * Nécessaire dès que le découpage des nuits change : une nuit redécoupée
- * reçoit une nouvelle heure de début, donc une nouvelle ligne, et l'ancienne
- * — mal découpée, souvent plus longue — resterait en base, où « la plus longue
- * session du jour » la choisirait encore.
- *
- * Les instants sont comparés en millisecondes : Postgres rend
- * `2026-07-20T21:47:00+00:00` là où l'import écrit `…:00.000Z`.
- */
-export function staleSleepSessionIds(
-  existing: Pick<SleepSessionRow, 'id' | 'started_at' | 'source'>[],
-  synced: { startedAt: string }[],
-  source: string,
-): string[] {
-  if (synced.length === 0) return [];
-  const keep = new Set(synced.map((s) => new Date(s.startedAt).getTime()));
-  const from = Math.min(...keep);
-  return existing
-    .filter((r) => r.source === source)
-    .filter((r) => {
-      const t = new Date(r.started_at).getTime();
-      return t >= from && !keep.has(t);
-    })
-    .map((r) => r.id);
-}
-
-/** Les clés des sessions d'une source à partir d'un instant — de quoi calculer `staleSleepSessionIds`. */
+/** Les clés des sessions d'une source sur [from, to) — de quoi calculer `staleRowIds`. */
 export async function listSleepSessionKeys(
   client: SupotsuClient,
   userId: string,
   source: string,
   fromIso: string,
-): Promise<Pick<SleepSessionRow, 'id' | 'started_at' | 'source'>[]> {
-  return fetchAllPages((from, to) =>
+  toIso: string,
+): Promise<KeyedRow[]> {
+  const rows = await fetchAllPages((from, to) =>
     client
       .from('sleep_sessions')
-      .select('id, started_at, source')
+      .select('id, started_at')
       .eq('user_id', userId)
       .eq('source', source)
       .gte('started_at', fromIso)
+      .lt('started_at', toIso)
       .order('started_at', { ascending: true })
       .order('id', { ascending: true })
       .range(from, to),
   );
+  return rows.map((r) => ({ id: r.id, at: r.started_at }));
 }
 
 /** Supprime des sessions par identifiant, par lots : une liste d'identifiants trop longue ne tient pas dans l'URL. */
 export async function deleteSleepSessions(client: SupotsuClient, ids: string[]): Promise<void> {
-  const CHUNK = 200;
-  for (let i = 0; i < ids.length; i += CHUNK) {
-    const { error } = await client.from('sleep_sessions').delete().in('id', ids.slice(i, i + CHUNK));
+  for (let i = 0; i < ids.length; i += DELETE_CHUNK) {
+    const { error } = await client.from('sleep_sessions').delete().in('id', ids.slice(i, i + DELETE_CHUNK));
     if (error) throw error;
   }
 }

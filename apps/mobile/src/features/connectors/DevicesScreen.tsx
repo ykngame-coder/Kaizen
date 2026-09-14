@@ -26,6 +26,7 @@ import {
   syncStrava,
 } from './stravaClient';
 import { appleHealthAvailable, createIngestToken, ingestUrl } from './appleHealthClient';
+import { fullReplaceWindows } from './replaceWindows';
 
 function sourceLabel(t: TFunction): Partial<Record<DataSource, { name: string; icon: string }>> {
   return {
@@ -386,7 +387,7 @@ export function HealthKitCard(): React.JSX.Element {
       if (activities.length + healthMetrics.length + sleepSessions.length === 0) {
         setNote(t('connectors.devices.healthKit.noNewData'));
       } else {
-        await importHealth.mutateAsync({ activities, healthMetrics, records: [], sleepSessions, workouts: [], replaceSleepSource: 'apple_health' });
+        await importHealth.mutateAsync({ activities, healthMetrics, records: [], sleepSessions, workouts: [], replace: fullReplaceWindows({ healthMetrics, sleepSessions }, new Date()) });
         setNote(t('connectors.devices.healthKit.imported', { activitiesCount: activities.length, healthCount: healthMetrics.length, sleepCount: sleepSessions.length }));
       }
     } catch (e) {
