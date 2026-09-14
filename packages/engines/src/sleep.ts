@@ -101,7 +101,19 @@ const localDayKey = (iso: string): string => {
 };
 
 /**
- * One sleep_duration metric per calendar night within the window — a night
+ * La nuit d'un horodatage de sommeil : son jour local, décalé de 12 h.
+ *
+ * Deux conventions coexistent — midi du jour de réveil (Apple Santé,
+ * `nightKeyToIso`) et heure du coucher (Health Auto Export). Le jour
+ * calendaire brut confondait, pour la seconde, un coucher à 1 h 30 avec le
+ * coucher de 22 h de la veille : deux nuits fondues en une, et une régularité
+ * du coucher faussée. Décalé de 12 h, un coucher entre midi et midi retombe
+ * sur le jour de sa soirée, et midi du jour de réveil reste sur son jour.
+ */
+const nightKey = (iso: string): string => localDayKey(new Date(new Date(iso).getTime() - 12 * 60 * 60 * 1000).toISOString());
+
+/**
+ * One sleep_duration metric per night within the window — a night
  * can have more than one recorded entry (repeated syncs before ingestion
  * refreshed a night's row in place instead of appending, or more than one
  * source), which used to make "N dernières nuits" render more than N bars.
@@ -113,7 +125,7 @@ function distinctNights(metrics: HealthMetric[], asOf: ISODateString, days: numb
     .sort((a, b) => b.measuredAt.localeCompare(a.measuredAt));
   const byDay = new Map<string, HealthMetric>();
   for (const m of candidates) {
-    const key = localDayKey(m.measuredAt);
+    const key = nightKey(m.measuredAt);
     if (!byDay.has(key)) byDay.set(key, m);
   }
   return [...byDay.values()];
