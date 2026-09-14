@@ -1,4 +1,4 @@
-import type { ImportedActivity, ImportedHealthMetric, ImportedSleepSession } from '@supotsu/connectors';
+import type { FullRead, HealthSource } from './healthSource';
 import type { ActivityInput, NutritionEntryInput } from '@supotsu/shared';
 
 /**
@@ -10,13 +10,23 @@ export function healthKitAvailable(): boolean {
   return false;
 }
 
-export async function syncHealthKit(_options: { days?: number } = {}): Promise<{
-  activities: ImportedActivity[];
-  healthMetrics: ImportedHealthMetric[];
-  sleepSessions: ImportedSleepSession[];
-}> {
-  throw new Error('HealthKit est disponible uniquement sur iOS (build natif).');
+export async function syncHealthKit(): Promise<FullRead> {
+  throw new Error(IOS_ONLY);
 }
+
+const IOS_ONLY = 'HealthKit est disponible uniquement sur iOS (build natif).';
+
+/** Bouchon : aucun type suivi hors iOS, et toute lecture échoue. */
+export const nativeHealthSource: HealthSource = {
+  types: [],
+  authorize: () => Promise.reject(new Error(IOS_ONLY)),
+  currentAnchor: () => Promise.resolve(null),
+  changesSince: () => Promise.reject(new Error(IOS_ONLY)),
+  readSleep: () => Promise.reject(new Error(IOS_ONLY)),
+  stepTotals: () => Promise.reject(new Error(IOS_ONLY)),
+  readQuantity: () => Promise.reject(new Error(IOS_ONLY)),
+  fullRead: () => Promise.reject(new Error(IOS_ONLY)),
+};
 
 export function subscribeHealthKitChanges(_onChange: () => void): () => void {
   return () => undefined;
