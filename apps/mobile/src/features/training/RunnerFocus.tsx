@@ -1,5 +1,5 @@
 import React from 'react';
-import { Pressable, View } from 'react-native';
+import { Pressable, ScrollView, View } from 'react-native';
 import { Text, useTheme } from '@supotsu/ui';
 import { radii, spacing } from '@supotsu/design-system';
 
@@ -69,7 +69,17 @@ export function RunnerFocus({
   const tint = accent ?? colors.primary;
 
   return (
-    <View style={{ flex: 1, justifyContent: 'center', gap: spacing[5] }}>
+    // ScrollView plutôt que View : le contenu (titre, pastilles, valeur,
+    // enfants variables) peut dépasser la hauteur visible (petit écran,
+    // Dynamic Type, contenu long) et pousser l'action hors écran sans aucun
+    // moyen de l'atteindre — déjà vu et corrigé une fois sur l'écran
+    // précédent (f06f122), réintroduit par ce composant. flexGrow garde le
+    // centrage quand tout tient, scroll dès que ça déborde.
+    <ScrollView
+      style={{ flex: 1 }}
+      contentContainerStyle={{ flexGrow: 1, justifyContent: 'center', gap: spacing[5], paddingVertical: spacing[4] }}
+      showsVerticalScrollIndicator={false}
+    >
       <View style={{ alignItems: 'center', gap: spacing[3] }}>
         {tag ? (
           <View
@@ -170,6 +180,6 @@ export function RunnerFocus({
           </Pressable>
         ) : null}
       </View>
-    </View>
+    </ScrollView>
   );
 }

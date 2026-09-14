@@ -287,7 +287,7 @@ export function StrengthRunner({ workoutId, sets, onBlockFinished }: StrengthRun
     >
       {plates ? (
         <Text variant="caption" color="textSubtle" style={{ textAlign: 'center' }}>
-          {plates.perSide.map((pl) => `${pl}`).join(' · ')}
+          {plates.perSide.map((pl) => (pl.count > 1 ? `${pl.plateKg} × ${pl.count}` : `${pl.plateKg}`)).join(' · ')}
         </Text>
       ) : null}
     </RunnerFocus>
