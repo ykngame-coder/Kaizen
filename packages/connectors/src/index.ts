@@ -5,6 +5,7 @@ export * from './pipeline';
 export * from './garmin';
 export * from './strava';
 export * from './appleHealth';
+export * from './healthKitIncremental';
 export * from './healthImport';
 export * from './healthAutoExport';
 export * from './garminExport';
