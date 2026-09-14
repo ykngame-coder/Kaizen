@@ -28,8 +28,8 @@ describe('buildActivityMuscleSessions', () => {
     const activity: Activity = { ...baseActivity, muscles: ['chest', 'triceps'] };
     const out = buildActivityMuscleSessions([activity], []);
     expect(out).toEqual([
-      // 15 min : un tiers de la séance de référence de 45 min.
-      { trainedAt: activity.startedAt, primaryMuscles: ['chest', 'triceps'], secondaryMuscles: [], recovery: false, load: 15 / 45 },
+      // 15 min : la moitié de la séance de référence de 30 min.
+      { trainedAt: activity.startedAt, primaryMuscles: ['chest', 'triceps'], secondaryMuscles: [], recovery: false, load: 0.5 },
     ]);
   });
 
@@ -39,7 +39,7 @@ describe('buildActivityMuscleSessions', () => {
   });
 
   it('préremplit une course non taguée avec son profil, secondaires compris', () => {
-    const run: Activity = { ...baseActivity, type: 'running', durationSec: 45 * 60 };
+    const run: Activity = { ...baseActivity, type: 'running', durationSec: 30 * 60 };
     expect(buildActivityMuscleSessions([run], [])).toEqual([
       { trainedAt: run.startedAt, primaryMuscles: ['quads', 'hamstrings', 'glutes', 'calves'], secondaryMuscles: ['core'], recovery: false, load: 1 },
     ]);
@@ -53,8 +53,17 @@ describe('buildActivityMuscleSessions', () => {
   });
 
   it('une marche pèse léger', () => {
-    const walk: Activity = { ...baseActivity, type: 'walking', durationSec: 45 * 60 };
+    const walk: Activity = { ...baseActivity, type: 'walking', durationSec: 30 * 60 };
     expect(buildActivityMuscleSessions([walk], [])[0]?.load).toBeCloseTo(0.4);
+  });
+
+  it('estime l intensité d une course importée d après sa FC moyenne', () => {
+    const run: Activity = { ...baseActivity, type: 'running', durationSec: 30 * 60, avgHeartRate: 155 };
+    const [withHr] = buildActivityMuscleSessions([run], [], { restingHr: 60, maxHr: 185 });
+    const [without] = buildActivityMuscleSessions([run], []);
+    expect(withHr?.load).toBeCloseTo(1.25);
+    // Sans FC max (âge inconnu), l'intensité reste neutre.
+    expect(without?.load).toBeCloseTo(1);
   });
 
   it('les muscles tagués à la main l emportent sur le profil', () => {

@@ -101,3 +101,21 @@ export async function deleteHealthMetrics(client: SupotsuClient, ids: string[]):
     if (error) throw error;
   }
 }
+
+/** La mesure la plus récente d'un type — sans charger tout l'historique. */
+export async function latestHealthMetric(
+  client: SupotsuClient,
+  userId: string,
+  type: string,
+): Promise<HealthMetricRow | null> {
+  const { data, error } = await client
+    .from('health_metrics')
+    .select('*')
+    .eq('user_id', userId)
+    .eq('type', type)
+    .order('measured_at', { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  if (error) throw error;
+  return data;
+}

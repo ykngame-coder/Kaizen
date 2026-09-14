@@ -41,7 +41,7 @@ import type {
   UserSessionInput,
   WellnessCheckinInput,
 } from '@supotsu/shared';
-import { computeGoalProgress, generateProgramSchedule, nightDateKey, resolveSleepSessionInsert } from '@supotsu/engines';
+import { computeGoalProgress, generateProgramSchedule, maxHeartRateFor, nightDateKey, resolveSleepSessionInsert } from '@supotsu/engines';
 import { PROGRAM_CATALOG } from '@supotsu/shared';
 import type {
   ImportedActivity,
@@ -95,6 +95,7 @@ import {
   listHealthMetricKeys,
   deleteHealthMetrics,
   deleteActivitiesByExternalIds,
+  latestHealthMetric,
   listSleepSessions as listSleepSessionsDb,
   insertNutritionEntry,
   insertNutritionEntries,
@@ -1515,7 +1516,13 @@ function createDemoRepository(): DataRepository {
       const completedIds = new Set(workouts.filter((w) => w.status === 'completed').map((w) => w.id));
       const dates = new Map(rows.filter((r) => completedIds.has(r.workoutId)).map((r) => [r.workoutId, r.date]));
       const activities = await readJson<Activity>(actKey(userId));
-      return [...buildMuscleSessions(dates, rows), ...buildActivityMuscleSessions(activities, workouts)];
+      const rawProfile = await secureStorage.getItem(profKey(userId));
+      const profile = rawProfile ? (JSON.parse(rawProfile) as AthleteProfileInput) : null;
+      const resting = (await readJson<HealthMetric>(hmKey(userId)))
+        .filter((m) => m.type === 'resting_heart_rate')
+        .sort((a, b) => b.measuredAt.localeCompare(a.measuredAt))[0];
+      const hr = { restingHr: resting?.value, maxHr: maxHeartRateFor(profile?.birthDate, new Date().toISOString()) };
+      return [...buildMuscleSessions(dates, rows), ...buildActivityMuscleSessions(activities, workouts, hr)];
     },
     async listMuscleWork(userId) {
       const rows = await readJson<LoggedSetRow & { date: string }>(setKey(userId));
@@ -2404,7 +2411,14 @@ function createSupabaseRepository(
       const sets = await listWorkoutSetsForUser(client, userId);
       const activities = (await listActivitiesDb(client, userId)).map(rowToActivity);
       const workouts = workoutRows.map(rowToWorkout);
-      return [...buildMuscleSessions(dates, sets), ...buildActivityMuscleSessions(activities, workouts)];
+      // De quoi estimer l'intensité d'une activité importée d'après sa FC
+      // moyenne : FC max selon l'âge, dernière FC de repos mesurée.
+      const [profileRow, resting] = await Promise.all([
+        getAthleteProfileDb(client, userId),
+        latestHealthMetric(client, userId, 'resting_heart_rate'),
+      ]);
+      const hr = { restingHr: resting?.value ?? undefined, maxHr: maxHeartRateFor(profileRow?.birth_date ?? undefined, new Date().toISOString()) };
+      return [...buildMuscleSessions(dates, sets), ...buildActivityMuscleSessions(activities, workouts, hr)];
     },
     async listMuscleWork(userId) {
       const workouts = await listWorkoutsDb(client, userId);

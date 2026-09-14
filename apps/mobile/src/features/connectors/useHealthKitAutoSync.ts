@@ -1,5 +1,7 @@
 import { useEffect, useRef } from 'react';
 import { Platform } from 'react-native';
+import { useQueryClient, type QueryClient } from '@tanstack/react-query';
+import { FATIGUE_WINDOW_DAYS } from '@supotsu/engines';
 import { estimateActivityHeartRateWindow, estimateWorkoutHeartRateWindow } from '@supotsu/connectors';
 import { healthKitAvailable, queryHeartRateSummary, subscribeHealthKitChanges } from './healthKitClient';
 import { useHealthSync } from './healthSync';
@@ -20,6 +22,12 @@ export async function isHealthKitConnected(): Promise<boolean> {
 }
 
 const HEART_RATE_BACKFILL_DAYS = 3;
+/**
+ * Les activités, elles, sont rattrapées sur toute la fenêtre de récupération :
+ * leur FC moyenne sert à estimer leur intensité, donc leur poids dans la
+ * fatigue musculaire (activityMuscleLoad).
+ */
+const ACTIVITY_HEART_RATE_DAYS = FATIGUE_WINDOW_DAYS;
 
 /**
  * Re-checks the last few days of completed workouts/activities still
@@ -28,8 +36,10 @@ const HEART_RATE_BACKFILL_DAYS = 3;
  * session's own completion (the immediate attempt in queries.ts can miss
  * this if the watch hadn't synced to the phone yet). Best-effort throughout.
  */
-async function backfillHeartRate(userId: string, repo: DataRepository): Promise<void> {
+async function backfillHeartRate(userId: string, repo: DataRepository): Promise<boolean> {
   const cutoffMs = Date.now() - HEART_RATE_BACKFILL_DAYS * 24 * 60 * 60 * 1000;
+  const activityCutoffMs = Date.now() - ACTIVITY_HEART_RATE_DAYS * 24 * 60 * 60 * 1000;
+  let updated = false;
 
   try {
     const workouts = await repo.listWorkouts(userId);
@@ -48,15 +58,31 @@ async function backfillHeartRate(userId: string, repo: DataRepository): Promise<
   try {
     const activities = await repo.listActivities(userId);
     for (const a of activities) {
-      if (a.source === 'apple_health' || a.avgHeartRate != null) continue;
-      if (new Date(a.startedAt).getTime() < cutoffMs) continue;
+      // Les activités importées de Santé en font partie : la synchro ne lit
+      // pas leur FC, et sans elle leur intensité reste inconnue.
+      if (a.avgHeartRate != null) continue;
+      if (new Date(a.startedAt).getTime() < activityCutoffMs) continue;
       const window = estimateActivityHeartRateWindow(a.startedAt, a.durationSec);
       const summary = await queryHeartRateSummary(new Date(window.start), new Date(window.end));
-      if (summary) await repo.setActivityHeartRate(userId, a.id, summary);
+      if (summary) {
+        await repo.setActivityHeartRate(userId, a.id, summary);
+        updated = true;
+      }
     }
   } catch {
     // Best-effort.
   }
+  return updated;
+}
+
+/**
+ * Une FC ajoutée change l'intensité estimée d'une activité, donc la
+ * récupération : sans cette relecture, l'écran gardait l'ancien calcul
+ * jusqu'à la prochaine synchro.
+ */
+function refreshAfterHeartRate(qc: QueryClient, userId: string): void {
+  void qc.invalidateQueries({ queryKey: ['activities', userId] });
+  void qc.invalidateQueries({ queryKey: ['muscleSessions', userId] });
 }
 
 /**
@@ -70,6 +96,7 @@ async function backfillHeartRate(userId: string, repo: DataRepository): Promise<
  */
 export function useHealthKitAutoSync(): void {
   const { user, status: authStatus } = useAuth();
+  const qc = useQueryClient();
   const requestSync = useHealthSync();
   const requestRef = useRef(requestSync);
   requestRef.current = requestSync;
@@ -87,7 +114,7 @@ export function useHealthKitAutoSync(): void {
     // synchro (aucune ancre) et au filet hebdomadaire.
     const runSync = async (): Promise<void> => {
       await requestRef.current('incremental');
-      if (user) await backfillHeartRate(user.id, createDataRepository());
+      if (user && (await backfillHeartRate(user.id, createDataRepository()))) refreshAfterHeartRate(qc, user.id);
     };
 
     void (async () => {
@@ -103,7 +130,7 @@ export function useHealthKitAutoSync(): void {
       cancelled = true;
       unsubscribe?.();
     };
-  }, [authStatus, user]);
+  }, [authStatus, user, qc]);
 }
 
 /**
@@ -115,10 +142,11 @@ export function useHealthKitAutoSync(): void {
  */
 export function useManualHealthKitSync(): () => Promise<void> {
   const { user } = useAuth();
+  const qc = useQueryClient();
   const requestSync = useHealthSync();
   return async () => {
     if (Platform.OS !== 'ios' || !healthKitAvailable() || !(await isHealthKitConnected())) return;
     await requestSync('incremental');
-    if (user) await backfillHeartRate(user.id, createDataRepository());
+    if (user && (await backfillHeartRate(user.id, createDataRepository()))) refreshAfterHeartRate(qc, user.id);
   };
 }

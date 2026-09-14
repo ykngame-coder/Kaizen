@@ -1,5 +1,5 @@
 import type { Activity, Workout } from '@supotsu/core';
-import { activityMuscleLoad, profileFor, type MuscleSession } from '@supotsu/engines';
+import { activityMuscleLoad, profileFor, type HeartRateContext, type MuscleSession } from '@supotsu/engines';
 import { localDateKey } from '../../features/community/leaderboardHelpers';
 
 /**
@@ -24,20 +24,21 @@ function hasMatchedWorkout(activity: Activity, workouts: Workout[]): boolean {
  * benefits — nothing is written back.
  *
  * Every session carries its `load` (duration, intensity, type weight): a
- * 10-minute walk no longer tires the legs like a half-marathon.
+ * 10-minute walk no longer tires the legs like a half-marathon. `hr` lets an
+ * activity without a declared intensity get one from its average heart rate.
  *
  * Mobility/yoga activities ease fatigue instead of adding it, same treatment
  * structured mobility exercises already get (see buildMuscleSessions'
  * isMobility handling in repository.ts).
  */
-export function buildActivityMuscleSessions(activities: Activity[], workouts: Workout[]): MuscleSession[] {
+export function buildActivityMuscleSessions(activities: Activity[], workouts: Workout[], hr: HeartRateContext = {}): MuscleSession[] {
   const out: MuscleSession[] = [];
   for (const a of activities) {
     if (hasMatchedWorkout(a, workouts)) continue;
     const tagged = a.muscles && a.muscles.length > 0 ? a.muscles : null;
     const profile = tagged ? null : profileFor(a);
     if (!tagged && !profile) continue;
-    const load = activityMuscleLoad(a);
+    const load = activityMuscleLoad(a, hr);
     if (load <= 0) continue;
     out.push({
       trainedAt: a.startedAt,
