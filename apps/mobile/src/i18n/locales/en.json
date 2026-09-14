@@ -1575,7 +1575,10 @@
     "heading": "Muscles worked",
     "hint": "Tell us which muscles this activity worked so it counts toward your recovery.",
     "save": "Save",
-    "saved": "Saved"
+    "saved": "Saved",
+    "estimated": "Estimated from the activity type, and already counted in your recovery. Adjust if needed, then save.",
+    "estimatedSecondary": "Secondary (counts half): {{muscles}}",
+    "backToEstimate": "Back to the estimate"
    }
   },
   "customize": {

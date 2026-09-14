@@ -28,16 +28,43 @@ describe('buildActivityMuscleSessions', () => {
     const activity: Activity = { ...baseActivity, muscles: ['chest', 'triceps'] };
     const out = buildActivityMuscleSessions([activity], []);
     expect(out).toEqual([
-      { trainedAt: activity.startedAt, primaryMuscles: ['chest', 'triceps'], secondaryMuscles: [], recovery: false },
+      // 15 min : un tiers de la séance de référence de 45 min.
+      { trainedAt: activity.startedAt, primaryMuscles: ['chest', 'triceps'], secondaryMuscles: [], recovery: false, load: 15 / 45 },
     ]);
   });
 
-  it('skips an untagged activity', () => {
+  it('skips an untagged activity whose type has no profile — cross-training, only the user knows', () => {
     const out = buildActivityMuscleSessions([baseActivity], []);
     expect(out).toEqual([]);
   });
 
-  it('skips an activity tagged with an empty muscle list', () => {
+  it('préremplit une course non taguée avec son profil, secondaires compris', () => {
+    const run: Activity = { ...baseActivity, type: 'running', durationSec: 45 * 60 };
+    expect(buildActivityMuscleSessions([run], [])).toEqual([
+      { trainedAt: run.startedAt, primaryMuscles: ['quads', 'hamstrings', 'glutes', 'calves'], secondaryMuscles: ['core'], recovery: false, load: 1 },
+    ]);
+  });
+
+  it('pour « autre », utilise le nom donné par Apple Santé', () => {
+    const hike: Activity = { ...baseActivity, type: 'other', notes: 'Randonnée', durationSec: 90 * 60 };
+    const [s] = buildActivityMuscleSessions([hike], []);
+    expect(s?.primaryMuscles).toEqual(['quads', 'glutes', 'calves']);
+    expect(s?.load).toBeCloseTo(2);
+  });
+
+  it('une marche pèse léger', () => {
+    const walk: Activity = { ...baseActivity, type: 'walking', durationSec: 45 * 60 };
+    expect(buildActivityMuscleSessions([walk], [])[0]?.load).toBeCloseTo(0.4);
+  });
+
+  it('les muscles tagués à la main l emportent sur le profil', () => {
+    const run: Activity = { ...baseActivity, type: 'running', durationSec: 45 * 60, muscles: ['calves'] };
+    const [s] = buildActivityMuscleSessions([run], []);
+    expect(s?.primaryMuscles).toEqual(['calves']);
+    expect(s?.secondaryMuscles).toEqual([]);
+  });
+
+  it('skips an activity tagged with an empty muscle list and no profile', () => {
     const activity: Activity = { ...baseActivity, muscles: [] };
     const out = buildActivityMuscleSessions([activity], []);
     expect(out).toEqual([]);

@@ -1,5 +1,5 @@
 import type { Activity, Workout } from '@supotsu/core';
-import type { MuscleSession } from '@supotsu/engines';
+import { activityMuscleLoad, profileFor, type MuscleSession } from '@supotsu/engines';
 import { localDateKey } from '../../features/community/leaderboardHelpers';
 
 /**
@@ -16,21 +16,35 @@ function hasMatchedWorkout(activity: Activity, workouts: Workout[]): boolean {
 }
 
 /**
- * One MuscleSession per tagged activity that isn't already covered by a
- * matched structured workout. Mobility/yoga activities ease fatigue instead
- * of adding it, same treatment structured mobility exercises already get
- * (see buildMuscleSessions' isMobility handling in repository.ts).
+ * One MuscleSession per activity that isn't already covered by a matched
+ * structured workout. Muscles: those the user tagged by hand, else the
+ * activity type's profile (`profileFor` — a run always works the same
+ * muscles); an activity with neither (strength, cross-training: only the user
+ * knows) contributes nothing. Computed at read time, so every past activity
+ * benefits — nothing is written back.
+ *
+ * Every session carries its `load` (duration, intensity, type weight): a
+ * 10-minute walk no longer tires the legs like a half-marathon.
+ *
+ * Mobility/yoga activities ease fatigue instead of adding it, same treatment
+ * structured mobility exercises already get (see buildMuscleSessions'
+ * isMobility handling in repository.ts).
  */
 export function buildActivityMuscleSessions(activities: Activity[], workouts: Workout[]): MuscleSession[] {
   const out: MuscleSession[] = [];
   for (const a of activities) {
-    if (!a.muscles || a.muscles.length === 0) continue;
     if (hasMatchedWorkout(a, workouts)) continue;
+    const tagged = a.muscles && a.muscles.length > 0 ? a.muscles : null;
+    const profile = tagged ? null : profileFor(a);
+    if (!tagged && !profile) continue;
+    const load = activityMuscleLoad(a);
+    if (load <= 0) continue;
     out.push({
       trainedAt: a.startedAt,
-      primaryMuscles: a.muscles,
-      secondaryMuscles: [],
+      primaryMuscles: tagged ?? profile!.primary,
+      secondaryMuscles: tagged ? [] : profile!.secondary,
       recovery: a.type === 'mobility' || a.type === 'yoga',
+      load,
     });
   }
   return out;

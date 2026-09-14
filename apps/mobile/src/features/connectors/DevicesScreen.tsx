@@ -16,6 +16,7 @@ import { useHealthSync } from './healthSync';
 import type { HealthTypeKey } from './healthSource';
 import type { SyncReport } from './healthSyncEngine';
 import { loadSyncReport } from './healthSyncStore';
+import { sourceLabel } from './sourceLabel';
 import { markHealthKitConnected } from './useHealthKitAutoSync';
 import {
   disconnectGarmin,
@@ -31,20 +32,6 @@ import {
   syncStrava,
 } from './stravaClient';
 import { appleHealthAvailable, createIngestToken, ingestUrl } from './appleHealthClient';
-
-function sourceLabel(t: TFunction): Partial<Record<DataSource, { name: string; icon: string }>> {
-  return {
-    garmin: { name: 'Garmin', icon: '⌚' },
-    apple_health: { name: 'Apple Santé', icon: '🍎' },
-    renpho: { name: 'Renpho', icon: '⚖' },
-    withings: { name: 'Withings', icon: '⚖' },
-    polar: { name: 'Polar', icon: '❤️' },
-    coros: { name: 'Coros', icon: '⌚' },
-    oura: { name: 'Oura', icon: '💍' },
-    fitbit: { name: 'Fitbit', icon: '⌚' },
-    manual: { name: t('connectors.devices.sourceLabel.manual'), icon: '✍️' },
-  };
-}
 
 function metricLabel(t: TFunction): Partial<Record<HealthMetricType, string>> {
   return {

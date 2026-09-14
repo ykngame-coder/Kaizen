@@ -1575,7 +1575,10 @@
     "heading": "Músculos trabalhados",
     "hint": "Indica que músculos esta atividade trabalhou para que conte na tua recuperação.",
     "save": "Guardar",
-    "saved": "Guardado"
+    "saved": "Guardado",
+    "estimated": "Estimado a partir do tipo de atividade e já contado na tua recuperação. Ajusta se for preciso e guarda.",
+    "estimatedSecondary": "Secundários (contam metade): {{muscles}}",
+    "backToEstimate": "Voltar à estimativa"
    }
   },
   "customize": {

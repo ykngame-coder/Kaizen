@@ -1575,7 +1575,10 @@
     "heading": "Muscles travaillés",
     "hint": "Indique quels muscles cette activité a sollicités pour qu'elle compte dans ta récupération.",
     "save": "Enregistrer",
-    "saved": "Enregistré"
+    "saved": "Enregistré",
+    "estimated": "Estimé d'après le type d'activité, et déjà pris en compte dans ta récupération. Modifie si besoin, puis enregistre.",
+    "estimatedSecondary": "En secondaire (compte moitié) : {{muscles}}",
+    "backToEstimate": "Revenir à l'estimation"
    }
   },
   "customize": {

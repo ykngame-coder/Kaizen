@@ -1,13 +1,15 @@
 import React, { useMemo, useState } from 'react';
-import { View } from 'react-native';
+import { Pressable, View } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { Button, Card, EmptyState, FilterChip, Icon, Screen, Text, useTheme } from '@supotsu/ui';
 import { radii, spacing } from '@supotsu/design-system';
 import type { MuscleGroup } from '@supotsu/core';
 import { EXERCISE_LIBRARY } from '@supotsu/shared';
+import { profileFor } from '@supotsu/engines';
 import { EXERCISES, MUSCLE_LABEL } from '@/features/exercises/catalog';
 import { BackButton } from '@/features/navigation/BackButton';
+import { sourceName } from '@/features/connectors/sourceLabel';
 import { useActivities, useCustomExercises, useDeleteActivity, useUpdateActivityMuscles, useWorkoutBlocks, useWorkoutSets, useWorkouts } from '@/lib/data/queries';
 import { activityTitle, formatDate, formatDistance, formatDuration } from '@/lib/format';
 import { BlockSummaryCard } from '@/features/training/WorkoutDetailScreen';
@@ -67,7 +69,14 @@ export function ActivityDetailScreen(): React.JSX.Element {
   const [musclesSaved, setMusclesSaved] = useState(false);
 
   const activity = useMemo(() => activities.find((a) => a.id === id), [activities, id]);
-  const musclesValue = selectedMuscles ?? activity?.muscles ?? [];
+  // Sans tag manuel, les muscles viennent du profil du type d'activité — déjà
+  // comptés dans la récupération (buildActivityMuscleSessions). On les affiche
+  // comme une estimation qu'on peut corriger.
+  const tagged = !!activity?.muscles && activity.muscles.length > 0;
+  const profile = activity && !tagged ? profileFor(activity) : null;
+  const estimated = selectedMuscles === null && profile !== null;
+  const musclesValue = selectedMuscles ?? (tagged ? activity!.muscles! : profile ? [...profile.primary, ...profile.secondary] : []);
+  const canReturnToEstimate = tagged && activity != null && profileFor({ type: activity.type, notes: activity.notes }) !== null;
 
   const matchedWorkout = useMemo(() => {
     if (!activity || activity.type !== 'strength') return undefined;
@@ -135,12 +144,20 @@ export function ActivityDetailScreen(): React.JSX.Element {
     setMusclesSaved(true);
   };
 
+  /** Efface le tag manuel : l'activité retombe sur l'estimation de son type. */
+  const onReturnToEstimate = async (): Promise<void> => {
+    if (!activity) return;
+    await updateActivityMuscles.mutateAsync({ activityId: activity.id, muscles: [] });
+    setSelectedMuscles(null);
+    setMusclesSaved(false);
+  };
+
   return (
     <Screen scroll>
       <BackButton />
       <Text variant="title">{activityTitle(activity.type, activity.notes)}</Text>
       <Text variant="caption" color="textMuted" style={{ marginTop: 2 }}>
-        {formatDate(activity.startedAt)} · {activity.source}
+        {formatDate(activity.startedAt)} · {sourceName(activity.source, t)}
       </Text>
 
       <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: spacing[3], marginTop: spacing[2] }}>
@@ -168,20 +185,34 @@ export function ActivityDetailScreen(): React.JSX.Element {
         <Card>
           <Text variant="heading">{t('sport.activityDetail.muscles.heading')}</Text>
           <Text variant="caption" color="textMuted" style={{ marginTop: spacing[1] }}>
-            {t('sport.activityDetail.muscles.hint')}
+            {estimated ? t('sport.activityDetail.muscles.estimated') : t('sport.activityDetail.muscles.hint')}
           </Text>
+          {estimated && profile && profile.secondary.length > 0 ? (
+            <Text variant="caption" color="textSubtle" style={{ marginTop: spacing[1] }}>
+              {t('sport.activityDetail.muscles.estimatedSecondary', { muscles: profile.secondary.map((m) => MUSCLE_LABEL[m]).join(', ') })}
+            </Text>
+          ) : null}
           <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: spacing[2], marginTop: spacing[3] }}>
             {MUSCLES.map((m) => (
               <FilterChip key={m} label={MUSCLE_LABEL[m]} active={musclesValue.includes(m)} onPress={() => toggleMuscle(m)} />
             ))}
           </View>
-          <View style={{ alignItems: 'flex-start', marginTop: spacing[3] }}>
-            <Button
-              label={updateActivityMuscles.isPending ? '…' : musclesSaved ? t('sport.activityDetail.muscles.saved') : t('sport.activityDetail.muscles.save')}
-              onPress={onSaveMuscles}
-              disabled={updateActivityMuscles.isPending}
-            />
-          </View>
+          {/* Une estimation intacte est déjà comptée : rien à enregistrer. L'enregistrer
+              telle quelle ferait passer ses muscles secondaires en principaux. */}
+          {!estimated ? (
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing[3], marginTop: spacing[3] }}>
+              <Button
+                label={updateActivityMuscles.isPending ? '…' : musclesSaved ? t('sport.activityDetail.muscles.saved') : t('sport.activityDetail.muscles.save')}
+                onPress={onSaveMuscles}
+                disabled={updateActivityMuscles.isPending}
+              />
+              {canReturnToEstimate ? (
+                <Pressable onPress={onReturnToEstimate} hitSlop={8} disabled={updateActivityMuscles.isPending}>
+                  <Text variant="caption" color="primary">{t('sport.activityDetail.muscles.backToEstimate')}</Text>
+                </Pressable>
+              ) : null}
+            </View>
+          ) : null}
         </Card>
       ) : null}
 

@@ -1575,7 +1575,10 @@
     "heading": "Beanspruchte Muskeln",
     "hint": "Gib an, welche Muskeln diese Aktivität beansprucht hat, damit sie in deiner Erholung zählt.",
     "save": "Speichern",
-    "saved": "Gespeichert"
+    "saved": "Gespeichert",
+    "estimated": "Aus der Aktivitätsart geschätzt und bereits in deiner Erholung berücksichtigt. Bei Bedarf anpassen und speichern.",
+    "estimatedSecondary": "Sekundär (zählt halb): {{muscles}}",
+    "backToEstimate": "Zurück zur Schätzung"
    }
   },
   "customize": {
