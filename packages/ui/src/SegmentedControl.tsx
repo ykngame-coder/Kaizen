@@ -41,21 +41,32 @@ export function SegmentedControl<T extends string>({
             accessibilityRole="radio"
             accessibilityState={{ selected }}
             onPress={() => onChange(option.value)}
-            style={({ pressed }) => ({
-              flexGrow: vertical ? 0 : 1,
-              backgroundColor: selected ? colors.primary : colors.surfaceElevated,
-              borderColor: selected ? colors.primary : colors.border,
-              borderWidth: 1,
-              borderRadius: radii.md,
-              paddingVertical: spacing[3],
-              paddingHorizontal: spacing[4],
-              alignItems: 'center',
-              opacity: pressed ? 0.8 : 1,
-            })}
+            // Style STATIQUE sur le Pressable, apparence et retour au toucher
+            // sur la View intérieure — le schéma de Button. Passé en
+            // style-fonction (`style={({ pressed }) => …}`), tout le style
+            // était perdu dans l'app : fond, bordure, marges et largeur, et
+            // les onglets Défis / Classement de Communauté ne ressemblaient
+            // plus qu'à deux mots.
+            style={{ flexGrow: vertical ? 0 : 1 }}
           >
-            <Text variant="subtitle" color={selected ? 'onPrimary' : 'text'}>
-              {option.label}
-            </Text>
+            {({ pressed }) => (
+              <View
+                style={{
+                  backgroundColor: selected ? colors.primary : colors.surfaceElevated,
+                  borderColor: selected ? colors.primary : colors.border,
+                  borderWidth: 1,
+                  borderRadius: radii.md,
+                  paddingVertical: spacing[3],
+                  paddingHorizontal: spacing[4],
+                  alignItems: 'center',
+                  opacity: pressed ? 0.8 : 1,
+                }}
+              >
+                <Text variant="subtitle" color={selected ? 'onPrimary' : 'text'}>
+                  {option.label}
+                </Text>
+              </View>
+            )}
           </Pressable>
         );
       })}
