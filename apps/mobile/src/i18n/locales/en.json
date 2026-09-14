@@ -2415,6 +2415,7 @@
    "moveTitle_one": "Move {{count}} item",
    "moveTitle_other": "Move {{count}} items",
    "copyFromA11y": "Copy from another day",
+   "copyFromLabel": "Copy",
    "done": {
     "copied_one": "{{count}} item copied to {{day}}",
     "copied_other": "{{count}} items copied to {{day}}",

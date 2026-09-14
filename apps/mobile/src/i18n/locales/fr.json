@@ -2415,6 +2415,7 @@
    "moveTitle_one": "Déplacer {{count}} aliment",
    "moveTitle_other": "Déplacer {{count}} aliments",
    "copyFromA11y": "Copier depuis un autre jour",
+   "copyFromLabel": "Copier",
    "done": {
     "copied_one": "{{count}} aliment copié vers {{day}}",
     "copied_other": "{{count}} aliments copiés vers {{day}}",

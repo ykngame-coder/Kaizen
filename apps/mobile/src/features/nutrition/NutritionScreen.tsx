@@ -1,10 +1,11 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { Pressable, ScrollView, TextInput, View } from 'react-native';
+import { Swipeable } from 'react-native-gesture-handler';
 import { useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { Button, Card, Fab, FilterChip, Icon, Input, ProgressRing, Screen, Sparkline, Text, useTheme, type IconName } from '@supotsu/ui';
-import { spacing } from '@supotsu/design-system';
+import { radii, spacing } from '@supotsu/design-system';
 import {
   computeNutritionScore,
   dailySums,
@@ -353,29 +354,40 @@ export function NutritionScreen(): React.JSX.Element {
                   </View>
                 ) : null}
               </View>
-              <Pressable
-                onPress={() => router.push({ pathname: '/nutrition/meal/day', params: { type: m.type, date: selectedDate.key } })}
-                style={({ pressed }) => ({ flexDirection: 'row', alignItems: 'center', gap: spacing[3], paddingVertical: spacing[2], opacity: pressed ? 0.6 : 1 })}
+              {/* Le bouton copier vivait en icône muette de 28px, aussi discrète
+                  que le "+" alors que c'est souvent l'action la plus utile
+                  (retour TestFlight — introuvable). Le swipe le remplace par
+                  un geste avec libellé, et le "+" disparaît : `MealDayScreen`
+                  a déjà son propre bouton "Ajouter" une fois la ligne ouverte. */}
+              <Swipeable
+                renderRightActions={() => (
+                  <Pressable
+                    onPress={() => setCopyInto(m.type)}
+                    accessibilityLabel={t('nutrition.copy.copyFromA11y')}
+                    style={{
+                      justifyContent: 'center',
+                      alignItems: 'center',
+                      width: 76,
+                      marginLeft: spacing[2],
+                      borderRadius: radii.lg,
+                      backgroundColor: colors.surfaceElevated,
+                    }}
+                  >
+                    <Icon name="copy" size={18} color={colors.text} />
+                    <Text variant="caption" style={{ marginTop: 2, fontWeight: '600' }}>{t('nutrition.copy.copyFromLabel')}</Text>
+                  </Pressable>
+                )}
+                overshootRight={false}
               >
-                <View style={{ width: 40, height: 40, borderRadius: 12, backgroundColor: colors.surfaceElevated, alignItems: 'center', justifyContent: 'center' }}><Icon name={MEAL_ICON[m.type] ?? 'bowl'} size={19} color={colors.text} /></View>
-                <Text variant="body" color={m.count > 0 ? 'text' : 'textSubtle'} style={{ flex: 1 }} numberOfLines={1}>{summary}</Text>
                 <Pressable
-                  onPress={() => setCopyInto(m.type)}
-                  accessibilityLabel={t('nutrition.copy.copyFromA11y')}
-                  hitSlop={8}
-                  style={{ width: 28, height: 28, borderRadius: 14, backgroundColor: colors.surfaceElevated, alignItems: 'center', justifyContent: 'center' }}
+                  onPress={() => router.push({ pathname: '/nutrition/meal/day', params: { type: m.type, date: selectedDate.key } })}
+                  style={({ pressed }) => ({ flexDirection: 'row', alignItems: 'center', gap: spacing[3], paddingVertical: spacing[2], opacity: pressed ? 0.6 : 1 })}
                 >
-                  <Icon name="copy" size={14} color={colors.textMuted} />
+                  <View style={{ width: 40, height: 40, borderRadius: 12, backgroundColor: colors.surfaceElevated, alignItems: 'center', justifyContent: 'center' }}><Icon name={MEAL_ICON[m.type] ?? 'bowl'} size={19} color={colors.text} /></View>
+                  <Text variant="body" color={m.count > 0 ? 'text' : 'textSubtle'} style={{ flex: 1 }} numberOfLines={1}>{summary}</Text>
+                  <Text variant="heading" style={{ color: colors.textSubtle }}>›</Text>
                 </Pressable>
-                <Pressable
-                  onPress={() => router.push({ pathname: '/nutrition/meal/new', params: { date: selectedDate.key, mealType: m.type } })}
-                  accessibilityLabel={t('nutrition.mealDay.addButton')}
-                  hitSlop={8}
-                  style={{ width: 28, height: 28, borderRadius: 14, backgroundColor: colors.surfaceElevated, alignItems: 'center', justifyContent: 'center' }}
-                >
-                  <Text variant="body" style={{ fontWeight: '800' }}>+</Text>
-                </Pressable>
-              </Pressable>
+              </Swipeable>
             </View>
           );
         })}

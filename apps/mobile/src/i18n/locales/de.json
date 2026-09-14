@@ -2415,6 +2415,7 @@
    "moveTitle_one": "{{count}} Lebensmittel verschieben",
    "moveTitle_other": "{{count}} Lebensmittel verschieben",
    "copyFromA11y": "Von einem anderen Tag kopieren",
+   "copyFromLabel": "Kopieren",
    "done": {
     "copied_one": "{{count}} Lebensmittel auf {{day}} kopiert",
     "copied_other": "{{count}} Lebensmittel auf {{day}} kopiert",
