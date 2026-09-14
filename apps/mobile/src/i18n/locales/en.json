@@ -2736,7 +2736,30 @@
     "native": "Native iOS",
     "iosRequired": "iOS app required",
     "authorizeAndSync": "Authorize & sync",
-    "notAvailable": "Available in the iOS app (native build). On the web, use Apple Health via Health Auto Export below."
+    "notAvailable": "Available in the iOS app (native build). On the web, use Apple Health via Health Auto Export below.",
+    "lastSync": {
+     "title": "Last sync",
+     "mode": {
+      "incremental": "incremental",
+      "full": "full"
+     },
+     "reason": {
+      "requested": "requested",
+      "no-anchor": "first sync",
+      "weekly": "weekly safety net",
+      "anchor-rejected": "anchor rejected",
+      "disabled": "incremental disabled"
+     },
+     "summary": "{{mode}} ({{reason}}) · {{time}} · {{duration}} s · {{added}} added · {{deleted}} deleted",
+     "anchors": "Anchors: {{via}}",
+     "via": {
+      "empty-query": "empty query",
+      "paged": "paged scan",
+      "existing": "existing"
+     },
+     "typeErrors": "Failed types: {{types}}",
+     "error": "Error: {{message}}"
+    }
    },
    "title": "Devices & sensors",
    "subtitle": "Sync • Connections • Sources",

@@ -2736,7 +2736,30 @@
     "native": "Natif iOS",
     "iosRequired": "App iOS requise",
     "authorizeAndSync": "Autoriser & synchroniser",
-    "notAvailable": "Disponible dans l'app iOS (build natif). Sur le web, utilise Apple Santé via Health Auto Export ci-dessous."
+    "notAvailable": "Disponible dans l'app iOS (build natif). Sur le web, utilise Apple Santé via Health Auto Export ci-dessous.",
+    "lastSync": {
+     "title": "Dernière synchro",
+     "mode": {
+      "incremental": "incrémentale",
+      "full": "complète"
+     },
+     "reason": {
+      "requested": "demandée",
+      "no-anchor": "première synchro",
+      "weekly": "filet hebdomadaire",
+      "anchor-rejected": "ancre refusée",
+      "disabled": "incrémental désactivé"
+     },
+     "summary": "{{mode}} ({{reason}}) · {{time}} · {{duration}} s · {{added}} ajouts · {{deleted}} suppressions",
+     "anchors": "Ancres : {{via}}",
+     "via": {
+      "empty-query": "requête vide",
+      "paged": "parcours paginé",
+      "existing": "existantes"
+     },
+     "typeErrors": "Types en échec : {{types}}",
+     "error": "Erreur : {{message}}"
+    }
    },
    "title": "Appareils & capteurs",
    "subtitle": "Synchronisation • Connexions • Sources",

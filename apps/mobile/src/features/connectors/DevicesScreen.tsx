@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Platform, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
@@ -8,9 +8,14 @@ import { Badge, Button, Card, Screen, Text, useTheme, type BadgeTone } from '@su
 import { radii, spacing } from '@supotsu/design-system';
 import { CONNECTORS } from '@supotsu/connectors';
 import type { DataSource, HealthMetricType } from '@supotsu/core';
-import { useHealthMetrics, useImportHealth } from '@/lib/data/queries';
+import { useHealthMetrics } from '@/lib/data/queries';
+import { useAuth } from '@/features/auth/AuthProvider';
 import { errorMessage } from '@/lib/errors';
-import { healthKitAvailable, syncHealthKit } from './healthKitClient';
+import { healthKitAvailable } from './healthKitClient';
+import { useHealthSync } from './healthSync';
+import type { HealthTypeKey } from './healthSource';
+import type { SyncReport } from './healthSyncEngine';
+import { loadSyncReport } from './healthSyncStore';
 import { markHealthKitConnected } from './useHealthKitAutoSync';
 import {
   disconnectGarmin,
@@ -26,7 +31,6 @@ import {
   syncStrava,
 } from './stravaClient';
 import { appleHealthAvailable, createIngestToken, ingestUrl } from './appleHealthClient';
-import { fullReplaceWindows } from './replaceWindows';
 
 function sourceLabel(t: TFunction): Partial<Record<DataSource, { name: string; icon: string }>> {
   return {
@@ -372,24 +376,44 @@ function RenphoCard(): React.JSX.Element {
 /** Native Apple HealthKit (iOS build only) — reads Health directly on-device. Exported: also reused by the onboarding "Tes appareils" step. */
 export function HealthKitCard(): React.JSX.Element {
   const { t } = useTranslation();
-  const importHealth = useImportHealth();
+  const { user } = useAuth();
+  const requestSync = useHealthSync();
   const isIos = Platform.OS === 'ios';
   const available = isIos && healthKitAvailable();
   const [busy, setBusy] = useState(false);
   const [note, setNote] = useState<string | null>(null);
+  const [report, setReport] = useState<SyncReport | null>(null);
 
+  useEffect(() => {
+    if (user) void loadSyncReport(user.id).then(setReport);
+  }, [user]);
+
+  // Relecture complète : c'est le bouton « tout reconstruire » — le reste de
+  // l'app synchronise en incrémental.
   const sync = async (): Promise<void> => {
     setNote(null);
     setBusy(true);
     try {
-      const { activities, healthMetrics, sleepSessions } = await syncHealthKit();
       await markHealthKitConnected();
-      if (activities.length + healthMetrics.length + sleepSessions.length === 0) {
-        setNote(t('connectors.devices.healthKit.noNewData'));
-      } else {
-        await importHealth.mutateAsync({ activities, healthMetrics, records: [], sleepSessions, workouts: [], replace: fullReplaceWindows({ healthMetrics, sleepSessions }, new Date()) });
-        setNote(t('connectors.devices.healthKit.imported', { activitiesCount: activities.length, healthCount: healthMetrics.length, sleepCount: sleepSessions.length }));
+      await requestSync('full');
+      const last = user ? await loadSyncReport(user.id) : null;
+      setReport(last);
+      if (!last) return;
+      if (last.error) {
+        setNote(t('connectors.devices.healthKit.syncErrorWithDetail', { detail: last.error }));
+        return;
       }
+      const added = (k: HealthTypeKey): number => last.perType[k]?.added ?? 0;
+      const activitiesCount = added('workouts');
+      const sleepCount = added('sleep');
+      const healthCount = Object.entries(last.perType)
+        .filter(([k]) => k !== 'workouts' && k !== 'sleep')
+        .reduce((n, [, v]) => n + (v?.added ?? 0), 0);
+      setNote(
+        activitiesCount + sleepCount + healthCount === 0
+          ? t('connectors.devices.healthKit.noNewData')
+          : t('connectors.devices.healthKit.imported', { activitiesCount, healthCount, sleepCount }),
+      );
     } catch (e) {
       const detail = errorMessage(e, '');
       setNote(
@@ -427,7 +451,43 @@ export function HealthKitCard(): React.JSX.Element {
           {note}
         </Text>
       ) : null}
+      {available && report ? <LastSyncLine report={report} /> : null}
     </Card>
+  );
+}
+
+/**
+ * Diagnostic de la dernière synchro : mode et raison, durée, ajouts et
+ * suppressions, origine des ancres, types en échec. Le seul moyen de vérifier
+ * la synchro incrémentale sur TestFlight — et de la diagnostiquer sans deviner.
+ */
+function LastSyncLine({ report }: { report: SyncReport }): React.JSX.Element {
+  const { t } = useTranslation();
+  const types = Object.values(report.perType);
+  const added = types.reduce((n, v) => n + (v?.added ?? 0), 0);
+  const deleted = types.reduce((n, v) => n + (v?.deleted ?? 0), 0);
+  const failed = Object.entries(report.perType).filter(([, v]) => v?.error).map(([k, v]) => `${k.replace('HKQuantityTypeIdentifier', '')} (${v?.error})`);
+  const vias = [...new Set(Object.values(report.anchorsVia))].map((v) => t(`connectors.devices.healthKit.lastSync.via.${v}`));
+  const lines = [
+    t('connectors.devices.healthKit.lastSync.summary', {
+      mode: t(`connectors.devices.healthKit.lastSync.mode.${report.mode}`),
+      reason: t(`connectors.devices.healthKit.lastSync.reason.${report.reason}`),
+      time: new Date(report.startedAt).toLocaleString(undefined, { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }),
+      duration: (report.durationMs / 1000).toFixed(1),
+      added,
+      deleted,
+    }),
+    vias.length ? t('connectors.devices.healthKit.lastSync.anchors', { via: vias.join(', ') }) : null,
+    failed.length ? t('connectors.devices.healthKit.lastSync.typeErrors', { types: failed.join(', ') }) : null,
+    report.error ? t('connectors.devices.healthKit.lastSync.error', { message: report.error }) : null,
+  ].filter((l): l is string => l !== null);
+  return (
+    <View style={{ marginTop: spacing[2], gap: 2 }}>
+      <Text variant="label" color="textSubtle">{t('connectors.devices.healthKit.lastSync.title')}</Text>
+      {lines.map((l) => (
+        <Text key={l} variant="caption" color="textSubtle">{l}</Text>
+      ))}
+    </View>
   );
 }
 

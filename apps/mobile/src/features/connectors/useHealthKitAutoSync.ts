@@ -1,12 +1,11 @@
 import { useEffect, useRef } from 'react';
 import { Platform } from 'react-native';
 import { estimateActivityHeartRateWindow, estimateWorkoutHeartRateWindow } from '@supotsu/connectors';
-import { healthKitAvailable, queryHeartRateSummary, subscribeHealthKitChanges, syncHealthKit } from './healthKitClient';
-import { useImportHealth } from '@/lib/data/queries';
+import { healthKitAvailable, queryHeartRateSummary, subscribeHealthKitChanges } from './healthKitClient';
+import { useHealthSync } from './healthSync';
 import { useAuth } from '@/features/auth/AuthProvider';
 import { secureStorage } from '@/lib/secure-storage';
 import { createDataRepository, type DataRepository } from '@/lib/data/repository';
-import { fullReplaceWindows } from './replaceWindows';
 
 const CONNECTED_KEY = 'supotsu.healthkit.connected';
 
@@ -71,9 +70,9 @@ async function backfillHeartRate(userId: string, repo: DataRepository): Promise<
  */
 export function useHealthKitAutoSync(): void {
   const { user, status: authStatus } = useAuth();
-  const importHealth = useImportHealth();
-  const importRef = useRef(importHealth);
-  importRef.current = importHealth;
+  const requestSync = useHealthSync();
+  const requestRef = useRef(requestSync);
+  requestRef.current = requestSync;
   const startedRef = useRef(false);
 
   useEffect(() => {
@@ -84,15 +83,10 @@ export function useHealthKitAutoSync(): void {
     let unsubscribe: (() => void) | undefined;
     let cancelled = false;
 
+    // Incrémental : l'orchestrateur bascule seul en complet à la première
+    // synchro (aucune ancre) et au filet hebdomadaire.
     const runSync = async (): Promise<void> => {
-      try {
-        const { activities, healthMetrics, sleepSessions } = await syncHealthKit();
-        if (activities.length + healthMetrics.length + sleepSessions.length > 0) {
-          await importRef.current.mutateAsync({ activities, healthMetrics, records: [], sleepSessions, workouts: [], replace: fullReplaceWindows({ healthMetrics, sleepSessions }, new Date()) });
-        }
-      } catch {
-        // Best-effort — the manual button on the Devices screen is the fallback.
-      }
+      await requestRef.current('incremental');
       if (user) await backfillHeartRate(user.id, createDataRepository());
     };
 
@@ -100,6 +94,8 @@ export function useHealthKitAutoSync(): void {
       if (!healthKitAvailable() || !(await isHealthKitConnected())) return;
       if (cancelled) return;
       void runSync();
+      // Huit abonnements, une seule file : une arrivée de données touchant
+      // plusieurs types ne donne qu'une synchro, plus un tour au plus.
       unsubscribe = subscribeHealthKitChanges(() => void runSync());
     })();
 
@@ -114,22 +110,15 @@ export function useHealthKitAutoSync(): void {
  * Pull-to-refresh handlers call this before invalidating queries — otherwise
  * "swipe down to refresh" only re-reads whatever's already in Supabase and
  * looks like it did nothing when Apple Health has newer data that hasn't
- * synced yet (auto-sync only runs on app open + background delivery, not on
- * every pull-to-refresh).
+ * synced yet. Incrémental : seules les nouveautés depuis la dernière synchro
+ * sont lues, c'est presque instantané.
  */
 export function useManualHealthKitSync(): () => Promise<void> {
   const { user } = useAuth();
-  const importHealth = useImportHealth();
+  const requestSync = useHealthSync();
   return async () => {
     if (Platform.OS !== 'ios' || !healthKitAvailable() || !(await isHealthKitConnected())) return;
-    try {
-      const { activities, healthMetrics, sleepSessions } = await syncHealthKit();
-      if (activities.length + healthMetrics.length + sleepSessions.length > 0) {
-        await importHealth.mutateAsync({ activities, healthMetrics, records: [], sleepSessions, workouts: [], replace: fullReplaceWindows({ healthMetrics, sleepSessions }, new Date()) });
-      }
-    } catch {
-      // Best-effort — the caller still invalidates queries and re-reads whatever's stored.
-    }
+    await requestSync('incremental');
     if (user) await backfillHeartRate(user.id, createDataRepository());
   };
 }

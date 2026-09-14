@@ -2736,7 +2736,30 @@
     "native": "Nativo iOS",
     "iosRequired": "Requiere app iOS",
     "authorizeAndSync": "Autorizar y sincronizar",
-    "notAvailable": "Disponible en la app iOS (compilación nativa). En la web, usa Apple Salud a través de Health Auto Export abajo."
+    "notAvailable": "Disponible en la app iOS (compilación nativa). En la web, usa Apple Salud a través de Health Auto Export abajo.",
+    "lastSync": {
+     "title": "Última sincronización",
+     "mode": {
+      "incremental": "incremental",
+      "full": "completa"
+     },
+     "reason": {
+      "requested": "solicitada",
+      "no-anchor": "primera sincronización",
+      "weekly": "red semanal",
+      "anchor-rejected": "ancla rechazada",
+      "disabled": "incremental desactivado"
+     },
+     "summary": "{{mode}} ({{reason}}) · {{time}} · {{duration}} s · {{added}} añadidos · {{deleted}} eliminados",
+     "anchors": "Anclas: {{via}}",
+     "via": {
+      "empty-query": "consulta vacía",
+      "paged": "recorrido paginado",
+      "existing": "existentes"
+     },
+     "typeErrors": "Tipos con error: {{types}}",
+     "error": "Error: {{message}}"
+    }
    },
    "title": "Dispositivos y sensores",
    "subtitle": "Sincronización • Conexiones • Fuentes",
