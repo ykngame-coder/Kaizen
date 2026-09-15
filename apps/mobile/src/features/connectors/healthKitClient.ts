@@ -47,3 +47,11 @@ export async function saveNutritionToHealthKit(_input: NutritionEntryInput): Pro
 export async function queryHeartRateSummary(_start: Date, _end: Date): Promise<{ avgHeartRate: number; maxHeartRate: number } | null> {
   return null; // no-op off iOS
 }
+
+export async function readDateOfBirth(): Promise<string | null> {
+  return null; // no-op off iOS
+}
+
+export async function queryEffortScore(_start: Date, _end: Date): Promise<number | null> {
+  return null; // no-op off iOS
+}

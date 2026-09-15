@@ -27,6 +27,7 @@ import type {
   WellnessCheckin,
   GeneralLeaderboardEntry,
   DataSource,
+  Intensity,
 } from '@supotsu/core';
 import type {
   ActivityInput,
@@ -61,6 +62,7 @@ import {
   listActivities as listActivitiesDb,
   updateActivityMuscles as updateActivityMusclesDb,
   updateActivityHeartRate as updateActivityHeartRateDb,
+  updateActivityIntensity as updateActivityIntensityDb,
   deleteActivity as deleteActivityDb,
   insertWorkout,
   insertWorkoutWithBlocks as insertWorkoutWithBlocksDb,
@@ -295,6 +297,8 @@ export interface DataRepository {
   updateActivityMuscles(userId: string, activityId: string, muscles: MuscleGroup[]): Promise<Activity>;
   /** Attach a connected watch's avg/max heart rate — best-effort, never called when the activity already has one. */
   setActivityHeartRate(userId: string, activityId: string, summary: { avgHeartRate: number; maxHeartRate: number }): Promise<void>;
+  /** Pose l'intensité d'une activité qui n'en a pas (score d'effort d'Apple) — jamais sur une intensité déjà déclarée. */
+  setActivityIntensity(userId: string, activityId: string, intensity: Intensity): Promise<void>;
   /** Remove a logged/imported activity (e.g. a duplicate or unwanted import). */
   deleteActivity(userId: string, activityId: string): Promise<void>;
   listWorkouts(userId: string): Promise<Workout[]>;
@@ -1102,6 +1106,11 @@ function createDemoRepository(): DataRepository {
           : a,
       );
       await writeJson(actKey(userId), next);
+    },
+    async setActivityIntensity(userId, activityId, intensity) {
+      const items = await readJson<Activity>(actKey(userId));
+      const now = new Date().toISOString();
+      await writeJson(actKey(userId), items.map((a) => (a.id === activityId ? { ...a, intensity, updatedAt: now } : a)));
     },
     async deleteActivity(userId, activityId) {
       const items = await readJson<Activity>(actKey(userId));
@@ -2343,6 +2352,9 @@ function createSupabaseRepository(
     },
     async setActivityHeartRate(_userId, activityId, summary) {
       await updateActivityHeartRateDb(client, activityId, summary);
+    },
+    async setActivityIntensity(_userId, activityId, intensity) {
+      await updateActivityIntensityDb(client, activityId, intensity);
     },
     async deleteActivity(_userId, activityId) {
       await deleteActivityDb(client, activityId);

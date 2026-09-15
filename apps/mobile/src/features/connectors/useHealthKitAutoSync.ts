@@ -1,9 +1,9 @@
 import { useEffect, useRef } from 'react';
 import { Platform } from 'react-native';
 import { useQueryClient, type QueryClient } from '@tanstack/react-query';
-import { FATIGUE_WINDOW_DAYS } from '@supotsu/engines';
+import { FATIGUE_WINDOW_DAYS, intensityFromEffortScore } from '@supotsu/engines';
 import { estimateActivityHeartRateWindow, estimateWorkoutHeartRateWindow } from '@supotsu/connectors';
-import { healthKitAvailable, queryHeartRateSummary, subscribeHealthKitChanges } from './healthKitClient';
+import { healthKitAvailable, queryEffortScore, queryHeartRateSummary, readDateOfBirth, subscribeHealthKitChanges } from './healthKitClient';
 import { useHealthSync } from './healthSync';
 import { useAuth } from '@/features/auth/AuthProvider';
 import { secureStorage } from '@/lib/secure-storage';
@@ -66,15 +66,28 @@ async function backfillHeartRate(userId: string, repo: DataRepository): Promise<
     const activities = await repo.listActivities(userId);
     for (const a of activities) {
       // Les activités importées de Santé en font partie : la synchro ne lit
-      // pas leur FC, et sans elle leur intensité reste inconnue.
-      if (a.avgHeartRate != null) continue;
+      // ni leur FC ni leur effort, et sans eux leur intensité reste inconnue.
       if (new Date(a.startedAt).getTime() < activityCutoffMs) continue;
+      if (a.avgHeartRate != null && a.intensity != null) continue;
       try {
         const window = estimateActivityHeartRateWindow(a.startedAt, a.durationSec);
-        const summary = await queryHeartRateSummary(new Date(window.start), new Date(window.end));
-        if (summary) {
-          await repo.setActivityHeartRate(userId, a.id, summary);
-          updated = true;
+        if (a.avgHeartRate == null) {
+          const summary = await queryHeartRateSummary(new Date(window.start), new Date(window.end));
+          if (summary) {
+            await repo.setActivityHeartRate(userId, a.id, summary);
+            updated = true;
+          }
+        }
+        // Le score d'effort d'Apple, quand la Watch en a un : plus fiable que
+        // l'estimation par la FC. Une intensité déclarée à la main n'est
+        // jamais remplacée — on ne passe ici que si elle manque.
+        if (a.intensity == null) {
+          const score = await queryEffortScore(new Date(window.start), new Date(window.end));
+          const intensity = score == null ? undefined : intensityFromEffortScore(score);
+          if (intensity) {
+            await repo.setActivityIntensity(userId, a.id, intensity);
+            updated = true;
+          }
         }
       } catch {
         // Une activité en échec ne doit pas empêcher le rattrapage des autres.
@@ -86,6 +99,29 @@ async function backfillHeartRate(userId: string, repo: DataRepository): Promise<
   return updated;
 }
 
+/** Une seule tentative par compte et par lancement de l'app : la date de naissance ne change pas. */
+const birthDateChecked = new Set<string>();
+
+/**
+ * Reprend la date de naissance d'Apple Santé dans le profil quand il n'en a
+ * pas — elle sert à estimer la FC max, et l'inscription ne la demande pas.
+ * Une date déjà saisie dans Supotsu n'est jamais écrasée.
+ */
+async function fillBirthDateFromHealth(userId: string, repo: DataRepository): Promise<boolean> {
+  if (birthDateChecked.has(userId)) return false;
+  birthDateChecked.add(userId);
+  try {
+    const profile = await repo.getAthleteProfile(userId);
+    if (!profile || profile.birthDate) return false;
+    const birthDate = await readDateOfBirth();
+    if (!birthDate) return false;
+    await repo.saveAthleteProfile(userId, { ...profile, birthDate });
+    return true;
+  } catch {
+    return false; // Best-effort.
+  }
+}
+
 /**
  * Une FC ajoutée change l'intensité estimée d'une activité, donc la
  * récupération : sans cette relecture, l'écran gardait l'ancien calcul
@@ -94,6 +130,15 @@ async function backfillHeartRate(userId: string, repo: DataRepository): Promise<
 function refreshAfterHeartRate(qc: QueryClient, userId: string): void {
   void qc.invalidateQueries({ queryKey: ['activities', userId] });
   void qc.invalidateQueries({ queryKey: ['muscleSessions', userId] });
+  void qc.invalidateQueries({ queryKey: ['athleteProfile', userId] });
+}
+
+/** Après une synchro : FC et effort des activités récentes, date de naissance ; relecture si quelque chose a changé. */
+async function enrichAfterSync(qc: QueryClient, userId: string): Promise<void> {
+  const repo = createDataRepository();
+  const hr = await backfillHeartRate(userId, repo);
+  const birth = await fillBirthDateFromHealth(userId, repo);
+  if (hr || birth) refreshAfterHeartRate(qc, userId);
 }
 
 /**
@@ -125,7 +170,7 @@ export function useHealthKitAutoSync(): void {
     // synchro (aucune ancre) et au filet hebdomadaire.
     const runSync = async (): Promise<void> => {
       await requestRef.current('incremental');
-      if (user && (await backfillHeartRate(user.id, createDataRepository()))) refreshAfterHeartRate(qc, user.id);
+      if (user) await enrichAfterSync(qc, user.id);
     };
 
     void (async () => {
@@ -158,6 +203,6 @@ export function useManualHealthKitSync(): () => Promise<void> {
   return async () => {
     if (Platform.OS !== 'ios' || !healthKitAvailable() || !(await isHealthKitConnected())) return;
     await requestSync('incremental');
-    if (user && (await backfillHeartRate(user.id, createDataRepository()))) refreshAfterHeartRate(qc, user.id);
+    if (user) await enrichAfterSync(qc, user.id);
   };
 }

@@ -49,6 +49,20 @@ export async function updateActivityHeartRate(
 }
 
 /**
+ * Pose l'intensité d'une activité — le score d'effort d'Apple d'une séance
+ * importée qui n'en avait pas. Jamais appelé sur une activité qui en a déjà
+ * une : une intensité déclarée à la main l'emporte.
+ */
+export async function updateActivityIntensity(
+  client: SupotsuClient,
+  activityId: string,
+  intensity: 'low' | 'moderate' | 'high' | 'max',
+): Promise<void> {
+  const { error } = await client.from('activities').update({ intensity }).eq('id', activityId);
+  if (error) throw error;
+}
+
+/**
  * Bulk upsert activities (bulk import). Idempotent via the
  * (user_id, source, external_id) unique index, so re-importing the same export
  * adds nothing. Rows are chunked to keep requests reasonable.

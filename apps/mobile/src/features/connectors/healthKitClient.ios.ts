@@ -1,4 +1,5 @@
 import * as HealthKit from '@kingstinct/react-native-healthkit';
+import { Platform } from 'react-native';
 import type { QuantityTypeIdentifier } from '@kingstinct/react-native-healthkit';
 import {
   normalizeHealthKitSamples,
@@ -121,9 +122,62 @@ const WRITE_TYPES: HealthKit.SampleTypeIdentifierWriteable[] = [
  */
 async function requestHealthKitAuthorization(): Promise<void> {
   await HealthKit.requestAuthorization({
-    toRead: [...QUANTITY_TYPES.map((q) => q.id), STEP_COUNT_TYPE, SLEEP_TYPE, WORKOUT_TYPE, HEART_RATE_TYPE],
+    toRead: [
+      ...QUANTITY_TYPES.map((q) => q.id),
+      STEP_COUNT_TYPE,
+      SLEEP_TYPE,
+      WORKOUT_TYPE,
+      HEART_RATE_TYPE,
+      // Pour estimer la FC max d'après l'âge, sans le demander à l'inscription.
+      DATE_OF_BIRTH_TYPE,
+      ...(effortScoreAvailable() ? EFFORT_SCORE_TYPES : []),
+    ],
     toShare: WRITE_TYPES,
   });
+}
+
+const DATE_OF_BIRTH_TYPE = 'HKCharacteristicTypeIdentifierDateOfBirth' as const;
+/** Note d'effort donnée sur la Watch, puis estimation d'Apple — dans cet ordre de préférence. */
+const EFFORT_SCORE_TYPES = ['HKQuantityTypeIdentifierWorkoutEffortScore', 'HKQuantityTypeIdentifierEstimatedWorkoutEffortScore'] as const;
+
+/** Le score d'effort n'existe qu'à partir d'iOS 18 : demander un type inconnu ferait échouer toute l'autorisation. */
+function effortScoreAvailable(): boolean {
+  return Number.parseInt(String(Platform.Version), 10) >= 18;
+}
+
+/** La date de naissance renseignée dans Santé, ou `null` si elle n'y est pas (ou n'est pas autorisée). */
+export async function readDateOfBirth(): Promise<string | null> {
+  if (!healthKitAvailable()) return null;
+  try {
+    const d = await HealthKit.getDateOfBirthAsync();
+    return d ? d.toISOString() : null;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Le score d'effort d'Apple (1-10) d'une séance : la note donnée sur la Watch
+ * si elle existe, sinon l'estimation d'Apple. `null` avant iOS 18, sans Apple
+ * Watch, ou quand Santé n'en a pas pour cette fenêtre.
+ */
+export async function queryEffortScore(start: Date, end: Date): Promise<number | null> {
+  if (!healthKitAvailable() || !effortScoreAvailable()) return null;
+  for (const type of EFFORT_SCORE_TYPES) {
+    try {
+      const samples = await HealthKit.queryQuantitySamples(type, {
+        unit: 'appleEffortScore',
+        limit: 1,
+        ascending: false,
+        filter: { date: { startDate: start, endDate: end } },
+      });
+      const score = samples[0]?.quantity;
+      if (typeof score === 'number' && Number.isFinite(score)) return score;
+    } catch {
+      /* type non autorisé : on essaie le suivant */
+    }
+  }
+  return null;
 }
 
 type DateFilter = { date: { startDate: Date; endDate?: Date } };
