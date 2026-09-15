@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { Activity, Workout } from '@supotsu/core';
-import { buildActivityMuscleSessions } from './muscleSessions';
+import { buildActivityMuscleSessions, observedMaxHeartRates } from './muscleSessions';
 
 const baseActivity: Activity = {
   id: 'a1',
@@ -103,5 +103,17 @@ describe('buildActivityMuscleSessions', () => {
     const [m, y] = buildActivityMuscleSessions([mobility, yoga], []);
     expect(m?.recovery).toBe(true);
     expect(y?.recovery).toBe(true);
+  });
+});
+
+describe('observedMaxHeartRates', () => {
+  const now = new Date('2026-09-14T12:00:00.000Z');
+
+  it('prend les FC max des activités et des séances des 6 derniers mois', () => {
+    const recent: Activity = { ...baseActivity, startedAt: '2026-09-01T10:00:00.000Z', maxHeartRate: 188 };
+    const old: Activity = { ...baseActivity, id: 'a2', startedAt: '2025-12-01T10:00:00.000Z', maxHeartRate: 199 };
+    const noHr: Activity = { ...baseActivity, id: 'a3' };
+    const workout: Workout = { ...baseWorkout, maxHeartRate: 176 };
+    expect(observedMaxHeartRates([recent, old, noHr], [workout], now).sort()).toEqual([176, 188]);
   });
 });

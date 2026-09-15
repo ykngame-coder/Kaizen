@@ -124,6 +124,38 @@ export function maxHeartRateFor(birthDate: string | undefined, asOf: string): nu
   return 208 - 0.7 * age;
 }
 
+/** Au-delà, une FC relevée tient du capteur qui décroche, pas de l'effort. */
+const OBSERVED_HR_RANGE = { min: 100, max: 230 };
+
+/**
+ * La FC max retenue : celle de l'âge (Tanaka), relevée par la plus haute FC
+ * effectivement atteinte en séance. Un sportif entraîné dépasse souvent la
+ * formule ; la garder telle quelle surestimerait chacune de ses intensités.
+ *
+ * La FC observée ne fait que RELEVER l'estimation, jamais la remplacer : sans
+ * effort maximal récent, elle n'est qu'un plancher. Sans âge, on ne déduit
+ * donc rien — la prendre seule ferait passer un footing pour une séance à fond.
+ */
+export function estimateMaxHeartRate(input: { birthDate: string | undefined; observed: number[]; asOf: string }): number | undefined {
+  const byAge = maxHeartRateFor(input.birthDate, input.asOf);
+  if (byAge === undefined) return undefined;
+  const plausible = input.observed.filter((v) => Number.isFinite(v) && v >= OBSERVED_HR_RANGE.min && v <= OBSERVED_HR_RANGE.max);
+  return Math.max(byAge, ...plausible);
+}
+
+/**
+ * Le score d'effort d'Apple (iOS 18 — noté par l'utilisateur sur la Watch, ou
+ * estimé par Apple) traduit en intensité, avec les paliers d'Apple eux-mêmes :
+ * facile 1-3, modéré 4-6, difficile 7-8, à fond 9-10.
+ */
+export function intensityFromEffortScore(score: number): Intensity | undefined {
+  if (!Number.isFinite(score) || score < 1 || score > 10) return undefined;
+  if (score <= 3) return 'low';
+  if (score <= 6) return 'moderate';
+  if (score <= 8) return 'high';
+  return 'max';
+}
+
 /**
  * L'intensité d'une activité d'après sa FC moyenne — méthode de Karvonen : la
  * part de la réserve cardiaque (FC max − FC de repos) utilisée. Les

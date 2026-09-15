@@ -50,3 +50,22 @@ export function buildActivityMuscleSessions(activities: Activity[], workouts: Wo
   }
   return out;
 }
+
+/** La fenêtre dans laquelle une FC atteinte en séance vaut encore comme repère de FC max. */
+const OBSERVED_MAX_HR_DAYS = 180;
+
+/**
+ * Les FC max atteintes en séance ces 6 derniers mois — de quoi relever la FC
+ * max estimée d'après l'âge (voir `estimateMaxHeartRate`). Au-delà, la forme
+ * a pu changer.
+ */
+export function observedMaxHeartRates(activities: Activity[], workouts: Workout[], now: Date = new Date()): number[] {
+  const since = now.getTime() - OBSERVED_MAX_HR_DAYS * 24 * 60 * 60 * 1000;
+  const fromActivities = activities
+    .filter((a) => a.maxHeartRate != null && new Date(a.startedAt).getTime() >= since)
+    .map((a) => a.maxHeartRate!);
+  const fromWorkouts = workouts
+    .filter((w) => w.maxHeartRate != null && w.completedAt != null && new Date(w.completedAt).getTime() >= since)
+    .map((w) => w.maxHeartRate!);
+  return [...fromActivities, ...fromWorkouts];
+}

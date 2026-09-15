@@ -41,7 +41,7 @@ import type {
   UserSessionInput,
   WellnessCheckinInput,
 } from '@supotsu/shared';
-import { computeGoalProgress, generateProgramSchedule, maxHeartRateFor, nightDateKey, resolveSleepSessionInsert } from '@supotsu/engines';
+import { computeGoalProgress, estimateMaxHeartRate, generateProgramSchedule, nightDateKey, resolveSleepSessionInsert } from '@supotsu/engines';
 import { PROGRAM_CATALOG } from '@supotsu/shared';
 import type {
   ImportedActivity,
@@ -54,7 +54,7 @@ import type { MuscleSession } from '@supotsu/engines';
 import { EXERCISE_LIBRARY } from '@supotsu/shared';
 import { EXERCISES as FULL_EXERCISE_CATALOG } from '@/features/exercises/catalog';
 import { categoryToColumn, defaultDisplayName, localDateKey, type DailyScoreColumn, type LeaderboardCategory } from '@/features/community/leaderboardHelpers';
-import { buildActivityMuscleSessions } from './muscleSessions';
+import { buildActivityMuscleSessions, observedMaxHeartRates } from './muscleSessions';
 import {
   insertActivity,
   upsertActivities,
@@ -1527,7 +1527,10 @@ function createDemoRepository(): DataRepository {
       const resting = (await readJson<HealthMetric>(hmKey(userId)))
         .filter((m) => m.type === 'resting_heart_rate')
         .sort((a, b) => b.measuredAt.localeCompare(a.measuredAt))[0];
-      const hr = { restingHr: resting?.value, maxHr: maxHeartRateFor(profile?.birthDate, new Date().toISOString()) };
+      const hr = {
+        restingHr: resting?.value,
+        maxHr: estimateMaxHeartRate({ birthDate: profile?.birthDate, observed: observedMaxHeartRates(activities, workouts), asOf: new Date().toISOString() }),
+      };
       return [...buildMuscleSessions(dates, rows), ...buildActivityMuscleSessions(activities, workouts, hr)];
     },
     async listMuscleWork(userId) {
@@ -2425,7 +2428,10 @@ function createSupabaseRepository(
         getAthleteProfileDb(client, userId),
         latestHealthMetric(client, userId, 'resting_heart_rate'),
       ]);
-      const hr = { restingHr: resting?.value ?? undefined, maxHr: maxHeartRateFor(profileRow?.birth_date ?? undefined, new Date().toISOString()) };
+      const hr = {
+        restingHr: resting?.value ?? undefined,
+        maxHr: estimateMaxHeartRate({ birthDate: profileRow?.birth_date ?? undefined, observed: observedMaxHeartRates(activities, workouts), asOf: new Date().toISOString() }),
+      };
       return [...buildMuscleSessions(dates, sets), ...buildActivityMuscleSessions(activities, workouts, hr)];
     },
     async listMuscleWork(userId) {

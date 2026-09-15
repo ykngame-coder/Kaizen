@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { ACTIVITY_MUSCLE_PROFILES, activityMuscleLoad, intensityFromHeartRate, maxHeartRateFor, profileFor } from './activityMuscles';
+import { ACTIVITY_MUSCLE_PROFILES, activityMuscleLoad, estimateMaxHeartRate, intensityFromEffortScore, intensityFromHeartRate, maxHeartRateFor, profileFor } from './activityMuscles';
 
 describe('profileFor', () => {
   it('rend le profil du type d activité', () => {
@@ -106,5 +106,42 @@ describe('maxHeartRateFor (Tanaka)', () => {
   it('rien sans date de naissance plausible', () => {
     expect(maxHeartRateFor(undefined, '2026-09-14T12:00:00.000Z')).toBeUndefined();
     expect(maxHeartRateFor('2030-01-01T00:00:00.000Z', '2026-09-14T12:00:00.000Z')).toBeUndefined();
+  });
+});
+
+describe('estimateMaxHeartRate', () => {
+  const asOf = '2026-09-14T12:00:00.000Z';
+  const birth = '1990-06-15T00:00:00.000Z'; // 36 ans → Tanaka 182,8
+
+  it('part de l âge', () => {
+    expect(estimateMaxHeartRate({ birthDate: birth, observed: [], asOf })).toBeCloseTo(182.8);
+  });
+
+  it('relève l estimation quand une séance est montée plus haut', () => {
+    expect(estimateMaxHeartRate({ birthDate: birth, observed: [171, 191, 176], asOf })).toBe(191);
+  });
+
+  it('ne l abaisse jamais : une FC observée plus basse ne dit rien du maximum', () => {
+    expect(estimateMaxHeartRate({ birthDate: birth, observed: [165], asOf })).toBeCloseTo(182.8);
+  });
+
+  it('écarte les valeurs aberrantes d un capteur', () => {
+    expect(estimateMaxHeartRate({ birthDate: birth, observed: [250], asOf })).toBeCloseTo(182.8);
+  });
+
+  it('sans âge, ne s appuie pas sur la seule FC observée — un plancher, pas un maximum', () => {
+    expect(estimateMaxHeartRate({ birthDate: undefined, observed: [191], asOf })).toBeUndefined();
+  });
+});
+
+describe('intensityFromEffortScore (Apple)', () => {
+  it('reprend les paliers d Apple : facile, modéré, difficile, à fond', () => {
+    expect([1, 3, 4, 6, 7, 8, 9, 10].map(intensityFromEffortScore)).toEqual(['low', 'low', 'moderate', 'moderate', 'high', 'high', 'max', 'max']);
+  });
+
+  it('rien hors de l échelle 1-10', () => {
+    expect(intensityFromEffortScore(0)).toBeUndefined();
+    expect(intensityFromEffortScore(11)).toBeUndefined();
+    expect(intensityFromEffortScore(Number.NaN)).toBeUndefined();
   });
 });
