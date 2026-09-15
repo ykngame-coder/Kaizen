@@ -291,6 +291,27 @@ describe('normalizeHealthKitWorkout', () => {
     });
     expect(a?.notes).toBeUndefined();
   });
+
+  it('carries elevation gain/loss when present (regression: TestFlight report — Santé had it, Kaizen dropped it)', () => {
+    const a = normalizeHealthKitWorkout({
+      workoutActivityType: 13, // cycling
+      startDate: '2026-09-09T17:00:00Z',
+      duration: 2010,
+      elevationGainM: 36.2,
+      elevationLossM: 30.4,
+    });
+    expect(a).toMatchObject({ elevationGainM: 36, elevationLossM: 30 });
+  });
+
+  it('leaves elevation gain/loss unset when HealthKit has neither', () => {
+    const a = normalizeHealthKitWorkout({
+      workoutActivityType: 37,
+      startDate: '2026-07-20T06:00:00Z',
+      duration: 1800,
+    });
+    expect(a?.elevationGainM).toBeUndefined();
+    expect(a?.elevationLossM).toBeUndefined();
+  });
 });
 
 describe('normalizeShortcutHealth', () => {

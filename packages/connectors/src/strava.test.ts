@@ -22,6 +22,7 @@ describe('normalizeStravaActivity', () => {
       distance: 6543.2,
       average_heartrate: 151.6,
       calories: 420,
+      total_elevation_gain: 87.6,
     });
     expect(a).toMatchObject({
       externalId: 'strava-987654321',
@@ -31,8 +32,19 @@ describe('normalizeStravaActivity', () => {
       distanceM: 6543,
       avgHeartRate: 152, // rounded
       calories: 420,
+      elevationGainM: 88, // rounded
     });
     expect(a?.startedAt).toBe('2026-07-20T06:30:00.000Z');
+  });
+
+  it('leaves elevation gain unset when Strava has none (regression: TestFlight report — dénivelé exposed by Santé/Strava but dropped)', () => {
+    const a = normalizeStravaActivity({
+      id: 2,
+      sport_type: 'Run',
+      start_date: '2026-07-20T06:30:00Z',
+      moving_time: 600,
+    });
+    expect(a?.elevationGainM).toBeUndefined();
   });
 
   it('falls back to elapsed_time and legacy type', () => {

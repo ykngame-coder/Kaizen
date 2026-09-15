@@ -386,6 +386,8 @@ export interface HKWorkout {
   duration?: number; // seconds
   totalDistance?: number; // metres
   totalEnergyBurned?: number; // kcal
+  elevationGainM?: number;
+  elevationLossM?: number;
 }
 
 /** One HealthKit workout → a normalized activity (or null if unusable). */
@@ -406,6 +408,8 @@ export function normalizeHealthKitWorkout(w: HKWorkout): ImportedActivity | null
     durationSec,
     distanceM: w.totalDistance !== undefined ? Math.round(w.totalDistance) : undefined,
     calories: w.totalEnergyBurned !== undefined ? Math.round(w.totalEnergyBurned) : undefined,
+    elevationGainM: w.elevationGainM !== undefined ? Math.round(w.elevationGainM) : undefined,
+    elevationLossM: w.elevationLossM !== undefined ? Math.round(w.elevationLossM) : undefined,
     // Only when we fell back to the generic bucket — a real type (running,
     // yoga…) already has its own label, no need to repeat it.
     notes: type === 'other' ? healthKitWorkoutName(w.workoutActivityType) : undefined,

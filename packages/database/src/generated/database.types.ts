@@ -119,6 +119,7 @@ export interface Database {
           avg_heart_rate: number | null;
           max_heart_rate: number | null;
           elevation_gain_m: number | null;
+          elevation_loss_m: number | null;
           raw: Json | null;
           notes: string | null;
           external_id: string | null;
@@ -135,6 +136,8 @@ export interface Database {
           intensity?: 'low' | 'moderate' | 'high' | 'max' | null;
           avg_heart_rate?: number | null;
           max_heart_rate?: number | null;
+          elevation_gain_m?: number | null;
+          elevation_loss_m?: number | null;
           notes?: string | null;
           external_id?: string | null;
           muscles?: string[] | null;

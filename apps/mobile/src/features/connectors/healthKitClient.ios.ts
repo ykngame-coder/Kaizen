@@ -154,6 +154,11 @@ const toWorkout = (w: NativeWorkout): HKWorkout | null =>
         duration: w.duration?.quantity,
         totalDistance: w.totalDistance?.quantity,
         totalEnergyBurned: w.totalEnergyBurned?.quantity,
+        // Déjà présent dans la même métadonnée de workout que le reste
+        // ci-dessus — aucune requête ni autorisation supplémentaire. C'est
+        // ce que Santé lui-même affiche comme « Dénivelé positif/négatif ».
+        elevationGainM: w.metadata?.HKElevationAscended?.quantity,
+        elevationLossM: w.metadata?.HKElevationDescended?.quantity,
       };
 
 async function readQuantitySamples(id: PointMetricKey, filter: DateFilter): Promise<HKQuantitySample[]> {

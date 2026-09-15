@@ -163,6 +163,8 @@ export const activityInputSchema = z.object({
   calories: z.number().nonnegative().optional(),
   intensity: z.enum(['low', 'moderate', 'high', 'max']).optional(),
   avgHeartRate: z.number().int().positive().max(250).optional(),
+  elevationGainM: z.number().nonnegative().optional(),
+  elevationLossM: z.number().nonnegative().optional(),
   notes: z.string().max(1000).optional(),
 });
 export type ActivityInput = z.infer<typeof activityInputSchema>;

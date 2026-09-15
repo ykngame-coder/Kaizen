@@ -30,6 +30,7 @@ export interface Activity extends OwnedEntity {
   avgHeartRate?: number;
   maxHeartRate?: number;
   elevationGainM?: number;
+  elevationLossM?: number;
   /** Optional per-source raw payload kept for traceability (never overwritten). */
   raw?: Record<string, unknown>;
   notes?: string;

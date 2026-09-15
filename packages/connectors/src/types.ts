@@ -36,6 +36,8 @@ export interface ImportedActivity {
   calories?: number;
   intensity?: Intensity;
   avgHeartRate?: number;
+  elevationGainM?: number;
+  elevationLossM?: number;
   /** Source app's own activity name (e.g. HealthKit's "Randonnée") — shown
    *  alongside the generic type label when `type` is a catch-all like 'other'. */
   notes?: string;

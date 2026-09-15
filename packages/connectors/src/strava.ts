@@ -67,6 +67,8 @@ export function normalizeStravaActivity(a: StravaActivity): ImportedActivity | n
     calories: a.calories,
     avgHeartRate:
       a.average_heartrate !== undefined ? Math.round(a.average_heartrate) : undefined,
+    elevationGainM:
+      a.total_elevation_gain !== undefined ? Math.round(a.total_elevation_gain) : undefined,
   };
 }
 

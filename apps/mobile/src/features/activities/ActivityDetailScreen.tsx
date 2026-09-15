@@ -168,7 +168,8 @@ export function ActivityDetailScreen(): React.JSX.Element {
         <Stat label="Calories" value={activity.calories != null ? `${Math.round(activity.calories)} kcal` : null} />
         <Stat label="FC moyenne" value={activity.avgHeartRate != null ? `${Math.round(activity.avgHeartRate)} bpm` : null} />
         <Stat label="FC max" value={activity.maxHeartRate != null ? `${Math.round(activity.maxHeartRate)} bpm` : null} />
-        <Stat label="Dénivelé" value={activity.elevationGainM != null ? `${Math.round(activity.elevationGainM)} m` : null} />
+        <Stat label="Dénivelé +" value={activity.elevationGainM != null ? `${Math.round(activity.elevationGainM)} m` : null} />
+        <Stat label="Dénivelé -" value={activity.elevationLossM != null ? `${Math.round(activity.elevationLossM)} m` : null} />
         <Stat label="Intensité" value={activity.intensity ? INTENSITY_LABEL[activity.intensity] ?? activity.intensity : null} />
       </View>
 

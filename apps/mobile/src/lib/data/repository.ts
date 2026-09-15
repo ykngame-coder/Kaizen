@@ -461,6 +461,8 @@ function rowToActivity(r: ActivityRow): Activity {
     intensity: r.intensity ?? undefined,
     avgHeartRate: r.avg_heart_rate ?? undefined,
     maxHeartRate: r.max_heart_rate ?? undefined,
+    elevationGainM: r.elevation_gain_m ?? undefined,
+    elevationLossM: r.elevation_loss_m ?? undefined,
     notes: r.notes ?? undefined,
     muscles: (r.muscles as MuscleGroup[] | null) ?? undefined,
     createdAt: r.created_at,
@@ -967,6 +969,8 @@ function importedToActivity(userId: string, a: ImportedActivity): Activity {
     calories: a.calories,
     intensity: a.intensity,
     avgHeartRate: a.avgHeartRate,
+    elevationGainM: a.elevationGainM,
+    elevationLossM: a.elevationLossM,
     createdAt: now,
     updatedAt: now,
   };
@@ -1066,6 +1070,8 @@ function createDemoRepository(): DataRepository {
         calories: input.calories,
         intensity: input.intensity,
         avgHeartRate: input.avgHeartRate,
+        elevationGainM: input.elevationGainM,
+        elevationLossM: input.elevationLossM,
         notes: input.notes,
         createdAt: now,
         updatedAt: now,
@@ -2323,6 +2329,8 @@ function createSupabaseRepository(
         calories: input.calories ?? null,
         intensity: input.intensity ?? null,
         avg_heart_rate: input.avgHeartRate ?? null,
+        elevation_gain_m: input.elevationGainM ?? null,
+        elevation_loss_m: input.elevationLossM ?? null,
         notes: input.notes ?? null,
       });
       return rowToActivity(row);
@@ -2921,6 +2929,8 @@ function createSupabaseRepository(
           calories: a.calories ?? null,
           intensity: a.intensity ?? null,
           avg_heart_rate: a.avgHeartRate ?? null,
+          elevation_gain_m: a.elevationGainM ?? null,
+          elevation_loss_m: a.elevationLossM ?? null,
           notes: a.notes ?? null,
         })),
       );
