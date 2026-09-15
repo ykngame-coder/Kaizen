@@ -3252,6 +3252,11 @@
     "label": "Participar na classificação",
     "yes": "Sim",
     "no": "Não"
+   },
+   "birthDate": {
+    "label": "Data de nascimento",
+    "hint": "Opcional. Serve para estimar a tua FC máxima e, com ela, a intensidade das tuas sessões. É retirada da app Saúde se a deixares vazia.",
+    "invalid": "Data ilegível ou idade inverosímil — escreve-a como 15/06/1990."
    }
   },
   "screen": {

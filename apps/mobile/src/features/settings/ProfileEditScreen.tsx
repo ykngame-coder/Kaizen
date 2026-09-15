@@ -8,6 +8,7 @@ import type { AthleteProfileInput } from '@supotsu/shared';
 import { useAthleteProfile, useLeaderboardPrefs, useSaveAthleteProfile, useUpdateLeaderboardPrefs } from '@/lib/data/queries';
 import { useAuth } from '@/features/auth/AuthProvider';
 import { defaultDisplayName } from '@/features/community/leaderboardHelpers';
+import { formatBirthDate, parseBirthDate } from './birthDate';
 
 type Sex = AthleteProfileInput['sex'];
 type Level = AthleteProfileInput['level'];
@@ -41,9 +42,12 @@ export function ProfileEditScreen(): React.JSX.Element {
   const [height, setHeight] = useState('');
   const [weight, setWeight] = useState('');
   const [availability, setAvailability] = useState('');
+  const [birth, setBirth] = useState('');
+  const [birthError, setBirthError] = useState(false);
 
   useEffect(() => {
     if (!profile) return;
+    setBirth(profile.birthDate ? formatBirthDate(profile.birthDate) : '');
     setSex(profile.sex);
     setLevel(profile.level);
     setHeight(profile.heightCm !== undefined ? String(profile.heightCm) : '');
@@ -79,6 +83,14 @@ export function ProfileEditScreen(): React.JSX.Element {
   };
 
   const onSave = (): void => {
+    // Vide = pas de date. Illisible = on n'enregistre pas plutôt que de perdre
+    // silencieusement ce que l'utilisateur a tapé.
+    const birthDate = birth.trim() ? parseBirthDate(birth) : undefined;
+    if (birthDate === null) {
+      setBirthError(true);
+      return;
+    }
+    setBirthError(false);
     const input: AthleteProfileInput = {
       sex,
       level,
@@ -87,7 +99,7 @@ export function ProfileEditScreen(): React.JSX.Element {
       weeklyAvailability: numOrUndef(availability),
       sports: profile?.sports ?? [],
       equipment: profile?.equipment ?? [],
-      birthDate: profile?.birthDate,
+      birthDate,
     };
     save.mutate(input, { onSuccess: () => router.back() });
   };
@@ -125,6 +137,21 @@ export function ProfileEditScreen(): React.JSX.Element {
               <View style={{ flex: 1 }}>
                 <Input label={t('settings.profileEdit.weight.label')} placeholder="75" value={weight} onChangeText={setWeight} keyboardType="numeric" />
               </View>
+            </View>
+            <View style={{ gap: spacing[1] }}>
+              <Input
+                label={t('settings.profileEdit.birthDate.label')}
+                placeholder="15/06/1990"
+                value={birth}
+                onChangeText={(v) => {
+                  setBirth(v);
+                  setBirthError(false);
+                }}
+                keyboardType="numbers-and-punctuation"
+              />
+              <Text variant="caption" color={birthError ? 'error' : 'textSubtle'}>
+                {birthError ? t('settings.profileEdit.birthDate.invalid') : t('settings.profileEdit.birthDate.hint')}
+              </Text>
             </View>
             <Input
               label={t('settings.profileEdit.availability.label')}

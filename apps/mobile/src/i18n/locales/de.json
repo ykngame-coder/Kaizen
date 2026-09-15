@@ -3252,6 +3252,11 @@
     "label": "An der Rangliste teilnehmen",
     "yes": "Ja",
     "no": "Nein"
+   },
+   "birthDate": {
+    "label": "Geburtsdatum",
+    "hint": "Optional. Dient zur Schätzung deiner maximalen Herzfrequenz und damit der Intensität deiner Einheiten. Wird aus Apple Health übernommen, wenn du es leer lässt.",
+    "invalid": "Unlesbares Datum oder unplausibles Alter — schreib es so: 15/06/1990."
    }
   },
   "screen": {

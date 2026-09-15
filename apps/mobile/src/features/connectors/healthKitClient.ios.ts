@@ -16,6 +16,7 @@ import {
   type ImportedHealthMetric,
 } from '@supotsu/connectors';
 import { syncWindow, trimToWindow } from './syncWindow';
+import { normalizeBirthDate } from '@/features/settings/birthDate';
 import type { ChangeSet, FullRead, HealthSource, HealthTypeKey, PointMetricKey } from './healthSource';
 import type { ActivityType } from '@supotsu/core';
 import type { ActivityInput, NutritionEntryInput } from '@supotsu/shared';
@@ -150,7 +151,8 @@ export async function readDateOfBirth(): Promise<string | null> {
   if (!healthKitAvailable()) return null;
   try {
     const d = await HealthKit.getDateOfBirthAsync();
-    return d ? d.toISOString() : null;
+    // Santé la rend à minuit local : on garde le jour civil, à midi UTC.
+    return d ? normalizeBirthDate(d) : null;
   } catch {
     return null;
   }

@@ -3252,6 +3252,11 @@
     "label": "Participar en la clasificación",
     "yes": "Sí",
     "no": "No"
+   },
+   "birthDate": {
+    "label": "Fecha de nacimiento",
+    "hint": "Opcional. Sirve para estimar tu FC máxima y, con ella, la intensidad de tus sesiones. Se toma de Salud de Apple si la dejas vacía.",
+    "invalid": "Fecha ilegible o edad inverosímil — escríbela como 15/06/1990."
    }
   },
   "screen": {

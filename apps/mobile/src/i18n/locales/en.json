@@ -3252,6 +3252,11 @@
     "label": "Join the leaderboard",
     "yes": "Yes",
     "no": "No"
+   },
+   "birthDate": {
+    "label": "Date of birth",
+    "hint": "Optional. Used to estimate your max heart rate, and so the intensity of your sessions. Taken from Apple Health if you leave it empty.",
+    "invalid": "Unreadable date or implausible age — write it like 15/06/1990."
    }
   },
   "screen": {
