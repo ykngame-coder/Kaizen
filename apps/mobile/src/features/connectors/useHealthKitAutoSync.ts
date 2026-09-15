@@ -46,10 +46,17 @@ async function backfillHeartRate(userId: string, repo: DataRepository): Promise<
     for (const w of workouts) {
       if (w.status !== 'completed' || !w.completedAt || w.avgHeartRate != null) continue;
       if (new Date(w.completedAt).getTime() < cutoffMs) continue;
-      const sets = await repo.getWorkoutSets(userId, w.id);
-      const window = estimateWorkoutHeartRateWindow(w.completedAt, sets.length);
-      const summary = await queryHeartRateSummary(new Date(window.start), new Date(window.end));
-      if (summary) await repo.setWorkoutHeartRate(userId, w.id, summary);
+      try {
+        const sets = await repo.getWorkoutSets(userId, w.id);
+        const window = estimateWorkoutHeartRateWindow(w.completedAt, sets.length);
+        const summary = await queryHeartRateSummary(new Date(window.start), new Date(window.end));
+        if (summary) await repo.setWorkoutHeartRate(userId, w.id, summary);
+      } catch {
+        // Une séance en échec ne doit pas empêcher le rattrapage des autres
+        // (régression trouvée via un retour TestFlight : une écriture en
+        // échec sur une séance récente coupait la boucle avant d'atteindre
+        // les plus anciennes, triées du plus récent au plus ancien).
+      }
     }
   } catch {
     // Best-effort.
@@ -62,11 +69,15 @@ async function backfillHeartRate(userId: string, repo: DataRepository): Promise<
       // pas leur FC, et sans elle leur intensité reste inconnue.
       if (a.avgHeartRate != null) continue;
       if (new Date(a.startedAt).getTime() < activityCutoffMs) continue;
-      const window = estimateActivityHeartRateWindow(a.startedAt, a.durationSec);
-      const summary = await queryHeartRateSummary(new Date(window.start), new Date(window.end));
-      if (summary) {
-        await repo.setActivityHeartRate(userId, a.id, summary);
-        updated = true;
+      try {
+        const window = estimateActivityHeartRateWindow(a.startedAt, a.durationSec);
+        const summary = await queryHeartRateSummary(new Date(window.start), new Date(window.end));
+        if (summary) {
+          await repo.setActivityHeartRate(userId, a.id, summary);
+          updated = true;
+        }
+      } catch {
+        // Une activité en échec ne doit pas empêcher le rattrapage des autres.
       }
     }
   } catch {
