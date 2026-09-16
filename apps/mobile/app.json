@@ -86,7 +86,8 @@
             "deploymentTarget": "15.5"
           }
         }
-      ]
+      ],
+      "./plugins/withoutPushEntitlement"
     ],
     "experiments": {
       "typedRoutes": true
