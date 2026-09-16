@@ -76,13 +76,12 @@ export function TimeWheelSheet({ visible, title, value, onClose, onConfirm }: Ti
             </Picker>
           </View>
 
-          <Pressable
-            onPress={() => onConfirm(`${hour}:${minute}`)}
-            style={({ pressed }) => ({ opacity: pressed ? 0.85 : 1 })}
-          >
-            <View style={{ height: 52, borderRadius: radii.xl, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.primary }}>
-              <Text variant="subtitle" style={{ fontWeight: '700', color: colors.onGradient }}>{t('common.save')}</Text>
-            </View>
+          <Pressable onPress={() => onConfirm(`${hour}:${minute}`)}>
+            {({ pressed }) => (
+              <View style={{ height: 52, borderRadius: radii.xl, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.primary, opacity: pressed ? 0.85 : 1 }}>
+                <Text variant="subtitle" style={{ fontWeight: '700', color: colors.onGradient }}>{t('common.save')}</Text>
+              </View>
+            )}
           </Pressable>
         </View>
       </View>

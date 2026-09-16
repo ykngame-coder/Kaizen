@@ -186,8 +186,8 @@ export function CalendarScreen(): React.JSX.Element {
               </View>
             );
             return it.onPress ? (
-              <Pressable key={i} onPress={it.onPress} style={({ pressed }) => ({ opacity: pressed ? 0.6 : 1 })}>
-                {row}
+              <Pressable key={i} onPress={it.onPress}>
+                {({ pressed }) => <View style={{ opacity: pressed ? 0.6 : 1 }}>{row}</View>}
               </Pressable>
             ) : (
               <View key={i}>{row}</View>

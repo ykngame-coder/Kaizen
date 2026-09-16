@@ -31,14 +31,18 @@ function Accordion({ title, subtitle, open, onToggle, children }: { title: strin
   const { colors } = useTheme();
   return (
     <Card>
-      <Pressable onPress={onToggle} style={({ pressed }) => ({ opacity: pressed ? 0.7 : 1 })}>
-        <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing[3] }}>
-          <View style={{ flex: 1 }}>
-            <Text variant="body" style={{ fontWeight: '600' }}>{title}</Text>
-            {subtitle ? <Text variant="caption" color="textSubtle" style={{ marginTop: 2 }}>{subtitle}</Text> : null}
+      <Pressable onPress={onToggle}>
+        {({ pressed }) => (
+          <View style={{ opacity: pressed ? 0.7 : 1 }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing[3] }}>
+              <View style={{ flex: 1 }}>
+                <Text variant="body" style={{ fontWeight: '600' }}>{title}</Text>
+                {subtitle ? <Text variant="caption" color="textSubtle" style={{ marginTop: 2 }}>{subtitle}</Text> : null}
+              </View>
+              <Text variant="subtitle" color="textSubtle">{open ? '−' : '+'}</Text>
+            </View>
           </View>
-          <Text variant="subtitle" color="textSubtle">{open ? '−' : '+'}</Text>
-        </View>
+        )}
       </Pressable>
       {open ? <View style={{ marginTop: spacing[3], gap: spacing[2] }}>{children}</View> : null}
     </Card>
@@ -222,11 +226,13 @@ export function SupportScreen(): React.JSX.Element {
       <Section title={t('support.screen.quickAccess.title')}>
         <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: spacing[3] }}>
           {QUICK.map((q) => (
-            <Pressable key={q.label} onPress={() => router.push(q.path)} style={({ pressed }) => ({ flexGrow: 1, flexBasis: '45%', opacity: pressed ? 0.7 : 1 })}>
-              <View style={{ backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border, borderRadius: radii.lg, padding: spacing[4], gap: spacing[2] }}>
-                <Text style={{ fontSize: 22 }}>{q.icon}</Text>
-                <Text variant="body" style={{ fontWeight: '600' }}>{q.label}</Text>
-              </View>
+            <Pressable key={q.label} onPress={() => router.push(q.path)} style={{ flexGrow: 1, flexBasis: '45%' }}>
+              {({ pressed }) => (
+                <View style={{ opacity: pressed ? 0.7 : 1, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border, borderRadius: radii.lg, padding: spacing[4], gap: spacing[2] }}>
+                  <Text style={{ fontSize: 22 }}>{q.icon}</Text>
+                  <Text variant="body" style={{ fontWeight: '600' }}>{q.label}</Text>
+                </View>
+              )}
             </Pressable>
           ))}
         </View>

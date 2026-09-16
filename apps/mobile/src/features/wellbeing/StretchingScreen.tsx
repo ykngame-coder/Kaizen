@@ -61,17 +61,17 @@ export function StretchingScreen(): React.JSX.Element {
           const zoneStretches = stretchesForZone(zone);
           if (zoneStretches.length === 0) return null;
           return (
-            <Pressable
-              key={zone}
-              onPress={() => router.push({ pathname: '/sport/stretching/session', params: { zone } })}
-              style={({ pressed }) => ({ opacity: pressed ? 0.6 : 1 })}
-            >
-              <Card>
-                <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <Text variant="body" style={{ fontWeight: '600' }}>{ZONE_LABEL[zone]}</Text>
-                  <Badge label={t('wellbeing.stretching.zoneCount', { count: zoneStretches.length })} tone="neutral" />
+            <Pressable key={zone} onPress={() => router.push({ pathname: '/sport/stretching/session', params: { zone } })}>
+              {({ pressed }) => (
+                <View style={{ opacity: pressed ? 0.6 : 1 }}>
+                  <Card>
+                    <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <Text variant="body" style={{ fontWeight: '600' }}>{ZONE_LABEL[zone]}</Text>
+                      <Badge label={t('wellbeing.stretching.zoneCount', { count: zoneStretches.length })} tone="neutral" />
+                    </View>
+                  </Card>
                 </View>
-              </Card>
+              )}
             </Pressable>
           );
         })}

@@ -21,11 +21,8 @@ export function HubHeaderButton({
 }): React.JSX.Element {
   const { colors } = useTheme();
   return (
-    <Pressable
-      onPress={onPress}
-      accessibilityLabel={accessibilityLabel}
-      style={({ pressed }) => ({ transform: [{ scale: pressed ? 0.94 : 1 }], opacity: pressed ? 0.6 : 1 })}
-    >
+    <Pressable onPress={onPress} accessibilityLabel={accessibilityLabel}>
+      {({ pressed }) => (
       <View
         style={{
           width: 38,
@@ -36,10 +33,13 @@ export function HubHeaderButton({
           borderColor: colors.border,
           alignItems: 'center',
           justifyContent: 'center',
+          transform: [{ scale: pressed ? 0.94 : 1 }],
+          opacity: pressed ? 0.6 : 1,
         }}
       >
         {typeof icon === 'string' ? <Text style={{ fontSize: 16 }}>{icon}</Text> : icon}
       </View>
+      )}
     </Pressable>
   );
 }

@@ -203,22 +203,24 @@ export function DayMealSheet({
 
           {error ? <Text variant="caption" style={{ color: colors.error }}>{error}</Text> : null}
 
-          <Pressable
-            onPress={() => onConfirm(dayKey, meal)}
-            disabled={disabled}
-            style={({ pressed }) => ({
-              height: 52,
-              borderRadius: radii.xl,
-              alignItems: 'center',
-              justifyContent: 'center',
-              backgroundColor: colors.primary,
-              opacity: disabled ? 0.35 : pressed ? 0.85 : 1,
-            })}
-          >
-            {busy ? (
-              <ActivityIndicator color={colors.onGradient} />
-            ) : (
-              <Text variant="subtitle" style={{ fontWeight: '700', color: colors.onGradient }}>{result.confirmLabel}</Text>
+          <Pressable onPress={() => onConfirm(dayKey, meal)} disabled={disabled}>
+            {({ pressed }) => (
+              <View
+                style={{
+                  height: 52,
+                  borderRadius: radii.xl,
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  backgroundColor: colors.primary,
+                  opacity: disabled ? 0.35 : pressed ? 0.85 : 1,
+                }}
+              >
+                {busy ? (
+                  <ActivityIndicator color={colors.onGradient} />
+                ) : (
+                  <Text variant="subtitle" style={{ fontWeight: '700', color: colors.onGradient }}>{result.confirmLabel}</Text>
+                )}
+              </View>
             )}
           </Pressable>
         </View>

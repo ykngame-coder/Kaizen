@@ -132,8 +132,9 @@ export function SearchScreen(): React.JSX.Element {
       ) : (
         <Card>
           {results.map((it, i) => (
-            <Pressable key={i} onPress={() => router.push(it.path)} style={({ pressed }) => ({ opacity: pressed ? 0.6 : 1 })}>
-              <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing[3], paddingVertical: spacing[3], borderBottomWidth: i < results.length - 1 ? 1 : 0, borderBottomColor: colors.border }}>
+            <Pressable key={i} onPress={() => router.push(it.path)}>
+              {({ pressed }) => (
+              <View style={{ opacity: pressed ? 0.6 : 1, flexDirection: 'row', alignItems: 'center', gap: spacing[3], paddingVertical: spacing[3], borderBottomWidth: i < results.length - 1 ? 1 : 0, borderBottomColor: colors.border }}>
                 <View style={{ width: 38, height: 38, borderRadius: radii.md, backgroundColor: colors.surfaceElevated, alignItems: 'center', justifyContent: 'center' }}>
                   <Text style={{ fontSize: 17 }}>{it.icon}</Text>
                 </View>
@@ -147,6 +148,7 @@ export function SearchScreen(): React.JSX.Element {
                   ›
                 </Text>
               </View>
+              )}
             </Pressable>
           ))}
         </Card>

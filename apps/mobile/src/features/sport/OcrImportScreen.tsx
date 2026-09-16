@@ -259,8 +259,12 @@ export function OcrImportScreen(): React.JSX.Element {
                           autoFocus
                         />
                         {filtered.map((e) => (
-                          <Pressable key={e.id} onPress={() => pickMatch(exIndex, e.id, e.name)} style={({ pressed }) => ({ opacity: pressed ? 0.7 : 1 })}>
-                            <Text variant="body">{e.name}</Text>
+                          <Pressable key={e.id} onPress={() => pickMatch(exIndex, e.id, e.name)}>
+                            {({ pressed }) => (
+                              <View style={{ opacity: pressed ? 0.7 : 1 }}>
+                                <Text variant="body">{e.name}</Text>
+                              </View>
+                            )}
                           </Pressable>
                         ))}
                         {d.pickerQuery.trim() && filtered.length === 0 ? (

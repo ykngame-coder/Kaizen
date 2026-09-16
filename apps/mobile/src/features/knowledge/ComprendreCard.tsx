@@ -31,18 +31,20 @@ export function ComprendreCard({ pillars, max = 2 }: { pillars: Pillar[]; max?: 
       </View>
       <View style={{ gap: spacing[2] }}>
         {articles.map((a) => (
-          <Pressable
-            key={a.id}
-            onPress={() => router.push(`/comprendre/${a.id}`)}
-            style={({ pressed }) => ({
-              opacity: pressed ? 0.6 : 1,
-              borderRadius: 12,
-              padding: spacing[3],
-              backgroundColor: colors.surfaceElevated,
-            })}
-          >
-            <Text variant="body" style={{ fontWeight: '600' }}>{a.title}</Text>
-            <Text variant="caption" color="textSubtle" style={{ marginTop: 2 }}>{a.summary}</Text>
+          <Pressable key={a.id} onPress={() => router.push(`/comprendre/${a.id}`)}>
+            {({ pressed }) => (
+              <View
+                style={{
+                  opacity: pressed ? 0.6 : 1,
+                  borderRadius: 12,
+                  padding: spacing[3],
+                  backgroundColor: colors.surfaceElevated,
+                }}
+              >
+                <Text variant="body" style={{ fontWeight: '600' }}>{a.title}</Text>
+                <Text variant="caption" color="textSubtle" style={{ marginTop: 2 }}>{a.summary}</Text>
+              </View>
+            )}
           </Pressable>
         ))}
       </View>

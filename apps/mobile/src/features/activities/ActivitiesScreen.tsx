@@ -56,26 +56,30 @@ export function ActivitiesScreen(): React.JSX.Element {
           {activities.map((a) => {
             const distance = formatDistance(a.distanceM);
             return (
-              <Pressable key={a.id} onPress={() => router.push({ pathname: '/sport/activity/[id]', params: { id: a.id } })} style={({ pressed }) => ({ opacity: pressed ? 0.7 : 1 })}>
-                <Card>
-                  <View
-                    style={{
-                      flexDirection: 'row',
-                      justifyContent: 'space-between',
-                      alignItems: 'center',
-                    }}
-                  >
-                    <Text variant="subtitle">{activityTitle(a.type, a.notes)}</Text>
-                    <Text variant="caption" color="textMuted">
-                      {formatDate(a.startedAt)}
-                    </Text>
+              <Pressable key={a.id} onPress={() => router.push({ pathname: '/sport/activity/[id]', params: { id: a.id } })}>
+                {({ pressed }) => (
+                  <View style={{ opacity: pressed ? 0.7 : 1 }}>
+                    <Card>
+                      <View
+                        style={{
+                          flexDirection: 'row',
+                          justifyContent: 'space-between',
+                          alignItems: 'center',
+                        }}
+                      >
+                        <Text variant="subtitle">{activityTitle(a.type, a.notes)}</Text>
+                        <Text variant="caption" color="textMuted">
+                          {formatDate(a.startedAt)}
+                        </Text>
+                      </View>
+                      <Text variant="body" color="textMuted">
+                        {formatDuration(a.durationSec)}
+                        {distance ? ` · ${distance}` : ''}
+                        {a.intensity ? ` · ${a.intensity}` : ''}
+                      </Text>
+                    </Card>
                   </View>
-                  <Text variant="body" color="textMuted">
-                    {formatDuration(a.durationSec)}
-                    {distance ? ` · ${distance}` : ''}
-                    {a.intensity ? ` · ${a.intensity}` : ''}
-                  </Text>
-                </Card>
+                )}
               </Pressable>
             );
           })}

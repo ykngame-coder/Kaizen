@@ -107,8 +107,8 @@ function KpiTile({ icon, value, delta, deltaTone, label, onPress }: { icon: Reac
   );
   if (!onPress) return content;
   return (
-    <Pressable onPress={onPress} style={({ pressed }) => ({ flex: 1, opacity: pressed ? 0.7 : 1 })}>
-      {content}
+    <Pressable onPress={onPress} style={{ flex: 1 }}>
+      {({ pressed }) => <View style={{ opacity: pressed ? 0.7 : 1 }}>{content}</View>}
     </Pressable>
   );
 }
@@ -133,8 +133,12 @@ function CheckRow({ done, label, last, onToggle, onPress }: { done: boolean; lab
           {done ? <Text style={{ color: '#04140b', fontSize: 12, fontWeight: '800' }}>✓</Text> : null}
         </View>
       </Pressable>
-      <Pressable onPress={onPress} style={({ pressed }) => ({ flex: 1, paddingVertical: spacing[2], opacity: pressed ? 0.6 : 1 })}>
-        <Text variant="body" style={{ color: done ? colors.textSubtle : colors.text }}>{label}</Text>
+      <Pressable onPress={onPress} style={{ flex: 1 }}>
+        {({ pressed }) => (
+          <View style={{ paddingVertical: spacing[2], opacity: pressed ? 0.6 : 1 }}>
+            <Text variant="body" style={{ color: done ? colors.textSubtle : colors.text }}>{label}</Text>
+          </View>
+        )}
       </Pressable>
     </View>
   );
@@ -143,8 +147,8 @@ function CheckRow({ done, label, last, onToggle, onPress }: { done: boolean; lab
 /** Makes an entire card tappable toward its hub — not just the small "Voir ›" link in its header. */
 function TapCard({ onPress, children }: { onPress: () => void; children: React.ReactNode }): React.JSX.Element {
   return (
-    <Pressable onPress={onPress} style={({ pressed }) => ({ opacity: pressed ? 0.8 : 1 })}>
-      {children}
+    <Pressable onPress={onPress}>
+      {({ pressed }) => <View style={{ opacity: pressed ? 0.8 : 1 }}>{children}</View>}
     </Pressable>
   );
 }
@@ -164,7 +168,11 @@ function TrendCard({ label, value, up, series, color, onPress }: { label: string
     </View>
   );
   if (!onPress) return content;
-  return <Pressable onPress={onPress} style={({ pressed }) => ({ opacity: pressed ? 0.8 : 1 })}>{content}</Pressable>;
+  return (
+    <Pressable onPress={onPress}>
+      {({ pressed }) => <View style={{ opacity: pressed ? 0.8 : 1 }}>{content}</View>}
+    </Pressable>
+  );
 }
 
 /* ---------- screen ---------- */
@@ -546,9 +554,13 @@ export function DashboardScreen(): React.JSX.Element {
         <SectionTitle>{t('dashboard.screen.quickLinks.title')}</SectionTitle>
         <View style={{ flexDirection: 'row', flexWrap: 'wrap' }}>
           {visibleQuickLinks.map((l) => (
-            <Pressable key={l.key} onPress={() => router.push(l.path)} style={({ pressed }) => ({ width: '25%', alignItems: 'center', gap: 6, paddingVertical: spacing[2], opacity: pressed ? 0.6 : 1 })}>
-              <View style={{ width: 52, height: 52, borderRadius: radii.lg, backgroundColor: colors.surfaceElevated, borderWidth: 1, borderColor: colors.border, alignItems: 'center', justifyContent: 'center' }}><Icon name={l.icon} size={22} color={colors.text} /></View>
-              <Text variant="caption" color="textMuted" style={{ textAlign: 'center' }}>{t(l.labelKey)}</Text>
+            <Pressable key={l.key} onPress={() => router.push(l.path)} style={{ width: '25%' }}>
+              {({ pressed }) => (
+                <View style={{ alignItems: 'center', gap: 6, paddingVertical: spacing[2], opacity: pressed ? 0.6 : 1 }}>
+                  <View style={{ width: 52, height: 52, borderRadius: radii.lg, backgroundColor: colors.surfaceElevated, borderWidth: 1, borderColor: colors.border, alignItems: 'center', justifyContent: 'center' }}><Icon name={l.icon} size={22} color={colors.text} /></View>
+                  <Text variant="caption" color="textMuted" style={{ textAlign: 'center' }}>{t(l.labelKey)}</Text>
+                </View>
+              )}
             </Pressable>
           ))}
         </View>

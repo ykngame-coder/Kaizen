@@ -98,8 +98,8 @@ export function ListRow({
 
   if (!onPress) return body;
   return (
-    <Pressable onPress={onPress} style={({ pressed }) => ({ opacity: pressed ? 0.6 : 1 })}>
-      {body}
+    <Pressable onPress={onPress}>
+      {({ pressed }) => <View style={{ opacity: pressed ? 0.6 : 1 }}>{body}</View>}
     </Pressable>
   );
 }

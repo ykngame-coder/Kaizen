@@ -329,20 +329,20 @@ export function PlanningScreen(): React.JSX.Element {
       {/* Week navigator */}
       <Card style={{ marginTop: spacing[3] }}>
         <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
-          <Pressable
-            onPress={() => setWeekAnchor(new Date(weekAnchor.getTime() - 7 * DAY_MS))}
-            hitSlop={10}
-            style={({ pressed }) => ({ opacity: pressed ? 0.5 : 1, padding: spacing[1] })}
-          >
-            <Text variant="heading">‹</Text>
+          <Pressable onPress={() => setWeekAnchor(new Date(weekAnchor.getTime() - 7 * DAY_MS))} hitSlop={10}>
+            {({ pressed }) => (
+              <View style={{ opacity: pressed ? 0.5 : 1, padding: spacing[1] }}>
+                <Text variant="heading">‹</Text>
+              </View>
+            )}
           </Pressable>
           <Text variant="subtitle">{weekLabel}</Text>
-          <Pressable
-            onPress={() => setWeekAnchor(new Date(weekAnchor.getTime() + 7 * DAY_MS))}
-            hitSlop={10}
-            style={({ pressed }) => ({ opacity: pressed ? 0.5 : 1, padding: spacing[1] })}
-          >
-            <Text variant="heading">›</Text>
+          <Pressable onPress={() => setWeekAnchor(new Date(weekAnchor.getTime() + 7 * DAY_MS))} hitSlop={10}>
+            {({ pressed }) => (
+              <View style={{ opacity: pressed ? 0.5 : 1, padding: spacing[1] }}>
+                <Text variant="heading">›</Text>
+              </View>
+            )}
           </Pressable>
         </View>
         <View style={{ flexDirection: 'row', gap: spacing[1], marginTop: spacing[3] }}>
@@ -758,26 +758,29 @@ function SessionCard({
           {/* Extra gap vs. the group above so the destructive delete button
               isn't a fat-finger away from reprogram (TestFlight feedback). */}
           <View style={{ flexDirection: 'row', gap: spacing[3] }}>
-            <Pressable
-              onPress={onReprogram}
-              hitSlop={6}
-              accessibilityLabel={t('sport.planning.sessionCard.reprogramA11y')}
-              style={({ pressed }) => ({
-                opacity: pressed ? 0.5 : 1, width: 48, alignItems: 'center', justifyContent: 'center',
-                borderRadius: radii.md, borderWidth: 1, borderColor: colors.border,
-              })}
-            >
-              <Text style={{ fontSize: 18 }}>↻</Text>
+            <Pressable onPress={onReprogram} hitSlop={6} accessibilityLabel={t('sport.planning.sessionCard.reprogramA11y')}>
+              {({ pressed }) => (
+                <View
+                  style={{
+                    opacity: pressed ? 0.5 : 1, width: 48, alignItems: 'center', justifyContent: 'center',
+                    borderRadius: radii.md, borderWidth: 1, borderColor: colors.border,
+                  }}
+                >
+                  <Text style={{ fontSize: 18 }}>↻</Text>
+                </View>
+              )}
             </Pressable>
-            <Pressable
-              onPress={onDelete}
-              hitSlop={6}
-              style={({ pressed }) => ({
-                opacity: pressed ? 0.5 : 1, width: 48, alignItems: 'center', justifyContent: 'center',
-                borderRadius: radii.md, borderWidth: 1, borderColor: colors.error,
-              })}
-            >
-              <Icon name="trash" size={16} color={colors.error} />
+            <Pressable onPress={onDelete} hitSlop={6}>
+              {({ pressed }) => (
+                <View
+                  style={{
+                    opacity: pressed ? 0.5 : 1, width: 48, alignItems: 'center', justifyContent: 'center',
+                    borderRadius: radii.md, borderWidth: 1, borderColor: colors.error,
+                  }}
+                >
+                  <Icon name="trash" size={16} color={colors.error} />
+                </View>
+              )}
             </Pressable>
           </View>
         </View>

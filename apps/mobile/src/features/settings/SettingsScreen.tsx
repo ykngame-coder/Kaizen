@@ -180,18 +180,24 @@ export function SettingsScreen(): React.JSX.Element {
             onPress={() => setPreference('sleepGoalHours', Math.max(6, Number((preferences.sleepGoalHours - 0.25).toFixed(2))))}
             hitSlop={10}
             accessibilityLabel={t('settings.screen.preferences.sleepGoal.less')}
-            style={({ pressed }) => ({ opacity: pressed ? 0.5 : 1, paddingHorizontal: spacing[3], paddingVertical: spacing[2] })}
           >
-            <Text variant="heading">−</Text>
+            {({ pressed }) => (
+              <View style={{ opacity: pressed ? 0.5 : 1, paddingHorizontal: spacing[3], paddingVertical: spacing[2] }}>
+                <Text variant="heading">−</Text>
+              </View>
+            )}
           </Pressable>
           <Text variant="subtitle" style={{ minWidth: 90, textAlign: 'center' }}>{formatGoalHours(preferences.sleepGoalHours)}</Text>
           <Pressable
             onPress={() => setPreference('sleepGoalHours', Math.min(10, Number((preferences.sleepGoalHours + 0.25).toFixed(2))))}
             hitSlop={10}
             accessibilityLabel={t('settings.screen.preferences.sleepGoal.more')}
-            style={({ pressed }) => ({ opacity: pressed ? 0.5 : 1, paddingHorizontal: spacing[3], paddingVertical: spacing[2] })}
           >
-            <Text variant="heading">+</Text>
+            {({ pressed }) => (
+              <View style={{ opacity: pressed ? 0.5 : 1, paddingHorizontal: spacing[3], paddingVertical: spacing[2] }}>
+                <Text variant="heading">+</Text>
+              </View>
+            )}
           </Pressable>
         </View>
         <Text variant="caption" color="textSubtle" style={{ marginTop: spacing[1] }}>{t('settings.screen.preferences.sleepGoal.hint')}</Text>

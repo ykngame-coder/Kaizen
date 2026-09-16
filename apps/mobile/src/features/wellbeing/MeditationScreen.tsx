@@ -43,12 +43,8 @@ export function MeditationScreen(): React.JSX.Element {
                 );
                 if (!s.available) return <View key={s.id}>{card}</View>;
                 return (
-                  <Pressable
-                    key={s.id}
-                    onPress={() => router.push({ pathname: '/sommeil/meditation/[id]', params: { id: s.id } })}
-                    style={({ pressed }) => ({ opacity: pressed ? 0.6 : 1 })}
-                  >
-                    {card}
+                  <Pressable key={s.id} onPress={() => router.push({ pathname: '/sommeil/meditation/[id]', params: { id: s.id } })}>
+                    {({ pressed }) => <View style={{ opacity: pressed ? 0.6 : 1 }}>{card}</View>}
                   </Pressable>
                 );
               })}

@@ -50,12 +50,12 @@ export function DayNav({ value, onChange, maxDaysFuture = 7 }: DayNavProps): Rea
         marginTop: spacing[1],
       }}
     >
-      <Pressable
-        onPress={() => onChange(shiftDay(value, -1))}
-        hitSlop={10}
-        style={({ pressed }) => ({ opacity: pressed ? 0.5 : 1, padding: spacing[1] })}
-      >
-        <Text variant="heading">‹</Text>
+      <Pressable onPress={() => onChange(shiftDay(value, -1))} hitSlop={10}>
+        {({ pressed }) => (
+          <View style={{ opacity: pressed ? 0.5 : 1, padding: spacing[1] }}>
+            <Text variant="heading">‹</Text>
+          </View>
+        )}
       </Pressable>
 
       <Pressable
@@ -83,13 +83,12 @@ export function DayNav({ value, onChange, maxDaysFuture = 7 }: DayNavProps): Rea
         ) : null}
       </Pressable>
 
-      <Pressable
-        onPress={() => onChange(shiftDay(value, 1))}
-        disabled={atMax}
-        hitSlop={10}
-        style={({ pressed }) => ({ opacity: atMax ? 0.25 : pressed ? 0.5 : 1, padding: spacing[1] })}
-      >
-        <Text variant="heading">›</Text>
+      <Pressable onPress={() => onChange(shiftDay(value, 1))} disabled={atMax} hitSlop={10}>
+        {({ pressed }) => (
+          <View style={{ opacity: atMax ? 0.25 : pressed ? 0.5 : 1, padding: spacing[1] }}>
+            <Text variant="heading">›</Text>
+          </View>
+        )}
       </Pressable>
 
       {/* DatePickerModal reste sur un instant ISO : c'est un sélecteur de date

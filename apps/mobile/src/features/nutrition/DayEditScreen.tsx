@@ -219,14 +219,17 @@ export function DayEditScreen(): React.JSX.Element {
                     onPress={() => toggle(e.id)}
                     accessibilityRole="checkbox"
                     accessibilityState={{ checked: selected.has(e.id) }}
-                    style={({ pressed }) => ({ flexDirection: 'row', alignItems: 'center', gap: spacing[3], paddingVertical: spacing[2], paddingLeft: spacing[5], opacity: pressed ? 0.6 : 1 })}
                   >
-                    <Check state={selected.has(e.id) ? 'all' : 'none'} />
-                    <View style={{ flex: 1, minWidth: 0 }}>
-                      <Text variant="body" numberOfLines={1}>{nameOf(e)}</Text>
-                      {e.quantityG != null ? <Text variant="caption" color="textSubtle">{e.quantityG} g</Text> : null}
-                    </View>
-                    <Text variant="body" color="textMuted" style={{ fontVariant: ['tabular-nums'] }}>{Math.round(e.kcal)}</Text>
+                    {({ pressed }) => (
+                      <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing[3], paddingVertical: spacing[2], paddingLeft: spacing[5], opacity: pressed ? 0.6 : 1 }}>
+                        <Check state={selected.has(e.id) ? 'all' : 'none'} />
+                        <View style={{ flex: 1, minWidth: 0 }}>
+                          <Text variant="body" numberOfLines={1}>{nameOf(e)}</Text>
+                          {e.quantityG != null ? <Text variant="caption" color="textSubtle">{e.quantityG} g</Text> : null}
+                        </View>
+                        <Text variant="body" color="textMuted" style={{ fontVariant: ['tabular-nums'] }}>{Math.round(e.kcal)}</Text>
+                      </View>
+                    )}
                   </Pressable>
                 ))}
               </View>
@@ -250,9 +253,13 @@ export function DayEditScreen(): React.JSX.Element {
                 key={id}
                 onPress={() => (id === 'delete' ? askDelete() : setSheet(id))}
                 disabled={remove.isPending}
-                style={({ pressed }) => ({ flex: 1, height: 46, borderRadius: radii.lg, backgroundColor: bg, alignItems: 'center', justifyContent: 'center', opacity: pressed ? 0.8 : 1 })}
+                style={{ flex: 1 }}
               >
-                <Text variant="body" style={{ fontWeight: '700', color: fg }} numberOfLines={1}>{label}</Text>
+                {({ pressed }) => (
+                  <View style={{ height: 46, borderRadius: radii.lg, backgroundColor: bg, alignItems: 'center', justifyContent: 'center', opacity: pressed ? 0.8 : 1 }}>
+                    <Text variant="body" style={{ fontWeight: '700', color: fg }} numberOfLines={1}>{label}</Text>
+                  </View>
+                )}
               </Pressable>
             ))}
           </View>

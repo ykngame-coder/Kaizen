@@ -1,5 +1,5 @@
 import React from 'react';
-import { Pressable } from 'react-native';
+import { Pressable, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Text } from '@supotsu/ui';
 
@@ -23,8 +23,12 @@ export function BackButton(): React.JSX.Element {
     else router.replace('/');
   };
   return (
-    <Pressable onPress={handlePress} hitSlop={8} accessibilityLabel="Retour" style={({ pressed }) => ({ opacity: pressed ? 0.6 : 1, alignSelf: 'flex-start' })}>
-      <Text variant="caption" color="primary">‹ Retour</Text>
+    <Pressable onPress={handlePress} hitSlop={8} accessibilityLabel="Retour" style={{ alignSelf: 'flex-start' }}>
+      {({ pressed }) => (
+        <View style={{ opacity: pressed ? 0.6 : 1 }}>
+          <Text variant="caption" color="primary">‹ Retour</Text>
+        </View>
+      )}
     </Pressable>
   );
 }

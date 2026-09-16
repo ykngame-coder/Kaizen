@@ -40,8 +40,8 @@ export function HubRow({ title, subtitle, icon, onPress, soon }: HubRowProps): R
   );
   if (soon || !onPress) return body;
   return (
-    <Pressable onPress={onPress} style={({ pressed }) => ({ opacity: pressed ? 0.85 : 1 })}>
-      {body}
+    <Pressable onPress={onPress}>
+      {({ pressed }) => <View style={{ opacity: pressed ? 0.85 : 1 }}>{body}</View>}
     </Pressable>
   );
 }

@@ -26,29 +26,32 @@ export function FilterChip({ label, active = false, onPress }: FilterChipProps):
   const pad = { paddingHorizontal: spacing[3], paddingVertical: spacing[2] };
 
   return (
-    <Pressable onPress={onPress} style={({ pressed }) => ({ opacity: pressed ? 0.8 : 1 })}>
-      {active ? (
-        <LinearGradient
-          colors={gradients.brand as unknown as readonly [string, string, ...string[]]}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 1 }}
-          style={{ borderRadius: radii.full, ...pad }}
-        >
-          {inner}
-        </LinearGradient>
-      ) : (
-        <View
-          style={{
-            borderRadius: radii.full,
-            backgroundColor: colors.surfaceElevated,
-            borderWidth: 1,
-            borderColor: colors.border,
-            ...pad,
-          }}
-        >
-          {inner}
-        </View>
-      )}
+    <Pressable onPress={onPress}>
+      {({ pressed }) =>
+        active ? (
+          <LinearGradient
+            colors={gradients.brand as unknown as readonly [string, string, ...string[]]}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={{ borderRadius: radii.full, opacity: pressed ? 0.8 : 1, ...pad }}
+          >
+            {inner}
+          </LinearGradient>
+        ) : (
+          <View
+            style={{
+              borderRadius: radii.full,
+              backgroundColor: colors.surfaceElevated,
+              borderWidth: 1,
+              borderColor: colors.border,
+              opacity: pressed ? 0.8 : 1,
+              ...pad,
+            }}
+          >
+            {inner}
+          </View>
+        )
+      }
     </Pressable>
   );
 }

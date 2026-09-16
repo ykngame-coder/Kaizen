@@ -155,16 +155,20 @@ function ArticleCard({
   onPress: () => void;
 }): React.JSX.Element {
   return (
-    <Pressable onPress={onPress} style={({ pressed }) => ({ opacity: pressed ? 0.7 : 1 })}>
-      <Card>
-        <Text variant="heading">{article.title}</Text>
-        <Text variant="body" color="textMuted" style={{ marginTop: spacing[1] }}>
-          {article.summary}
-        </Text>
-        <View style={{ alignItems: 'flex-start', marginTop: spacing[2] }}>
-          <Badge label={`${article.readMinutes} min`} tone="info" />
+    <Pressable onPress={onPress}>
+      {({ pressed }) => (
+        <View style={{ opacity: pressed ? 0.7 : 1 }}>
+          <Card>
+            <Text variant="heading">{article.title}</Text>
+            <Text variant="body" color="textMuted" style={{ marginTop: spacing[1] }}>
+              {article.summary}
+            </Text>
+            <View style={{ alignItems: 'flex-start', marginTop: spacing[2] }}>
+              <Badge label={`${article.readMinutes} min`} tone="info" />
+            </View>
+          </Card>
         </View>
-      </Card>
+      )}
     </Pressable>
   );
 }

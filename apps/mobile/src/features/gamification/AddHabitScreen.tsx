@@ -104,24 +104,26 @@ export function AddHabitScreen(): React.JSX.Element {
           {PRESETS.map((p) => {
             const active = name === p.name;
             return (
-              <Pressable
-                key={p.name}
-                onPress={() => applyPreset(p)}
-                style={({ pressed }) => ({
-                  flexDirection: 'row',
-                  alignItems: 'center',
-                  gap: 6,
-                  paddingVertical: spacing[2],
-                  paddingHorizontal: spacing[3],
-                  borderRadius: 20,
-                  backgroundColor: active ? colors.primary : colors.surfaceElevated,
-                  borderWidth: 1,
-                  borderColor: active ? colors.primary : colors.border,
-                  opacity: pressed ? 0.7 : 1,
-                })}
-              >
-                <Text style={{ fontSize: 15 }}>{p.emoji}</Text>
-                <Text variant="caption" style={{ color: active ? colors.onPrimary : colors.text, fontWeight: '600' }}>{p.name}</Text>
+              <Pressable key={p.name} onPress={() => applyPreset(p)}>
+                {({ pressed }) => (
+                  <View
+                    style={{
+                      flexDirection: 'row',
+                      alignItems: 'center',
+                      gap: 6,
+                      paddingVertical: spacing[2],
+                      paddingHorizontal: spacing[3],
+                      borderRadius: 20,
+                      backgroundColor: active ? colors.primary : colors.surfaceElevated,
+                      borderWidth: 1,
+                      borderColor: active ? colors.primary : colors.border,
+                      opacity: pressed ? 0.7 : 1,
+                    }}
+                  >
+                    <Text style={{ fontSize: 15 }}>{p.emoji}</Text>
+                    <Text variant="caption" style={{ color: active ? colors.onPrimary : colors.text, fontWeight: '600' }}>{p.name}</Text>
+                  </View>
+                )}
               </Pressable>
             );
           })}

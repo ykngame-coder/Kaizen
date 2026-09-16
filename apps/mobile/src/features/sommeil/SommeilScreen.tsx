@@ -136,12 +136,13 @@ function ToolTile({ icon, label, path }: { icon: React.ReactNode; label: string;
   const router = useRouter();
   const { colors } = useTheme();
   return (
-    <Pressable
-      onPress={() => router.push(path)}
-      style={({ pressed }) => ({ flex: 1, minWidth: '45%', opacity: pressed ? 0.6 : 1, backgroundColor: colors.surfaceElevated, borderRadius: radii.lg, padding: spacing[3] })}
-    >
-      {typeof icon === 'string' ? <Text style={{ fontSize: 16 }}>{icon}</Text> : icon}
-      <Text variant="body" style={{ marginTop: spacing[1] }}>{label}</Text>
+    <Pressable onPress={() => router.push(path)} style={{ flex: 1, minWidth: '45%' }}>
+      {({ pressed }) => (
+        <View style={{ opacity: pressed ? 0.6 : 1, backgroundColor: colors.surfaceElevated, borderRadius: radii.lg, padding: spacing[3] }}>
+          {typeof icon === 'string' ? <Text style={{ fontSize: 16 }}>{icon}</Text> : icon}
+          <Text variant="body" style={{ marginTop: spacing[1] }}>{label}</Text>
+        </View>
+      )}
     </Pressable>
   );
 }

@@ -179,28 +179,28 @@ export function JournalScreen(): React.JSX.Element {
           <Card>
             <SectionTitle>{t('nutrition.journal.recentMeals.title')}</SectionTitle>
             {[...today].filter((e) => !isHydrationOnlyEntry(e)).sort((a, b) => b.loggedAt.localeCompare(a.loggedAt)).slice(0, 6).map((e) => (
-              <Pressable
-                key={e.id}
-                onPress={() => router.push({ pathname: '/nutrition/meal/[id]', params: { id: e.id } })}
-                style={({ pressed }) => ({ flexDirection: 'row', alignItems: 'center', gap: spacing[3], paddingVertical: spacing[3], borderBottomWidth: 1, borderBottomColor: colors.border, opacity: pressed ? 0.6 : 1 })}
-              >
-                <View style={{ width: 44, height: 44, borderRadius: 12, backgroundColor: colors.surfaceElevated, alignItems: 'center', justifyContent: 'center' }}><Text style={{ fontSize: 19 }}>{MEAL_ICON[e.mealType] ?? '🍽'}</Text></View>
-                <View style={{ flex: 1 }}>
-                  <Text variant="body" style={{ fontWeight: '600' }}>{e.description || t(`nutrition.journal.meal.${e.mealType}`)}</Text>
-                  <Text variant="caption" color="textSubtle">P {Math.round(e.proteinG ?? 0)} · G {Math.round(e.carbG ?? 0)} · L {Math.round(e.fatG ?? 0)}</Text>
-                </View>
-                <View style={{ alignItems: 'flex-end' }}>
-                  <Text variant="body" style={{ fontWeight: '700' }}>{Math.round(e.kcal)}</Text>
-                  <Text variant="caption" color="textSubtle">{formatClockFromIso(e.loggedAt, preferences.timeFormat)}</Text>
-                </View>
-                <Pressable
-                  onPress={() => deleteEntry.mutate(e.id)}
-                  disabled={deleteEntry.isPending && deleteEntry.variables === e.id}
-                  hitSlop={8}
-                  style={{ opacity: deleteEntry.isPending && deleteEntry.variables === e.id ? 0.4 : 1 }}
-                >
-                  <Icon name="trash" size={18} color={colors.textSubtle} />
-                </Pressable>
+              <Pressable key={e.id} onPress={() => router.push({ pathname: '/nutrition/meal/[id]', params: { id: e.id } })}>
+                {({ pressed }) => (
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing[3], paddingVertical: spacing[3], borderBottomWidth: 1, borderBottomColor: colors.border, opacity: pressed ? 0.6 : 1 }}>
+                    <View style={{ width: 44, height: 44, borderRadius: 12, backgroundColor: colors.surfaceElevated, alignItems: 'center', justifyContent: 'center' }}><Text style={{ fontSize: 19 }}>{MEAL_ICON[e.mealType] ?? '🍽'}</Text></View>
+                    <View style={{ flex: 1 }}>
+                      <Text variant="body" style={{ fontWeight: '600' }}>{e.description || t(`nutrition.journal.meal.${e.mealType}`)}</Text>
+                      <Text variant="caption" color="textSubtle">P {Math.round(e.proteinG ?? 0)} · G {Math.round(e.carbG ?? 0)} · L {Math.round(e.fatG ?? 0)}</Text>
+                    </View>
+                    <View style={{ alignItems: 'flex-end' }}>
+                      <Text variant="body" style={{ fontWeight: '700' }}>{Math.round(e.kcal)}</Text>
+                      <Text variant="caption" color="textSubtle">{formatClockFromIso(e.loggedAt, preferences.timeFormat)}</Text>
+                    </View>
+                    <Pressable
+                      onPress={() => deleteEntry.mutate(e.id)}
+                      disabled={deleteEntry.isPending && deleteEntry.variables === e.id}
+                      hitSlop={8}
+                      style={{ opacity: deleteEntry.isPending && deleteEntry.variables === e.id ? 0.4 : 1 }}
+                    >
+                      <Icon name="trash" size={18} color={colors.textSubtle} />
+                    </Pressable>
+                  </View>
+                )}
               </Pressable>
             ))}
           </Card>

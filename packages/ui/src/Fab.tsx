@@ -30,31 +30,29 @@ export function Fab({
   const wrap: ViewStyle = { position: 'absolute', bottom, right, zIndex: 50 };
   return (
     <View style={wrap} pointerEvents="box-none">
-      <Pressable
-        accessibilityRole="button"
-        accessibilityLabel={accessibilityLabel}
-        onPress={onPress}
-        style={({ pressed }) => ({ transform: [{ scale: pressed ? 0.96 : 1 }] })}
-      >
-        <LinearGradient
-          colors={gradients.brand as unknown as readonly [string, string, ...string[]]}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 1 }}
-          style={{
-            width: size,
-            height: size,
-            borderRadius: size / 2,
-            alignItems: 'center',
-            justifyContent: 'center',
-            shadowColor: '#2d7ff9',
-            shadowOpacity: 0.5,
-            shadowRadius: 16,
-            shadowOffset: { width: 0, height: 8 },
-            elevation: 8,
-          }}
-        >
-          <Text style={{ color: '#fff', fontSize: size * 0.44, lineHeight: size * 0.5, marginTop: -2 }}>{icon}</Text>
-        </LinearGradient>
+      <Pressable accessibilityRole="button" accessibilityLabel={accessibilityLabel} onPress={onPress}>
+        {({ pressed }) => (
+          <LinearGradient
+            colors={gradients.brand as unknown as readonly [string, string, ...string[]]}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={{
+              width: size,
+              height: size,
+              borderRadius: size / 2,
+              alignItems: 'center',
+              justifyContent: 'center',
+              shadowColor: '#2d7ff9',
+              shadowOpacity: 0.5,
+              shadowRadius: 16,
+              shadowOffset: { width: 0, height: 8 },
+              elevation: 8,
+              transform: [{ scale: pressed ? 0.96 : 1 }],
+            }}
+          >
+            <Text style={{ color: '#fff', fontSize: size * 0.44, lineHeight: size * 0.5, marginTop: -2 }}>{icon}</Text>
+          </LinearGradient>
+        )}
       </Pressable>
     </View>
   );

@@ -256,8 +256,8 @@ export function SportScreen(): React.JSX.Element {
                 </View>
               );
               return r.kind === 'workout' ? (
-                <Pressable key={r.id} onPress={() => router.push({ pathname: '/sport/workout/[id]', params: { id: r.id } })} style={({ pressed }) => ({ opacity: pressed ? 0.6 : 1 })}>
-                  {row}
+                <Pressable key={r.id} onPress={() => router.push({ pathname: '/sport/workout/[id]', params: { id: r.id } })}>
+                  {({ pressed }) => <View style={{ opacity: pressed ? 0.6 : 1 }}>{row}</View>}
                 </Pressable>
               ) : (
                 <View key={r.id}>{row}</View>
@@ -358,21 +358,23 @@ export function SportScreen(): React.JSX.Element {
                       )}
                     </View>
                   </View>
-                  <Pressable
-                    onPress={() => router.push(plannedToday ? '/sport/planning' : '/sport/workout/new')}
-                    style={({ pressed }) => ({ marginTop: spacing[3], height: 46, borderRadius: radii.xl, backgroundColor: colors.surfaceElevated, borderWidth: 1, borderColor: colors.border, alignItems: 'center', justifyContent: 'center', transform: [{ scale: pressed ? 0.98 : 1 }] })}
-                  >
-                    <Text variant="body" style={{ fontWeight: '600' }}>{plannedToday ? t('sport.screen.session.viewPlanning') : t('sport.screen.session.createSession')}</Text>
+                  <Pressable onPress={() => router.push(plannedToday ? '/sport/planning' : '/sport/workout/new')}>
+                    {({ pressed }) => (
+                      <View style={{ marginTop: spacing[3], height: 46, borderRadius: radii.xl, backgroundColor: colors.surfaceElevated, borderWidth: 1, borderColor: colors.border, alignItems: 'center', justifyContent: 'center', transform: [{ scale: pressed ? 0.98 : 1 }] }}>
+                        <Text variant="body" style={{ fontWeight: '600' }}>{plannedToday ? t('sport.screen.session.viewPlanning') : t('sport.screen.session.createSession')}</Text>
+                      </View>
+                    )}
                   </Pressable>
                   {/* « Ajouter planifier une séance sous créer pour planifier
                       directement une séance déjà créée » : créer partait sur un
                       constructeur vierge, sans chemin vers la bibliothèque. */}
                   {!plannedToday ? (
-                    <Pressable
-                      onPress={() => router.push({ pathname: '/sport/planning', params: { date: selectedDate.key } })}
-                      style={({ pressed }) => ({ marginTop: spacing[2], height: 46, borderRadius: radii.xl, borderWidth: 1, borderColor: colors.border, alignItems: 'center', justifyContent: 'center', transform: [{ scale: pressed ? 0.98 : 1 }] })}
-                    >
-                      <Text variant="body" style={{ fontWeight: '600' }}>{t('sport.screen.session.planSession')}</Text>
+                    <Pressable onPress={() => router.push({ pathname: '/sport/planning', params: { date: selectedDate.key } })}>
+                      {({ pressed }) => (
+                        <View style={{ marginTop: spacing[2], height: 46, borderRadius: radii.xl, borderWidth: 1, borderColor: colors.border, alignItems: 'center', justifyContent: 'center', transform: [{ scale: pressed ? 0.98 : 1 }] }}>
+                          <Text variant="body" style={{ fontWeight: '600' }}>{t('sport.screen.session.planSession')}</Text>
+                        </View>
+                      )}
                     </Pressable>
                   ) : null}
                 </Card>

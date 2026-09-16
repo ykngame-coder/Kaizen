@@ -121,7 +121,13 @@ function StepperRow({
     <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: spacing[3] }}>
       <Text variant="body" style={{ flex: 1 }}>{label}</Text>
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing[3] }}>
-        <Pressable onPress={onMinus} style={({ pressed }) => [btn, { opacity: pressed ? 0.6 : 1 }]}><Text variant="subtitle">−</Text></Pressable>
+        <Pressable onPress={onMinus}>
+          {({ pressed }) => (
+            <View style={{ ...btn, opacity: pressed ? 0.6 : 1 }}>
+              <Text variant="subtitle">−</Text>
+            </View>
+          )}
+        </Pressable>
         {editing ? (
           <TextInput
             value={draft}
@@ -138,7 +144,13 @@ function StepperRow({
             <Text variant="body" style={{ fontWeight: '700', minWidth: 84, textAlign: 'center' }}>{format(rawValue)}</Text>
           </Pressable>
         )}
-        <Pressable onPress={onPlus} style={({ pressed }) => [btn, { opacity: pressed ? 0.6 : 1 }]}><Text variant="subtitle">+</Text></Pressable>
+        <Pressable onPress={onPlus}>
+          {({ pressed }) => (
+            <View style={{ ...btn, opacity: pressed ? 0.6 : 1 }}>
+              <Text variant="subtitle">+</Text>
+            </View>
+          )}
+        </Pressable>
       </View>
     </View>
   );
@@ -379,13 +391,14 @@ export function NutritionScreen(): React.JSX.Element {
                 )}
                 overshootRight={false}
               >
-                <Pressable
-                  onPress={() => router.push({ pathname: '/nutrition/meal/day', params: { type: m.type, date: selectedDate.key } })}
-                  style={({ pressed }) => ({ flexDirection: 'row', alignItems: 'center', gap: spacing[3], paddingVertical: spacing[2], opacity: pressed ? 0.6 : 1 })}
-                >
-                  <View style={{ width: 40, height: 40, borderRadius: 12, backgroundColor: colors.surfaceElevated, alignItems: 'center', justifyContent: 'center' }}><Icon name={MEAL_ICON[m.type] ?? 'bowl'} size={19} color={colors.text} /></View>
-                  <Text variant="body" color={m.count > 0 ? 'text' : 'textSubtle'} style={{ flex: 1 }} numberOfLines={1}>{summary}</Text>
-                  <Text variant="heading" style={{ color: colors.textSubtle }}>›</Text>
+                <Pressable onPress={() => router.push({ pathname: '/nutrition/meal/day', params: { type: m.type, date: selectedDate.key } })}>
+                  {({ pressed }) => (
+                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing[3], paddingVertical: spacing[2], opacity: pressed ? 0.6 : 1 }}>
+                      <View style={{ width: 40, height: 40, borderRadius: 12, backgroundColor: colors.surfaceElevated, alignItems: 'center', justifyContent: 'center' }}><Icon name={MEAL_ICON[m.type] ?? 'bowl'} size={19} color={colors.text} /></View>
+                      <Text variant="body" color={m.count > 0 ? 'text' : 'textSubtle'} style={{ flex: 1 }} numberOfLines={1}>{summary}</Text>
+                      <Text variant="heading" style={{ color: colors.textSubtle }}>›</Text>
+                    </View>
+                  )}
                 </Pressable>
               </Swipeable>
             </View>

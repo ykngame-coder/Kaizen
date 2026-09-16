@@ -626,8 +626,9 @@ export function SessionBlocksEditor({
                     <Pressable
                       key={ex.id}
                       onPress={() => setPendingAdd((prev) => (isPicked ? prev.filter((id) => id !== ex.id) : [...prev, ex.id]))}
-                      style={({ pressed }) => ({ opacity: pressed ? 0.7 : 1 })}
                     >
+                      {({ pressed }) => (
+                        <View style={{ opacity: pressed ? 0.7 : 1 }}>
                       <Card style={{ borderWidth: isPicked ? 2 : undefined, borderColor: isPicked ? colors.primary : undefined }}>
                         <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing[3] }}>
                           <Thumb exercise={ex} />
@@ -649,6 +650,8 @@ export function SessionBlocksEditor({
                           </Text>
                         </View>
                       </Card>
+                        </View>
+                      )}
                     </Pressable>
                     );
                   })}

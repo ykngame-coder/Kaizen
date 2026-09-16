@@ -57,17 +57,19 @@ export function ExerciseLibraryScreen(): React.JSX.Element {
       ) : (
         <Card>
           {results.map((e, i) => (
-            <Pressable key={e.id} onPress={() => router.push({ pathname: '/sport/exercise/[id]', params: { id: e.id } })} style={({ pressed }) => ({ opacity: pressed ? 0.6 : 1 })}>
-              <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing[3], paddingVertical: spacing[3], borderBottomWidth: i < results.length - 1 ? 1 : 0, borderBottomColor: colors.border }}>
-                <View style={{ width: 40, height: 40, borderRadius: radii.md, backgroundColor: colors.surfaceElevated, alignItems: 'center', justifyContent: 'center' }}>
-                  <Text style={{ fontSize: 18 }}>{MUSCLE_ICON[e.primary]}</Text>
+            <Pressable key={e.id} onPress={() => router.push({ pathname: '/sport/exercise/[id]', params: { id: e.id } })}>
+              {({ pressed }) => (
+                <View style={{ opacity: pressed ? 0.6 : 1, flexDirection: 'row', alignItems: 'center', gap: spacing[3], paddingVertical: spacing[3], borderBottomWidth: i < results.length - 1 ? 1 : 0, borderBottomColor: colors.border }}>
+                  <View style={{ width: 40, height: 40, borderRadius: radii.md, backgroundColor: colors.surfaceElevated, alignItems: 'center', justifyContent: 'center' }}>
+                    <Text style={{ fontSize: 18 }}>{MUSCLE_ICON[e.primary]}</Text>
+                  </View>
+                  <View style={{ flex: 1 }}>
+                    <Text variant="body" style={{ fontWeight: '600' }}>{e.name}</Text>
+                    <Text variant="caption" color="textSubtle" style={{ marginTop: 2 }}>{MUSCLE_LABEL[e.primary]} · {e.equipment}</Text>
+                  </View>
+                  <Text variant="body" color="textSubtle">›</Text>
                 </View>
-                <View style={{ flex: 1 }}>
-                  <Text variant="body" style={{ fontWeight: '600' }}>{e.name}</Text>
-                  <Text variant="caption" color="textSubtle" style={{ marginTop: 2 }}>{MUSCLE_LABEL[e.primary]} · {e.equipment}</Text>
-                </View>
-                <Text variant="body" color="textSubtle">›</Text>
-              </View>
+              )}
             </Pressable>
           ))}
         </Card>
