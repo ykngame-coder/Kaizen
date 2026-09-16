@@ -1,5 +1,5 @@
 import React from 'react';
-import { Pressable, ScrollView, View } from 'react-native';
+import { Pressable, View } from 'react-native';
 import { Text, useTheme } from '@supotsu/ui';
 import { radii, spacing } from '@supotsu/design-system';
 import type { SetEntry } from '@supotsu/core';
@@ -24,11 +24,18 @@ export interface MovementChecklistProps {
  * jusqu'ici faite de cartes pleine largeur, du même poids visuel que le chrono.
  *
  * Partagée par AMRAP et Pour le temps, qui en avaient chacun une copie.
+ *
+ * Pas de scroll interne (retour TestFlight : la séance entière doit être
+ * visible, et le bouton qui valide le tour doit rester atteignable) — un
+ * `ScrollView` borné à 160px dans un `ScrollView` parent capte le geste et
+ * rendait le bouton d'action inaccessible pour un tour à plusieurs
+ * mouvements. La liste fait maintenant partie du flux normal de
+ * `RunnerFocus`, qui scrolle déjà dans son ensemble si besoin.
  */
 export function MovementChecklist({ sets, ticked, onToggle, exerciseName }: MovementChecklistProps): React.JSX.Element {
   const { colors } = useTheme();
   return (
-    <ScrollView style={{ maxHeight: 160 }} contentContainerStyle={{ gap: spacing[1] }}>
+    <View style={{ gap: spacing[1] }}>
       {sets.map((s) => {
         const isTicked = !!ticked[s.id];
         return (
@@ -67,6 +74,6 @@ export function MovementChecklist({ sets, ticked, onToggle, exerciseName }: Move
           </Pressable>
         );
       })}
-    </ScrollView>
+    </View>
   );
 }
