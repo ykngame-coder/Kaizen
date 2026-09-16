@@ -25,6 +25,10 @@ export interface MovementChecklistProps {
  *
  * Partagée par AMRAP et Pour le temps, qui en avaient chacun une copie.
  *
+ * Style STATIQUE sur le Pressable, apparence sur une View intérieure — même
+ * schéma que SegmentedControl (da2a8e3) : un style-fonction sur ce Pressable
+ * perd tout son style dans cette app.
+ *
  * Pas de scroll interne (retour TestFlight : la séance entière doit être
  * visible, et le bouton qui valide le tour doit rester atteignable) — un
  * `ScrollView` borné à 160px dans un `ScrollView` parent capte le geste et
@@ -39,38 +43,40 @@ export function MovementChecklist({ sets, ticked, onToggle, exerciseName }: Move
       {sets.map((s) => {
         const isTicked = !!ticked[s.id];
         return (
-          <Pressable
-            key={s.id}
-            onPress={() => onToggle(s.id)}
-            style={({ pressed }) => ({
-              flexDirection: 'row',
-              alignItems: 'center',
-              gap: spacing[3],
-              paddingVertical: spacing[2],
-              paddingHorizontal: spacing[3],
-              borderRadius: radii.md,
-              backgroundColor: pressed ? colors.surfaceElevated : 'transparent',
-              opacity: isTicked ? 0.5 : 1,
-            })}
-          >
-            {/* Un point, pas une case : un repère de progression qu'on peut
-                marquer en passant, pas une case qu'il faudrait cocher pour
-                avancer. */}
-            <View
-              style={{
-                width: 8,
-                height: 8,
-                borderRadius: radii.full,
-                backgroundColor: isTicked ? colors.success : colors.border,
-              }}
-            />
-            <Text
-              variant="body"
-              color={isTicked ? 'textSubtle' : 'text'}
-              style={isTicked ? { textDecorationLine: 'line-through' } : undefined}
-            >
-              {s.reps != null ? `${s.reps} ` : ''}{exerciseName(s.exerciseId)}
-            </Text>
+          <Pressable key={s.id} onPress={() => onToggle(s.id)}>
+            {({ pressed }) => (
+              <View
+                style={{
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                  gap: spacing[3],
+                  paddingVertical: spacing[2],
+                  paddingHorizontal: spacing[3],
+                  borderRadius: radii.md,
+                  backgroundColor: pressed ? colors.surfaceElevated : 'transparent',
+                  opacity: isTicked ? 0.5 : 1,
+                }}
+              >
+                {/* Un point, pas une case : un repère de progression qu'on peut
+                    marquer en passant, pas une case qu'il faudrait cocher pour
+                    avancer. */}
+                <View
+                  style={{
+                    width: 8,
+                    height: 8,
+                    borderRadius: radii.full,
+                    backgroundColor: isTicked ? colors.success : colors.border,
+                  }}
+                />
+                <Text
+                  variant="body"
+                  color={isTicked ? 'textSubtle' : 'text'}
+                  style={isTicked ? { textDecorationLine: 'line-through' } : undefined}
+                >
+                  {s.reps != null ? `${s.reps} ` : ''}{exerciseName(s.exerciseId)}
+                </Text>
+              </View>
+            )}
           </Pressable>
         );
       })}

@@ -159,24 +159,36 @@ export function RunnerFocus({
       {children}
 
       <View style={{ gap: spacing[3] }}>
-        <Pressable
-          onPress={onAction}
-          disabled={actionDisabled}
-          style={({ pressed }) => ({
-            height: 58,
-            borderRadius: radii.xl,
-            alignItems: 'center',
-            justifyContent: 'center',
-            backgroundColor: tint,
-            opacity: actionDisabled ? 0.4 : pressed ? 0.85 : 1,
-          })}
-        >
-          <Text variant="subtitle" style={{ fontWeight: '700', color: '#04140b' }}>{actionLabel}</Text>
+        {/* Style STATIQUE sur le Pressable, apparence et retour au toucher sur
+            une View intérieure — même schéma que SegmentedControl (da2a8e3) :
+            un style-fonction sur ce Pressable perdait tout son style (fond,
+            taille…) dans cette app, ne laissant que le texte nu — c'est très
+            exactement ce qui rendait le bouton d'action illisible, signalé
+            deux fois via TestFlight. */}
+        <Pressable onPress={onAction} disabled={actionDisabled}>
+          {({ pressed }) => (
+            <View
+              style={{
+                height: 58,
+                borderRadius: radii.xl,
+                alignItems: 'center',
+                justifyContent: 'center',
+                backgroundColor: tint,
+                opacity: actionDisabled ? 0.4 : pressed ? 0.85 : 1,
+              }}
+            >
+              <Text variant="subtitle" style={{ fontWeight: '700', color: '#04140b' }}>{actionLabel}</Text>
+            </View>
+          )}
         </Pressable>
 
         {secondaryLabel && onSecondary ? (
-          <Pressable onPress={onSecondary} hitSlop={10} style={({ pressed }) => ({ opacity: pressed ? 0.5 : 1 })}>
-            <Text variant="body" color="textSubtle" style={{ textAlign: 'center' }}>{secondaryLabel}</Text>
+          <Pressable onPress={onSecondary} hitSlop={10}>
+            {({ pressed }) => (
+              <View style={{ opacity: pressed ? 0.5 : 1 }}>
+                <Text variant="body" color="textSubtle" style={{ textAlign: 'center' }}>{secondaryLabel}</Text>
+              </View>
+            )}
           </Pressable>
         ) : null}
       </View>
