@@ -12,7 +12,12 @@ export interface MovementChecklistProps {
 }
 
 /**
- * Les mouvements d'un tour, à cocher au fur et à mesure.
+ * Les mouvements d'un tour — un repère de progression, pas une check-list à
+ * valider : « Round terminé » reste cliquable à tout moment, coché ou non
+ * (retour TestFlight : la case à cocher classique laissait croire le
+ * contraire). D'où un simple point plutôt qu'une case, pour ne plus évoquer
+ * une tâche obligatoire — le tap-pour-marquer et l'état éphémère restent
+ * identiques.
  *
  * Volontairement discrète : dans la mise en page focus, c'est le mouvement en
  * cours qui domine, et cette liste ne sert qu'à savoir ce qui reste. Elle était
@@ -41,20 +46,17 @@ export function MovementChecklist({ sets, ticked, onToggle, exerciseName }: Move
               opacity: isTicked ? 0.5 : 1,
             })}
           >
+            {/* Un point, pas une case : un repère de progression qu'on peut
+                marquer en passant, pas une case qu'il faudrait cocher pour
+                avancer. */}
             <View
               style={{
-                width: 22,
-                height: 22,
-                borderRadius: 6,
-                borderWidth: 2,
-                borderColor: isTicked ? colors.success : colors.border,
-                backgroundColor: isTicked ? colors.success : 'transparent',
-                alignItems: 'center',
-                justifyContent: 'center',
+                width: 8,
+                height: 8,
+                borderRadius: radii.full,
+                backgroundColor: isTicked ? colors.success : colors.border,
               }}
-            >
-              {isTicked ? <Text variant="caption" style={{ color: colors.background }}>✓</Text> : null}
-            </View>
+            />
             <Text
               variant="body"
               color={isTicked ? 'textSubtle' : 'text'}
