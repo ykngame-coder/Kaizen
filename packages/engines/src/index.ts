@@ -14,6 +14,7 @@ export * from './community';
 export * from './marketplace';
 export * from './decision';
 export * from './muscles';
+export * from './reminders';
 export * from './activityMuscles';
 export * from './progression';
 export * from './analytics';
