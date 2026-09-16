@@ -16,6 +16,7 @@ import {
   useSleepSessions,
 } from '@/lib/data/queries';
 import { formatClock, usePreferences, type TimeFormat } from '@/lib/preferences';
+import { ReminderSettingsCard } from './ReminderSettingsCard';
 
 type Category = 'important' | 'sante' | 'nutrition' | 'entrainement' | 'succes' | 'appareils';
 
@@ -178,6 +179,8 @@ export function NotificationsScreen(): React.JSX.Element {
           </Pressable>
         ) : null}
       </View>
+
+      <ReminderSettingsCard />
 
       {/* Priorité du jour */}
       {recovery ? (

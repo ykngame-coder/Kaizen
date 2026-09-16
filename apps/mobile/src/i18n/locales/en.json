@@ -3202,6 +3202,29 @@
     },
     "message": "Your alerts are generated from your data (recovery, nutrition, records, sleep, habits, devices)."
    }
+  },
+  "reminders": {
+   "title": "Reminders",
+   "subtitle": "Scheduled on this phone. Nothing is sent anywhere else, and a reminder only arrives when it has a reason to.",
+   "denied": "Notifications are off. Tap here to allow them in iOS settings.",
+   "atTime": "at {{time}}",
+   "hours": "Hours",
+   "minutes": "Minutes",
+   "habits": {
+    "label": "Unchecked habits"
+   },
+   "bedtime": {
+    "label": "Bedtime",
+    "detail": "{{minutes}} min before your ideal time"
+   },
+   "session": {
+    "label": "Planned session"
+   },
+   "hydration": {
+    "label": "Hydration",
+    "detail": "every {{hours}} h after you wake up",
+    "every": "{{hours}} h"
+   }
   }
  },
  "security": {

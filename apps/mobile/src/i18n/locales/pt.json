@@ -3202,6 +3202,29 @@
     },
     "message": "Seus alertas são gerados a partir dos seus dados (recuperação, nutrição, recordes, sono, hábitos, dispositivos)."
    }
+  },
+  "reminders": {
+   "title": "Lembretes",
+   "subtitle": "Programados neste telemóvel. Nada é enviado para fora, e um lembrete só chega se fizer sentido.",
+   "denied": "Notificações desativadas. Toca aqui para as permitires nas definições do iOS.",
+   "atTime": "às {{time}}",
+   "hours": "Horas",
+   "minutes": "Minutos",
+   "habits": {
+    "label": "Hábitos por marcar"
+   },
+   "bedtime": {
+    "label": "Hora de deitar",
+    "detail": "{{minutes}} min antes da tua hora ideal"
+   },
+   "session": {
+    "label": "Sessão planeada"
+   },
+   "hydration": {
+    "label": "Hidratação",
+    "detail": "de {{hours}} em {{hours}} h desde que acordas",
+    "every": "{{hours}} h"
+   }
   }
  },
  "security": {

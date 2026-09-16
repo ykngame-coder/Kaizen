@@ -3202,6 +3202,29 @@
     },
     "message": "Deine Benachrichtigungen werden aus deinen Daten generiert (Erholung, Ernährung, Rekorde, Schlaf, Gewohnheiten, Geräte)."
    }
+  },
+  "reminders": {
+   "title": "Erinnerungen",
+   "subtitle": "Auf diesem Telefon geplant. Nichts wird nach außen gesendet, und eine Erinnerung kommt nur, wenn es einen Grund gibt.",
+   "denied": "Mitteilungen sind aus. Tippe hier, um sie in den iOS-Einstellungen zu erlauben.",
+   "atTime": "um {{time}}",
+   "hours": "Stunden",
+   "minutes": "Minuten",
+   "habits": {
+    "label": "Offene Gewohnheiten"
+   },
+   "bedtime": {
+    "label": "Schlafenszeit",
+    "detail": "{{minutes}} Min vor deiner idealen Zeit"
+   },
+   "session": {
+    "label": "Geplante Einheit"
+   },
+   "hydration": {
+    "label": "Trinken",
+    "detail": "alle {{hours}} Std ab dem Aufstehen",
+    "every": "{{hours}} Std"
+   }
   }
  },
  "security": {

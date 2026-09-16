@@ -2,6 +2,7 @@ import React, { createContext, useContext, useEffect, useMemo, useState } from '
 import { setHapticsEnabled } from '@supotsu/ui';
 import i18n, { detectDeviceLanguage, type LanguagePreference } from '@/i18n';
 import { secureStorage } from '@/lib/secure-storage';
+import { DEFAULT_REMINDER_SETTINGS, type ReminderSettings } from '@supotsu/engines';
 
 export type UnitSystem = 'metric' | 'imperial';
 export type TimeFormat = '24h' | '12h';
@@ -62,6 +63,12 @@ export interface Preferences {
   timeFormat: TimeFormat;
   /** Haptic feedback on buttons and toggles (native only). */
   haptics: boolean;
+  /**
+   * Rappels locaux : quels rappels sont actifs et à quelle heure. Propres à
+   * l'appareil, comme les notifications elles-mêmes — rien ne part sur le
+   * serveur. Tout est éteint par défaut.
+   */
+  reminderSettings: ReminderSettings;
   /** Require Face ID / Touch ID to open the app (native only). */
   biometricLock: boolean;
   /** User-chosen daily step target (steps have no auto-estimated goal, unlike nutrition). */
@@ -114,6 +121,7 @@ const DEFAULTS: Preferences = {
   barWeightKg: 20,
   availablePlates: [25, 20, 15, 10, 5, 2.5, 1.25],
   defaultRestSec: 90,
+  reminderSettings: DEFAULT_REMINDER_SETTINGS,
 };
 
 const STORAGE_KEY = 'supotsu.preferences';
@@ -136,7 +144,14 @@ export function PreferencesProvider({ children }: { children: React.ReactNode })
       const raw = await secureStorage.getItem(STORAGE_KEY);
       if (active && raw) {
         try {
-          setPreferences({ ...DEFAULTS, ...(JSON.parse(raw) as Partial<Preferences>) });
+          const saved = JSON.parse(raw) as Partial<Preferences>;
+          setPreferences({
+            ...DEFAULTS,
+            ...saved,
+            // Fusion par rappel : un rappel ajouté après coup doit exister
+            // même dans des préférences enregistrées avant lui.
+            reminderSettings: { ...DEFAULT_REMINDER_SETTINGS, ...(saved.reminderSettings ?? {}) },
+          });
         } catch {
           // ignore corrupt prefs, keep defaults
         }
