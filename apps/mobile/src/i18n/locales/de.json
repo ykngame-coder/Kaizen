@@ -3224,6 +3224,26 @@
     "label": "Trinken",
     "detail": "alle {{hours}} Std ab dem Aufstehen",
     "every": "{{hours}} Std"
+   },
+   "sent": {
+    "habits": {
+     "title_one": "Noch 1 Gewohnheit offen",
+     "title_other": "Noch {{count}} Gewohnheiten offen",
+     "body_one": "Hak sie vor Mitternacht ab, um deine Serie zu halten.",
+     "body_other": "Hak sie vor Mitternacht ab, um deine Serie zu halten."
+    },
+    "bedtime": {
+     "title": "Schlafenszeit in {{offsetMin}} Minuten",
+     "body": "Heute Abend beginnt dein Fenster um {{bedtime}}."
+    },
+    "session": {
+     "title": "Heute ist eine Einheit geplant",
+     "body": "{{name}} — wann es dir passt."
+    },
+    "hydration": {
+     "title": "Noch {{litres}} L zu trinken",
+     "body": "Ein Glas jetzt ist eins weniger heute Abend."
+    }
    }
   }
  },

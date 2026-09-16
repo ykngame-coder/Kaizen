@@ -52,4 +52,10 @@ export const notificationHost: NotificationHost = {
   async cancel(id) {
     await Notifications.cancelScheduledNotificationAsync(id);
   },
+  onResponse(handler) {
+    const sub = Notifications.addNotificationResponseReceivedListener((response) => {
+      handler((response.notification.request.content.data ?? {}) as Record<string, unknown>);
+    });
+    return () => sub.remove();
+  },
 };

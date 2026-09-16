@@ -22,6 +22,7 @@ function fakeHost(initial: ScheduledNotification[] = [], failOn: string[] = []) 
       calls.cancelled.push(id);
       state.delete(id);
     },
+    onResponse: () => () => undefined,
   };
   return { host, calls, state };
 }

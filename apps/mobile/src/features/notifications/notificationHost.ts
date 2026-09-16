@@ -31,6 +31,8 @@ export interface NotificationHost {
   scheduled(): Promise<ScheduledNotification[]>;
   schedule(notification: NotificationToSchedule): Promise<void>;
   cancel(id: string): Promise<void>;
+  /** Appelé quand l'utilisateur touche un rappel ; rend la fonction pour se désabonner. */
+  onResponse(handler: (data: Record<string, unknown>) => void): () => void;
 }
 
 /** Le texte d'un rappel, composé par l'app (traductions). */
@@ -47,4 +49,5 @@ export const notificationHost: NotificationHost = {
   scheduled: async () => [],
   schedule: async () => unavailable(),
   cancel: async () => unavailable(),
+  onResponse: () => () => undefined,
 };

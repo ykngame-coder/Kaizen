@@ -3224,6 +3224,26 @@
     "label": "Hydratation",
     "detail": "toutes les {{hours}} h depuis ton lever",
     "every": "{{hours}} h"
+   },
+   "sent": {
+    "habits": {
+     "title_one": "Il te reste 1 habitude",
+     "title_other": "Il te reste {{count}} habitudes",
+     "body_one": "Coche-la avant minuit pour garder ta série.",
+     "body_other": "Coche-les avant minuit pour garder ta série."
+    },
+    "bedtime": {
+     "title": "Coucher dans {{offsetMin}} minutes",
+     "body": "Ton créneau de ce soir commence à {{bedtime}}."
+    },
+    "session": {
+     "title": "Séance prévue aujourd'hui",
+     "body": "{{name}} — quand tu veux."
+    },
+    "hydration": {
+     "title": "Il te reste {{litres}} L à boire",
+     "body": "Un verre maintenant, c'est autant de moins ce soir."
+    }
    }
   }
  },

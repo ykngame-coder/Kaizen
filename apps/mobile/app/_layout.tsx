@@ -20,6 +20,7 @@ import { PreferencesProvider } from '@/lib/preferences';
 import { AppTabBar } from '@/features/navigation/AppTabBar';
 import { BiometricGate } from '@/features/security/BiometricGate';
 import { useHealthKitAutoSync } from '@/features/connectors/useHealthKitAutoSync';
+import { useReminderScheduler } from '@/features/notifications/useReminderScheduler';
 
 // Keep the splash screen up until the app's custom fonts (design-system
 // typography.ts) are loaded — swapping fonts in after first paint would
@@ -37,6 +38,7 @@ function RouteGuard({ children }: { children: React.ReactNode }): React.JSX.Elem
   const router = useRouter();
   const { colors } = useTheme();
   useHealthKitAutoSync();
+  useReminderScheduler();
 
   const authResolving = authStatus === 'loading';
   const onboardingResolving = authStatus === 'authenticated' && onboardingStatus === 'loading';

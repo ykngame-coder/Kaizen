@@ -3224,6 +3224,26 @@
     "label": "Hidratación",
     "detail": "cada {{hours}} h desde que te levantas",
     "every": "{{hours}} h"
+   },
+   "sent": {
+    "habits": {
+     "title_one": "Te queda 1 hábito",
+     "title_other": "Te quedan {{count}} hábitos",
+     "body_one": "Márcalo antes de medianoche para mantener tu racha.",
+     "body_other": "Márcalos antes de medianoche para mantener tu racha."
+    },
+    "bedtime": {
+     "title": "A dormir en {{offsetMin}} minutos",
+     "body": "Esta noche tu franja empieza a las {{bedtime}}."
+    },
+    "session": {
+     "title": "Sesión prevista hoy",
+     "body": "{{name}} — cuando te venga bien."
+    },
+    "hydration": {
+     "title": "Te quedan {{litres}} L por beber",
+     "body": "Un vaso ahora es uno menos esta noche."
+    }
    }
   }
  },

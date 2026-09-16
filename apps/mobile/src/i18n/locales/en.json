@@ -3224,6 +3224,26 @@
     "label": "Hydration",
     "detail": "every {{hours}} h after you wake up",
     "every": "{{hours}} h"
+   },
+   "sent": {
+    "habits": {
+     "title_one": "1 habit left",
+     "title_other": "{{count}} habits left",
+     "body_one": "Check it off before midnight to keep your streak.",
+     "body_other": "Check them off before midnight to keep your streak."
+    },
+    "bedtime": {
+     "title": "Bedtime in {{offsetMin}} minutes",
+     "body": "Tonight your window starts at {{bedtime}}."
+    },
+    "session": {
+     "title": "Session planned today",
+     "body": "{{name}} — whenever suits you."
+    },
+    "hydration": {
+     "title": "{{litres}} L left to drink",
+     "body": "A glass now is one less tonight."
+    }
    }
   }
  },
