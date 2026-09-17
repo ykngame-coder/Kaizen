@@ -3251,6 +3251,10 @@
      "title": "Noch {{litres}} L zu trinken",
      "body": "Ein Glas jetzt ist eins weniger heute Abend."
     }
+   },
+   "status": {
+    "none": "Derzeit keine Erinnerung geplant — entweder ist alles aus, oder keine Bedingung trifft zu.",
+    "next": "{{count}} Erinnerungen geplant · nächste {{when}}"
    }
   }
  },

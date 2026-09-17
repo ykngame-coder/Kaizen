@@ -3251,6 +3251,10 @@
      "title": "Faltam {{litres}} L para beberes",
      "body": "Um copo agora é menos um esta noite."
     }
+   },
+   "status": {
+    "none": "Nenhum lembrete programado — ou está tudo desligado, ou nenhuma condição se aplica.",
+    "next": "{{count}} lembretes programados · próximo {{when}}"
    }
   }
  },

@@ -3251,6 +3251,10 @@
      "title": "Te quedan {{litres}} L por beber",
      "body": "Un vaso ahora es uno menos esta noche."
     }
+   },
+   "status": {
+    "none": "Ningún recordatorio programado — o todo está apagado, o no se cumple ninguna condición.",
+    "next": "{{count}} recordatorios programados · el próximo {{when}}"
    }
   }
  },

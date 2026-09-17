@@ -6,6 +6,7 @@ import { spacing } from '@supotsu/design-system';
 import type { ReminderKind, ReminderSettings } from '@supotsu/engines';
 import { usePreferences } from '@/lib/preferences';
 import { notificationHost } from './notificationHost';
+import { REMINDER_ID_PREFIX } from './reminderScheduler';
 import { TimeWheelSheet } from './TimeWheelSheet';
 
 const HYDRATION_INTERVALS = [2, 3, 4, 5, 6];
@@ -25,10 +26,27 @@ export function ReminderSettingsCard(): React.JSX.Element | null {
   const settings = preferences.reminderSettings;
   const [denied, setDenied] = useState(false);
   const [editing, setEditing] = useState<'habits' | 'session' | null>(null);
+  const [status, setStatus] = useState<{ count: number; next: string | null } | null>(null);
+
+  // Diagnostic : sans lui, « je ne reçois rien » ne dit pas si le rappel n'a
+  // pas été programmé, ou s'il l'a été et n'est pas encore tombé.
+  const refreshStatus = async (): Promise<void> => {
+    const perm = await notificationHost.permission();
+    setDenied(perm === 'denied');
+    const mine = (await notificationHost.scheduled())
+      .filter((n) => n.id.startsWith(`${REMINDER_ID_PREFIX}:`))
+      .sort((a, b) => a.at.localeCompare(b.at));
+    setStatus({ count: mine.length, next: mine[0]?.at ?? null });
+  };
 
   useEffect(() => {
-    void notificationHost.permission().then((p) => setDenied(p === 'denied'));
-  }, []);
+    void refreshStatus();
+    // La programmation elle-même est différée de quelques centaines de
+    // millisecondes (regroupement) : sans cette seconde lecture, la ligne
+    // afficherait l'état d'avant le changement qu'on vient de faire.
+    const later = setTimeout(() => void refreshStatus(), 1500);
+    return () => clearTimeout(later);
+  }, [settings]);
 
   // Hors iOS, aucune notification locale : mieux vaut ne rien montrer que des
   // interrupteurs sans effet.
@@ -96,6 +114,19 @@ export function ReminderSettingsCard(): React.JSX.Element | null {
           </View>
         ) : null}
       </View>
+
+      {status ? (
+        <Text variant="caption" color="textSubtle" style={{ marginTop: spacing[2] }}>
+          {status.count === 0
+            ? t('notifications.reminders.status.none')
+            : t('notifications.reminders.status.next', {
+                count: status.count,
+                when: status.next
+                  ? new Date(status.next).toLocaleString(undefined, { weekday: 'short', hour: '2-digit', minute: '2-digit' })
+                  : '',
+              })}
+        </Text>
+      ) : null}
 
       <TimeWheelSheet
         visible={editing !== null}

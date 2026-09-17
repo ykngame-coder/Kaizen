@@ -3251,6 +3251,10 @@
      "title": "{{litres}} L left to drink",
      "body": "A glass now is one less tonight."
     }
+   },
+   "status": {
+    "none": "No reminder scheduled right now — either everything is off, or no condition applies.",
+    "next": "{{count}} reminders scheduled · next {{when}}"
    }
   }
  },

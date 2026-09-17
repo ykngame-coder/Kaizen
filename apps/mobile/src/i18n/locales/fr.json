@@ -3251,6 +3251,10 @@
      "title": "Il te reste {{litres}} L à boire",
      "body": "Un verre maintenant, c'est autant de moins ce soir."
     }
+   },
+   "status": {
+    "none": "Aucun rappel programmé pour l'instant — soit tout est éteint, soit aucune condition n'est remplie.",
+    "next": "{{count}} rappels programmés · prochain {{when}}"
    }
   }
  },

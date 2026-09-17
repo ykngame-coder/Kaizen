@@ -10,6 +10,19 @@ import type { NotificationHost, NotificationPermission, ScheduledNotification } 
  * « Push Notifications » ni clé APNs.
  */
 
+/**
+ * Sans ce gestionnaire, iOS N'AFFICHE PAS une notification qui se déclenche
+ * pendant que l'app est au premier plan : elle est livrée à l'app, qui n'en
+ * fait rien. Un rappel de 20 h 30 passait donc inaperçu si l'app était ouverte
+ * à ce moment-là.
+ *
+ * Pas de pastille sur l'icône : un rappel manqué ne doit pas laisser une
+ * pastille rouge qu'on ne sait pas faire disparaître.
+ */
+Notifications.setNotificationHandler({
+  handleNotification: async () => ({ shouldShowBanner: true, shouldShowList: true, shouldPlaySound: true, shouldSetBadge: false }),
+});
+
 const toPermission = (status: Notifications.PermissionStatus): NotificationPermission =>
   status === 'granted' ? 'granted' : status === 'undetermined' ? 'undetermined' : 'denied';
 
