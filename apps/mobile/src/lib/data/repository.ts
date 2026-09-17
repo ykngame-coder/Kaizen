@@ -843,18 +843,32 @@ const EXERCISE_BY_ID = new Map<string, MuscleLookupExercise>([
   ]),
 ]);
 
+/** `EXERCISE_BY_ID` plus this user's own custom exercises — those live per-user in
+ *  the database, not in the two static catalogues, so they're merged in per call
+ *  rather than baked into the module-level map. */
+function exerciseLookup(customExercises: Exercise[]): Map<string, MuscleLookupExercise> {
+  if (customExercises.length === 0) return EXERCISE_BY_ID;
+  const merged = new Map(EXERCISE_BY_ID);
+  for (const e of customExercises) {
+    merged.set(e.id, { primaryMuscles: e.primaryMuscles, secondaryMuscles: e.secondaryMuscles, isMobility: e.category === 'mobility' });
+  }
+  return merged;
+}
+
 /** Build muscle sessions from logged sets: one per (workout, exercise) with muscles. */
 function buildMuscleSessions(
   workoutDate: Map<string, string>,
   sets: { workoutId: string; exerciseId: string }[],
+  customExercises: Exercise[] = [],
 ): MuscleSession[] {
+  const byId = exerciseLookup(customExercises);
   const seen = new Set<string>();
   const out: MuscleSession[] = [];
   for (const s of sets) {
     const key = `${s.workoutId}|${s.exerciseId}`;
     if (seen.has(key)) continue;
     seen.add(key);
-    const exercise = EXERCISE_BY_ID.get(s.exerciseId);
+    const exercise = byId.get(s.exerciseId);
     const trainedAt = workoutDate.get(s.workoutId);
     if (!exercise || !trainedAt) continue;
     out.push({
@@ -877,10 +891,11 @@ export interface MuscleWork {
 }
 
 /** Expand logged sets into per-muscle volume entries (primary full, secondary half). */
-function buildMuscleWork(dates: Map<string, string>, sets: LoggedSetRow[]): MuscleWork[] {
+function buildMuscleWork(dates: Map<string, string>, sets: LoggedSetRow[], customExercises: Exercise[] = []): MuscleWork[] {
+  const byId = exerciseLookup(customExercises);
   const out: MuscleWork[] = [];
   for (const s of sets) {
-    const exercise = EXERCISE_BY_ID.get(s.exerciseId);
+    const exercise = byId.get(s.exerciseId);
     const trainedAt = dates.get(s.workoutId);
     if (!exercise || !trainedAt) continue;
     const reps = s.reps ?? 1;
@@ -1540,14 +1555,16 @@ function createDemoRepository(): DataRepository {
         restingHr: resting?.value,
         maxHr: estimateMaxHeartRate({ birthDate: profile?.birthDate, observed: observedMaxHeartRates(activities, workouts), asOf: new Date().toISOString() }),
       };
-      return [...buildMuscleSessions(dates, rows), ...buildActivityMuscleSessions(activities, workouts, hr)];
+      const customExercises = await readJson<Exercise>(customExKey(userId));
+      return [...buildMuscleSessions(dates, rows, customExercises), ...buildActivityMuscleSessions(activities, workouts, hr)];
     },
     async listMuscleWork(userId) {
       const rows = await readJson<LoggedSetRow & { date: string }>(setKey(userId));
       const workouts = await readJson<Workout>(wkKey(userId));
       const completedIds = new Set(workouts.filter((w) => w.status === 'completed').map((w) => w.id));
       const dates = new Map(rows.filter((r) => completedIds.has(r.workoutId)).map((r) => [r.workoutId, r.date]));
-      return buildMuscleWork(dates, rows);
+      const customExercises = await readJson<Exercise>(customExKey(userId));
+      return buildMuscleWork(dates, rows, customExercises);
     },
     async lastSessionSetsByExercise(userId) {
       const rows = await readJson<LoggedSetRow & { date: string }>(setKey(userId));
@@ -2444,7 +2461,8 @@ function createSupabaseRepository(
         restingHr: resting?.value ?? undefined,
         maxHr: estimateMaxHeartRate({ birthDate: profileRow?.birth_date ?? undefined, observed: observedMaxHeartRates(activities, workouts), asOf: new Date().toISOString() }),
       };
-      return [...buildMuscleSessions(dates, sets), ...buildActivityMuscleSessions(activities, workouts, hr)];
+      const customExercises = (await listCustomExercisesDb(client, userId)).map(rowToExercise);
+      return [...buildMuscleSessions(dates, sets, customExercises), ...buildActivityMuscleSessions(activities, workouts, hr)];
     },
     async listMuscleWork(userId) {
       const workouts = await listWorkoutsDb(client, userId);
@@ -2452,7 +2470,8 @@ function createSupabaseRepository(
         workouts.filter((w) => w.status === 'completed' && w.completed_at).map((w) => [w.id, w.completed_at!]),
       );
       const sets = await listLoggedSetsDb(client, userId);
-      return buildMuscleWork(dates, sets);
+      const customExercises = (await listCustomExercisesDb(client, userId)).map(rowToExercise);
+      return buildMuscleWork(dates, sets, customExercises);
     },
     async lastSessionSetsByExercise(userId) {
       const workouts = await listWorkoutsDb(client, userId);
