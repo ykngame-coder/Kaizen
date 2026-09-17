@@ -1122,7 +1122,14 @@
     "mechanicIsolation": "Isolation",
     "targetMusclesHeading": "Muscles ciblés",
     "primaryMuscleSuffix": " (principal)",
-    "executionHeading": "Exécution"
+    "executionHeading": "Exécution",
+    "customBadge": "Perso",
+    "deleteAction": "Supprimer",
+    "deleteConfirmTitle": "Supprimer « {{name}} » ?",
+    "deleteConfirmMessage": "Cette action est irréversible.",
+    "deleteErrorTitle": "Suppression impossible",
+    "deleteInUseMessage": "Cet exercice est utilisé dans une séance existante — retire-le de tes séances avant de le supprimer.",
+    "deleteGenericMessage": "Une erreur est survenue, réessaie."
    },
    "addCustom": {
     "title": "Exercice personnalisé",

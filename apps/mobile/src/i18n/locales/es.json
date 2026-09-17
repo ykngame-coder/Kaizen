@@ -1122,7 +1122,14 @@
     "mechanicIsolation": "Aislamiento",
     "targetMusclesHeading": "Músculos trabajados",
     "primaryMuscleSuffix": " (principal)",
-    "executionHeading": "Ejecución"
+    "executionHeading": "Ejecución",
+    "customBadge": "Personal",
+    "deleteAction": "Eliminar",
+    "deleteConfirmTitle": "¿Eliminar «{{name}}»?",
+    "deleteConfirmMessage": "Esta acción no se puede deshacer.",
+    "deleteErrorTitle": "No se pudo eliminar",
+    "deleteInUseMessage": "Este ejercicio se usa en un entrenamiento existente — quítalo de tus entrenamientos primero.",
+    "deleteGenericMessage": "Algo salió mal, inténtalo de nuevo."
    },
    "addCustom": {
     "title": "Ejercicio personalizado",

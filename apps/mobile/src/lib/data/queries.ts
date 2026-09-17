@@ -347,6 +347,18 @@ export function useAddCustomExercise() {
   });
 }
 
+export function useDeleteCustomExercise() {
+  const { user } = useAuth();
+  const repo = useRepository();
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (exerciseId: string) => repo.deleteCustomExercise(user!.id, exerciseId),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['customExercises', user?.id] });
+    },
+  });
+}
+
 export function useHabitLogs() {
   const { user } = useAuth();
   const repo = useRepository();

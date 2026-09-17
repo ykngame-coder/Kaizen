@@ -117,6 +117,8 @@ import {
   deleteHabitLog as deleteHabitLogDb,
   insertCustomExercise as insertCustomExerciseDb,
   listCustomExercises as listCustomExercisesDb,
+  deleteCustomExercise as deleteCustomExerciseDb,
+  FOREIGN_KEY_VIOLATION,
   insertChallenge,
   listChallenges as listChallengesDb,
   listMyParticipations,
@@ -413,6 +415,9 @@ export interface DataRepository {
   /** The caller's own exercises added on top of the bundled catalogue (e.g. home-gym equipment). */
   listCustomExercises(userId: string): Promise<Exercise[]>;
   addCustomExercise(userId: string, input: CustomExerciseInput): Promise<Exercise>;
+  /** Rejects (message `EXERCISE_IN_USE`) if the exercise is still referenced by a logged set — deleting it would
+   *  orphan past workout history, so that's refused rather than silently cascaded. */
+  deleteCustomExercise(userId: string, exerciseId: string): Promise<void>;
   listChallenges(): Promise<Challenge[]>;
   createChallenge(userId: string, input: ChallengeInput): Promise<Challenge>;
   listMyChallengeIds(userId: string): Promise<string[]>;
@@ -1824,6 +1829,12 @@ function createDemoRepository(): DataRepository {
       await writeJson(customExKey(userId), [...items, exercise]);
       return exercise;
     },
+    async deleteCustomExercise(userId, exerciseId) {
+      const sets = await readJson<LoggedSetRow>(setKey(userId));
+      if (sets.some((s) => s.exerciseId === exerciseId)) throw new Error('EXERCISE_IN_USE');
+      const items = await readJson<Exercise>(customExKey(userId));
+      await writeJson(customExKey(userId), items.filter((e) => e.id !== exerciseId));
+    },
     async listHabitLogs(userId) {
       const items = await readJson<HabitLog>(hlogKey(userId));
       return items.sort((a, b) => b.completedAt.localeCompare(a.completedAt));
@@ -2716,6 +2727,14 @@ function createSupabaseRepository(
         created_by: userId,
       });
       return rowToExercise(row);
+    },
+    async deleteCustomExercise(userId, exerciseId) {
+      try {
+        await deleteCustomExerciseDb(client, userId, exerciseId);
+      } catch (error) {
+        if ((error as { code?: string }).code === FOREIGN_KEY_VIOLATION) throw new Error('EXERCISE_IN_USE');
+        throw error;
+      }
     },
     async listHabitLogs(userId) {
       return (await listHabitLogsDb(client, userId)).map(rowToHabitLog);

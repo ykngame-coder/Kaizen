@@ -1,10 +1,11 @@
 import React, { useMemo } from 'react';
-import { Image, View } from 'react-native';
+import { Alert, Image, View } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { Badge, Button, Card, EmptyState, Icon, Screen, Text, useTheme } from '@supotsu/ui';
 import { radii, spacing } from '@supotsu/design-system';
-import { EXERCISES, MUSCLE_LABEL, exerciseImageUrl } from './catalog';
+import { useCustomExercises, useDeleteCustomExercise } from '@/lib/data/queries';
+import { EXERCISES, MUSCLE_LABEL, exerciseImageUrl, toCatalogExercise } from './catalog';
 
 /** Exercise detail — image, targeted muscles, equipment/level, step-by-step instructions. */
 export function ExerciseDetailScreen(): React.JSX.Element {
@@ -12,7 +13,41 @@ export function ExerciseDetailScreen(): React.JSX.Element {
   const router = useRouter();
   const { colors } = useTheme();
   const { id } = useLocalSearchParams<{ id: string }>();
-  const exercise = useMemo(() => EXERCISES.find((e) => e.id === id), [id]);
+  const { data: customExercises = [] } = useCustomExercises();
+  const deleteCustomExercise = useDeleteCustomExercise();
+  // Un exercice perso n'est jamais dans le catalogue statique — sans ce
+  // repli, sa fiche affichait "introuvable" bien qu'il existe (retour
+  // TestFlight : impossible de retrouver/supprimer un exercice perso).
+  const custom = useMemo(() => customExercises.find((e) => e.id === id), [customExercises, id]);
+  const exercise = useMemo(() => EXERCISES.find((e) => e.id === id) ?? (custom ? toCatalogExercise(custom) : undefined), [id, custom]);
+  const isCustom = !!custom;
+
+  const askDelete = (): void => {
+    if (!custom) return;
+    Alert.alert(
+      t('sport.exercises.detail.deleteConfirmTitle', { name: custom.name }),
+      t('sport.exercises.detail.deleteConfirmMessage'),
+      [
+        { text: t('common.cancel'), style: 'cancel' },
+        {
+          text: t('sport.exercises.detail.deleteAction'),
+          style: 'destructive',
+          onPress: () => {
+            deleteCustomExercise.mutate(custom.id, {
+              onSuccess: () => router.back(),
+              onError: (error) => {
+                const inUse = error instanceof Error && error.message === 'EXERCISE_IN_USE';
+                Alert.alert(
+                  t('sport.exercises.detail.deleteErrorTitle'),
+                  inUse ? t('sport.exercises.detail.deleteInUseMessage') : t('sport.exercises.detail.deleteGenericMessage'),
+                );
+              },
+            });
+          },
+        },
+      ],
+    );
+  };
 
   if (!exercise) {
     return (
@@ -38,6 +73,7 @@ export function ExerciseDetailScreen(): React.JSX.Element {
 
       {/* Meta badges */}
       <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: spacing[2] }}>
+        {isCustom ? <Badge label={t('sport.exercises.detail.customBadge')} tone="success" /> : null}
         <Badge label={exercise.equipment} tone="info" />
         <Badge label={exercise.level} tone="neutral" />
         {exercise.mechanic ? <Badge label={exercise.mechanic === 'compound' ? t('sport.exercises.detail.mechanicCompound') : t('sport.exercises.detail.mechanicIsolation')} tone="neutral" /> : null}
@@ -72,6 +108,14 @@ export function ExerciseDetailScreen(): React.JSX.Element {
 
       <View style={{ flexDirection: 'row', gap: spacing[3] }}>
         <Button label={t('common.back')} variant="secondary" onPress={() => router.back()} />
+        {isCustom ? (
+          <Button
+            label={t('sport.exercises.detail.deleteAction')}
+            variant="danger"
+            onPress={askDelete}
+            disabled={deleteCustomExercise.isPending}
+          />
+        ) : null}
       </View>
     </Screen>
   );

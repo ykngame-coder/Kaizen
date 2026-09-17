@@ -1122,7 +1122,14 @@
     "mechanicIsolation": "Isolation",
     "targetMusclesHeading": "Zielmuskeln",
     "primaryMuscleSuffix": " (primär)",
-    "executionHeading": "Ausführung"
+    "executionHeading": "Ausführung",
+    "customBadge": "Eigene",
+    "deleteAction": "Löschen",
+    "deleteConfirmTitle": "„{{name}}“ löschen?",
+    "deleteConfirmMessage": "Das kann nicht rückgängig gemacht werden.",
+    "deleteErrorTitle": "Löschen nicht möglich",
+    "deleteInUseMessage": "Diese Übung wird in einem bestehenden Workout verwendet — entferne sie zuerst dort.",
+    "deleteGenericMessage": "Etwas ist schiefgelaufen, versuch es erneut."
    },
    "addCustom": {
     "title": "Eigene Übung",
