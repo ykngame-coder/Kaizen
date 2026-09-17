@@ -3255,6 +3255,13 @@
    "status": {
     "none": "Nenhum lembrete programado — ou está tudo desligado, ou nenhuma condição se aplica.",
     "next": "{{count}} lembretes programados · próximo {{when}}"
+   },
+   "test": {
+    "action": "Enviar um lembrete de teste em 10 s",
+    "title": "Teste de lembrete",
+    "body": "Se estás a ler isto, as notificações funcionam: o resto é uma questão de condições.",
+    "sent": "Programado. Fecha a app e espera 10 segundos.",
+    "failed": "Falhou: {{error}}"
    }
   }
  },

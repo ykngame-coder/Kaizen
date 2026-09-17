@@ -3255,6 +3255,13 @@
    "status": {
     "none": "Aucun rappel programmé pour l'instant — soit tout est éteint, soit aucune condition n'est remplie.",
     "next": "{{count}} rappels programmés · prochain {{when}}"
+   },
+   "test": {
+    "action": "Envoyer un rappel test dans 10 s",
+    "title": "Test de rappel",
+    "body": "Si tu lis ceci, les notifications fonctionnent : le reste est affaire de conditions.",
+    "sent": "Programmé. Ferme l'app et attends 10 secondes.",
+    "failed": "Échec : {{error}}"
    }
   }
  },

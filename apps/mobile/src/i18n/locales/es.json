@@ -3255,6 +3255,13 @@
    "status": {
     "none": "Ningún recordatorio programado — o todo está apagado, o no se cumple ninguna condición.",
     "next": "{{count}} recordatorios programados · el próximo {{when}}"
+   },
+   "test": {
+    "action": "Enviar un recordatorio de prueba en 10 s",
+    "title": "Prueba de recordatorio",
+    "body": "Si lees esto, las notificaciones funcionan: lo demás es cuestión de condiciones.",
+    "sent": "Programado. Cierra la app y espera 10 segundos.",
+    "failed": "Error: {{error}}"
    }
   }
  },

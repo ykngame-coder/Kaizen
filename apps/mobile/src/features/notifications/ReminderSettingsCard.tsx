@@ -27,6 +27,7 @@ export function ReminderSettingsCard(): React.JSX.Element | null {
   const [denied, setDenied] = useState(false);
   const [editing, setEditing] = useState<'habits' | 'session' | null>(null);
   const [status, setStatus] = useState<{ count: number; next: string | null } | null>(null);
+  const [testState, setTestState] = useState<string | null>(null);
 
   // Diagnostic : sans lui, « je ne reçois rien » ne dit pas si le rappel n'a
   // pas été programmé, ou s'il l'a été et n'est pas encore tombé.
@@ -65,6 +66,35 @@ export function ReminderSettingsCard(): React.JSX.Element | null {
       setDenied(false);
     }
     update({ [kind]: { ...settings[kind], enabled } } as Partial<ReminderSettings>);
+  };
+
+  /**
+   * Un rappel dans 10 s, sans condition : sépare « la programmation ne marche
+   * pas » de « aucune condition n'était remplie », ce qu'aucun réglage ne
+   * permet de distinguer depuis le téléphone.
+   */
+  const sendTest = async (): Promise<void> => {
+    setTestState('sending');
+    try {
+      const granted = (await notificationHost.permission()) === 'granted' ? 'granted' : await notificationHost.requestPermission();
+      if (granted !== 'granted') {
+        setDenied(true);
+        setTestState('denied');
+        return;
+      }
+      await notificationHost.schedule({
+        // Hors du préfixe des rappels : la prochaine synchronisation annule
+        // tout ce qui porte « supotsu: » et n'est pas planifié — elle
+        // effacerait le test avant qu'il ne tombe.
+        id: `${REMINDER_ID_PREFIX}-test`,
+        at: new Date(Date.now() + 10_000).toISOString(),
+        title: t('notifications.reminders.test.title'),
+        body: t('notifications.reminders.test.body'),
+      });
+      setTestState('sent');
+    } catch (e) {
+      setTestState(e instanceof Error ? e.message : 'erreur');
+    }
   };
 
   const Row = ({ kind, detail, onPressDetail }: { kind: ReminderKind; detail: string; onPressDetail?: () => void }): React.JSX.Element => (
@@ -125,6 +155,21 @@ export function ReminderSettingsCard(): React.JSX.Element | null {
                   ? new Date(status.next).toLocaleString(undefined, { weekday: 'short', hour: '2-digit', minute: '2-digit' })
                   : '',
               })}
+        </Text>
+      ) : null}
+
+      <Pressable onPress={() => void sendTest()} hitSlop={8} style={{ marginTop: spacing[3], alignSelf: 'flex-start' }}>
+        <Text variant="caption" color="primary">{t('notifications.reminders.test.action')}</Text>
+      </Pressable>
+      {testState ? (
+        <Text variant="caption" color={testState === 'sent' ? 'textSubtle' : 'error'} style={{ marginTop: spacing[1] }}>
+          {testState === 'sent'
+            ? t('notifications.reminders.test.sent')
+            : testState === 'sending'
+              ? '…'
+              : testState === 'denied'
+                ? t('notifications.reminders.denied')
+                : t('notifications.reminders.test.failed', { error: testState })}
         </Text>
       ) : null}
 

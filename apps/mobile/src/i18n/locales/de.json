@@ -3255,6 +3255,13 @@
    "status": {
     "none": "Derzeit keine Erinnerung geplant — entweder ist alles aus, oder keine Bedingung trifft zu.",
     "next": "{{count}} Erinnerungen geplant · nächste {{when}}"
+   },
+   "test": {
+    "action": "Test-Erinnerung in 10 s senden",
+    "title": "Erinnerungstest",
+    "body": "Wenn du das liest, funktionieren Mitteilungen: der Rest ist eine Frage der Bedingungen.",
+    "sent": "Geplant. Schließe die App und warte 10 Sekunden.",
+    "failed": "Fehlgeschlagen: {{error}}"
    }
   }
  },

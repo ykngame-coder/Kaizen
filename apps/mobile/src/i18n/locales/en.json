@@ -3255,6 +3255,13 @@
    "status": {
     "none": "No reminder scheduled right now — either everything is off, or no condition applies.",
     "next": "{{count}} reminders scheduled · next {{when}}"
+   },
+   "test": {
+    "action": "Send a test reminder in 10 s",
+    "title": "Reminder test",
+    "body": "If you can read this, notifications work: the rest is about conditions.",
+    "sent": "Scheduled. Close the app and wait 10 seconds.",
+    "failed": "Failed: {{error}}"
    }
   }
  },
