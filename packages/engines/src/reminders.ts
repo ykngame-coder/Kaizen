@@ -1,4 +1,5 @@
 import type { Habit, HabitLog, ISODateString, NutritionEntry, SleepSession, Workout } from '@supotsu/core';
+import { weekBoundsOf } from './habitProgress';
 
 /**
  * Quels rappels locaux programmer, et quand.
@@ -89,13 +90,6 @@ function bedtimeInstant(day: Date, hhmm: string): Date {
 
 const sameLocalDay = (iso: string, day: Date): boolean => dayKey(new Date(iso)) === dayKey(day);
 
-/** Début de la semaine (lundi) du jour donné, et nombre de jours restants dans cette semaine, ce jour compris. */
-function weekBounds(day: Date): { start: Date; daysLeft: number } {
-  const dow = (day.getDay() + 6) % 7; // lundi = 0
-  const start = new Date(day.getFullYear(), day.getMonth(), day.getDate() - dow);
-  return { start, daysLeft: 7 - dow };
-}
-
 /**
  * Les habitudes encore dues ce jour-là. Une quotidienne compte tant qu'elle n'a
  * pas été validée ; une hebdomadaire seulement au dernier moment utile — quand
@@ -110,8 +104,7 @@ function habitsDueOn(input: ReminderInput, day: Date): number {
       if (done < h.targetPerPeriod) due += 1;
       continue;
     }
-    const { start, daysLeft } = weekBounds(day);
-    const end = new Date(start.getFullYear(), start.getMonth(), start.getDate() + 7);
+    const { start, end, daysLeft } = weekBoundsOf(day);
     const done = input.habitLogs.filter((l) => {
       if (l.habitId !== h.id) return false;
       const t = new Date(l.completedAt).getTime();

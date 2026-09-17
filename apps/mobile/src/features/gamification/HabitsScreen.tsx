@@ -5,7 +5,7 @@ import { useTranslation } from 'react-i18next';
 import { Button, Card, Icon, Screen, Text, useTheme } from '@supotsu/ui';
 import { radii, spacing } from '@supotsu/design-system';
 import type { Habit, HealthMetricType } from '@supotsu/core';
-import { estimateTargets, sumDay } from '@supotsu/engines';
+import { estimateTargets, habitExistedOn, habitProgressOn, habitSatisfiedOn, indexHabitLogs, sumDay, weekBoundsOf, type HabitPeriod } from '@supotsu/engines';
 import { BackButton } from '@/features/navigation/BackButton';
 import { DayNav } from '@/features/navigation/DayNav';
 import { dayKeyOf, useSelectedDay } from '@/features/navigation/day';
@@ -15,6 +15,8 @@ import { GoalsSection } from '@/features/goals/GoalsSection';
 import { claimAutoLog, linkedKindFor, type LinkedKind } from './linkedHabits';
 
 const DAY_MS = 86_400_000;
+/** Fenêtre des statistiques : assez large pour ne pas tronquer une longue série. */
+const STATS_WINDOW_DAYS = 400;
 
 
 // 'habits' (the default pillar) and 'performance' have no thematic icon of
@@ -111,30 +113,39 @@ export function HabitsScreen(): React.JSX.Element {
   }, [pendingHabitId, logHabit.isPending, unlogHabit.isPending]);
 
   const active = useMemo(() => habits.filter((h) => !h.archivedAt), [habits]);
+  const logIndex = useMemo(() => indexHabitLogs(logs), [logs]);
+  const viewedDay = useMemo(() => new Date(selectedDate.noon), [selectedDate.noon]);
 
-  // Logs indexed by day, per-habit day-sets (for streaks), per-habit
-  // completion counts on the viewed day (for multi-per-day targets), and the
-  // most recent log id per habit on the viewed day (so unchecking removes
-  // exactly the last completion instead of every log for that habit).
-  const { byDay, perHabitDays, countsOnViewedDay, latestLogIdOnViewedDay } = useMemo(() => {
-    const day = new Map<string, Set<string>>();
+  // Jours où chaque habitude a été validée — sert aux habitudes liées, qui se
+  // valident aussi toutes seules à partir des données réelles.
+  const perHabitDays = useMemo(() => {
     const perHabit = new Map<string, Set<string>>();
-    const counts = new Map<string, number>();
-    const latest = new Map<string, { id: string; completedAt: string }>();
     for (const l of logs) {
       const k = dayKeyOf(new Date(l.completedAt));
-      if (!day.has(k)) day.set(k, new Set());
-      day.get(k)!.add(l.habitId);
       if (!perHabit.has(l.habitId)) perHabit.set(l.habitId, new Set());
       perHabit.get(l.habitId)!.add(k);
-      if (k === viewedK) {
-        counts.set(l.habitId, (counts.get(l.habitId) ?? 0) + 1);
-        const current = latest.get(l.habitId);
-        if (!current || l.completedAt > current.completedAt) latest.set(l.habitId, { id: l.id, completedAt: l.completedAt });
-      }
     }
-    return { byDay: day, perHabitDays: perHabit, countsOnViewedDay: counts, latestLogIdOnViewedDay: latest };
-  }, [logs, viewedK]);
+    return perHabit;
+  }, [logs]);
+
+  /**
+   * La validation à retirer quand on décoche — la dernière de la PÉRIODE de
+   * l'habitude. Ne chercher que dans le jour affiché rendait la case d'une
+   * hebdomadaire validée un autre jour inerte : elle paraissait cochée, et le
+   * clic ne faisait rien.
+   */
+  const lastLogIdFor = (h: Habit): string | undefined => {
+    const { start, end } = weekBoundsOf(viewedDay);
+    const inPeriod = (iso: string): boolean => {
+      if (h.cadence !== 'weekly') return dayKeyOf(new Date(iso)) === viewedK;
+      const t = new Date(iso).getTime();
+      return t >= start.getTime() && t < end.getTime();
+    };
+    return logs
+      .filter((l) => l.habitId === h.id && inPeriod(l.completedAt))
+      .sort((a, b) => a.completedAt.localeCompare(b.completedAt))
+      .at(-1)?.id;
+  };
 
   // Real progress for linked habits — today only, no history backfill for past days.
   const weight = latestMetric(health, 'weight');
@@ -180,18 +191,19 @@ export function HabitsScreen(): React.JSX.Element {
    * sport malgré qu'elle soit faite via Apple Santé" — previously the
    * checkbox was hidden entirely whenever a habit was linked and it's today).
    */
-  const progressFor = (h: Habit): { count: number; target: number; done: boolean; live?: { value: number; target: number }; liveConfirmed: boolean } => {
+  const progressFor = (h: Habit): { count: number; target: number; done: boolean; period: HabitPeriod; live?: { value: number; target: number }; liveConfirmed: boolean } => {
     const kind = linkedKindFor(h.name);
-    if (kind && isToday) {
+    const liveConfirmed = kind && isToday ? (() => { const l = liveProgress(kind); return l.target > 0 && l.value >= l.target; })() : false;
+    // Une hebdomadaire liée garde son avancement de la SEMAINE : la donnée
+    // réelle du jour l'a déjà validée une fois (auto-log), elle n'a pas à
+    // afficher une barre du jour qui ignorerait les deux autres séances.
+    if (kind && isToday && h.cadence !== 'weekly') {
       const live = liveProgress(kind);
-      const liveConfirmed = live.target > 0 && live.value >= live.target;
       const manuallyLogged = (perHabitDays.get(h.id) ?? new Set()).has(todayK);
       const done = liveConfirmed || manuallyLogged;
-      return { count: done ? 1 : 0, target: 1, done, live, liveConfirmed };
+      return { count: done ? 1 : 0, target: 1, done, period: 'day', live, liveConfirmed };
     }
-    const target = h.cadence === 'daily' ? Math.max(1, h.targetPerPeriod) : 1;
-    const count = countsOnViewedDay.get(h.id) ?? 0;
-    return { count, target, done: count >= target, liveConfirmed: false };
+    return { ...habitProgressOn(h, logIndex, viewedDay), liveConfirmed };
   };
 
   // Linked habits auto-log once their real-data target is hit.
@@ -226,16 +238,41 @@ export function HabitsScreen(): React.JSX.Element {
 
   const denom = Math.max(1, active.length);
 
+  /**
+   * Ce qui était tenu, jour par jour — l'habitude est jugée sur SA période :
+   * une hebdomadaire dont la cible est atteinte vaut pour toute sa semaine, et
+   * une habitude créée hier ne rend pas le mois dernier rouge.
+   */
+  const { satisfiedDays, dayFraction } = useMemo(() => {
+    const per = new Map<string, Set<string>>();
+    const frac = new Map<string, number>();
+    for (let i = 0; i < STATS_WINDOW_DAYS; i += 1) {
+      const d = new Date(now.getFullYear(), now.getMonth(), now.getDate() - i);
+      const key = dayKeyOf(d);
+      let existing = 0;
+      let satisfied = 0;
+      for (const h of active) {
+        if (!habitExistedOn(h, d)) continue;
+        existing += 1;
+        if (!habitSatisfiedOn(h, logIndex, d, now)) continue;
+        satisfied += 1;
+        const set = per.get(h.id) ?? new Set<string>();
+        set.add(key);
+        per.set(h.id, set);
+      }
+      frac.set(key, existing === 0 ? 0 : satisfied / existing);
+    }
+    return { satisfiedDays: per, dayFraction: frac };
+  }, [active, logIndex, todayK]);
+
   // 30-day completion calendar (oldest → today) — always anchored to real
   // "today", independent of the day being browsed in the checklist above.
   const cal = useMemo(() => {
     return Array.from({ length: 30 }, (_, i) => {
       const d = new Date(now.getTime() - (29 - i) * DAY_MS);
-      const done = byDay.get(dayKeyOf(d))?.size ?? 0;
-      const frac = done / denom;
-      return { frac, isToday: dayKeyOf(d) === todayK };
+      return { frac: dayFraction.get(dayKeyOf(d)) ?? 0, isToday: dayKeyOf(d) === todayK };
     });
-  }, [byDay, denom, now, todayK]);
+  }, [dayFraction, now, todayK]);
 
   // Success rate over 30 days.
   const success = useMemo(() => {
@@ -244,18 +281,20 @@ export function HabitsScreen(): React.JSX.Element {
   }, [cal]);
 
   // Streaks per habit (shown individually in "Séries en cours").
-  const streaks = useMemo(() => active.map((h) => ({ habit: h, streak: streakOf(perHabitDays.get(h.id) ?? new Set(), now) })).sort((a, b) => b.streak - a.streak), [active, perHabitDays, now]);
+  const streaks = useMemo(() => active.map((h) => ({ habit: h, streak: streakOf(satisfiedDays.get(h.id) ?? new Set(), now) })).sort((a, b) => b.streak - a.streak), [active, satisfiedDays, now]);
   // "Meilleure série" KPI: a streak day only counts if ALL active habits were
   // validated that day — previously it took the max of any single habit's own
   // streak, so it could read "1 j" even on a day nothing else was done. Reuses
   // the same full-day-completion notion as the 30-day calendar's "Tout fait" cells.
   const daysFullyDone = useMemo(() => {
     const full = new Set<string>();
-    for (const [k, ids] of byDay) if (ids.size >= denom) full.add(k);
+    for (const [key, frac] of dayFraction) if (frac >= 1) full.add(key);
     return full;
-  }, [byDay, denom]);
+  }, [dayFraction]);
   const bestStreak = useMemo(() => streakOf(daysFullyDone, now), [daysFullyDone, now]);
-  const doneToday = useMemo(() => new Set(active.filter((h) => (perHabitDays.get(h.id) ?? new Set()).has(todayK)).map((h) => h.id)), [active, perHabitDays, todayK]);
+  // « Faites aujourd'hui » : plus rien à demander aujourd'hui — une
+  // hebdomadaire dont la cible de la semaine est atteinte en fait partie.
+  const doneToday = useMemo(() => new Set(active.filter((h) => habitProgressOn(h, logIndex, now).done).map((h) => h.id)), [active, logIndex, todayK]);
   const disciplineScore = Math.round((doneToday.size / denom) * 40 + success * 0.6);
 
   const cellColor = (frac: number, future = false): string => {
@@ -337,6 +376,15 @@ export function HabitsScreen(): React.JSX.Element {
                           </Text>
                           <MiniBar pct={(p.live.value / Math.max(1, p.live.target)) * 100} color={p.done ? colors.accentData : colors.warning} />
                         </>
+                      ) : p.period === 'week' ? (
+                        <>
+                          <Text variant="caption" style={{ color: p.done ? colors.accentData : colors.textSubtle, fontWeight: '600' }}>
+                            {p.done
+                              ? t('sport.gamification.habitsScreen.checklist.weeklyDone')
+                              : t('sport.gamification.habitsScreen.checklist.weeklyProgress', { count: p.count, target: p.target })}
+                          </Text>
+                          {p.target > 1 ? <MiniBar pct={(p.count / p.target) * 100} color={p.done ? colors.accentData : colors.warning} /> : null}
+                        </>
                       ) : p.target > 1 ? (
                         <>
                           <Text variant="caption" color={p.done ? 'accentData' : 'textSubtle'} style={{ fontWeight: '600' }}>{p.count}/{p.target}</Text>
@@ -364,7 +412,7 @@ export function HabitsScreen(): React.JSX.Element {
                             );
                           };
                           if (p.done) {
-                            const logId = latestLogIdOnViewedDay.get(h.id)?.id;
+                            const logId = lastLogIdFor(h);
                             if (!logId) return;
                             setPendingHabitId(h.id);
                             unlogHabit.mutate(logId, { onSettled: settle, onError });

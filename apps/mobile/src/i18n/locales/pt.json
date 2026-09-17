@@ -837,7 +837,9 @@
      "checkA11y": "Marcar {{name}}",
      "uncheckA11y": "Desmarcar {{name}}",
      "toggleErrorTitle": "Ops",
-     "toggleError": "Não foi possível salvar este hábito agora. Tenta novamente daqui a pouco."
+     "toggleError": "Não foi possível salvar este hábito agora. Tenta novamente daqui a pouco.",
+     "weeklyDone": "Feito esta semana · volta na segunda",
+     "weeklyProgress": "{{count}}/{{target}} esta semana"
     },
     "disciplineScore": {
      "heading": "Pontuação de disciplina",

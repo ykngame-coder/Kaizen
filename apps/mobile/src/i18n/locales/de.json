@@ -837,7 +837,9 @@
      "checkA11y": "{{name}} abhaken",
      "uncheckA11y": "Haken bei {{name}} entfernen",
      "toggleErrorTitle": "Hoppla",
-     "toggleError": "Diese Gewohnheit konnte gerade nicht gespeichert werden. Versuch es gleich noch einmal."
+     "toggleError": "Diese Gewohnheit konnte gerade nicht gespeichert werden. Versuch es gleich noch einmal.",
+     "weeklyDone": "Diese Woche erledigt · wieder am Montag",
+     "weeklyProgress": "{{count}}/{{target}} diese Woche"
     },
     "disciplineScore": {
      "heading": "Disziplin-Score",

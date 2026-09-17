@@ -110,7 +110,10 @@ export function WeeklyReportScreen(): React.JSX.Element {
     let validated = 0;
     for (const l of habitLogs) { const tm = new Date(l.completedAt).getTime(); if (tm >= since) { validated += 1; weekLogDays.add(dayKey(new Date(l.completedAt))); } }
     const habitDots = labels.map((lab, i) => ({ label: lab, done: weekLogDays.has(dayKey(new Date(now.getTime() - (6 - i) * DAY_MS))) }));
-    const target = activeHabits.length * 7;
+    // Une hebdomadaire attend sa cible UNE fois dans la semaine ; une
+    // quotidienne, sept. Les compter toutes sept fois rendait le taux de
+    // réussite inatteignable dès qu'une habitude était hebdomadaire.
+    const target = activeHabits.reduce((sum, h) => sum + Math.max(1, h.targetPerPeriod) * (h.cadence === 'weekly' ? 1 : 7), 0);
 
     const weights = health.filter((m) => m.type === 'weight').sort((a, b) => a.measuredAt.localeCompare(b.measuredAt));
     const wLast = weights.at(-1)?.value;

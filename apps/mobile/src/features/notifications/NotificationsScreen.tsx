@@ -6,7 +6,7 @@ import type { TFunction } from 'i18next';
 import { Button, Card, EmptyState, Gradient, Icon, ListRow, Screen, Text, Toggle, useTheme } from '@supotsu/ui';
 import { radii, spacing } from '@supotsu/design-system';
 import type { HealthMetricType } from '@supotsu/core';
-import { computeCircadianProfile, computeRecoveryScore, estimateTargets, recoveryBand, sumDay } from '@supotsu/engines';
+import { computeCircadianProfile, computeRecoveryScore, estimateTargets, habitProgressOn, indexHabitLogs, recoveryBand, sumDay } from '@supotsu/engines';
 import {
   useHabitLogs,
   useHabits,
@@ -97,9 +97,10 @@ export function NotificationsScreen(): React.JSX.Element {
     const out: Notif[] = [];
 
     // Habits pending → important
-    const todayKey = dayKey(new Date());
-    const doneToday = new Set(habitLogs.filter((l) => dayKey(new Date(l.completedAt)) === todayKey).map((l) => l.habitId));
-    const pending = habits.filter((h) => !h.archivedAt && !doneToday.has(h.id));
+    // Sur SA période : une hebdomadaire déjà tenue cette semaine n'a rien à
+    // réclamer aujourd'hui.
+    const habitIndex = indexHabitLogs(habitLogs);
+    const pending = habits.filter((h) => !h.archivedAt && !habitProgressOn(h, habitIndex, new Date(asOf)).done);
     if (pending.length > 0) {
       const title = pending.length === 1
         ? t('notifications.screen.notifs.habitSingular', { name: pending[0]!.name })

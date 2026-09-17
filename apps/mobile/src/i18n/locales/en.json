@@ -837,7 +837,9 @@
      "checkA11y": "Check {{name}}",
      "uncheckA11y": "Uncheck {{name}}",
      "toggleErrorTitle": "Oops",
-     "toggleError": "Could not save this habit right now. Try again in a moment."
+     "toggleError": "Could not save this habit right now. Try again in a moment.",
+     "weeklyDone": "Done this week · back on Monday",
+     "weeklyProgress": "{{count}}/{{target}} this week"
     },
     "disciplineScore": {
      "heading": "Discipline score",

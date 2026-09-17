@@ -20,6 +20,8 @@ import {
   sumDay,
   weightTrend,
   formatGoalHours,
+  habitProgressOn,
+  indexHabitLogs,
 } from '@supotsu/engines';
 import { useActivities, useHabitLogs, useHabits, useHealthMetrics, useLeaderboardPrefs, useNutritionEntries, usePlannedWorkouts, useRecordDailyScore, useSleepSessions } from '@/lib/data/queries';
 import { useAuth } from '@/features/auth/AuthProvider';
@@ -290,9 +292,11 @@ export function DashboardScreen(): React.JSX.Element {
     const todays = health.filter((m) => m.type === 'steps' && dayKey(new Date(m.measuredAt)) === todayK);
     return [...todays].sort((a, b) => a.measuredAt.localeCompare(b.measuredAt)).at(-1)?.value ?? 0;
   }, [health, todayK]);
-  const doneToday = useMemo(() => new Set(habitLogs.filter((l) => dayKey(new Date(l.completedAt)) === todayK).map((l) => l.habitId)), [habitLogs, todayK]);
+  // Chaque habitude est jugée sur SA période : une hebdomadaire dont la cible
+  // de la semaine est atteinte n'est plus « en attente » les jours suivants.
+  const habitIndex = useMemo(() => indexHabitLogs(habitLogs), [habitLogs]);
   const activeHabits = habits.filter((h) => !h.archivedAt);
-  const pendingHabits = activeHabits.filter((h) => !doneToday.has(h.id));
+  const pendingHabits = activeHabits.filter((h) => !habitProgressOn(h, habitIndex, now).done);
   const streak = useMemo(() => computeStreak(activities, asOf).value, [activities, asOf]);
   const weekDays = useMemo(() => {
     const logDays = new Set(habitLogs.map((l) => dayKey(new Date(l.completedAt))));

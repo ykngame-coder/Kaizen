@@ -837,7 +837,9 @@
      "checkA11y": "Cocher {{name}}",
      "uncheckA11y": "Décocher {{name}}",
      "toggleErrorTitle": "Oups",
-     "toggleError": "Impossible d'enregistrer cette habitude pour l'instant. Réessaie dans un instant."
+     "toggleError": "Impossible d'enregistrer cette habitude pour l'instant. Réessaie dans un instant.",
+     "weeklyDone": "Fait cette semaine · revient lundi",
+     "weeklyProgress": "{{count}}/{{target}} cette semaine"
     },
     "disciplineScore": {
      "heading": "Score discipline",
