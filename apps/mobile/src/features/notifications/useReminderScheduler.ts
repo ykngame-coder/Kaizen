@@ -6,6 +6,7 @@ import { computeCircadianProfile, plannedReminders, type PlannedReminder, type R
 import { useHabitLogs, useHabits, useHealthMetrics, useNutritionEntries, useSleepSessions, useWorkouts } from '@/lib/data/queries';
 import { usePreferences } from '@/lib/preferences';
 import { notificationHost } from './notificationHost';
+import { reminderDiagnostics } from './reminderDiagnostics';
 import { syncReminders } from './reminderScheduler';
 
 /** Objectif d'hydratation retenu quand l'utilisateur n'en a pas fixé un. */
@@ -46,37 +47,53 @@ export function useReminderScheduler(): void {
 
   const runRef = useRef<() => void>(() => undefined);
   runRef.current = (): void => {
-    if (Platform.OS !== 'ios' || !ready) return;
+    if (Platform.OS !== 'ios') return;
+    const at = new Date().toISOString();
+    if (!ready) {
+      reminderDiagnostics.set({ at, outcome: 'not-ready' });
+      return;
+    }
+    // Sans ce try, une exception se perdait dans une promesse non surveillée :
+    // les rappels disparaissaient sans le moindre signe.
     void (async () => {
-      // Réglages tous éteints (ou autorisation retirée) : on annule les nôtres
-      // en synchronisant sur une liste vide, plutôt que de les laisser sonner.
-      const allowed = (await notificationHost.permission()) === 'granted' && enabled;
-      if (!allowed) {
-        await syncReminders(notificationHost, [], () => ({ title: '', body: '' }));
-        return;
+      try {
+        // Réglages tous éteints (ou autorisation retirée) : on annule les nôtres
+        // en synchronisant sur une liste vide, plutôt que de les laisser sonner.
+        const allowed = (await notificationHost.permission()) === 'granted' && enabled;
+        if (!allowed) {
+          await syncReminders(notificationHost, [], () => ({ title: '', body: '' }));
+          reminderDiagnostics.set({ at, outcome: 'not-allowed' });
+          return;
+        }
+        if (loading) {
+          reminderDiagnostics.set({ at, outcome: 'loading' });
+          return;
+        }
+
+        const now = new Date();
+        const chronotype = computeCircadianProfile(health ?? [], now.toISOString(), {
+          tzOffsetMinutes: -now.getTimezoneOffset(),
+          goalHours: preferences.sleepGoalHours,
+        }).value;
+
+        const wanted = plannedReminders(
+          {
+            habits: habits ?? [],
+            habitLogs: habitLogs ?? [],
+            workouts: workouts ?? [],
+            nutrition: nutrition ?? [],
+            sleepSessions: sleepSessions ?? [],
+            hydrationGoalMl: preferences.nutritionGoals?.hydrationMl ?? DEFAULT_HYDRATION_ML,
+            chronotype: chronotype ? { idealBedtime: chronotype.idealBedtime, idealWake: chronotype.idealWake } : null,
+          },
+          settings,
+          now,
+        );
+        const result = await syncReminders(notificationHost, wanted, textFor);
+        reminderDiagnostics.set({ at, outcome: 'scheduled', wanted: wanted.length, result });
+      } catch (e) {
+        reminderDiagnostics.set({ at, outcome: 'error', error: e instanceof Error ? e.message : String(e) });
       }
-      if (loading) return;
-
-      const now = new Date();
-      const chronotype = computeCircadianProfile(health ?? [], now.toISOString(), {
-        tzOffsetMinutes: -now.getTimezoneOffset(),
-        goalHours: preferences.sleepGoalHours,
-      }).value;
-
-      const wanted = plannedReminders(
-        {
-          habits: habits ?? [],
-          habitLogs: habitLogs ?? [],
-          workouts: workouts ?? [],
-          nutrition: nutrition ?? [],
-          sleepSessions: sleepSessions ?? [],
-          hydrationGoalMl: preferences.nutritionGoals?.hydrationMl ?? DEFAULT_HYDRATION_ML,
-          chronotype: chronotype ? { idealBedtime: chronotype.idealBedtime, idealWake: chronotype.idealWake } : null,
-        },
-        settings,
-        now,
-      );
-      await syncReminders(notificationHost, wanted, textFor);
     })();
   };
 

@@ -6,6 +6,7 @@ import { spacing } from '@supotsu/design-system';
 import type { ReminderKind, ReminderSettings } from '@supotsu/engines';
 import { usePreferences } from '@/lib/preferences';
 import { notificationHost } from './notificationHost';
+import { describeDiagnostic, useReminderDiagnostic } from './reminderDiagnostics';
 import { REMINDER_ID_PREFIX } from './reminderScheduler';
 import { TimeWheelSheet } from './TimeWheelSheet';
 
@@ -28,6 +29,7 @@ export function ReminderSettingsCard(): React.JSX.Element | null {
   const [editing, setEditing] = useState<'habits' | 'session' | null>(null);
   const [status, setStatus] = useState<{ count: number; next: string | null } | null>(null);
   const [testState, setTestState] = useState<string | null>(null);
+  const diagnostic = useReminderDiagnostic();
 
   // Diagnostic : sans lui, « je ne reçois rien » ne dit pas si le rappel n'a
   // pas été programmé, ou s'il l'a été et n'est pas encore tombé.
@@ -157,6 +159,16 @@ export function ReminderSettingsCard(): React.JSX.Element | null {
               })}
         </Text>
       ) : null}
+
+      {diagnostic ? (
+        <Text variant="caption" color="textMuted" style={{ marginTop: spacing[1] }}>
+          {describeDiagnostic(diagnostic)}
+        </Text>
+      ) : (
+        <Text variant="caption" color="textMuted" style={{ marginTop: spacing[1] }}>
+          aucun recalcul depuis l&apos;ouverture de l&apos;app
+        </Text>
+      )}
 
       <Pressable onPress={() => void sendTest()} hitSlop={8} style={{ marginTop: spacing[3], alignSelf: 'flex-start' }}>
         <Text variant="caption" color="primary">{t('notifications.reminders.test.action')}</Text>
