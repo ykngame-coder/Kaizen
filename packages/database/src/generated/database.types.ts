@@ -361,6 +361,29 @@ export interface Database {
         Update: Partial<Database['public']['Tables']['nutrition_entries']['Insert']>;
         Relationships: [];
       };
+      custom_foods: {
+        Row: {
+          barcode: string;
+          description: string;
+          kcal: number;
+          protein_g: number | null;
+          carb_g: number | null;
+          fat_g: number | null;
+          created_by: string | null;
+          created_at: string;
+        };
+        Insert: {
+          barcode: string;
+          description: string;
+          kcal: number;
+          protein_g?: number | null;
+          carb_g?: number | null;
+          fat_g?: number | null;
+          created_by?: string | null;
+        };
+        Update: Partial<Database['public']['Tables']['custom_foods']['Insert']>;
+        Relationships: [];
+      };
       habits: {
         Row: {
           id: string;

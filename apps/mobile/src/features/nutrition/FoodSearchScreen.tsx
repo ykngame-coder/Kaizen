@@ -7,7 +7,7 @@ import { radii, spacing } from '@supotsu/design-system';
 import { scaleMacros } from '@supotsu/connectors';
 import type { FoodItem } from '@supotsu/core';
 import { type NutritionEntryInput } from '@supotsu/shared';
-import { useAddNutritionEntry } from '@/lib/data/queries';
+import { useAddCustomFood, useAddNutritionEntry, useCustomFoodLookup } from '@/lib/data/queries';
 import { getFoodByBarcode, searchFoods } from './foodSearch';
 
 /** Search foods on Open Food Facts and log a portion (Master Prompt P11). */
@@ -16,6 +16,8 @@ export function FoodSearchScreen(): React.JSX.Element {
   const router = useRouter();
   const { colors } = useTheme();
   const addMeal = useAddNutritionEntry();
+  const lookupCustomFood = useCustomFoodLookup();
+  const addCustomFood = useAddCustomFood();
   const params = useLocalSearchParams<{ barcode?: string }>();
 
   const MEALS = [
@@ -35,10 +37,20 @@ export function FoodSearchScreen(): React.JSX.Element {
   const [grams, setGrams] = useState('100');
   const [mealType, setMealType] = useState<(typeof MEALS)[number]['value']>('lunch');
 
+  // Ni Open Food Facts ni les aliments déjà ajoutés par d'autres ne connaissent
+  // ce code-barres : on propose de le renseigner une fois, pour tout le monde.
+  const [notFoundBarcode, setNotFoundBarcode] = useState<string | null>(null);
+  const [newName, setNewName] = useState('');
+  const [newKcal, setNewKcal] = useState('');
+  const [newProtein, setNewProtein] = useState('');
+  const [newCarb, setNewCarb] = useState('');
+  const [newFat, setNewFat] = useState('');
+
   const runSearch = async (): Promise<void> => {
     setError(null);
     setLoading(true);
     setSelected(null);
+    setNotFoundBarcode(null);
     try {
       const found = await searchFoods(query);
       setResults(found);
@@ -54,15 +66,28 @@ export function FoodSearchScreen(): React.JSX.Element {
     setError(null);
     setLoading(true);
     setSelected(null);
+    setNotFoundBarcode(null);
     try {
       const food = await getFoodByBarcode(code);
       if (food) {
         setResults([food]);
         pick(food);
-      } else {
-        setResults([]);
-        setError(t('nutrition.foodSearch.errors.barcodeNotFound'));
+        return;
       }
+      // Absent d'OFF : quelqu'un d'autre l'a peut-être déjà ajouté avant nous.
+      const custom = await lookupCustomFood(code);
+      if (custom) {
+        setResults([custom]);
+        pick(custom);
+        return;
+      }
+      setResults([]);
+      setNewName('');
+      setNewKcal('');
+      setNewProtein('');
+      setNewCarb('');
+      setNewFat('');
+      setNotFoundBarcode(code);
     } catch (e) {
       setError(e instanceof Error ? e.message : t('nutrition.foodSearch.errors.searchFailed'));
     } finally {
@@ -73,6 +98,30 @@ export function FoodSearchScreen(): React.JSX.Element {
   const pick = (food: FoodItem): void => {
     setSelected(food);
     setGrams(food.servingSizeG ? String(food.servingSizeG) : '100');
+  };
+
+  const submitNewFood = async (): Promise<void> => {
+    const kcal = Number(newKcal);
+    if (!notFoundBarcode || !newName.trim() || !newKcal.trim() || !Number.isFinite(kcal) || kcal < 0) {
+      setError(t('nutrition.foodSearch.notFound.invalid'));
+      return;
+    }
+    setError(null);
+    try {
+      const food = await addCustomFood.mutateAsync({
+        barcode: notFoundBarcode,
+        description: newName.trim(),
+        kcal,
+        proteinG: newProtein.trim() ? Number(newProtein) : undefined,
+        carbG: newCarb.trim() ? Number(newCarb) : undefined,
+        fatG: newFat.trim() ? Number(newFat) : undefined,
+      });
+      setNotFoundBarcode(null);
+      setResults([food]);
+      pick(food);
+    } catch {
+      setError(t('nutrition.foodSearch.notFound.saveFailed'));
+    }
   };
 
   // Arriving from the scanner with a barcode param → look it up automatically.
@@ -131,6 +180,34 @@ export function FoodSearchScreen(): React.JSX.Element {
       <Button label={t('nutrition.foodSearch.scanButton')} onPress={() => router.push('/nutrition/food/scan')} fullWidth />
 
       {error ? <Badge label={error} tone="warning" /> : null}
+
+      {notFoundBarcode ? (
+        <Card>
+          <Text variant="heading">{t('nutrition.foodSearch.notFound.title')}</Text>
+          <Text variant="caption" color="textMuted">
+            {t('nutrition.foodSearch.notFound.message')}
+          </Text>
+          <Input label={t('nutrition.foodSearch.notFound.nameLabel')} value={newName} onChangeText={setNewName} />
+          <Input label={t('nutrition.addMeal.calc.kcalPer100')} keyboardType="numeric" value={newKcal} onChangeText={setNewKcal} />
+          <View style={{ flexDirection: 'row', gap: spacing[2] }}>
+            <View style={{ flex: 1 }}>
+              <Input label={t('nutrition.addMeal.calc.proteinPer100')} keyboardType="numeric" value={newProtein} onChangeText={setNewProtein} />
+            </View>
+            <View style={{ flex: 1 }}>
+              <Input label={t('nutrition.addMeal.calc.carbPer100')} keyboardType="numeric" value={newCarb} onChangeText={setNewCarb} />
+            </View>
+            <View style={{ flex: 1 }}>
+              <Input label={t('nutrition.addMeal.calc.fatPer100')} keyboardType="numeric" value={newFat} onChangeText={setNewFat} />
+            </View>
+          </View>
+          <Button
+            label={addCustomFood.isPending ? '…' : t('nutrition.foodSearch.notFound.addButton')}
+            onPress={submitNewFood}
+            disabled={addCustomFood.isPending}
+            fullWidth
+          />
+        </Card>
+      ) : null}
 
       {selected && portion ? (
         <Card>

@@ -2256,8 +2256,15 @@
    "errors": {
     "noResults": "No food found for this search.",
     "searchFailed": "Search failed.",
-    "barcodeNotFound": "Barcode not found in Open Food Facts.",
     "saveFailed": "Save failed."
+   },
+   "notFound": {
+    "title": "Product not listed yet",
+    "message": "This barcode isn't in Open Food Facts. Add it once, and it'll be recognized for everyone next time.",
+    "nameLabel": "Product name",
+    "addButton": "Add this product",
+    "invalid": "Enter a name and valid calories.",
+    "saveFailed": "Couldn't add this product."
    }
   },
   "calorieCalculator": {

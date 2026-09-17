@@ -24,7 +24,7 @@ import type {
   ImportedWorkout,
 } from '@supotsu/connectors';
 import { useAuth } from '@/features/auth/AuthProvider';
-import { createDataRepository, type HealthMetricInput, type NewCircuitBlockInput, type NewCircuitWorkout, type NewRunnerSet, type NewSleepSession, type NewWorkout, type PlannedInput, type ReplaceWindow, type SetLogInput } from './repository';
+import { createDataRepository, type CustomFoodInput, type HealthMetricInput, type NewCircuitBlockInput, type NewCircuitWorkout, type NewRunnerSet, type NewSleepSession, type NewWorkout, type PlannedInput, type ReplaceWindow, type SetLogInput } from './repository';
 import { isHealthKitConnected } from '@/features/connectors/useHealthKitAutoSync';
 import { queryHeartRateSummary, saveActivityToHealthKit, saveNutritionToHealthKit, saveWorkoutToHealthKit } from '@/features/connectors/healthKitClient';
 import { periodToDays, type DailyScoreColumn, type LeaderboardCategory, type LeaderboardPeriod } from '@/features/community/leaderboardHelpers';
@@ -212,6 +212,21 @@ export function useUpdateNutritionEntry() {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['nutrition', user?.id] });
     },
+  });
+}
+
+/** Un code-barres inconnu d'Open Food Facts, peut-être déjà ajouté par quelqu'un d'autre. */
+export function useCustomFoodLookup() {
+  const repo = useRepository();
+  return (barcode: string) => repo.getCustomFood(barcode);
+}
+
+/** Ajoute un aliment pour un code-barres qu'Open Food Facts ne connaît pas — visible par tous. */
+export function useAddCustomFood() {
+  const { user } = useAuth();
+  const repo = useRepository();
+  return useMutation({
+    mutationFn: (input: CustomFoodInput) => repo.addCustomFood(user!.id, input),
   });
 }
 

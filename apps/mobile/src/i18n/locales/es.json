@@ -2256,8 +2256,15 @@
    "errors": {
     "noResults": "No se encontró ningún alimento para esta búsqueda.",
     "searchFailed": "No se pudo realizar la búsqueda.",
-    "barcodeNotFound": "Código de barras desconocido en Open Food Facts.",
     "saveFailed": "No se pudo guardar."
+   },
+   "notFound": {
+    "title": "Producto aún no registrado",
+    "message": "Este código de barras no está en Open Food Facts. Añádelo una vez y todos lo reconocerán la próxima vez.",
+    "nameLabel": "Nombre del producto",
+    "addButton": "Añadir este producto",
+    "invalid": "Indica un nombre y calorías válidas.",
+    "saveFailed": "No se pudo añadir este producto."
    }
   },
   "calorieCalculator": {

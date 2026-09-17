@@ -3,6 +3,7 @@ import type {
   BlockFormat,
   Challenge,
   Exercise,
+  FoodItem,
   Goal,
   GoalType,
   HealthMetric,
@@ -105,6 +106,8 @@ import {
   listNutritionEntries as listNutritionEntriesDb,
   deleteNutritionEntry as deleteNutritionEntryDb,
   updateNutritionEntry as updateNutritionEntryDb,
+  getCustomFoodByBarcode,
+  insertCustomFood as insertCustomFoodDb,
   insertHabit,
   listHabits as listHabitsDb,
   updateHabit as updateHabitDb,
@@ -161,6 +164,7 @@ import {
   type HealthMetricRow,
   type SleepSessionRow,
   type NutritionEntryRow,
+  type CustomFoodRow,
   type HabitRow,
   type HabitLogRow,
   type ExerciseRow,
@@ -245,6 +249,16 @@ export interface HealthMetricInput {
   unit: string;
   /** ISO datetime; defaults to now if omitted. */
   measuredAt?: string;
+}
+
+/** Un aliment saisi à la main pour un code-barres qu'Open Food Facts ne connaît pas. */
+export interface CustomFoodInput {
+  barcode: string;
+  description: string;
+  kcal: number;
+  proteinG?: number;
+  carbG?: number;
+  fatG?: number;
 }
 
 export type NewSleepSession = Omit<SleepSession, 'id' | 'userId' | 'createdAt' | 'updatedAt'>;
@@ -382,6 +396,9 @@ export interface DataRepository {
   deleteNutritionEntries(userId: string, entryIds: string[]): Promise<void>;
   /** Adjust a logged entry's calories/macros, or move it to another meal (e.g. logged under breakfast, actually lunch). */
   updateNutritionEntry(userId: string, entryId: string, patch: { kcal?: number; proteinG?: number; carbG?: number; fatG?: number; mealType?: MealType; loggedAt?: string }): Promise<NutritionEntry>;
+  /** Un aliment ajouté par un utilisateur pour un code-barres qu'Open Food Facts ne connaît pas — partagé, pas de copie de leur base. */
+  getCustomFood(barcode: string): Promise<FoodItem | null>;
+  addCustomFood(userId: string, input: CustomFoodInput): Promise<FoodItem>;
   listHabits(userId: string): Promise<Habit[]>;
   addHabit(userId: string, input: HabitInput): Promise<Habit>;
   /** Rename/retarget an existing habit. */
@@ -589,6 +606,19 @@ function rowToNutrition(r: NutritionEntryRow): NutritionEntry {
     loggedAt: r.logged_at,
     createdAt: r.created_at,
     updatedAt: r.updated_at,
+  };
+}
+
+function rowToFoodItem(r: CustomFoodRow): FoodItem {
+  return {
+    barcode: r.barcode,
+    name: r.description,
+    per100g: {
+      kcal: r.kcal,
+      proteinG: r.protein_g ?? 0,
+      carbG: r.carb_g ?? 0,
+      fatG: r.fat_g ?? 0,
+    },
   };
 }
 
@@ -1040,6 +1070,8 @@ const blockKey = (u: string): string => `supotsu.blocks.${u}`;
 const hmKey = (u: string): string => `supotsu.health.${u}`;
 const sleepKey = (u: string): string => `supotsu.sleep.${u}`;
 const nutKey = (u: string): string => `supotsu.nutrition.${u}`;
+/** Pas de suffixe utilisateur : partagée entre tous, comme en base réelle. */
+const customFoodsKey = 'supotsu.customfoods';
 const habKey = (u: string): string => `supotsu.habits.${u}`;
 const hlogKey = (u: string): string => `supotsu.habitlogs.${u}`;
 const customExKey = (u: string): string => `supotsu.customexercises.${u}`;
@@ -1723,6 +1755,20 @@ function createDemoRepository(): DataRepository {
       if (!updated) throw new Error('Nutrition entry not found');
       await writeJson(nutKey(userId), next);
       return updated;
+    },
+    async getCustomFood(barcode) {
+      const items = await readJson<FoodItem>(customFoodsKey);
+      return items.find((f) => f.barcode === barcode) ?? null;
+    },
+    async addCustomFood(_userId, input) {
+      const items = await readJson<FoodItem>(customFoodsKey);
+      const food: FoodItem = {
+        barcode: input.barcode,
+        name: input.description,
+        per100g: { kcal: input.kcal, proteinG: input.proteinG ?? 0, carbG: input.carbG ?? 0, fatG: input.fatG ?? 0 },
+      };
+      await writeJson(customFoodsKey, [...items, food]);
+      return food;
     },
     async listHabits(userId) {
       const items = await readJson<Habit>(habKey(userId));
@@ -2613,6 +2659,22 @@ function createSupabaseRepository(
         ...(patch.loggedAt !== undefined ? { logged_at: patch.loggedAt } : {}),
       });
       return rowToNutrition(row);
+    },
+    async getCustomFood(barcode) {
+      const row = await getCustomFoodByBarcode(client, barcode);
+      return row ? rowToFoodItem(row) : null;
+    },
+    async addCustomFood(userId, input) {
+      const row = await insertCustomFoodDb(client, {
+        barcode: input.barcode,
+        description: input.description,
+        kcal: input.kcal,
+        protein_g: input.proteinG ?? null,
+        carb_g: input.carbG ?? null,
+        fat_g: input.fatG ?? null,
+        created_by: userId,
+      });
+      return rowToFoodItem(row);
     },
     async listHabits(userId) {
       return (await listHabitsDb(client, userId)).map(rowToHabit);
