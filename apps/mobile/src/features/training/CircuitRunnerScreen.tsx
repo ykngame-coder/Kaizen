@@ -16,6 +16,7 @@ import { EmomRunner } from './EmomRunner';
 import { TabataRunner } from './TabataRunner';
 import { FinishSessionSheet } from './FinishSessionSheet';
 import { ForTimeRunner } from './ForTimeRunner';
+import { HyroxRunner } from './HyroxRunner';
 import { BlockTimeline } from './BlockTimeline';
 
 const FORMAT_COLOR_KEY: Record<string, 'accentStrength' | 'accentEndurance' | 'accentLime'> = {
@@ -179,7 +180,7 @@ export function CircuitRunnerScreen(): React.JSX.Element {
       workoutId: active.workoutId,
       completedRounds: roundsDone,
       resultTimeSec:
-        active.format === 'for_time'
+        active.format === 'for_time' || active.format === 'hyrox'
           ? elapsed
           : active.format === 'amrap'
             ? (active.timeCapSec ?? 0)
@@ -327,6 +328,8 @@ export function CircuitRunnerScreen(): React.JSX.Element {
         <EmomRunner block={active} sets={sets} onFinished={(r) => void finishTimedBlock(r)} />
       ) : active.format === 'tabata' ? (
         <TabataRunner block={active} sets={sets} onFinished={(r) => void finishTimedBlock(r)} />
+      ) : active.format === 'hyrox' ? (
+        <HyroxRunner block={active} sets={sets} onFinished={(r, e) => void finishTimedBlock(r, e)} />
       ) : (
         <ForTimeRunner block={active} sets={sets} onFinished={(r, e) => void finishTimedBlock(r, e)} />
       )}
