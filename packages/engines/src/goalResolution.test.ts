@@ -20,7 +20,6 @@ const goal = (over: Partial<Goal> = {}): Goal => ({
 });
 
 const weights: TrendPoint[] = [
-  { date: '2026-08-20T07:00:00.000Z', value: 106 },
   { date: '2026-08-29T07:00:00.000Z', value: 105 },
   { date: '2026-09-10T07:00:00.000Z', value: 104.4 },
   { date: '2026-09-17T07:00:00.000Z', value: 103.7 },
@@ -29,6 +28,16 @@ const weights: TrendPoint[] = [
 describe('resolveGoal', () => {
   it('reconstitue le départ à partir de la pesée du jour de création', () => {
     expect(resolveGoal(goal(), weights).startValue).toBe(105);
+  });
+
+  it('moyenne les pesées de la semaine entourant la création, bruit de balance compris', () => {
+    const noisy: TrendPoint[] = [
+      { date: '2026-08-27T07:00:00.000Z', value: 104 },
+      { date: '2026-08-29T07:00:00.000Z', value: 108 },
+      { date: '2026-08-29T20:00:00.000Z', value: 103 },
+      { date: '2026-09-17T07:00:00.000Z', value: 103.7 },
+    ];
+    expect(resolveGoal(goal(), noisy).startValue).toBe(105);
   });
 
   it('suit le poids réel sans attendre une saisie', () => {

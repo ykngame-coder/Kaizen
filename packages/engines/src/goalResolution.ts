@@ -16,29 +16,32 @@ import { computeGoalProgress, type TrendPoint } from './progression';
 
 /** Au-delà, une pesée ne dit plus rien du poids qu'on avait en créant l'objectif. */
 export const START_LOOKUP_WINDOW_DAYS = 21;
+/** Une balance envoie plusieurs mesures par jour, bruitées : le départ se prend sur une moyenne, jamais sur une pesée isolée. */
+export const START_AVERAGE_WINDOW_DAYS = 7;
 const DAY_MS = 86_400_000;
 
 const isWeightGoal = (goal: Goal): boolean =>
   goal.type === 'body_composition' && (goal.targetUnit === undefined || goal.targetUnit.toLowerCase() === 'kg');
 
-/** La pesée la plus proche d'un instant, dans la fenêtre — sinon rien. */
-function nearestPoint(points: TrendPoint[], at: string): TrendPoint | undefined {
+/**
+ * Le poids autour d'un instant : la moyenne des pesées de la semaine qui
+ * l'entoure, sinon la pesée la plus proche tant qu'elle reste dans la fenêtre.
+ * Une seule mesure ferait sauter la barre au gré du bruit de la balance.
+ */
+function weightAround(points: TrendPoint[], at: string): number | undefined {
   const target = new Date(at).getTime();
-  let best: TrendPoint | undefined;
-  let bestGap = Infinity;
-  for (const p of points) {
-    const gap = Math.abs(new Date(p.date).getTime() - target);
-    if (gap < bestGap) {
-      best = p;
-      bestGap = gap;
-    }
+  const gaps = points.map((p) => ({ value: p.value, gap: Math.abs(new Date(p.date).getTime() - target) }));
+  const near = gaps.filter((g) => g.gap <= START_AVERAGE_WINDOW_DAYS * DAY_MS);
+  if (near.length > 0) {
+    return Math.round((near.reduce((sum, g) => sum + g.value, 0) / near.length) * 10) / 10;
   }
-  return best && bestGap <= START_LOOKUP_WINDOW_DAYS * DAY_MS ? best : undefined;
+  const closest = gaps.reduce<{ value: number; gap: number } | undefined>((best, g) => (best && best.gap <= g.gap ? best : g), undefined);
+  return closest && closest.gap <= START_LOOKUP_WINDOW_DAYS * DAY_MS ? closest.value : undefined;
 }
 
 /**
  * L'objectif complété par les données réelles : dernière pesée comme valeur
- * courante, pesée du jour de création comme départ quand il manque.
+ * courante, poids moyen du jour de création comme départ quand il manque.
  */
 export function resolveGoal(goal: Goal, weights: TrendPoint[]): Goal {
   if (!isWeightGoal(goal) || weights.length === 0) return goal;
@@ -46,7 +49,7 @@ export function resolveGoal(goal: Goal, weights: TrendPoint[]): Goal {
   const latest = sorted[sorted.length - 1]!;
   return {
     ...goal,
-    startValue: goal.startValue ?? nearestPoint(sorted, goal.createdAt)?.value,
+    startValue: goal.startValue ?? weightAround(sorted, goal.createdAt),
     currentValue: latest.value,
   };
 }
