@@ -12,6 +12,7 @@ export * from './nutrition';
 export * from './gamification';
 export * from './community';
 export * from './marketplace';
+export * from './programSchedule';
 export * from './decision';
 export * from './muscles';
 export * from './reminders';

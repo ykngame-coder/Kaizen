@@ -43,10 +43,10 @@ import type {
   UserSessionInput,
   WellnessCheckinInput,
 } from '@supotsu/shared';
-import { computeGoalProgress, estimateMaxHeartRate, generateProgramSchedule, nightDateKey, resolveSleepSessionInsert } from '@supotsu/engines';
+import { computeGoalProgress, estimateMaxHeartRate, generateProgramSchedule, nightDateKey, programSessionDates, resolveSleepSessionInsert } from '@supotsu/engines';
 import { PROGRAM_CATALOG } from '@supotsu/shared';
 import type { ProgramSessionTemplate } from '@supotsu/core';
-import { programSessionTemplates } from './programContent';
+import { sessionToWorkoutBlocks } from './sessionWorkout';
 import type {
   ImportedActivity,
   ImportedHealthMetric,
@@ -127,7 +127,6 @@ import {
   joinChallenge as joinChallengeDb,
   fetchLeaderboard,
   listPrograms as listProgramsDb,
-  listCatalogSessionExercises,
   listCatalogSessions,
   listEnrollments as listEnrollmentsDb,
   enrollInProgram,
@@ -2832,12 +2831,23 @@ function createSupabaseRepository(
       }));
     },
     async listPrograms() {
-      const [rows, sessions, exercises] = await Promise.all([
-        listProgramsDb(client),
-        listCatalogSessions(client),
-        listCatalogSessionExercises(client),
-      ]);
-      return rows.map((r) => rowToProgram(r, programSessionTemplates(r.id, sessions, exercises)));
+      const [rows, links] = await Promise.all([listProgramsDb(client), listCatalogSessions(client)]);
+      // Le nom de chaque séance liée, pour l'aperçu du programme — son contenu
+      // est celui de la séance publique elle-même, lu à l'inscription.
+      const names = new Map(
+        (await Promise.all(
+          [...new Set(links.map((l) => l.session_id))].map(async (id) => {
+            const session = await getUserSessionDb(client, id);
+            return [id, session?.name ?? ''] as const;
+          }),
+        )),
+      );
+      return rows.map((r) =>
+        rowToProgram(
+          r,
+          links.filter((l) => l.program_id === r.id).map((l) => ({ title: names.get(l.session_id) ?? '' })),
+        ),
+      );
     },
     async listEnrolledProgramIds(userId) {
       return (await listEnrollmentsDb(client, userId)).map((e) => e.program_id);
@@ -2848,6 +2858,30 @@ function createSupabaseRepository(
       await enrollInProgram(client, userId, programId);
       if (alreadyEnrolled) return; // don't regenerate the schedule on a re-enroll
 
+      const links = (await listCatalogSessions(client)).filter((l) => l.program_id === programId);
+      if (links.length > 0) {
+        // Chaque séance du programme est copiée telle quelle — blocs, durées,
+        // charges, distances — et datée selon sa semaine.
+        for (const s of programSessionDates(
+          links.map((l) => ({ sessionId: l.session_id, weekNumber: l.week_number, order: l.order })),
+        )) {
+          const session = await getUserSessionDb(client, s.sessionId);
+          if (!session) continue;
+          const [blocks, exercises] = await Promise.all([
+            listSessionBlocks(client, s.sessionId),
+            listSessionExercisesDb(client, s.sessionId),
+          ]);
+          await this.addPlannedWorkout(userId, {
+            name: session.name,
+            plannedFor: s.plannedFor,
+            notes: session.notes ?? undefined,
+            blocks: sessionToWorkoutBlocks(blocks.map(rowToUserSessionBlock), exercises.map(rowToUserSessionExercise)),
+          });
+        }
+        return;
+      }
+
+      // Repli : les programmes d'origine, dont le contenu est encore bundlé.
       const program = PROGRAM_CATALOG.find((p) => p.id === programId);
       if (!program) return;
       const schedule = generateProgramSchedule(program);
