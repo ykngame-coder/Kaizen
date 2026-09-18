@@ -187,6 +187,7 @@ export interface Database {
           weight_kg: number | null;
           duration_sec: number | null;
           rest_sec: number | null;
+          distance_m: number | null;
           rpe: number | null;
           block_id: string | null;
           superset_group: number | null;
@@ -204,6 +205,7 @@ export interface Database {
           weight_kg?: number | null;
           duration_sec?: number | null;
           rest_sec?: number | null;
+          distance_m?: number | null;
           rpe?: number | null;
           block_id?: string | null;
           superset_group?: number | null;
@@ -649,6 +651,7 @@ export interface Database {
           weight_kg: number | null;
           duration_sec: number | null;
           rest_sec: number | null;
+          distance_m: number | null;
           is_warmup: boolean;
         };
         Insert: {
@@ -660,6 +663,7 @@ export interface Database {
           weight_kg?: number | null;
           duration_sec?: number | null;
           rest_sec?: number | null;
+          distance_m?: number | null;
           is_warmup?: boolean;
         };
         Update: Partial<Database['public']['Tables']['user_session_exercises']['Insert']>;
