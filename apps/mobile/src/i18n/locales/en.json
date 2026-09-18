@@ -1556,6 +1556,7 @@
     "missingName": "Give your workout a name.",
     "missingExercise": "Add at least one exercise.",
     "missingFields": "Give it a name and add at least one exercise.",
+    "missingHyroxTarget": "Every hyrox station needs a distance or a time.",
     "saveFailed": "Couldn't save."
    },
    "visibility": {

@@ -1556,6 +1556,7 @@
     "missingName": "Donne un nom à ta séance.",
     "missingExercise": "Ajoute au moins un exercice.",
     "missingFields": "Donne un nom et ajoute au moins un exercice.",
+    "missingHyroxTarget": "Chaque station hyrox a besoin d’une distance ou d’un temps.",
     "saveFailed": "Enregistrement impossible."
    },
    "visibility": {

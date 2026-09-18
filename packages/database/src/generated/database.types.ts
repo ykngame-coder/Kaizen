@@ -193,6 +193,8 @@ export interface Database {
           superset_group: number | null;
           planned_reps: number | null;
           planned_weight_kg: number | null;
+          planned_distance_m: number | null;
+          planned_duration_sec: number | null;
           rir: number | null;
           is_warmup: boolean;
           completed_at: string | null;
@@ -211,6 +213,8 @@ export interface Database {
           superset_group?: number | null;
           planned_reps?: number | null;
           planned_weight_kg?: number | null;
+          planned_distance_m?: number | null;
+          planned_duration_sec?: number | null;
           rir?: number | null;
           is_warmup?: boolean;
           completed_at?: string | null;

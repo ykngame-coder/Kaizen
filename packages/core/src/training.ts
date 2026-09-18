@@ -103,6 +103,17 @@ export interface SetEntry {
    */
   plannedReps?: number;
   plannedWeightKg?: number;
+  /**
+   * Same "what was programmed, never rewritten" split as plannedReps/plannedWeightKg
+   * above, but load-bearing for Hyrox rather than just a historical reference: once a
+   * station is logged, distanceM/durationSec both end up populated (target + measured
+   * result), so they alone can no longer tell which one was the station's original
+   * fixed target. plannedDistanceM/plannedDurationSec keep that distinction — exactly
+   * one of the pair is set at creation and never touched again. Undefined for anything
+   * created before this field existed.
+   */
+  plannedDistanceM?: number;
+  plannedDurationSec?: number;
   /** Reps in reserve — the alternative to rpe, picked via the effortMetric preference. */
   rir?: number;
   /** A warm-up set: shown while training, excluded from volume, records and adherence. */

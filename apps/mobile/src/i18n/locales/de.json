@@ -1556,6 +1556,7 @@
     "missingName": "Gib deinem Training einen Namen.",
     "missingExercise": "Füge mindestens eine Übung hinzu.",
     "missingFields": "Gib einen Namen ein und füge mindestens eine Übung hinzu.",
+    "missingHyroxTarget": "Jede Hyrox-Station braucht eine Distanz oder eine Zeit.",
     "saveFailed": "Speichern nicht möglich."
    },
    "visibility": {

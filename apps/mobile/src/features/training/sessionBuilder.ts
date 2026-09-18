@@ -304,6 +304,22 @@ function timeCapSecondsOf(block: BlockDraft): number | undefined {
 const HAS_ROUNDS: BlockFormat[] = ['emom', 'for_time', 'strength', 'tabata'];
 
 /**
+ * True if a Hyrox station is missing the field its own toggle currently
+ * requires — the spec says the editor prevents this, not the runner (the
+ * runner already degrades gracefully if it happens anyway).
+ */
+export function hyroxStationsMissingTarget(blocks: BlockDraft[]): boolean {
+  return blocks.some((b) => {
+    if (b.format !== 'hyrox') return false;
+    return b.order.some((slotId) => {
+      const s = b.selected[slotId];
+      if (!s) return false;
+      return s.hyroxMode === 'time' ? !s.duration : !s.distance;
+    });
+  });
+}
+
+/**
  * Drafts → the blocks of a dated workout.
  *
  * The counterpart of `blocksToSessionInput`, extracted because NewWorkoutScreen

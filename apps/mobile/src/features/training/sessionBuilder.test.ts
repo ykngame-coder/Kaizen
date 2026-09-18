@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { blocksToSessionInput, blocksToWorkoutInput, defaultTimeCapForFormat, normalizeSearch, type BlockDraft } from './sessionBuilder';
+import { blocksToSessionInput, blocksToWorkoutInput, defaultTimeCapForFormat, hyroxStationsMissingTarget, normalizeSearch, type BlockDraft } from './sessionBuilder';
 
 function block(overrides: Partial<BlockDraft> = {}): BlockDraft {
   return {
@@ -210,5 +210,39 @@ describe('blocksToWorkoutInput', () => {
     ]);
     expect(out!.sets[0]!.distanceM).toBeUndefined();
     expect(out!.sets[0]!.durationSec).toBeUndefined();
+  });
+});
+
+describe('hyroxStationsMissingTarget', () => {
+  const hyroxBlock = (selected: BlockDraft['selected']): BlockDraft =>
+    block({ format: 'hyrox', order: Object.keys(selected), selected });
+
+  it('signale une station distance sans distance renseignée', () => {
+    expect(
+      hyroxStationsMissingTarget([hyroxBlock({ 'slot-1': { exerciseId: 'rowing', reps: '', weight: '', rest: '', hyroxMode: 'distance', distance: '' } })]),
+    ).toBe(true);
+  });
+
+  it('signale une station temps sans durée renseignée', () => {
+    expect(
+      hyroxStationsMissingTarget([hyroxBlock({ 'slot-1': { exerciseId: 'skierg', reps: '', weight: '', rest: '', hyroxMode: 'time', duration: '' } })]),
+    ).toBe(true);
+  });
+
+  it('ne signale rien quand chaque station a son champ requis', () => {
+    expect(
+      hyroxStationsMissingTarget([
+        hyroxBlock({
+          'slot-1': { exerciseId: 'rowing', reps: '', weight: '', rest: '', hyroxMode: 'distance', distance: '1000' },
+          'slot-2': { exerciseId: 'skierg', reps: '', weight: '', rest: '', hyroxMode: 'time', duration: '240' },
+        }),
+      ]),
+    ).toBe(false);
+  });
+
+  it('ignore les blocs qui ne sont pas au format hyrox', () => {
+    expect(
+      hyroxStationsMissingTarget([block({ format: 'strength', order: ['slot-1'], selected: { 'slot-1': { exerciseId: 'squat', reps: '5', weight: '60', rest: '90' } } })]),
+    ).toBe(false);
   });
 });

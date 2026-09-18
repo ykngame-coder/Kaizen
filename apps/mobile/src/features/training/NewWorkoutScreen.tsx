@@ -20,7 +20,7 @@ import {
   useWorkoutSets,
   useWorkoutBlocks,
 } from '@/lib/data/queries';
-import { blocksToSessionInput, blocksToWorkoutInput, defaultTimeCapForFormat, newSlotId, useSessionBlocks, type SetDraft } from './sessionBuilder';
+import { blocksToSessionInput, blocksToWorkoutInput, defaultTimeCapForFormat, hyroxStationsMissingTarget, newSlotId, useSessionBlocks, type SetDraft } from './sessionBuilder';
 import { SessionBlocksEditor } from './SessionBlocksEditor';
 import { SESSION_TEMPLATES, templateToBlocks } from './sessionTemplates';
 
@@ -111,7 +111,7 @@ export function NewWorkoutScreen(): React.JSX.Element {
           rest: s.restSec != null ? String(s.restSec) : '',
           distance: s.distanceM != null ? String(s.distanceM) : '',
           duration: s.durationSec != null ? String(s.durationSec) : '',
-          hyroxMode: s.durationSec != null ? 'time' : 'distance',
+          hyroxMode: s.plannedDurationSec != null ? 'time' : 'distance',
         };
         if (s.supersetGroup != null) supersetGroups[slotId] = s.supersetGroup;
       }
@@ -155,6 +155,10 @@ export function NewWorkoutScreen(): React.JSX.Element {
     }
     if (builder.blocks.every((b) => b.order.length === 0)) {
       setError(t('sport.sessionBuilder.errors.missingExercise'));
+      return;
+    }
+    if (hyroxStationsMissingTarget(builder.blocks)) {
+      setError(t('sport.sessionBuilder.errors.missingHyroxTarget'));
       return;
     }
     try {
