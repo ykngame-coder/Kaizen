@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { computeAmrapState, computeEmomState, computeForTimeState, formatClock, supersetPartners } from './blockRunnerEngine';
+import { computeAmrapState, computeEmomState, computeForTimeState, computeHyroxStationState, formatClock, supersetPartners } from './blockRunnerEngine';
 
 describe('computeAmrapState', () => {
   it('counts down from the time cap', () => {
@@ -41,6 +41,24 @@ describe('computeForTimeState', () => {
 
   it('finishes once every round is completed', () => {
     expect(computeForTimeState(522, 8, 8)).toEqual({ displaySec: 522, currentRound: 8, isFinished: true });
+  });
+});
+
+describe('computeHyroxStationState', () => {
+  it('distance-target station: counts up, never finishes on its own', () => {
+    expect(computeHyroxStationState(0, { distanceM: 1000 })).toEqual({ displaySec: 0, isFinished: false });
+    expect(computeHyroxStationState(187, { distanceM: 1000 })).toEqual({ displaySec: 187, isFinished: false });
+    expect(computeHyroxStationState(99999, { distanceM: 1000 })).toEqual({ displaySec: 99999, isFinished: false });
+  });
+
+  it('time-target station: counts down, finishes automatically at zero', () => {
+    expect(computeHyroxStationState(0, { durationSec: 240 })).toEqual({ displaySec: 240, isFinished: false });
+    expect(computeHyroxStationState(180, { durationSec: 240 })).toEqual({ displaySec: 60, isFinished: false });
+    expect(computeHyroxStationState(240, { durationSec: 240 })).toEqual({ displaySec: 0, isFinished: true });
+  });
+
+  it('time-target station: clamps past the target instead of going negative', () => {
+    expect(computeHyroxStationState(300, { durationSec: 240 })).toEqual({ displaySec: 0, isFinished: true });
   });
 });
 

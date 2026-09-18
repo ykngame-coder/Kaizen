@@ -86,6 +86,31 @@ export function computeForTimeState(elapsedSec: number, roundsCompleted: number,
   };
 }
 
+/** One Hyrox station's live timing state — distinct from `BlockRunnerState`, which is per-block. */
+export interface HyroxStationState {
+  /** Counts up for a distance-target station, down for a time-target one. */
+  displaySec: number;
+  /** True once a time-target station's countdown hits zero — the log phase should start automatically. Always false for a distance-target station, which the runner ends manually. */
+  isFinished: boolean;
+}
+
+/**
+ * Hyrox: a station's target is whichever of `distanceM`/`durationSec` is set
+ * at creation — never both. The other one is what the runner logs once the
+ * station is done, so this function only ever reads the target field.
+ *
+ * Distance-target: chronomètre, personne ne sait à l'avance combien de temps
+ * ça prendra, donc pas de fin automatique. Time-target: décompte classique,
+ * fin automatique à zéro comme n'importe quel minuteur de travail.
+ */
+export function computeHyroxStationState(elapsedSec: number, station: { distanceM?: number; durationSec?: number }): HyroxStationState {
+  if (station.durationSec != null) {
+    const remaining = Math.max(0, station.durationSec - elapsedSec);
+    return { displaySec: remaining, isFinished: remaining <= 0 };
+  }
+  return { displaySec: elapsedSec, isFinished: false };
+}
+
 /** "m:ss" — matches IntervalTimerScreen's plain-seconds display, just with a minutes component for longer AMRAP/for-time durations. */
 export function formatClock(totalSec: number): string {
   const m = Math.floor(totalSec / 60);
