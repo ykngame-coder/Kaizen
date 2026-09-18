@@ -51,7 +51,7 @@ export interface Workout extends OwnedEntity {
   notes?: string;
 }
 
-export type BlockFormat = 'strength' | 'amrap' | 'emom' | 'for_time' | 'tabata';
+export type BlockFormat = 'strength' | 'amrap' | 'emom' | 'for_time' | 'tabata' | 'hyrox';
 
 /**
  * One ordered segment of a session (Master Prompt — circuit workout
@@ -88,6 +88,8 @@ export interface SetEntry {
   reps?: number;
   weightKg?: number;
   durationSec?: number;
+  /** Hyrox station target or result, in meters — whichever of this and `durationSec` is set at creation is the station's fixed target; the runner fills in the other one once the station is done. Unused by every other format. */
+  distanceM?: number;
   restSec?: number;
   /** Set-level RPE. */
   rpe?: number;

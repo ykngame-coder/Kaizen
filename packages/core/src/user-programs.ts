@@ -26,6 +26,8 @@ export interface UserSessionExercise {
   reps?: number;
   weightKg?: number;
   durationSec?: number;
+  /** Mirrors SetEntry.distanceM — see its doc comment. */
+  distanceM?: number;
   restSec?: number;
 }
 
