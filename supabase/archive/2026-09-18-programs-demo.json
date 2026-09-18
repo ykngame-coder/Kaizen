@@ -1,0 +1,72 @@
+{
+  "exported_at": "2026-09-18T08:01:15.409003+00:00",
+  "reason": "Catalogue de coachs fictifs retiré avant l'ouverture aux vrais programmes",
+  "programs": [
+    {
+      "id": "prog-force-debutant",
+      "title": "Force Fondations",
+      "author": "Coach Léa",
+      "focus": "strength",
+      "level": "beginner",
+      "weeks": 8,
+      "sessions_per_week": 3,
+      "description": "Bases du renforcement full-body : squat, charnière de hanche, poussée, tirage.",
+      "price_cents": 0
+    },
+    {
+      "id": "prog-endurance-5k",
+      "title": "Objectif 5 km",
+      "author": "Coach Marco",
+      "focus": "endurance",
+      "level": "beginner",
+      "weeks": 6,
+      "sessions_per_week": 3,
+      "description": "Progression course à pied du fractionné léger à un 5 km continu.",
+      "price_cents": 0
+    },
+    {
+      "id": "prog-hyrox-prep",
+      "title": "Prépa Hyrox",
+      "author": "Coach Sarah",
+      "focus": "hyrox",
+      "level": "confirmed",
+      "weeks": 10,
+      "sessions_per_week": 5,
+      "description": "Compromis force-endurance orienté stations Hyrox (wall balls, sled, rameur).",
+      "price_cents": 2900
+    },
+    {
+      "id": "prog-recomp",
+      "title": "Recomposition 12 semaines",
+      "author": "Coach Léa",
+      "focus": "weight_loss",
+      "level": "intermediate",
+      "weeks": 12,
+      "sessions_per_week": 4,
+      "description": "Musculation + cardio raisonné pour perdre du gras en gardant le muscle.",
+      "price_cents": 1900
+    },
+    {
+      "id": "prog-mobilite",
+      "title": "Mobilité quotidienne",
+      "author": "Coach Yuki",
+      "focus": "mobility",
+      "level": "beginner",
+      "weeks": 4,
+      "sessions_per_week": 6,
+      "description": "10 minutes par jour pour les hanches, les épaules et le dos.",
+      "price_cents": 0
+    }
+  ],
+  "program_enrollments": [
+    {
+      "id": "443ec980-1b68-4c33-80a5-d9051a95c811",
+      "user_id": "3a31be9f-893b-4985-9acc-f6015e35e84e",
+      "program_id": "prog-mobilite",
+      "status": "active",
+      "started_at": "2026-08-17T21:16:34.881736+00:00",
+      "created_at": "2026-08-17T21:16:34.881736+00:00",
+      "updated_at": "2026-08-17T21:16:34.881736+00:00"
+    }
+  ]
+}

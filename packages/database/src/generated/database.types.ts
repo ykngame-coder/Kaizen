@@ -496,6 +496,7 @@ export interface Database {
           sessions_per_week: number;
           description: string;
           price_cents: number;
+          published: boolean;
         };
         Insert: {
           id: string;
@@ -507,8 +508,47 @@ export interface Database {
           sessions_per_week: number;
           description?: string;
           price_cents?: number;
+          published?: boolean;
         };
         Update: Partial<Database['public']['Tables']['programs']['Insert']>;
+        Relationships: [];
+      };
+      program_sessions: {
+        Row: {
+          id: string;
+          program_id: string;
+          order: number;
+          title: string;
+          notes: string | null;
+        };
+        Insert: {
+          id?: string;
+          program_id: string;
+          order?: number;
+          title: string;
+          notes?: string | null;
+        };
+        Update: Partial<Database['public']['Tables']['program_sessions']['Insert']>;
+        Relationships: [];
+      };
+      program_session_exercises: {
+        Row: {
+          id: string;
+          session_id: string;
+          exercise_id: string;
+          order: number;
+          sets: number;
+          reps: number;
+        };
+        Insert: {
+          id?: string;
+          session_id: string;
+          exercise_id: string;
+          order?: number;
+          sets?: number;
+          reps?: number;
+        };
+        Update: Partial<Database['public']['Tables']['program_session_exercises']['Insert']>;
         Relationships: [];
       };
       program_enrollments: {

@@ -45,6 +45,8 @@ import type {
 } from '@supotsu/shared';
 import { computeGoalProgress, estimateMaxHeartRate, generateProgramSchedule, nightDateKey, resolveSleepSessionInsert } from '@supotsu/engines';
 import { PROGRAM_CATALOG } from '@supotsu/shared';
+import type { ProgramSessionTemplate } from '@supotsu/core';
+import { programSessionTemplates } from './programContent';
 import type {
   ImportedActivity,
   ImportedHealthMetric,
@@ -125,6 +127,8 @@ import {
   joinChallenge as joinChallengeDb,
   fetchLeaderboard,
   listPrograms as listProgramsDb,
+  listCatalogSessionExercises,
+  listCatalogSessions,
   listEnrollments as listEnrollmentsDb,
   enrollInProgram,
   listUserSessions as listUserSessionsDb,
@@ -680,10 +684,12 @@ function rowToChallenge(r: ChallengeRow): Challenge {
   };
 }
 
-function rowToProgram(r: ProgramRow): Program {
-  // Session content isn't a DB column — it's static reference content
-  // (like the exercise library), bundled with the app and looked up by id.
-  const sessionTemplates = PROGRAM_CATALOG.find((p) => p.id === r.id)?.sessionTemplates ?? [];
+/**
+ * Le contenu vient de la base ; le catalogue bundlé ne sert plus que de repli
+ * pour les programmes d'origine, qui n'ont pas encore de lignes à eux.
+ */
+function rowToProgram(r: ProgramRow, fromDb: ProgramSessionTemplate[] = []): Program {
+  const sessionTemplates = fromDb.length > 0 ? fromDb : PROGRAM_CATALOG.find((p) => p.id === r.id)?.sessionTemplates ?? [];
   return {
     id: r.id,
     title: r.title,
@@ -2802,7 +2808,12 @@ function createSupabaseRepository(
       }));
     },
     async listPrograms() {
-      return (await listProgramsDb(client)).map(rowToProgram);
+      const [rows, sessions, exercises] = await Promise.all([
+        listProgramsDb(client),
+        listCatalogSessions(client),
+        listCatalogSessionExercises(client),
+      ]);
+      return rows.map((r) => rowToProgram(r, programSessionTemplates(r.id, sessions, exercises)));
     },
     async listEnrolledProgramIds(userId) {
       return (await listEnrollmentsDb(client, userId)).map((e) => e.program_id);
