@@ -241,6 +241,7 @@ function blockFormatLabel(format: WorkoutBlock['format'], t: TFunction): string 
   if (format === 'for_time') return t('sport.workoutDetail.blockFormat.forTime');
   if (format === 'amrap') return 'AMRAP';
   if (format === 'tabata') return 'Tabata';
+  if (format === 'hyrox') return 'Hyrox';
   return 'EMOM';
 }
 
@@ -249,6 +250,7 @@ function blockResultLine(b: WorkoutBlock, t: TFunction): string {
   if (b.format === 'emom') return `EMOM ${b.targetRounds ?? '?'}×${b.timeCapSec ?? '?'} s`;
   if (b.format === 'tabata') return `Tabata ${b.targetRounds ?? '?'}×${b.timeCapSec ?? '?'}/${b.restSec ?? '?'} s`;
   if (b.format === 'for_time') return `${t('sport.workoutDetail.blockFormat.forTime')}${b.resultTimeSec != null ? ` — ${Math.floor(b.resultTimeSec / 60)} min ${b.resultTimeSec % 60}` : ''}`;
+  if (b.format === 'hyrox') return `Hyrox${b.resultTimeSec != null ? ` — ${Math.floor(b.resultTimeSec / 60)} min ${b.resultTimeSec % 60}` : ''}`;
   const rounds = b.completedRounds ?? b.targetRounds;
   return rounds ? t('sport.workoutDetail.blockFormat.strengthRepeated', { rounds }) : t('sport.workoutDetail.blockFormat.strength');
 }
@@ -273,7 +275,7 @@ export function BlockSummaryCard({
         {sets.map((s, i) => (
           <View key={s.id} style={{ flexDirection: 'row', alignItems: 'center', gap: spacing[2] }}>
             <Text variant="caption" color="textSubtle">
-              {exerciseName(s.exerciseId)}{s.reps != null ? ` · ${s.reps} reps` : ''}{s.weightKg != null ? ` · ${s.weightKg} kg` : ''}
+              {exerciseName(s.exerciseId)}{s.reps != null ? ` · ${s.reps} reps` : ''}{s.distanceM != null ? ` · ${s.distanceM} m` : ''}{s.weightKg != null ? ` · ${s.weightKg} kg` : ''}
             </Text>
             {supersetPartners(sets, i).length > 0 ? <Badge label={t('sport.workoutDetail.superset.badge')} tone="info" /> : null}
           </View>
