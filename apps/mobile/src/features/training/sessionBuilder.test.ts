@@ -199,8 +199,15 @@ describe('blocksToWorkoutInput', () => {
     expect(out!.sets[1]).toMatchObject({ exerciseId: 'skierg', distanceM: undefined, durationSec: 240 });
   });
 
-  it('ne pose ni distance ni durée sur un format qui n est pas hyrox', () => {
-    const [out] = blocksToWorkoutInput([withSlot({ format: 'strength' })]);
+  it('ne pose ni distance ni durée sur un format qui n est pas hyrox, même si ces champs traînent depuis un changement de format', () => {
+    const [out] = blocksToWorkoutInput([
+      withSlot({
+        format: 'strength',
+        selected: {
+          'slot-1': { exerciseId: 'squat', reps: '5', weight: '60', rest: '90', distance: '500', duration: '120' },
+        },
+      }),
+    ]);
     expect(out!.sets[0]!.distanceM).toBeUndefined();
     expect(out!.sets[0]!.durationSec).toBeUndefined();
   });
