@@ -734,6 +734,7 @@ function toSessionBlocksWrite(input: UserSessionInput) {
       reps: e.reps ?? null,
       weight_kg: e.weightKg ?? null,
       duration_sec: e.durationSec ?? null,
+      distance_m: e.distanceM ?? null,
       rest_sec: e.restSec ?? null,
     })),
   }));
@@ -749,6 +750,7 @@ function rowToUserSessionExercise(r: UserSessionExerciseRow): UserSessionExercis
     reps: r.reps ?? undefined,
     weightKg: r.weight_kg ?? undefined,
     durationSec: r.duration_sec ?? undefined,
+    distanceM: r.distance_m ?? undefined,
     restSec: r.rest_sec ?? undefined,
   };
 }
@@ -1395,6 +1397,7 @@ function createDemoRepository(): DataRepository {
             weightKg: s.weightKg ?? null,
             restSec: s.restSec ?? null,
             distanceM: s.distanceM ?? null,
+            durationSec: s.durationSec ?? null,
             supersetGroup: s.supersetGroup ?? null,
             plannedReps: s.reps ?? null,
             plannedWeightKg: s.weightKg ?? null,
@@ -1538,7 +1541,7 @@ function createDemoRepository(): DataRepository {
         const block: WorkoutBlock = { id: randomId(), workoutId, order: i, format: b.format, timeCapSec: b.timeCapSec, targetRounds: b.targetRounds };
         newBlocks.push(block);
         b.sets.forEach((s) => {
-          newSets.push({ id: randomId(), workoutId, blockId: block.id, exerciseId: s.exerciseId, order: s.order, reps: s.reps ?? null, weightKg: s.weightKg ?? null, restSec: s.restSec ?? null, distanceM: s.distanceM ?? null, supersetGroup: s.supersetGroup ?? null, plannedReps: s.reps ?? null, plannedWeightKg: s.weightKg ?? null, isWarmup: s.isWarmup ?? false, date: now });
+          newSets.push({ id: randomId(), workoutId, blockId: block.id, exerciseId: s.exerciseId, order: s.order, reps: s.reps ?? null, weightKg: s.weightKg ?? null, restSec: s.restSec ?? null, distanceM: s.distanceM ?? null, durationSec: s.durationSec ?? null, supersetGroup: s.supersetGroup ?? null, plannedReps: s.reps ?? null, plannedWeightKg: s.weightKg ?? null, isWarmup: s.isWarmup ?? false, date: now });
         });
       });
       await writeJson(blockKey(userId), [...newBlocks, ...keptBlocks]);
@@ -2049,6 +2052,7 @@ function createDemoRepository(): DataRepository {
             reps: e.reps,
             weightKg: e.weightKg,
             durationSec: e.durationSec,
+            distanceM: e.distanceM,
             restSec: e.restSec,
           });
         });
@@ -2092,6 +2096,7 @@ function createDemoRepository(): DataRepository {
             reps: e.reps,
             weightKg: e.weightKg,
             durationSec: e.durationSec,
+            distanceM: e.distanceM,
             restSec: e.restSec,
           });
         });

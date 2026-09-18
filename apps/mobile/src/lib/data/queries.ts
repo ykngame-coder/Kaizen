@@ -819,6 +819,7 @@ export function useLaunchSession() {
                   reps: e.reps,
                   weightKg: e.weightKg,
                   durationSec: e.durationSec,
+                  distanceM: e.distanceM,
                   restSec: e.restSec,
                 })),
             }))
@@ -831,6 +832,7 @@ export function useLaunchSession() {
                   reps: e.reps,
                   weightKg: e.weightKg,
                   durationSec: e.durationSec,
+                  distanceM: e.distanceM,
                   restSec: e.restSec,
                 })),
               },

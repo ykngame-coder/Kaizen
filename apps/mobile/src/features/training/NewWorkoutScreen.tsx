@@ -109,6 +109,9 @@ export function NewWorkoutScreen(): React.JSX.Element {
           reps: s.reps != null ? String(s.reps) : '',
           weight: s.weightKg != null ? String(s.weightKg) : '',
           rest: s.restSec != null ? String(s.restSec) : '',
+          distance: s.distanceM != null ? String(s.distanceM) : '',
+          duration: s.durationSec != null ? String(s.durationSec) : '',
+          hyroxMode: s.durationSec != null ? 'time' : 'distance',
         };
         if (s.supersetGroup != null) supersetGroups[slotId] = s.supersetGroup;
       }

@@ -20,6 +20,7 @@ function formatChip(block: WorkoutBlock, t: ReturnType<typeof useTranslation>['t
   if (block.format === 'emom') return 'EMOM';
   if (block.format === 'tabata') return `Tabata · ${block.timeCapSec ?? '?'}/${block.restSec ?? '?'} s`;
   if (block.format === 'for_time') return t('sport.circuitRunner.format.forTime');
+  if (block.format === 'hyrox') return 'Hyrox';
   return t('sport.circuitRunner.format.strength');
 }
 

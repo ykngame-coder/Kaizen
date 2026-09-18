@@ -210,6 +210,7 @@ async function restoreSessionContent(
             reps: e.reps,
             weight_kg: e.weight_kg,
             duration_sec: e.duration_sec,
+            distance_m: e.distance_m,
             rest_sec: e.rest_sec,
           })),
         );
@@ -227,6 +228,7 @@ async function restoreSessionContent(
           reps: e.reps,
           weight_kg: e.weight_kg,
           duration_sec: e.duration_sec,
+          distance_m: e.distance_m,
           rest_sec: e.rest_sec,
         })),
       );

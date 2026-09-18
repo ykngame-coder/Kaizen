@@ -93,7 +93,7 @@ export function HyroxRunner({ block, sets, onFinished }: TimedRunnerProps): Reac
   if (phase === 'work') {
     return (
       <RunnerFocus
-        tag={t('sport.sessionBuilder.blockFormat.hyrox')}
+        tag="Hyrox"
         title={exerciseName(activeSet.exerciseId)}
         total={ordered.length}
         current={activeIndex + 1}
@@ -109,7 +109,7 @@ export function HyroxRunner({ block, sets, onFinished }: TimedRunnerProps): Reac
 
   return (
     <RunnerFocus
-      tag={t('sport.sessionBuilder.blockFormat.hyrox')}
+      tag="Hyrox"
       title={exerciseName(activeSet.exerciseId)}
       total={ordered.length}
       current={activeIndex + 1}
