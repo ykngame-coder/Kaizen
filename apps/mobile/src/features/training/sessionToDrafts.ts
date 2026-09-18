@@ -27,7 +27,15 @@ function draftFor(block: UserSessionBlock | null, exercises: UserSessionExercise
     // exercice répété dans un bloc s'écraserait lui-même.
     const slotId = newSlotId(e.exerciseId);
     order.push(slotId);
-    selected[slotId] = { exerciseId: e.exerciseId, reps: str(e.reps), weight: str(e.weightKg), rest: str(e.restSec) };
+    selected[slotId] = {
+      exerciseId: e.exerciseId,
+      reps: str(e.reps),
+      weight: str(e.weightKg),
+      rest: str(e.restSec),
+      distance: str(e.distanceM),
+      duration: str(e.durationSec),
+      hyroxMode: e.durationSec != null ? 'time' : 'distance',
+    };
   }
   return {
     format: block?.format ?? 'strength',

@@ -142,4 +142,17 @@ describe('sessionToBlockDrafts', () => {
     expect(drafts).toHaveLength(1);
     expect(exerciseOrder(drafts[0]!)).toEqual(['squat']);
   });
+
+  it('restitue le mode et la valeur d une station hyrox', () => {
+    const drafts = sessionToBlockDrafts(
+      [block({ id: 'b1', order: 0, format: 'hyrox' })],
+      [
+        ex({ id: 'e1', order: 0, exerciseId: 'rowing', blockId: 'b1', distanceM: 1000 }),
+        ex({ id: 'e2', order: 1, exerciseId: 'skierg', blockId: 'b1', durationSec: 240 }),
+      ],
+    );
+    const slots = drafts[0]!.order.map((slotId) => drafts[0]!.selected[slotId]!);
+    expect(slots[0]).toMatchObject({ exerciseId: 'rowing', distance: '1000', duration: '', hyroxMode: 'distance' });
+    expect(slots[1]).toMatchObject({ exerciseId: 'skierg', distance: '', duration: '240', hyroxMode: 'time' });
+  });
 });
