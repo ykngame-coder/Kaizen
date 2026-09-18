@@ -101,6 +101,20 @@ describe('blocksToSessionInput', () => {
     });
     expect(blocksToSessionInput([forTime])[0]?.timeCapSec).toBeUndefined();
   });
+
+  it('mappe la distance et la durée d un bloc hyrox', () => {
+    const b = block({
+      format: 'hyrox',
+      order: ['slot1', 'slot2'],
+      selected: {
+        slot1: { exerciseId: 'rowing', reps: '', weight: '', rest: '', distance: '1000', hyroxMode: 'distance' },
+        slot2: { exerciseId: 'skierg', reps: '', weight: '', rest: '', duration: '240', hyroxMode: 'time' },
+      },
+    });
+    const [out] = blocksToSessionInput([b]);
+    expect(out!.exercises[0]).toMatchObject({ exerciseId: 'rowing', distanceM: 1000, durationSec: undefined });
+    expect(out!.exercises[1]).toMatchObject({ exerciseId: 'skierg', distanceM: undefined, durationSec: 240 });
+  });
 });
 
 describe('defaultTimeCapForFormat', () => {
@@ -168,5 +182,26 @@ describe('blocksToWorkoutInput', () => {
 
   it('n attribue aucun round aux formats qui n en ont pas', () => {
     expect(blocksToWorkoutInput([withSlot({ format: 'amrap', timeCapSec: '12', targetRounds: '5' })])[0]!.targetRounds).toBeUndefined();
+  });
+
+  it('mappe la distance pour une station distance, la durée pour une station temps', () => {
+    const [out] = blocksToWorkoutInput([
+      withSlot({
+        format: 'hyrox',
+        order: ['slot-1', 'slot-2'],
+        selected: {
+          'slot-1': { exerciseId: 'rowing', reps: '', weight: '20', rest: '', distance: '1000', hyroxMode: 'distance' },
+          'slot-2': { exerciseId: 'skierg', reps: '', weight: '', rest: '', duration: '240', hyroxMode: 'time' },
+        },
+      }),
+    ]);
+    expect(out!.sets[0]).toMatchObject({ exerciseId: 'rowing', distanceM: 1000, durationSec: undefined, weightKg: 20 });
+    expect(out!.sets[1]).toMatchObject({ exerciseId: 'skierg', distanceM: undefined, durationSec: 240 });
+  });
+
+  it('ne pose ni distance ni durée sur un format qui n est pas hyrox', () => {
+    const [out] = blocksToWorkoutInput([withSlot({ format: 'strength' })]);
+    expect(out!.sets[0]!.distanceM).toBeUndefined();
+    expect(out!.sets[0]!.durationSec).toBeUndefined();
   });
 });

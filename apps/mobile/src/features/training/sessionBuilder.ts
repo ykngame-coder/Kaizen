@@ -10,6 +10,12 @@ export interface SetDraft {
   reps: string;
   weight: string;
   rest: string;
+  /** Hyrox station distance target, in meters — meaningful only when `hyroxMode` is `'distance'`. Optional like `isWarmup`: no other format sets it. */
+  distance?: string;
+  /** Hyrox station time target, in seconds — meaningful only when `hyroxMode` is `'time'`. Optional like `isWarmup`: no other format sets it. */
+  duration?: string;
+  /** Which of `distance`/`duration` is this station's fixed target — builder UI state only, never persisted (the saved set only ever carries the one field that matters; this flag exists purely to decide which single input to show). Defaults to `'distance'`. */
+  hyroxMode?: 'distance' | 'time';
   /** Warm-up slot: kept out of volume and records. Set by the runner's auto-ramp (lot 2) or by hand. */
   isWarmup?: boolean;
 }
@@ -35,7 +41,7 @@ export function newSlotId(exerciseId: string): string {
   return `${exerciseId}::${slotSeq}`;
 }
 
-export const emptySet = (exerciseId: string): SetDraft => ({ exerciseId, reps: '', weight: '', rest: '' });
+export const emptySet = (exerciseId: string): SetDraft => ({ exerciseId, reps: '', weight: '', rest: '', distance: '', duration: '', hyroxMode: 'distance' });
 // targetRounds starts blank: a plain strength block now also exposes this
 // field (to repeat as a circuit), and a pre-filled "10" would silently turn
 // every new block's live run into a 10-round circuit before the user ever
@@ -78,6 +84,7 @@ export function formatLabel(format: BlockFormat, t: TFunction): string {
   if (format === 'for_time') return t('sport.sessionBuilder.blockFormat.forTime');
   if (format === 'amrap') return 'AMRAP';
   if (format === 'tabata') return 'Tabata';
+  if (format === 'hyrox') return 'Hyrox';
   return 'EMOM';
 }
 
@@ -315,6 +322,8 @@ export function blocksToWorkoutInput(blocks: BlockDraft[]): {
     reps?: number;
     weightKg?: number;
     restSec?: number;
+    distanceM?: number;
+    durationSec?: number;
     isWarmup?: boolean;
     supersetGroup?: number;
   }[];
@@ -327,12 +336,15 @@ export function blocksToWorkoutInput(blocks: BlockDraft[]): {
     targetRounds: HAS_ROUNDS.includes(b.format) ? Number(b.targetRounds) || undefined : undefined,
     sets: b.order.map((slotId, i) => {
       const s = b.selected[slotId]!;
+      const isHyroxTime = b.format === 'hyrox' && s.hyroxMode === 'time';
       return {
         exerciseId: s.exerciseId,
         order: i,
         reps: s.reps ? Number(s.reps) : undefined,
         weightKg: s.weight ? Number(s.weight) : undefined,
         restSec: b.format === 'strength' && s.rest ? Number(s.rest) : undefined,
+        distanceM: b.format === 'hyrox' && !isHyroxTime && s.distance ? Number(s.distance) : undefined,
+        durationSec: isHyroxTime && s.duration ? Number(s.duration) : undefined,
         isWarmup: s.isWarmup,
         supersetGroup: b.supersetGroups[slotId],
       };
@@ -347,12 +359,15 @@ export function blocksToSessionInput(blocks: BlockDraft[]): SessionBlockInput[] 
     for (const slotId of block.order) {
       const draft = block.selected[slotId];
       if (!draft) continue;
+      const isHyroxTime = block.format === 'hyrox' && draft.hyroxMode === 'time';
       exercises.push({
         exerciseId: draft.exerciseId,
         order: exercises.length,
         reps: draft.reps ? Number(draft.reps) : undefined,
         weightKg: draft.weight ? Number(draft.weight) : undefined,
         restSec: block.format === 'strength' && draft.rest ? Number(draft.rest) : undefined,
+        distanceM: block.format === 'hyrox' && !isHyroxTime && draft.distance ? Number(draft.distance) : undefined,
+        durationSec: isHyroxTime && draft.duration ? Number(draft.duration) : undefined,
       });
     }
     if (exercises.length === 0) continue;
