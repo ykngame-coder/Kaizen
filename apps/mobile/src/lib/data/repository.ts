@@ -1661,8 +1661,9 @@ function createDemoRepository(): DataRepository {
       let updated: Goal | undefined;
       const next = items.map((g) => {
         if (g.id !== goalId) return g;
-        const { progress, status } = progressedGoal(g, currentValue);
-        updated = { ...g, currentValue, progress, status, updatedAt: new Date().toISOString() };
+        const startValue = g.startValue ?? g.currentValue ?? currentValue;
+        const { progress, status } = progressedGoal({ ...g, startValue }, currentValue);
+        updated = { ...g, startValue, currentValue, progress, status, updatedAt: new Date().toISOString() };
         return updated;
       });
       if (!updated) throw new Error('Objectif introuvable.');
@@ -2569,8 +2570,11 @@ function createSupabaseRepository(
     async updateGoalCurrent(userId, goalId, currentValue) {
       const current = (await listGoalsDb(client, userId)).map(rowToGoal).find((g) => g.id === goalId);
       if (!current) throw new Error('Objectif introuvable.');
-      const { progress, status } = progressedGoal(current, currentValue);
-      return rowToGoal(await updateGoalCurrent(client, goalId, currentValue, progress, status));
+      // Un objectif créé sans valeur de départ ne pouvait jamais progresser :
+      // la première mise à jour adopte la valeur précédente comme départ.
+      const startValue = current.startValue ?? current.currentValue ?? currentValue;
+      const { progress, status } = progressedGoal({ ...current, startValue }, currentValue);
+      return rowToGoal(await updateGoalCurrent(client, goalId, currentValue, progress, status, startValue));
     },
     async updateGoal(_userId, goalId, patch) {
       return rowToGoal(

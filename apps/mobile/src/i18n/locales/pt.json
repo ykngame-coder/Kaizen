@@ -743,7 +743,8 @@
      "deleteA11y": "Excluir a meta",
      "delete": "Excluir",
      "currentValueLabel": "Valor atual",
-     "updateButton": "Atualizar"
+     "updateButton": "Atualizar",
+     "autoTracked": "Acompanhado automaticamente a partir do teu peso"
     }
    },
    "objectifsCard": {

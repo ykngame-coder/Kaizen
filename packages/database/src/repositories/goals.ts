@@ -29,10 +29,12 @@ export async function updateGoalCurrent(
   currentValue: number,
   progress: number,
   status: GoalRow['status'],
+  /** Point de départ à figer si l'objectif n'en avait pas — sans lui, la progression reste à zéro pour toujours. */
+  startValue?: number,
 ): Promise<GoalRow> {
   const { data, error } = await client
     .from('goals')
-    .update({ current_value: currentValue, progress, status })
+    .update({ current_value: currentValue, progress, status, ...(startValue !== undefined ? { start_value: startValue } : {}) })
     .eq('id', goalId)
     .select('*')
     .single();

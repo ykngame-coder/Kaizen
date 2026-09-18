@@ -21,13 +21,18 @@ import type { GoalInput } from '@supotsu/shared';
 import {
   computeGoalProgress,
   projectTargetDate,
+  resolveGoal,
   summarizeTrend,
   weightTrend,
 } from '@supotsu/engines';
+import type { TrendPoint } from '@supotsu/engines';
 import { useAddGoal, useDeleteGoal, useGoals, useHealthMetrics, useUpdateGoal, useUpdateGoalCurrent } from '@/lib/data/queries';
 import { formatDate } from '@/lib/format';
 import { formatWeight, usePreferences } from '@/lib/preferences';
 import { DatePickerModal } from '@/features/navigation/DatePickerModal';
+
+/** Assez large pour retrouver le poids qu'on avait en créant un vieil objectif. */
+const WEIGHT_HISTORY_DAYS = 3650;
 
 type TypeOption = { value: GoalType; label: string };
 function typeOptions(t: TFunction): TypeOption[] {
@@ -99,7 +104,7 @@ function ArchetypeTile({ item, active, onPress }: { item: Archetype; active: boo
   );
 }
 
-function GoalCard({ goal }: { goal: Goal }): React.JSX.Element {
+function GoalCard({ goal, weights }: { goal: Goal; weights: TrendPoint[] }): React.JSX.Element {
   const { t } = useTranslation();
   const { colors } = useTheme();
   const typeOpts = useMemo(() => typeOptions(t), [t]);
@@ -113,9 +118,14 @@ function GoalCard({ goal }: { goal: Goal }): React.JSX.Element {
   const [editTitle, setEditTitle] = useState(goal.title);
   const [editTarget, setEditTarget] = useState(goal.targetValue !== undefined ? String(goal.targetValue) : '');
   const [editUnit, setEditUnit] = useState(goal.targetUnit ?? '');
-  const progress = computeGoalProgress(goal, goal.startValue);
+  // Servi par les pesées réelles : la valeur courante suit le poids, et le
+  // départ est reconstitué quand il manque — sans lui, le pourcentage restait
+  // bloqué à zéro quoi qu'on saisisse.
+  const resolved = resolveGoal(goal, weights);
+  const autoTracked = resolved.currentValue !== goal.currentValue || (resolved.startValue !== goal.startValue && weights.length > 0);
+  const progress = computeGoalProgress(resolved, resolved.startValue);
   const pct = Math.round(progress * 100);
-  const done = goal.status === 'achieved';
+  const done = goal.status === 'achieved' || progress >= 1;
 
   const submit = (): void => {
     const n = Number(value.replace(',', '.'));
@@ -189,7 +199,9 @@ function GoalCard({ goal }: { goal: Goal }): React.JSX.Element {
       </View>
       {goal.targetValue !== undefined && (
         <Text variant="caption" color="textMuted">
-          {goal.currentValue ?? goal.startValue ?? '—'} → {goal.targetValue} {goal.targetUnit ?? ''}
+          {resolved.startValue !== undefined && resolved.startValue !== resolved.currentValue
+            ? `${resolved.startValue} → ${resolved.currentValue ?? '—'} → ${goal.targetValue} ${goal.targetUnit ?? ''}`
+            : `${resolved.currentValue ?? resolved.startValue ?? '—'} → ${goal.targetValue} ${goal.targetUnit ?? ''}`}
         </Text>
       )}
       <View style={{ marginTop: spacing[2] }}>
@@ -215,7 +227,11 @@ function GoalCard({ goal }: { goal: Goal }): React.JSX.Element {
         </View>
       ) : (
         !done &&
-        goal.targetValue !== undefined && (
+        goal.targetValue !== undefined && (autoTracked ? (
+          <Text variant="caption" color="textSubtle" style={{ marginTop: spacing[2] }}>
+            {t('sport.goals.screen.goalCard.autoTracked')}
+          </Text>
+        ) : (
           <View style={{ flexDirection: 'row', gap: spacing[2], alignItems: 'flex-end', marginTop: spacing[2] }}>
             <View style={{ flex: 1 }}>
               <Input
@@ -228,7 +244,7 @@ function GoalCard({ goal }: { goal: Goal }): React.JSX.Element {
             </View>
             <Button label={update.isPending ? '…' : t('sport.goals.screen.goalCard.updateButton')} onPress={submit} />
           </View>
-        )
+        ))
       )}
     </Card>
   );
@@ -279,6 +295,8 @@ export function GoalsSection({ showForm, onCloseForm }: { showForm: boolean; onC
   const [bodyDatePickerOpen, setBodyDatePickerOpen] = useState(false);
 
   const weight = useMemo(() => weightTrend(metrics, asOf, 120), [metrics, asOf]);
+  /** Historique complet : un objectif créé il y a un an a besoin du poids de ce jour-là. */
+  const allWeights = useMemo(() => weightTrend(metrics, asOf, WEIGHT_HISTORY_DAYS), [metrics, asOf]);
   const weightSummary = useMemo(() => summarizeTrend(weight), [weight]);
   const currentWeight = latestMetric(metrics, 'weight');
   const bodyFat = latestMetric(metrics, 'body_fat');
@@ -306,13 +324,16 @@ export function GoalsSection({ showForm, onCloseForm }: { showForm: boolean; onC
 
   const canSave = title.trim().length > 0;
   const save = (): void => {
+    // Sans valeur de départ, un objectif reste à 0 % quoi qu'il arrive : pour
+    // un objectif de poids, le poids connu la fournit sans rien demander.
+    const typed = current ? Number(current.replace(',', '.')) : undefined;
     const input: GoalInput = {
       type,
       title: title.trim(),
       priority: 'primary',
       targetValue: target ? Number(target.replace(',', '.')) : undefined,
       targetUnit: unit.trim() || undefined,
-      currentValue: current ? Number(current.replace(',', '.')) : undefined,
+      currentValue: typed ?? (type === 'body_composition' ? currentWeight : undefined),
     };
     addGoal.mutate(input, {
       onSuccess: () => {
@@ -457,7 +478,7 @@ export function GoalsSection({ showForm, onCloseForm }: { showForm: boolean; onC
               const eta = g.targetValue !== undefined && g.type === 'body_composition' ? projectTargetDate(weight, g.targetValue, asOf) : undefined;
               return (
                 <View key={g.id}>
-                  <GoalCard goal={g} />
+                  <GoalCard goal={g} weights={allWeights} />
                   {eta && (
                     <Text variant="caption" color="textSubtle" style={{ marginTop: spacing[1], marginLeft: spacing[1] }}>
                       {t('sport.goals.screen.myGoals.projection', { date: formatDate(eta) })}

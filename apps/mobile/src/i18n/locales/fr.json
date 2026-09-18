@@ -743,7 +743,8 @@
      "deleteA11y": "Supprimer l'objectif",
      "delete": "Supprimer",
      "currentValueLabel": "Valeur actuelle",
-     "updateButton": "Mettre à jour"
+     "updateButton": "Mettre à jour",
+     "autoTracked": "Suivi automatiquement depuis ton poids"
     }
    },
    "objectifsCard": {

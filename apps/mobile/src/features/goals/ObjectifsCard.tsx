@@ -5,7 +5,11 @@ import { useTranslation } from 'react-i18next';
 import { Card, Meter, Text, useTheme } from '@supotsu/ui';
 import { spacing } from '@supotsu/design-system';
 import type { GoalType } from '@supotsu/core';
-import { useGoals } from '@/lib/data/queries';
+import { resolvedGoalProgress, weightTrend } from '@supotsu/engines';
+import { useGoals, useHealthMetrics } from '@/lib/data/queries';
+
+/** Assez large pour retrouver le poids qu'on avait en créant un vieil objectif. */
+const WEIGHT_HISTORY_DAYS = 3650;
 
 /**
  * Objectifs contextualisés par pilier — filtre la liste partagée (`useGoals`)
@@ -18,6 +22,10 @@ export function ObjectifsCard({ types, max = 2 }: { types: GoalType[]; max?: num
   const router = useRouter();
   const { colors } = useTheme();
   const { data: goals = [] } = useGoals();
+  const { data: metrics = [] } = useHealthMetrics();
+  // La progression enregistrée reste à zéro pour un objectif sans point de
+  // départ : on la recalcule sur les pesées réelles, comme l'écran Objectifs.
+  const weights = useMemo(() => weightTrend(metrics, new Date().toISOString(), WEIGHT_HISTORY_DAYS), [metrics]);
   const filtered = useMemo(
     () => goals.filter((g) => types.includes(g.type) && g.status === 'active').slice(0, max),
     [goals, types, max],
@@ -33,15 +41,18 @@ export function ObjectifsCard({ types, max = 2 }: { types: GoalType[]; max?: num
         </Pressable>
       </View>
       <View style={{ gap: spacing[3] }}>
-        {filtered.map((g) => (
-          <View key={g.id} style={{ gap: spacing[1] }}>
-            <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
-              <Text variant="body">{g.title}</Text>
-              <Text variant="caption" color="textMuted">{Math.round(g.progress * 100)}%</Text>
+        {filtered.map((g) => {
+          const pct = Math.round(resolvedGoalProgress(g, weights) * 100);
+          return (
+            <View key={g.id} style={{ gap: spacing[1] }}>
+              <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
+                <Text variant="body">{g.title}</Text>
+                <Text variant="caption" color="textMuted">{pct}%</Text>
+              </View>
+              <Meter value={pct} color={colors.primary} height={6} />
             </View>
-            <Meter value={g.progress * 100} color={colors.primary} height={6} />
-          </View>
-        ))}
+          );
+        })}
       </View>
     </Card>
   );

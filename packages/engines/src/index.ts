@@ -18,6 +18,7 @@ export * from './reminders';
 export * from './habitProgress';
 export * from './activityMuscles';
 export * from './progression';
+export * from './goalResolution';
 export * from './analytics';
 export * from './load';
 export * from './plates';
