@@ -1,5 +1,6 @@
 import type { Exercise as CoreExercise, MuscleGroup } from '@supotsu/core';
 import data from './exercises.data.json';
+import { HYROX_SUPPLEMENT } from './hyroxSupplement';
 
 export type ExerciseCategory = 'force' | 'cardio' | 'mobilité';
 
@@ -23,7 +24,7 @@ export interface Exercise {
  * to our schema: muscles mapped to our groups, categories and equipment in
  * French, with instructions and image references kept for the detail view.
  */
-export const EXERCISES = data as unknown as Exercise[];
+export const EXERCISES = [...(data as unknown as Exercise[]), ...HYROX_SUPPLEMENT];
 
 /** Build a CDN URL for an exercise image path. */
 export function exerciseImageUrl(image: string | null): string | null {
