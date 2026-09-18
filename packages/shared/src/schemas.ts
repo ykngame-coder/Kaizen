@@ -187,6 +187,8 @@ export const sessionExerciseInputSchema = z.object({
   weightKg: z.number().nonnegative().max(1000).optional(),
   durationSec: z.number().int().positive().max(36000).optional(),
   restSec: z.number().int().nonnegative().max(3600).optional(),
+  /** Hyrox station distance target/result, in meters. */
+  distanceM: z.number().positive().max(100000).optional(),
 });
 export type SessionExerciseInput = z.infer<typeof sessionExerciseInputSchema>;
 
