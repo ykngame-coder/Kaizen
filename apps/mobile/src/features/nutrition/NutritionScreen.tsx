@@ -178,7 +178,12 @@ export function NutritionScreen(): React.JSX.Element {
   const onRefresh = async (): Promise<void> => { setRefreshing(true); await syncHealth(); await qc.invalidateQueries(); setRefreshing(false); };
 
   const addWater = (ml: number): void => {
-    addEntry.mutate({ mealType: 'snack', description: t('nutrition.screen.water.entryLabel'), kcal: 0, hydrationMl: ml, source: 'manual', loggedAt: new Date().toISOString() });
+    // Retour TestFlight : sur un autre jour que aujourd'hui, l'eau ajoutée
+    // atterrissait toujours sur la journée en cours — `new Date()` ignorait
+    // `selectedDate`. Même règle que l'ajout d'un repas : aujourd'hui à
+    // l'heure exacte, sinon à midi le jour affiché.
+    const loggedAt = isTodayLocal(asOf) ? new Date().toISOString() : selectedDate.noon;
+    addEntry.mutate({ mealType: 'snack', description: t('nutrition.screen.water.entryLabel'), kcal: 0, hydrationMl: ml, source: 'manual', loggedAt });
   };
   const [waterAmount, setWaterAmount] = useState(250);
   const [customWater, setCustomWater] = useState('');
