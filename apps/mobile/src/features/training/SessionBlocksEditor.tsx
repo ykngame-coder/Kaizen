@@ -206,6 +206,7 @@ export function SessionBlocksEditor({
     { value: 'emom', label: formatLabel('emom', t) },
     { value: 'for_time', label: formatLabel('for_time', t) },
     { value: 'tabata', label: formatLabel('tabata', t) },
+    { value: 'hyrox', label: formatLabel('hyrox', t) },
   ];
 
   const exerciseSubtitle = (ex: Exercise): string =>
@@ -396,6 +397,7 @@ export function SessionBlocksEditor({
     const suggestion = suggestionFor?.(draft.exerciseId);
     const suggestionReason = suggestion ? progressionRationaleKey(suggestion.rationale) : undefined;
     const isStrength = activeFormat === 'strength';
+    const isHyrox = activeFormat === 'hyrox';
     const activeBlockDraft = builder.blocks[builder.activeBlock];
     const groupId = activeBlockDraft?.supersetGroups[slotId];
     const isPendingSelected = pendingSuperset.includes(slotId);
@@ -493,15 +495,42 @@ export function SessionBlocksEditor({
             </View>
           ) : null}
 
-          <View style={{ flexDirection: 'row', gap: spacing[3], marginTop: spacing[2] }}>
-            <Stepper label={t('sport.sessionBuilder.set.repsLabel')} value={draft.reps} step={1} onChange={(v) => builder.updateExercise(slotId, { reps: v })} />
-            <Stepper label={t('sport.sessionBuilder.set.weightLabel')} value={draft.weight} step={2.5} unit="kg" onChange={(v) => builder.updateExercise(slotId, { weight: v })} />
-          </View>
-          {isStrength ? (
-            <View style={{ marginTop: spacing[2] }}>
-              <Stepper label={t('sport.sessionBuilder.set.restLabel')} value={draft.rest} step={15} unit="s" onChange={(v) => builder.updateExercise(slotId, { rest: v })} />
-            </View>
-          ) : null}
+          {isHyrox ? (
+            <>
+              <View style={{ flexDirection: 'row', gap: spacing[2], marginTop: spacing[2] }}>
+                <FilterChip
+                  label={t('sport.sessionBuilder.hyrox.distanceMode')}
+                  active={(draft.hyroxMode ?? 'distance') === 'distance'}
+                  onPress={() => builder.updateExercise(slotId, { hyroxMode: 'distance' })}
+                />
+                <FilterChip
+                  label={t('sport.sessionBuilder.hyrox.timeMode')}
+                  active={draft.hyroxMode === 'time'}
+                  onPress={() => builder.updateExercise(slotId, { hyroxMode: 'time' })}
+                />
+              </View>
+              <View style={{ flexDirection: 'row', gap: spacing[3], marginTop: spacing[2] }}>
+                {(draft.hyroxMode ?? 'distance') === 'distance' ? (
+                  <Stepper label={t('sport.sessionBuilder.hyrox.distanceLabel')} value={draft.distance ?? ''} step={50} unit="m" onChange={(v) => builder.updateExercise(slotId, { distance: v })} />
+                ) : (
+                  <Stepper label={t('sport.sessionBuilder.hyrox.durationLabel')} value={draft.duration ?? ''} step={15} unit="s" onChange={(v) => builder.updateExercise(slotId, { duration: v })} />
+                )}
+                <Stepper label={t('sport.sessionBuilder.set.weightLabel')} value={draft.weight} step={2.5} unit="kg" onChange={(v) => builder.updateExercise(slotId, { weight: v })} />
+              </View>
+            </>
+          ) : (
+            <>
+              <View style={{ flexDirection: 'row', gap: spacing[3], marginTop: spacing[2] }}>
+                <Stepper label={t('sport.sessionBuilder.set.repsLabel')} value={draft.reps} step={1} onChange={(v) => builder.updateExercise(slotId, { reps: v })} />
+                <Stepper label={t('sport.sessionBuilder.set.weightLabel')} value={draft.weight} step={2.5} unit="kg" onChange={(v) => builder.updateExercise(slotId, { weight: v })} />
+              </View>
+              {isStrength ? (
+                <View style={{ marginTop: spacing[2] }}>
+                  <Stepper label={t('sport.sessionBuilder.set.restLabel')} value={draft.rest} step={15} unit="s" onChange={(v) => builder.updateExercise(slotId, { rest: v })} />
+                </View>
+              ) : null}
+            </>
+          )}
           {/* Une série de plus pour le même exercice : le modèle l'acceptait
               déjà (les slots sont indépendants de l'exercice), mais rien ne
               permettait d'en créer une — d'où « Ajouter un bouton pour ajouter

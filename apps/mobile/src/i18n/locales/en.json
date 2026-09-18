@@ -1495,7 +1495,8 @@
      "amrap": "As many rounds as possible within the time cap.",
      "emom": "One task to do at the top of every interval.",
      "forTime": "Finish every round as fast as you can.",
-     "tabata": "Work and rest alternating, over a fixed number of rounds."
+     "tabata": "Work and rest alternating, over a fixed number of rounds.",
+     "hyrox": "Chained stations, no rest. Each has a distance or a time target — never both — and you log the result at the end."
     },
     "workLabel": "Work (s)",
     "restLabel": "Rest (s)",
@@ -1541,6 +1542,12 @@
     "repsShort_one": "{{count}} rep",
     "repsShort_other": "{{count}} reps",
     "addSet": "+ Add a set"
+   },
+   "hyrox": {
+    "distanceMode": "Distance",
+    "timeMode": "Time",
+    "distanceLabel": "Distance",
+    "durationLabel": "Duration"
    },
    "exercise": {
     "customPrefix": "✨ Custom · "

@@ -1495,7 +1495,8 @@
      "amrap": "So viele Runden wie möglich in der vorgegebenen Zeit.",
      "emom": "Eine Aufgabe zu Beginn jedes Intervalls.",
      "forTime": "Alle Runden so schnell wie möglich abschließen.",
-     "tabata": "Belastung und Pause im Wechsel, über eine feste Rundenzahl."
+     "tabata": "Belastung und Pause im Wechsel, über eine feste Rundenzahl.",
+     "hyrox": "Stationen ohne Pause hintereinander. Jede hat ein Distanz- oder Zeitziel — nie beides — und du trägst das Ergebnis am Ende ein."
     },
     "workLabel": "Belastung (s)",
     "restLabel": "Pause (s)",
@@ -1541,6 +1542,12 @@
     "repsShort_one": "{{count}} Wdh.",
     "repsShort_other": "{{count}} Wdh.",
     "addSet": "+ Satz hinzufügen"
+   },
+   "hyrox": {
+    "distanceMode": "Distanz",
+    "timeMode": "Zeit",
+    "distanceLabel": "Distanz",
+    "durationLabel": "Dauer"
    },
    "exercise": {
     "customPrefix": "✨ Eigene · "

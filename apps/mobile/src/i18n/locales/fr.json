@@ -1495,7 +1495,8 @@
      "amrap": "Le plus de tours possible dans le temps imparti.",
      "emom": "Une tâche à faire au début de chaque intervalle.",
      "forTime": "Finir tous les tours le plus vite possible.",
-     "tabata": "Travail et repos qui s'enchaînent, sur un nombre de rounds fixe."
+     "tabata": "Travail et repos qui s'enchaînent, sur un nombre de rounds fixe.",
+     "hyrox": "Stations enchaînées sans repos. Chacune a un objectif de distance ou de temps — jamais les deux — et tu notes le résultat à la fin."
     },
     "workLabel": "Travail (s)",
     "restLabel": "Repos (s)",
@@ -1541,6 +1542,12 @@
     "repsShort_one": "{{count}} rep",
     "repsShort_other": "{{count}} reps",
     "addSet": "+ Ajouter une série"
+   },
+   "hyrox": {
+    "distanceMode": "Distance",
+    "timeMode": "Temps",
+    "distanceLabel": "Distance",
+    "durationLabel": "Durée"
    },
    "exercise": {
     "customPrefix": "✨ Perso · "

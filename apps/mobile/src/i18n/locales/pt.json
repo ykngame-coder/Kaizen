@@ -1495,7 +1495,8 @@
      "amrap": "O máximo de rondas possível no tempo dado.",
      "emom": "Uma tarefa no início de cada intervalo.",
      "forTime": "Terminar todas as rondas o mais rápido possível.",
-     "tabata": "Trabalho e descanso alternados, durante um número fixo de rondas."
+     "tabata": "Trabalho e descanso alternados, durante um número fixo de rondas.",
+     "hyrox": "Estações encadeadas sem descanso. Cada uma tem uma meta de distância ou de tempo — nunca as duas — e você registra o resultado no final."
     },
     "workLabel": "Trabalho (s)",
     "restLabel": "Descanso (s)",
@@ -1541,6 +1542,12 @@
     "repsShort_one": "{{count}} rep",
     "repsShort_other": "{{count}} reps",
     "addSet": "+ Adicionar uma série"
+   },
+   "hyrox": {
+    "distanceMode": "Distância",
+    "timeMode": "Tempo",
+    "distanceLabel": "Distância",
+    "durationLabel": "Duração"
    },
    "exercise": {
     "customPrefix": "✨ Personalizado · "
