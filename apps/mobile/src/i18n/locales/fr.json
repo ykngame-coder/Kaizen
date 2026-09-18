@@ -1658,7 +1658,12 @@
    "restTag": "Repos",
    "restContext": "Récupération de {{total}}s",
    "logContext": "Série {{n}} terminée",
-   "targetWeight": "Objectif : {{weight}} kg"
+   "targetWeight": "Objectif : {{weight}} kg",
+   "hyroxTargetDistance": "Objectif : {{distance}} m",
+   "hyroxInProgress": "Décompte en cours…",
+   "hyroxDistanceReached": "Distance atteinte",
+   "hyroxLogContext": "Station terminée",
+   "hyroxDistanceA11y": "Distance parcourue (m)"
   },
   "progression": {
    "rationale": {

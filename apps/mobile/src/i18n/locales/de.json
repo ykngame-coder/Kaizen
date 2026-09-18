@@ -1658,7 +1658,12 @@
    "restTag": "Pause",
    "restContext": "{{total}}s Erholung",
    "logContext": "Satz {{n}} erledigt",
-   "targetWeight": "Ziel: {{weight}} kg"
+   "targetWeight": "Ziel: {{weight}} kg",
+   "hyroxTargetDistance": "Ziel: {{distance}} m",
+   "hyroxInProgress": "Countdown läuft…",
+   "hyroxDistanceReached": "Distanz erreicht",
+   "hyroxLogContext": "Station beendet",
+   "hyroxDistanceA11y": "Zurückgelegte Distanz (m)"
   },
   "progression": {
    "rationale": {
