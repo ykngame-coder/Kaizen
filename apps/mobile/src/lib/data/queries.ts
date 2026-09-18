@@ -14,7 +14,7 @@ import type {
   UserSessionInput,
   WellnessCheckinInput,
 } from '@supotsu/shared';
-import type { Challenge, GoalType, MealType, MuscleGroup, SetEntry, Visibility, Workout } from '@supotsu/core';
+import type { Challenge, GoalType, MealType, MuscleGroup, SetEntry, UserSessionBlock, UserSessionExercise, Visibility, Workout } from '@supotsu/core';
 import { dedupActivities, estimateActivityHeartRateWindow, estimateWorkoutHeartRateWindow } from '@supotsu/connectors';
 import type {
   ImportedActivity,
@@ -588,6 +588,33 @@ export function useSessionBlocks(sessionId: string | undefined) {
     queryKey: ['sessionBlocks', sessionId],
     enabled: !!user && !!sessionId,
     queryFn: () => repo.getSessionBlocks(user!.id, sessionId!),
+  });
+}
+
+/**
+ * Le contenu des séances d'un programme du catalogue, pour l'aperçu : blocs et
+ * prescription de chacune. Une seule requête par séance, mises en cache sous
+ * les mêmes clés que la bibliothèque — ouvrir l'aperçu puis la séance ne
+ * relit rien.
+ */
+export function useProgramSessionsContent(sessions: { sessionId: string }[] | undefined) {
+  const { user } = useAuth();
+  const repo = useRepository();
+  const ids = (sessions ?? []).map((s) => s.sessionId);
+  return useQuery({
+    queryKey: ['programSessionsContent', ids],
+    enabled: !!user && ids.length > 0,
+    queryFn: async () => {
+      const out = new Map<string, { blocks: UserSessionBlock[]; exercises: UserSessionExercise[] }>();
+      for (const id of ids) {
+        const [blocks, exercises] = await Promise.all([
+          repo.getSessionBlocks(user!.id, id),
+          repo.getSessionExercises(id),
+        ]);
+        out.set(id, { blocks, exercises });
+      }
+      return out;
+    },
   });
 }
 

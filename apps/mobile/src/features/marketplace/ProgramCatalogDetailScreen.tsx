@@ -7,7 +7,8 @@ import type { ProgramFocus } from '@supotsu/core';
 import { PICKABLE_EXERCISES } from '@supotsu/shared';
 import { EXERCISES } from '@/features/exercises/catalog';
 import { BackButton } from '@/features/navigation/BackButton';
-import { useEnrolledProgramIds, useEnrollProgram, usePrograms } from '@/lib/data/queries';
+import { useEnrolledProgramIds, useEnrollProgram, useProgramSessionsContent, usePrograms } from '@/lib/data/queries';
+import { describeBlock, describeSet } from './sessionPreview';
 
 const FOCUS_LABEL: Record<ProgramFocus, string> = {
   strength: 'Force',
@@ -35,9 +36,26 @@ export function ProgramCatalogDetailScreen(): React.JSX.Element {
 
   const program = useMemo(() => programs.find((p) => p.id === id), [programs, id]);
   const enrolled = enrolledIds.includes(id ?? '');
+  const { data: content } = useProgramSessionsContent(program?.sessions);
 
-  // One week's worth — sessionTemplates repeats the same weekly pattern (or a per-week plan), so the first sessionsPerWeek entries are what every enrolled week actually looks like.
-  const weekPreview = program?.sessionTemplates.slice(0, program.sessionsPerWeek) ?? [];
+  /**
+   * Semaine par semaine, et non « une semaine type » : les semaines d'un vrai
+   * programme n'ont ni le même nombre de séances ni le même contenu.
+   */
+  const weeks = useMemo(() => {
+    const byWeek = new Map<number, NonNullable<typeof program>['sessions']>();
+    for (const s of program?.sessions ?? []) {
+      const week = byWeek.get(s.weekNumber) ?? [];
+      week.push(s);
+      byWeek.set(s.weekNumber, week);
+    }
+    return [...byWeek.entries()]
+      .sort((a, b) => a[0] - b[0])
+      .map(([number, sessions]) => ({ number, sessions: [...(sessions ?? [])].sort((a, b) => a.order - b.order) }));
+  }, [program]);
+
+  // Programmes d'origine, dont le contenu est encore bundlé dans l'app.
+  const weekPreview = program?.sessions?.length ? [] : program?.sessionTemplates.slice(0, program.sessionsPerWeek) ?? [];
 
   if (isLoading) {
     return (
@@ -73,10 +91,54 @@ export function ProgramCatalogDetailScreen(): React.JSX.Element {
         {program.weeks} semaines · {program.sessionsPerWeek} séances/semaine
       </Text>
 
-      <Text variant="heading" style={{ marginTop: spacing[3] }}>Une semaine type</Text>
-      <Text variant="caption" color="textSubtle" style={{ marginBottom: spacing[2] }}>
-        Ce schéma se répète chaque semaine du programme.
-      </Text>
+      {weeks.length > 0 ? (
+        <View style={{ gap: spacing[3], marginTop: spacing[3] }}>
+          {weeks.map((week) => (
+            <View key={week.number} style={{ gap: spacing[2] }}>
+              <Text variant="heading">Semaine {week.number}</Text>
+              <Text variant="caption" color="textSubtle">
+                {week.sessions.length} séance{week.sessions.length > 1 ? 's' : ''}
+              </Text>
+              {week.sessions.map((s) => {
+                const detail = content?.get(s.sessionId);
+                return (
+                  <Card key={s.sessionId}>
+                    <Text variant="subtitle">{s.title}</Text>
+                    {(detail?.blocks ?? []).map((b) => {
+                      const label = describeBlock({ format: b.format, timeCapSec: b.timeCapSec, targetRounds: b.targetRounds, sets: [] });
+                      const sets = (detail?.exercises ?? []).filter((e) => e.blockId === b.id);
+                      return (
+                        <View key={b.id} style={{ marginTop: spacing[2] }}>
+                          {label ? (
+                            <Text variant="caption" color="primary" style={{ fontWeight: '700' }}>{label}</Text>
+                          ) : null}
+                          {sets.map((e) => (
+                            <View key={e.id} style={{ flexDirection: 'row', justifyContent: 'space-between', gap: spacing[2] }}>
+                              <Text variant="caption" color="textMuted" style={{ flex: 1 }} numberOfLines={1}>
+                                {exerciseName(e.exerciseId)}
+                              </Text>
+                              <Text variant="caption" color="textSubtle">{describeSet(e)}</Text>
+                            </View>
+                          ))}
+                        </View>
+                      );
+                    })}
+                  </Card>
+                );
+              })}
+            </View>
+          ))}
+        </View>
+      ) : null}
+
+      {weekPreview.length > 0 ? (
+        <>
+          <Text variant="heading" style={{ marginTop: spacing[3] }}>Une semaine type</Text>
+          <Text variant="caption" color="textSubtle" style={{ marginBottom: spacing[2] }}>
+            Ce schéma se répète chaque semaine du programme.
+          </Text>
+        </>
+      ) : null}
       <View style={{ gap: spacing[2] }}>
         {weekPreview.map((t, i) => (
           <Card key={i}>
@@ -101,7 +163,7 @@ export function ProgramCatalogDetailScreen(): React.JSX.Element {
       </View>
 
       <Text variant="caption" color="textSubtle" style={{ marginTop: spacing[2] }}>
-        En t'inscrivant, {program.sessionTemplates.length} séances sont automatiquement ajoutées à ta Planification.
+        En t'inscrivant, {program.sessions?.length ?? program.sessionTemplates.length} séances sont automatiquement ajoutées à ta Planification, à leur date.
       </Text>
 
       <View style={{ alignItems: 'flex-start', marginTop: spacing[3] }}>

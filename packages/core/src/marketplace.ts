@@ -47,6 +47,21 @@ export interface Program {
    * sessions every week only needs 3 entries, not 24.
    */
   sessionTemplates: ProgramSessionTemplate[];
+  /** Les séances liées, quand le contenu du programme vient de la base. */
+  sessions?: ProgramSessionRef[];
+}
+
+/**
+ * Une séance d'un programme du catalogue : un renvoi vers une séance publique,
+ * à sa place dans la progression. Le contenu vit dans la séance elle-même —
+ * blocs, durées, charges — et non dans le programme.
+ */
+export interface ProgramSessionRef {
+  sessionId: string;
+  /** 1 pour la première semaine. */
+  weekNumber: number;
+  order: number;
+  title: string;
 }
 
 export type EnrollmentStatus = 'active' | 'completed' | 'abandoned';

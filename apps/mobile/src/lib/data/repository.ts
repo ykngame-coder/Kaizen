@@ -2842,12 +2842,18 @@ function createSupabaseRepository(
           }),
         )),
       );
-      return rows.map((r) =>
-        rowToProgram(
-          r,
-          links.filter((l) => l.program_id === r.id).map((l) => ({ title: names.get(l.session_id) ?? '' })),
-        ),
-      );
+      return rows.map((r) => {
+        const mine = links.filter((l) => l.program_id === r.id);
+        return {
+          ...rowToProgram(r, mine.map((l) => ({ title: names.get(l.session_id) ?? '' }))),
+          sessions: mine.map((l) => ({
+            sessionId: l.session_id,
+            weekNumber: l.week_number,
+            order: l.order,
+            title: names.get(l.session_id) ?? '',
+          })),
+        };
+      });
     },
     async listEnrolledProgramIds(userId) {
       return (await listEnrollmentsDb(client, userId)).map((e) => e.program_id);
