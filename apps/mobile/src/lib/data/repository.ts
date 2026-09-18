@@ -217,6 +217,10 @@ export interface SetLogInput {
   weightKg?: number;
   rpe?: number;
   rir?: number;
+  /** Hyrox: the distance achieved, logged once a time-target station's countdown ends. */
+  distanceM?: number;
+  /** Hyrox: the time a distance-target station took, measured by the runner's clock. */
+  durationSec?: number;
   completedAt: string;
 }
 
@@ -228,6 +232,8 @@ export interface NewRunnerSet {
   reps?: number;
   weightKg?: number;
   restSec?: number;
+  /** Hyrox station target, in meters — see SetEntry.distanceM. */
+  distanceM?: number;
   isWarmup?: boolean;
 }
 
@@ -963,6 +969,10 @@ interface LoggedSetRow {
   rir?: number | null;
   isWarmup?: boolean;
   completedAt?: string | null;
+  /** Hyrox station target or result, in meters — see SetEntry.distanceM. */
+  distanceM?: number | null;
+  /** Hyrox station target or result, in seconds. Was never stored by the demo repo before this — no other format needed a per-set duration. */
+  durationSec?: number | null;
 }
 
 /** For each exercise, the sets of the most recent workout that contains it. */
@@ -1384,6 +1394,7 @@ function createDemoRepository(): DataRepository {
             reps: s.reps ?? null,
             weightKg: s.weightKg ?? null,
             restSec: s.restSec ?? null,
+            distanceM: s.distanceM ?? null,
             supersetGroup: s.supersetGroup ?? null,
             plannedReps: s.reps ?? null,
             plannedWeightKg: s.weightKg ?? null,
@@ -1420,6 +1431,8 @@ function createDemoRepository(): DataRepository {
           rir: r.rir ?? undefined,
           isWarmup: r.isWarmup ?? undefined,
           completedAt: r.completedAt ?? undefined,
+          distanceM: r.distanceM ?? undefined,
+          durationSec: r.durationSec ?? undefined,
         }));
     },
     async completeBlock(userId, blockId, result) {
@@ -1447,6 +1460,11 @@ function createDemoRepository(): DataRepository {
             reps: done.reps ?? null,
             weightKg: done.weightKg ?? null,
             rir: done.rir ?? null,
+            // `?? r.distanceM`/`?? r.durationSec`, not `?? null`: whichever of the
+            // two was this station's fixed target at creation must survive a log
+            // call that only ever supplies the *other* one.
+            distanceM: done.distanceM ?? r.distanceM ?? null,
+            durationSec: done.durationSec ?? r.durationSec ?? null,
             completedAt: done.completedAt,
           };
         }),
@@ -1482,6 +1500,7 @@ function createDemoRepository(): DataRepository {
         reps: s.reps ?? null,
         weightKg: s.weightKg ?? null,
         restSec: s.restSec ?? null,
+        distanceM: s.distanceM ?? null,
         plannedReps: s.reps ?? null,
         plannedWeightKg: s.weightKg ?? null,
         isWarmup: s.isWarmup ?? false,
@@ -1519,7 +1538,7 @@ function createDemoRepository(): DataRepository {
         const block: WorkoutBlock = { id: randomId(), workoutId, order: i, format: b.format, timeCapSec: b.timeCapSec, targetRounds: b.targetRounds };
         newBlocks.push(block);
         b.sets.forEach((s) => {
-          newSets.push({ id: randomId(), workoutId, blockId: block.id, exerciseId: s.exerciseId, order: s.order, reps: s.reps ?? null, weightKg: s.weightKg ?? null, restSec: s.restSec ?? null, supersetGroup: s.supersetGroup ?? null, plannedReps: s.reps ?? null, plannedWeightKg: s.weightKg ?? null, isWarmup: s.isWarmup ?? false, date: now });
+          newSets.push({ id: randomId(), workoutId, blockId: block.id, exerciseId: s.exerciseId, order: s.order, reps: s.reps ?? null, weightKg: s.weightKg ?? null, restSec: s.restSec ?? null, distanceM: s.distanceM ?? null, supersetGroup: s.supersetGroup ?? null, plannedReps: s.reps ?? null, plannedWeightKg: s.weightKg ?? null, isWarmup: s.isWarmup ?? false, date: now });
         });
       });
       await writeJson(blockKey(userId), [...newBlocks, ...keptBlocks]);
@@ -3283,6 +3302,7 @@ function createSupabaseRepository(
             reps: s.reps ?? null,
             weight_kg: s.weightKg ?? null,
             duration_sec: s.durationSec ?? null,
+            distance_m: s.distanceM ?? null,
             rest_sec: s.restSec ?? null,
             superset_group: s.supersetGroup ?? null,
             planned_reps: s.reps ?? null,
@@ -3307,6 +3327,7 @@ function createSupabaseRepository(
         reps: r.reps ?? undefined,
         weightKg: r.weight_kg ?? undefined,
         durationSec: r.duration_sec ?? undefined,
+        distanceM: r.distance_m ?? undefined,
         restSec: r.rest_sec ?? undefined,
         rpe: r.rpe ?? undefined,
         supersetGroup: r.superset_group ?? undefined,
@@ -3334,6 +3355,7 @@ function createSupabaseRepository(
           reps: s.reps ?? null,
           weight_kg: s.weightKg ?? null,
           rest_sec: s.restSec ?? null,
+          distance_m: s.distanceM ?? null,
           planned_reps: s.reps ?? null,
           planned_weight_kg: s.weightKg ?? null,
           is_warmup: s.isWarmup ?? false,
@@ -3366,6 +3388,7 @@ function createSupabaseRepository(
             reps: s.reps ?? null,
             weight_kg: s.weightKg ?? null,
             duration_sec: s.durationSec ?? null,
+            distance_m: s.distanceM ?? null,
             rest_sec: s.restSec ?? null,
             superset_group: s.supersetGroup ?? null,
             planned_reps: s.reps ?? null,

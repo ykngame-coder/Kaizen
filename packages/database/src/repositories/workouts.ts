@@ -363,6 +363,10 @@ export interface SetLogPatch {
   weightKg?: number;
   rpe?: number;
   rir?: number;
+  /** Hyrox: the distance achieved, logged once a time-target station's countdown ends. */
+  distanceM?: number;
+  /** Hyrox: the time a distance-target station took, measured by the runner's clock. */
+  durationSec?: number;
   completedAt: string;
 }
 
@@ -380,6 +384,13 @@ export async function updateSetLog(
       rpe: done.rpe ?? null,
       rir: done.rir ?? null,
       completed_at: done.completedAt,
+      // Unlike the fields above, distance/duration are NOT reset to null when
+      // absent: whichever of the two is this station's fixed target (set at
+      // creation, never part of a log call) must survive. Omitting the key
+      // entirely — not `?? null` — is what makes Postgrest leave the column
+      // untouched.
+      ...(done.distanceM !== undefined ? { distance_m: done.distanceM } : {}),
+      ...(done.durationSec !== undefined ? { duration_sec: done.durationSec } : {}),
     })
     .eq('id', setId)
     .select('*')
