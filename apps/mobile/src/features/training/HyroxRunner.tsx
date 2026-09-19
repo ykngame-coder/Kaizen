@@ -103,6 +103,11 @@ export function HyroxRunner({ block, sets, onFinished }: TimedRunnerProps): Reac
         actionLabel={isTimeMode ? t('sport.runner.hyroxInProgress') : t('sport.runner.hyroxDistanceReached')}
         onAction={isTimeMode ? () => undefined : finishWork}
         actionDisabled={isTimeMode}
+        // Un imprévu en pleine station ne doit pas fausser le chrono : la
+        // pause gèle aussi bien le décompte d'une station en temps que le
+        // chronomètre d'une station en distance.
+        secondaryLabel={clock.isPaused ? t('sport.runner.resumeClock') : t('sport.runner.pause')}
+        onSecondary={clock.togglePause}
       />
     );
   }
