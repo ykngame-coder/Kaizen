@@ -1272,6 +1272,8 @@ function createDemoRepository(): DataRepository {
               order: s.order,
               reps: s.reps ?? null,
               weightKg: s.weightKg ?? null,
+              durationSec: s.durationSec ?? null,
+              distanceM: s.distanceM ?? null,
               restSec: s.restSec ?? null,
               plannedReps: s.reps ?? null,
               plannedWeightKg: s.weightKg ?? null,
@@ -3288,7 +3290,13 @@ function createSupabaseRepository(
                 order: s.order,
                 reps: s.reps ?? null,
                 weight_kg: s.weightKg ?? null,
+                // Sans ces deux-là, une station chronométrée ou mesurée en
+                // mètres arrivait vide dans la séance planifiée : le lecteur
+                // n'avait plus qu'à demander des répétitions.
+                duration_sec: s.durationSec ?? null,
+                distance_m: s.distanceM ?? null,
                 rest_sec: s.restSec ?? null,
+                superset_group: s.supersetGroup ?? null,
                 planned_reps: s.reps ?? null,
                 planned_weight_kg: s.weightKg ?? null,
                 is_warmup: s.isWarmup ?? false,

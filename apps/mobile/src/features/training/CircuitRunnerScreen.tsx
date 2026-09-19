@@ -23,6 +23,7 @@ const FORMAT_COLOR_KEY: Record<string, 'accentStrength' | 'accentEndurance' | 'a
   amrap: 'accentStrength',
   emom: 'accentEndurance',
   for_time: 'accentLime',
+  hyrox: 'accentLime',
 };
 
 /** Live-guided execution for a session's blocks, one at a time — timer + the current block's exercises, advancing automatically when a timed block finishes. */
@@ -36,6 +37,8 @@ export function CircuitRunnerScreen(): React.JSX.Element {
     amrap: t('sport.circuitRunner.format.amrap'),
     emom: t('sport.circuitRunner.format.emom'),
     for_time: t('sport.circuitRunner.format.forTime'),
+    tabata: t('sport.circuitRunner.format.tabata'),
+    hyrox: t('sport.circuitRunner.format.hyrox'),
   };
   const { id } = useLocalSearchParams<{ id: string }>();
   const { data: blocks = [], isLoading } = useWorkoutBlocks(id);

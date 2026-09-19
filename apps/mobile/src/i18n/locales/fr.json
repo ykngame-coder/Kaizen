@@ -569,7 +569,9 @@
     "strength": "Musculation",
     "amrap": "AMRAP",
     "emom": "EMOM",
-    "forTime": "Pour le temps"
+    "forTime": "Pour le temps",
+    "tabata": "Tabata",
+    "hyrox": "Hyrox"
    },
    "blockCounter": "Bloc {{current}} / {{total}}",
    "notFound": {

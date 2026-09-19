@@ -569,7 +569,9 @@
     "strength": "Strength",
     "amrap": "AMRAP",
     "emom": "EMOM",
-    "forTime": "For Time"
+    "forTime": "For Time",
+    "tabata": "Tabata",
+    "hyrox": "Hyrox"
    },
    "blockCounter": "Block {{current}} / {{total}}",
    "notFound": {

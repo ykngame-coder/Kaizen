@@ -1,5 +1,6 @@
 import type { Exercise as CoreExercise, MuscleGroup } from '@supotsu/core';
 import data from './exercises.data.json';
+import { FRENCH_EXERCISE_NAMES } from './frenchNames';
 import { HYROX_SUPPLEMENT } from './hyroxSupplement';
 
 export type ExerciseCategory = 'force' | 'cardio' | 'mobilité';
@@ -24,7 +25,11 @@ export interface Exercise {
  * to our schema: muscles mapped to our groups, categories and equipment in
  * French, with instructions and image references kept for the detail view.
  */
-export const EXERCISES = [...(data as unknown as Exercise[]), ...HYROX_SUPPLEMENT];
+export const EXERCISES = [...(data as unknown as Exercise[]), ...HYROX_SUPPLEMENT].map((e) =>
+  // La traduction se pose ici, à la lecture : le fichier de données reste un
+  // miroir de la source amont, regénérable sans perdre les noms français.
+  FRENCH_EXERCISE_NAMES[e.id] ? { ...e, name: FRENCH_EXERCISE_NAMES[e.id]! } : e,
+);
 
 /** Build a CDN URL for an exercise image path. */
 export function exerciseImageUrl(image: string | null): string | null {
