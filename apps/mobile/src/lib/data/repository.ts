@@ -2892,7 +2892,11 @@ function createSupabaseRepository(
             name: session.name,
             plannedFor: s.plannedFor,
             notes: session.notes ?? undefined,
-            blocks: sessionToWorkoutBlocks(blocks.map(rowToUserSessionBlock), exercises.map(rowToUserSessionExercise)),
+            blocks: sessionToWorkoutBlocks(
+              blocks.map(rowToUserSessionBlock),
+              exercises.map(rowToUserSessionExercise),
+              (await this.getAthleteProfile(userId))?.sex,
+            ),
           });
         }
         return;
@@ -2914,7 +2918,15 @@ function createSupabaseRepository(
       return (await listUserSessionsDb(client, userId)).map(rowToUserSession);
     },
     async listCommunitySessions(userId) {
-      return (await listCommunitySessionsDb(client, userId)).map(rowToUserSession);
+      // Une séance qui appartient à un programme ne se découvre que par lui :
+      // sortie de sa progression, elle n'a plus de sens, et elle noierait les
+      // partages entre utilisateurs sous le contenu éditorial.
+      const [sessions, links] = await Promise.all([
+        listCommunitySessionsDb(client, userId),
+        listCatalogSessions(client),
+      ]);
+      const inProgram = new Set(links.map((l) => l.session_id));
+      return sessions.filter((s) => !inProgram.has(s.id)).map(rowToUserSession);
     },
     async getSessionExercises(sessionId) {
       return (await listSessionExercisesDb(client, sessionId)).map(rowToUserSessionExercise);

@@ -1,4 +1,5 @@
-import type { BlockFormat, SetEntry, UserSessionBlock, UserSessionExercise } from '@supotsu/core';
+import type { BlockFormat, Sex, SetEntry, UserSessionBlock, UserSessionExercise } from '@supotsu/core';
+import { withStandardSledWeights } from '@supotsu/engines';
 
 /** Un bloc prêt à être enregistré, tel que l'attendent `addPlannedWorkout` et `addCircuitWorkout`. */
 export interface SessionWorkoutBlock {
@@ -22,6 +23,8 @@ type WorkoutBlocks = SessionWorkoutBlock[];
 export function sessionToWorkoutBlocks(
   blocks: UserSessionBlock[],
   exercises: UserSessionExercise[],
+  /** Complète les charges de traîneau laissées vides par le coach, au standard de la catégorie. */
+  sex?: Sex,
 ): WorkoutBlocks {
   const setOf = (e: UserSessionExercise, fallbackOrder: number): WorkoutBlocks[number]['sets'][number] => ({
     exerciseId: e.exerciseId,
@@ -34,13 +37,13 @@ export function sessionToWorkoutBlocks(
   });
 
   if (blocks.length === 0) {
-    return [{ format: 'strength', sets: exercises.map(setOf) }];
+    return [{ format: 'strength', sets: withStandardSledWeights(exercises.map(setOf), sex) }];
   }
 
   return blocks.map((b) => ({
     format: b.format,
     timeCapSec: b.timeCapSec,
     targetRounds: b.targetRounds,
-    sets: exercises.filter((e) => e.blockId === b.id).map(setOf),
+    sets: withStandardSledWeights(exercises.filter((e) => e.blockId === b.id).map(setOf), sex),
   }));
 }

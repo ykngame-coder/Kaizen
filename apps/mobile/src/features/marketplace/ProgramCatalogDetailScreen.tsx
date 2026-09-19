@@ -7,7 +7,8 @@ import type { ProgramFocus } from '@supotsu/core';
 import { PICKABLE_EXERCISES } from '@supotsu/shared';
 import { EXERCISES } from '@/features/exercises/catalog';
 import { BackButton } from '@/features/navigation/BackButton';
-import { useEnrolledProgramIds, useEnrollProgram, useProgramSessionsContent, usePrograms } from '@/lib/data/queries';
+import { withStandardSledWeights } from '@supotsu/engines';
+import { useAthleteProfile, useEnrolledProgramIds, useEnrollProgram, useProgramSessionsContent, usePrograms } from '@/lib/data/queries';
 import { describeBlock, describeSet } from './sessionPreview';
 
 const FOCUS_LABEL: Record<ProgramFocus, string> = {
@@ -37,6 +38,9 @@ export function ProgramCatalogDetailScreen(): React.JSX.Element {
   const program = useMemo(() => programs.find((p) => p.id === id), [programs, id]);
   const enrolled = enrolledIds.includes(id ?? '');
   const { data: content } = useProgramSessionsContent(program?.sessions);
+  // Même charge à l'aperçu qu'à la séance : le traîneau se lit au standard de
+  // la catégorie, sinon l'écran promettrait autre chose que ce qui sera fait.
+  const { data: athlete } = useAthleteProfile();
 
   /**
    * Semaine par semaine, et non « une semaine type » : les semaines d'un vrai
@@ -106,7 +110,10 @@ export function ProgramCatalogDetailScreen(): React.JSX.Element {
                     <Text variant="subtitle">{s.title}</Text>
                     {(detail?.blocks ?? []).map((b) => {
                       const label = describeBlock({ format: b.format, timeCapSec: b.timeCapSec, targetRounds: b.targetRounds, sets: [] });
-                      const sets = (detail?.exercises ?? []).filter((e) => e.blockId === b.id);
+                      const sets = withStandardSledWeights(
+                        (detail?.exercises ?? []).filter((e) => e.blockId === b.id),
+                        athlete?.sex,
+                      );
                       return (
                         <View key={b.id} style={{ marginTop: spacing[2] }}>
                           {label ? (

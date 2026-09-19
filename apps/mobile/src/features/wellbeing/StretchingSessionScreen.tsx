@@ -5,6 +5,7 @@ import { useTranslation } from 'react-i18next';
 import { Button, EmptyState, Icon, Screen, Text, triggerHaptic, useTheme } from '@supotsu/ui';
 import { radii, spacing } from '@supotsu/design-system';
 import type { MuscleGroup } from '@supotsu/core';
+import { BackButton } from '@/features/navigation/BackButton';
 import { stretchesForZone, type Stretch } from './stretchCatalog';
 import { useTodayStretchRoutine } from './useStretchRoutine';
 
@@ -106,6 +107,7 @@ export function StretchingSessionScreen(): React.JSX.Element {
 
   return (
     <Screen>
+      <BackButton />
       <Text variant="caption" color="textSubtle">{t('wellbeing.stretchingSession.progress', { current: idx + 1, total: holds.length })}</Text>
 
       <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', gap: spacing[6] }}>

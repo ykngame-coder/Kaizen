@@ -4,6 +4,7 @@ import { useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { Badge, Button, Card, Screen, Text } from '@supotsu/ui';
 import { spacing } from '@supotsu/design-system';
+import { BackButton } from '@/features/navigation/BackButton';
 import { ZONE_LABEL, stretchesForZone } from './stretchCatalog';
 import { useTodayStretchRoutine } from './useStretchRoutine';
 
@@ -24,6 +25,9 @@ export function StretchingScreen(): React.JSX.Element {
 
   return (
     <Screen scroll>
+      {/* Atteint depuis le Catalogue, cet écran ouvre une autre pile : le
+          balayage iOS n'a rien à dépiler et on s'y retrouvait coincé. */}
+      <BackButton />
       <Text variant="title">{t('wellbeing.stretching.title')}</Text>
       <Text variant="caption" color="textMuted">
         {t('wellbeing.stretching.subtitle')}
