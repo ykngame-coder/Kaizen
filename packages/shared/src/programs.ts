@@ -158,6 +158,38 @@ const RECOMP_PATTERN: ProgramSessionTemplate[] = [
   },
 ];
 
+const PPL_PATTERN: ProgramSessionTemplate[] = [
+  {
+    title: 'Push',
+    exercises: [
+      { exerciseId: 'Barbell_Bench_Press_-_Medium_Grip', sets: 4, reps: 8 },
+      { exerciseId: 'Barbell_Shoulder_Press', sets: 3, reps: 8 },
+      { exerciseId: 'Incline_Dumbbell_Press', sets: 3, reps: 10 },
+      { exerciseId: 'Side_Lateral_Raise', sets: 3, reps: 15 },
+      { exerciseId: 'EZ-Bar_Skullcrusher', sets: 3, reps: 12 },
+    ],
+  },
+  {
+    title: 'Pull',
+    exercises: [
+      { exerciseId: 'Barbell_Deadlift', sets: 4, reps: 5 },
+      { exerciseId: 'Bent_Over_Barbell_Row', sets: 4, reps: 8 },
+      { exerciseId: 'One-Arm_Dumbbell_Row', sets: 3, reps: 10 },
+      { exerciseId: 'Barbell_Curl', sets: 3, reps: 12 },
+      { exerciseId: 'Hammer_Curls', sets: 3, reps: 12 },
+    ],
+  },
+  {
+    title: 'Jambes',
+    exercises: [
+      { exerciseId: 'Barbell_Squat', sets: 4, reps: 8 },
+      { exerciseId: 'Romanian_Deadlift', sets: 3, reps: 10 },
+      { exerciseId: 'Dumbbell_Lunges', sets: 3, reps: 10 },
+      { exerciseId: 'Standing_Barbell_Calf_Raise', sets: 3, reps: 15 },
+    ],
+  },
+];
+
 /**
  * Marketplace catalogue. Ids are stable slugs shared with the DB seed
  * (supabase/migrations/0004_community_marketplace.sql), so demo mode and the
@@ -213,6 +245,18 @@ export const PROGRAM_CATALOG: Program[] = [
     description: 'Musculation + cardio raisonné pour perdre du gras en gardant le muscle.',
     priceCents: 1900,
     sessionTemplates: repeatWeekly(RECOMP_PATTERN, 12, 4),
+  },
+  {
+    id: 'prog-ppl',
+    title: 'Push Pull Legs',
+    author: 'Coach Léa',
+    focus: 'strength',
+    level: 'intermediate',
+    weeks: 8,
+    sessionsPerWeek: 3,
+    description: 'Split Push/Pull/Legs à la barre et aux haltères — un cycle complet par semaine.',
+    priceCents: 0,
+    sessionTemplates: repeatWeekly(PPL_PATTERN, 8, 3),
   },
   {
     id: 'prog-mobilite',
