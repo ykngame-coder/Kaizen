@@ -15,10 +15,14 @@ export interface FoodPickerSheetProps {
   /** Un code-barres arrivé par la navigation (retour du scanner) — relance automatiquement sa recherche une fois. */
   initialBarcode?: string;
   onPick: (food: FoodItem) => void;
+  /** L'aliment déjà choisi (géré par le parent) — sert uniquement à surligner la bonne carte dans les résultats. */
+  selected?: FoodItem | null;
+  /** Appelé au tout début d'une nouvelle recherche/lookup — laisse le parent effacer une sélection précédente. */
+  onSearchStart?: () => void;
 }
 
 /** Recherche un aliment (nom, code-barres, scan) avec repli en saisie manuelle si introuvable — extrait de FoodSearchScreen pour être réutilisé par l'écran de recette. */
-export function FoodPickerSheet({ visible, scanReturnPath, initialBarcode, onPick }: FoodPickerSheetProps): React.JSX.Element | null {
+export function FoodPickerSheet({ visible, scanReturnPath, initialBarcode, onPick, selected, onSearchStart }: FoodPickerSheetProps): React.JSX.Element | null {
   const { t } = useTranslation();
   const router = useRouter();
   const { colors } = useTheme();
@@ -39,6 +43,7 @@ export function FoodPickerSheet({ visible, scanReturnPath, initialBarcode, onPic
   const [newFat, setNewFat] = useState('');
 
   const runSearch = async (): Promise<void> => {
+    onSearchStart?.();
     setError(null);
     setLoading(true);
     setNotFoundBarcode(null);
@@ -54,6 +59,7 @@ export function FoodPickerSheet({ visible, scanReturnPath, initialBarcode, onPic
   };
 
   const lookupBarcode = async (code: string): Promise<void> => {
+    onSearchStart?.();
     setError(null);
     setLoading(true);
     setNotFoundBarcode(null);
@@ -178,7 +184,13 @@ export function FoodPickerSheet({ visible, scanReturnPath, initialBarcode, onPic
             <Pressable
               key={`${food.barcode ?? food.name}-${i}`}
               onPress={() => onPick(food)}
-              style={{ padding: spacing[3], borderRadius: radii.md, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border }}
+              style={{
+                padding: spacing[3],
+                borderRadius: radii.md,
+                backgroundColor: colors.surface,
+                borderWidth: 1,
+                borderColor: selected === food ? colors.primary : colors.border,
+              }}
             >
               <Text variant="body">{food.name}</Text>
               <Text variant="caption" color="textMuted">

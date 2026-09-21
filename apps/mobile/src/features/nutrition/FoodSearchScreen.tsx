@@ -20,7 +20,13 @@ export function FoodSearchScreen(): React.JSX.Element {
         {t('nutrition.foodSearch.subtitle')}
       </Text>
 
-      <FoodPickerSheet visible initialBarcode={params.barcode} onPick={setSelected} />
+      <FoodPickerSheet
+        visible
+        initialBarcode={params.barcode}
+        selected={selected}
+        onSearchStart={() => setSelected(null)}
+        onPick={setSelected}
+      />
 
       {selected ? <FoodLogCard food={selected} onLogged={() => router.back()} /> : null}
 
