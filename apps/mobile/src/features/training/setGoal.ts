@@ -1,11 +1,12 @@
 import type { BlockFormat, SetEntry } from '@supotsu/core';
 
 /**
- * Ce qu'on lit d'une séance avant de s'y engager.
+ * L'objectif d'une prescription, dit dans son unité.
  *
  * Une séance de coach est chronométrée, chargée, parfois exprimée en mètres :
- * l'afficher en « séries × répétitions » comme le faisait l'ancien aperçu la
- * rendait méconnaissable. Chaque prescription se dit ici dans son unité.
+ * l'afficher en « séries × répétitions » la rendait méconnaissable. Sert à
+ * l'aperçu d'un programme comme au lecteur en pleine séance — les deux doivent
+ * annoncer exactement la même chose.
  */
 
 type PreviewSet = Pick<SetEntry, 'exerciseId' | 'order' | 'reps' | 'weightKg' | 'durationSec' | 'distanceM'>;

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { describeBlock, describeSet } from './sessionPreview';
+import { describeBlock, describeSet } from './setGoal';
 
 describe('describeSet', () => {
   it('donne une durée en minutes et secondes', () => {

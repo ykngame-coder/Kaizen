@@ -1666,7 +1666,9 @@
    "hyroxInProgress": "Counting down…",
    "hyroxDistanceReached": "Distance reached",
    "hyroxLogContext": "Station done",
-   "hyroxDistanceA11y": "Distance covered (m)"
+   "hyroxDistanceA11y": "Distance covered (m)",
+   "stationGoal": "Target: {{goal}}",
+   "upcoming": "Up next"
   },
   "progression": {
    "rationale": {

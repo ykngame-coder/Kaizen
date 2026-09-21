@@ -9,7 +9,7 @@ import { EXERCISES } from '@/features/exercises/catalog';
 import { BackButton } from '@/features/navigation/BackButton';
 import { withStandardSledWeights } from '@supotsu/engines';
 import { useAthleteProfile, useEnrolledProgramIds, useEnrollProgram, useProgramSessionsContent, usePrograms } from '@/lib/data/queries';
-import { describeBlock, describeSet } from './sessionPreview';
+import { describeBlock, describeSet } from '@/features/training/setGoal';
 
 const FOCUS_LABEL: Record<ProgramFocus, string> = {
   strength: 'Force',

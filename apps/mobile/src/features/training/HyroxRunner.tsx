@@ -7,6 +7,7 @@ import { EXERCISE_LIBRARY } from '@supotsu/shared';
 import { EXERCISES } from '@/features/exercises/catalog';
 import { useCustomExercises, useLogSet } from '@/lib/data/queries';
 import { computeHyroxStationState, formatClock } from './blockRunnerEngine';
+import { describeSet } from './setGoal';
 import { useRunClock } from './useRunClock';
 import { RunnerFocus } from './RunnerFocus';
 import type { TimedRunnerProps } from './AmrapRunner';
@@ -91,6 +92,7 @@ export function HyroxRunner({ block, sets, onFinished }: TimedRunnerProps): Reac
   };
 
   if (phase === 'work') {
+    const upcoming = ordered.slice(activeIndex + 1);
     return (
       <RunnerFocus
         tag="Hyrox"
@@ -99,7 +101,9 @@ export function HyroxRunner({ block, sets, onFinished }: TimedRunnerProps): Reac
         current={activeIndex + 1}
         context={isTimeMode ? t('sport.runner.remaining') : t('sport.runner.elapsed')}
         value={formatClock(state!.displaySec)}
-        valueHint={!isTimeMode && activeSet.distanceM != null ? t('sport.runner.hyroxTargetDistance', { distance: activeSet.distanceM }) : undefined}
+        // L'objectif est prévu : le taire obligeait à deviner ce qu'on est en
+        // train de faire, chrono à l'appui.
+        valueHint={t('sport.runner.stationGoal', { goal: describeSet(activeSet) })}
         actionLabel={isTimeMode ? t('sport.runner.hyroxInProgress') : t('sport.runner.hyroxDistanceReached')}
         onAction={isTimeMode ? () => undefined : finishWork}
         actionDisabled={isTimeMode}
@@ -108,7 +112,21 @@ export function HyroxRunner({ block, sets, onFinished }: TimedRunnerProps): Reac
         // chronomètre d'une station en distance.
         secondaryLabel={clock.isPaused ? t('sport.runner.resumeClock') : t('sport.runner.pause')}
         onSecondary={clock.togglePause}
-      />
+      >
+        {upcoming.length > 0 ? (
+          <View style={{ gap: spacing[1] }}>
+            <Text variant="label" color="textMuted">{t('sport.runner.upcoming')}</Text>
+            {upcoming.map((set, i) => (
+              <View key={set.id} style={{ flexDirection: 'row', justifyContent: 'space-between', gap: spacing[3], opacity: i === 0 ? 1 : 0.55 }}>
+                <Text variant="caption" color={i === 0 ? 'text' : 'textMuted'} style={{ flex: 1 }} numberOfLines={1}>
+                  {activeIndex + i + 2}. {exerciseName(set.exerciseId)}
+                </Text>
+                <Text variant="caption" color="textSubtle">{describeSet(set)}</Text>
+              </View>
+            ))}
+          </View>
+        ) : null}
+      </RunnerFocus>
     );
   }
 
