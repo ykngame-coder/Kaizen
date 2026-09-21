@@ -1,4 +1,4 @@
--- supabase/migrations/0039_recipes.sql
+-- supabase/migrations/0041_recipes.sql
 -- ---------------------------------------------------------------------------
 -- Recettes calculées : un panier d'ingrédients (macros figées à l'ajout,
 -- jamais une référence live vers Open Food Facts) dont les macros pour 100 g
