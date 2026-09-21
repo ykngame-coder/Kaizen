@@ -12,3 +12,4 @@ export * from './marketplace';
 export * from './records';
 export * from './score';
 export * from './user-programs';
+export * from './recipes';

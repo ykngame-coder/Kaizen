@@ -9,6 +9,7 @@ export * from './circadian';
 export * from './prediction';
 export * from './wellness';
 export * from './nutrition';
+export * from './recipes';
 export * from './gamification';
 export * from './community';
 export * from './marketplace';
