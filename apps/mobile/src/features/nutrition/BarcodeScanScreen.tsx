@@ -1,6 +1,6 @@
 import React, { useCallback, useRef, useState } from 'react';
 import { Platform, StyleSheet, View } from 'react-native';
-import { useFocusEffect, useRouter } from 'expo-router';
+import { useFocusEffect, useLocalSearchParams, useRouter, type Href } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { CameraView, useCameraPermissions, type BarcodeScanningResult } from 'expo-camera';
 import { Button, Screen, Text } from '@supotsu/ui';
@@ -15,6 +15,8 @@ export function BarcodeScanScreen(): React.JSX.Element {
   const { t } = useTranslation();
   const router = useRouter();
   const [permission, requestPermission] = useCameraPermissions();
+  const params = useLocalSearchParams<{ returnTo?: string }>();
+  const returnPath = params.returnTo && params.returnTo.startsWith('/') ? params.returnTo : '/nutrition/food/search';
   const scannedRef = useRef(false);
   // expo-camera's iOS preview doesn't re-initialise reliably under the new
   // architecture (expo/expo#31597) — the view mounts but the capture session
@@ -35,7 +37,7 @@ export function BarcodeScanScreen(): React.JSX.Element {
     const code = result.data?.replace(/\D/g, '');
     if (!code) return;
     scannedRef.current = true;
-    router.replace(`/nutrition/food/search?barcode=${code}`);
+    router.replace(`${returnPath}?barcode=${code}` as Href);
   };
 
   if (Platform.OS === 'web') {
@@ -45,7 +47,7 @@ export function BarcodeScanScreen(): React.JSX.Element {
         <Text variant="body" color="textMuted">
           {t('nutrition.barcodeScan.webBody')}
         </Text>
-        <Button label={t('nutrition.barcodeScan.goToSearch')} onPress={() => router.replace('/nutrition/food/search')} />
+        <Button label={t('nutrition.barcodeScan.goToSearch')} onPress={() => router.replace(returnPath as Href)} />
       </Screen>
     );
   }
@@ -69,7 +71,7 @@ export function BarcodeScanScreen(): React.JSX.Element {
         </Text>
         <Button label={t('nutrition.barcodeScan.allowCameraButton')} onPress={requestPermission} />
         <View style={{ alignItems: 'flex-start' }}>
-          <Button label={t('nutrition.barcodeScan.enterManually')} variant="secondary" onPress={() => router.replace('/nutrition/food/search')} />
+          <Button label={t('nutrition.barcodeScan.enterManually')} variant="secondary" onPress={() => router.replace(returnPath as Href)} />
         </View>
       </Screen>
     );
