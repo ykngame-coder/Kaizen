@@ -28,7 +28,7 @@ export function FoodSearchScreen(): React.JSX.Element {
         onPick={setSelected}
       />
 
-      {selected ? <FoodLogCard food={selected} onLogged={() => router.back()} /> : null}
+      {selected ? <FoodLogCard key={selected.barcode ?? selected.name} food={selected} onLogged={() => router.back()} /> : null}
 
       <Button label={t('nutrition.foodSearch.backButton')} variant="secondary" onPress={() => router.back()} />
     </Screen>
