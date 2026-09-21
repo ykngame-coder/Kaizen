@@ -177,6 +177,12 @@ export function AddMealScreen(): React.JSX.Element {
         onPress={() => router.replace('/nutrition/food/search')}
       />
 
+      <Button
+        label={t('nutrition.recipes.myRecipes.openButton')}
+        variant="secondary"
+        onPress={() => router.push('/nutrition/recipes')}
+      />
+
       <Pressable
         onPress={() => setShowDatePicker(true)}
         style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: spacing[2] }}

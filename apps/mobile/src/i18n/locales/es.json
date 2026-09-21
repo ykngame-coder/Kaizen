@@ -2320,6 +2320,15 @@
     "noIngredients": "Añade al menos un ingrediente.",
     "saveFailed": "No se pudo guardar.",
     "deleteFailed": "No se pudo eliminar."
+   },
+   "myRecipes": {
+    "title": "Mis recetas",
+    "openButton": "Mis recetas",
+    "newButton": "Nueva receta",
+    "communityButton": "Recetas de la comunidad",
+    "empty": "Aún no hay recetas.",
+    "editA11y": "Editar {{name}}",
+    "deleteA11y": "Eliminar {{name}}"
    }
   },
   "calorieCalculator": {

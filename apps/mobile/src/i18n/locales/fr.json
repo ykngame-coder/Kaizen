@@ -2320,6 +2320,15 @@
     "noIngredients": "Ajoute au moins un ingrédient.",
     "saveFailed": "Enregistrement impossible.",
     "deleteFailed": "Suppression impossible."
+   },
+   "myRecipes": {
+    "title": "Mes recettes",
+    "openButton": "Mes recettes",
+    "newButton": "Nouvelle recette",
+    "communityButton": "Recettes de la communauté",
+    "empty": "Aucune recette pour l'instant.",
+    "editA11y": "Modifier {{name}}",
+    "deleteA11y": "Supprimer {{name}}"
    }
   },
   "calorieCalculator": {

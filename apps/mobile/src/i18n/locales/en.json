@@ -2320,6 +2320,15 @@
     "noIngredients": "Add at least one ingredient.",
     "saveFailed": "Couldn't save.",
     "deleteFailed": "Couldn't delete."
+   },
+   "myRecipes": {
+    "title": "My recipes",
+    "openButton": "My recipes",
+    "newButton": "New recipe",
+    "communityButton": "Community recipes",
+    "empty": "No recipes yet.",
+    "editA11y": "Edit {{name}}",
+    "deleteA11y": "Delete {{name}}"
    }
   },
   "calorieCalculator": {

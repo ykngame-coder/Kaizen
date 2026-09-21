@@ -2320,6 +2320,15 @@
     "noIngredients": "Füge mindestens eine Zutat hinzu.",
     "saveFailed": "Speichern nicht möglich.",
     "deleteFailed": "Löschen nicht möglich."
+   },
+   "myRecipes": {
+    "title": "Meine Rezepte",
+    "openButton": "Meine Rezepte",
+    "newButton": "Neues Rezept",
+    "communityButton": "Rezepte der Community",
+    "empty": "Noch keine Rezepte.",
+    "editA11y": "{{name}} bearbeiten",
+    "deleteA11y": "{{name}} löschen"
    }
   },
   "calorieCalculator": {
