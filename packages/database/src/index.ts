@@ -11,6 +11,7 @@ export * from './repositories/sleep';
 export * from './repositories/replace';
 export * from './repositories/nutrition';
 export * from './repositories/customFoods';
+export * from './repositories/recipes';
 export * from './repositories/habits';
 export * from './repositories/community';
 export * from './repositories/leaderboard';

@@ -390,6 +390,50 @@ export interface Database {
         Update: Partial<Database['public']['Tables']['custom_foods']['Insert']>;
         Relationships: [];
       };
+      recipes: {
+        Row: {
+          id: string;
+          user_id: string;
+          name: string;
+          visibility: 'private' | 'public';
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          user_id: string;
+          name: string;
+          visibility?: 'private' | 'public';
+        };
+        Update: Partial<Database['public']['Tables']['recipes']['Insert']>;
+        Relationships: [];
+      };
+      recipe_ingredients: {
+        Row: {
+          id: string;
+          recipe_id: string;
+          barcode: string | null;
+          description: string;
+          kcal_per100g: number;
+          protein_g_per100g: number | null;
+          carb_g_per100g: number | null;
+          fat_g_per100g: number | null;
+          quantity_g: number;
+          order: number;
+        };
+        Insert: {
+          recipe_id: string;
+          barcode?: string | null;
+          description: string;
+          kcal_per100g: number;
+          protein_g_per100g?: number | null;
+          carb_g_per100g?: number | null;
+          fat_g_per100g?: number | null;
+          quantity_g: number;
+          order?: number;
+        };
+        Update: Partial<Database['public']['Tables']['recipe_ingredients']['Insert']>;
+        Relationships: [];
+      };
       habits: {
         Row: {
           id: string;
