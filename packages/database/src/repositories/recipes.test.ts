@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { deleteRecipe, getRecipe, insertRecipe, listCommunityRecipes, listRecipes, type RecipeIngredientRow, type RecipeRow } from './recipes';
+import { copyRecipe, deleteRecipe, getRecipe, insertRecipe, listCommunityRecipes, listRecipes, updateRecipe, type RecipeIngredientRow, type RecipeRow } from './recipes';
 import type { SupotsuClient } from '../client';
 
 interface Tables {
@@ -165,5 +165,51 @@ describe('deleteRecipe', () => {
     tables.recipes.push({ id: 'r1', user_id: 'u1', name: 'X', visibility: 'private', created_at: 'x', updated_at: 'x' });
     await deleteRecipe(makeClient(tables), 'r1');
     expect(tables.recipes).toHaveLength(0);
+  });
+});
+
+describe('updateRecipe', () => {
+  it('remplace le nom, la visibilité et la liste d ingrédients', async () => {
+    const tables = seed();
+    tables.recipes.push({ id: 'r1', user_id: 'u1', name: 'Soupe', visibility: 'private', created_at: 'x', updated_at: 'x' });
+    tables.recipe_ingredients.push({ id: 'i1', recipe_id: 'r1', barcode: null, description: 'Carotte', kcal_per100g: 40, protein_g_per100g: 1, carb_g_per100g: 9, fat_g_per100g: 0, quantity_g: 200, order: 0 });
+    const out = await updateRecipe(makeClient(tables), 'r1', { name: 'Soupe v2', visibility: 'public' }, [
+      { description: 'Poireau', kcal_per100g: 30, protein_g_per100g: 1, carb_g_per100g: 6, fat_g_per100g: 0, quantity_g: 150, order: 0 },
+    ]);
+    expect(out.recipe.name).toBe('Soupe v2');
+    expect(out.recipe.visibility).toBe('public');
+    expect(out.ingredients.map((i) => i.description)).toEqual(['Poireau']);
+    expect(tables.recipe_ingredients.map((i) => i.description)).toEqual(['Poireau']);
+  });
+
+  it('restaure les anciens ingrédients si la réinsertion échoue', async () => {
+    const tables = seed();
+    tables.recipes.push({ id: 'r1', user_id: 'u1', name: 'Soupe', visibility: 'private', created_at: 'x', updated_at: 'x' });
+    tables.recipe_ingredients.push({ id: 'i1', recipe_id: 'r1', barcode: null, description: 'Carotte', kcal_per100g: 40, protein_g_per100g: 1, carb_g_per100g: 9, fat_g_per100g: 0, quantity_g: 200, order: 0 });
+    const client = makeClient(tables, 'recipe_ingredients');
+    await expect(
+      updateRecipe(client, 'r1', { name: 'Soupe v2', visibility: 'public' }, [
+        { description: 'Poireau', kcal_per100g: 30, protein_g_per100g: 1, carb_g_per100g: 6, fat_g_per100g: 0, quantity_g: 150, order: 0 },
+      ]),
+    ).rejects.toThrow();
+    expect(tables.recipe_ingredients.map((i) => i.description)).toEqual(['Carotte']);
+  });
+});
+
+describe('copyRecipe', () => {
+  it('duplique la recette d un autre utilisateur, en privé, avec ses ingrédients', async () => {
+    const tables = seed();
+    tables.recipes.push({ id: 'r1', user_id: 'u2', name: 'Soupe de u2', visibility: 'public', created_at: 'x', updated_at: 'x' });
+    tables.recipe_ingredients.push({ id: 'i1', recipe_id: 'r1', barcode: null, description: 'Carotte', kcal_per100g: 40, protein_g_per100g: 1, carb_g_per100g: 9, fat_g_per100g: 0, quantity_g: 200, order: 0 });
+    const out = await copyRecipe(makeClient(tables), 'u1', 'r1');
+    expect(out.recipe.user_id).toBe('u1');
+    expect(out.recipe.visibility).toBe('private');
+    expect(out.recipe.id).not.toBe('r1');
+    expect(out.ingredients.map((i) => i.description)).toEqual(['Carotte']);
+    expect(tables.recipes).toHaveLength(2);
+  });
+
+  it('rejette si la recette source n existe pas', async () => {
+    await expect(copyRecipe(makeClient(seed()), 'u1', 'missing')).rejects.toThrow();
   });
 });

@@ -78,3 +78,51 @@ export async function deleteRecipe(client: SupotsuClient, recipeId: string): Pro
   const { error } = await client.from('recipes').delete().eq('id', recipeId);
   if (error) throw error;
 }
+
+/**
+ * Remplace le nom, la visibilité et la liste d'ingrédients d'une recette.
+ *
+ * Remplacement, pas fusion — même choix qu'`updateUserSession` : l'écran
+ * d'édition renvoie la liste complète, la réconcilier ligne par ligne
+ * n'apporterait rien. Pas de transaction entre la suppression et la
+ * réinsertion, donc les anciens ingrédients sont relus avant d'être effacés
+ * et restaurés si l'insertion des nouveaux échoue en cours de route — une
+ * édition ratée doit laisser la recette intacte, jamais vidée.
+ */
+export async function updateRecipe(
+  client: SupotsuClient,
+  recipeId: string,
+  patch: { name: string; visibility: 'private' | 'public' },
+  ingredients: Omit<RecipeIngredientInsertRow, 'recipe_id'>[],
+): Promise<RecipeWithIngredients> {
+  const previous = await listIngredients(client, recipeId);
+  const { data: recipe, error } = await client
+    .from('recipes')
+    .update({ name: patch.name, visibility: patch.visibility })
+    .eq('id', recipeId)
+    .select('*')
+    .single();
+  if (error) throw error;
+  const { error: deleteError } = await client.from('recipe_ingredients').delete().eq('recipe_id', recipeId);
+  if (deleteError) throw deleteError;
+  try {
+    const inserted = await insertIngredients(client, recipeId, ingredients);
+    return { recipe, ingredients: inserted };
+  } catch (e) {
+    if (previous.length > 0) {
+      await client.from('recipe_ingredients').insert(previous.map(({ id, ...rest }) => rest));
+    }
+    throw e;
+  }
+}
+
+/** Duplique une recette (typiquement celle d'un autre) dans les recettes du copieur, privée par défaut. */
+export async function copyRecipe(client: SupotsuClient, userId: string, sourceRecipeId: string): Promise<RecipeWithIngredients> {
+  const source = await getRecipe(client, sourceRecipeId);
+  if (!source) throw new Error('Recette introuvable.');
+  return insertRecipe(
+    client,
+    { user_id: userId, name: source.recipe.name, visibility: 'private' },
+    source.ingredients.map(({ id, recipe_id, ...rest }) => rest),
+  );
+}
