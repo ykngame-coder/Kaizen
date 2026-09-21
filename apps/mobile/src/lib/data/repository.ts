@@ -29,6 +29,8 @@ import type {
   GeneralLeaderboardEntry,
   DataSource,
   Intensity,
+  Recipe,
+  RecipeIngredient,
 } from '@supotsu/core';
 import type {
   ActivityInput,
@@ -110,6 +112,16 @@ import {
   updateNutritionEntry as updateNutritionEntryDb,
   getCustomFoodByBarcode,
   insertCustomFood as insertCustomFoodDb,
+  listRecipes as listRecipesDb,
+  listCommunityRecipes as listCommunityRecipesDb,
+  getRecipe as getRecipeDb,
+  insertRecipe as insertRecipeDb,
+  updateRecipe as updateRecipeDb,
+  deleteRecipe as deleteRecipeDb,
+  copyRecipe as copyRecipeDb,
+  type RecipeRow,
+  type RecipeIngredientRow,
+  type RecipeIngredientInsertRow,
   insertHabit,
   listHabits as listHabitsDb,
   updateHabit as updateHabitDb,
@@ -272,6 +284,22 @@ export interface CustomFoodInput {
   fatG?: number;
 }
 
+export interface RecipeIngredientInput {
+  barcode?: string;
+  description: string;
+  kcalPer100g: number;
+  proteinGPer100g: number;
+  carbGPer100g: number;
+  fatGPer100g: number;
+  quantityG: number;
+}
+
+export interface RecipeInput {
+  name: string;
+  visibility: Visibility;
+  ingredients: RecipeIngredientInput[];
+}
+
 export type NewSleepSession = Omit<SleepSession, 'id' | 'userId' | 'createdAt' | 'updatedAt'>;
 
 export interface AddSleepSessionResult {
@@ -410,6 +438,14 @@ export interface DataRepository {
   /** Un aliment ajouté par un utilisateur pour un code-barres qu'Open Food Facts ne connaît pas — partagé, pas de copie de leur base. */
   getCustomFood(barcode: string): Promise<FoodItem | null>;
   addCustomFood(userId: string, input: CustomFoodInput): Promise<FoodItem>;
+  listRecipes(userId: string): Promise<Recipe[]>;
+  listCommunityRecipes(userId: string): Promise<Recipe[]>;
+  getRecipe(recipeId: string): Promise<Recipe | null>;
+  addRecipe(userId: string, input: RecipeInput): Promise<Recipe>;
+  updateRecipe(userId: string, recipeId: string, input: RecipeInput): Promise<Recipe>;
+  deleteRecipe(userId: string, recipeId: string): Promise<void>;
+  /** Duplique la recette (typiquement celle d'un autre) en privé, dans les recettes de l'appelant. */
+  copyRecipe(userId: string, sourceRecipeId: string): Promise<Recipe>;
   listHabits(userId: string): Promise<Habit[]>;
   addHabit(userId: string, input: HabitInput): Promise<Habit>;
   /** Rename/retarget an existing habit. */
@@ -633,6 +669,44 @@ function rowToFoodItem(r: CustomFoodRow): FoodItem {
       carbG: r.carb_g ?? 0,
       fatG: r.fat_g ?? 0,
     },
+  };
+}
+
+function rowsToRecipe(recipe: RecipeRow, ingredients: RecipeIngredientRow[]): Recipe {
+  return {
+    id: recipe.id,
+    userId: recipe.user_id,
+    name: recipe.name,
+    visibility: recipe.visibility,
+    createdAt: recipe.created_at,
+    updatedAt: recipe.updated_at,
+    ingredients: ingredients
+      .slice()
+      .sort((a, b) => a.order - b.order)
+      .map((i) => ({
+        id: i.id,
+        barcode: i.barcode ?? undefined,
+        description: i.description,
+        kcalPer100g: i.kcal_per100g,
+        proteinGPer100g: i.protein_g_per100g ?? 0,
+        carbGPer100g: i.carb_g_per100g ?? 0,
+        fatGPer100g: i.fat_g_per100g ?? 0,
+        quantityG: i.quantity_g,
+        order: i.order,
+      })),
+  };
+}
+
+function ingredientInputToInsertRow(ing: RecipeIngredientInput, order: number): Omit<RecipeIngredientInsertRow, 'recipe_id'> {
+  return {
+    barcode: ing.barcode ?? null,
+    description: ing.description,
+    kcal_per100g: ing.kcalPer100g,
+    protein_g_per100g: ing.proteinGPer100g,
+    carb_g_per100g: ing.carbGPer100g,
+    fat_g_per100g: ing.fatGPer100g,
+    quantity_g: ing.quantityG,
+    order,
   };
 }
 
@@ -1097,6 +1171,8 @@ const sleepKey = (u: string): string => `supotsu.sleep.${u}`;
 const nutKey = (u: string): string => `supotsu.nutrition.${u}`;
 /** Pas de suffixe utilisateur : partagée entre tous, comme en base réelle. */
 const customFoodsKey = 'supotsu.customfoods';
+/** Pas de suffixe utilisateur : partagée entre tous, comme en base réelle (les recettes publiques doivent être visibles par tout le monde). */
+const recipesKey = 'supotsu.recipes';
 const habKey = (u: string): string => `supotsu.habits.${u}`;
 const hlogKey = (u: string): string => `supotsu.habitlogs.${u}`;
 const customExKey = (u: string): string => `supotsu.customexercises.${u}`;
@@ -1815,6 +1891,72 @@ function createDemoRepository(): DataRepository {
       };
       await writeJson(customFoodsKey, [...items, food]);
       return food;
+    },
+    async listRecipes(userId) {
+      const items = await readJson<Recipe>(recipesKey);
+      return items.filter((r) => r.userId === userId);
+    },
+    async listCommunityRecipes(userId) {
+      const items = await readJson<Recipe>(recipesKey);
+      return items.filter((r) => r.visibility === 'public' && r.userId !== userId);
+    },
+    async getRecipe(recipeId) {
+      const items = await readJson<Recipe>(recipesKey);
+      return items.find((r) => r.id === recipeId) ?? null;
+    },
+    async addRecipe(userId, input) {
+      const items = await readJson<Recipe>(recipesKey);
+      const now = new Date().toISOString();
+      const recipe: Recipe = {
+        id: randomId(),
+        userId,
+        name: input.name,
+        visibility: input.visibility,
+        createdAt: now,
+        updatedAt: now,
+        ingredients: input.ingredients.map((ing, i) => ({ id: randomId(), ...ing, order: i })),
+      };
+      await writeJson(recipesKey, [...items, recipe]);
+      return recipe;
+    },
+    async updateRecipe(_userId, recipeId, input) {
+      const items = await readJson<Recipe>(recipesKey);
+      let updated: Recipe | undefined;
+      const next = items.map((r) => {
+        if (r.id !== recipeId) return r;
+        updated = {
+          ...r,
+          name: input.name,
+          visibility: input.visibility,
+          ingredients: input.ingredients.map((ing, i) => ({ id: randomId(), ...ing, order: i })),
+          updatedAt: new Date().toISOString(),
+        };
+        return updated;
+      });
+      if (!updated) throw new Error('Recette introuvable.');
+      await writeJson(recipesKey, next);
+      return updated;
+    },
+    async deleteRecipe(_userId, recipeId) {
+      const items = await readJson<Recipe>(recipesKey);
+      await writeJson(recipesKey, items.filter((r) => r.id !== recipeId));
+    },
+    async copyRecipe(userId, sourceRecipeId) {
+      const items = await readJson<Recipe>(recipesKey);
+      const source = items.find((r) => r.id === sourceRecipeId);
+      if (!source) throw new Error('Recette introuvable.');
+      const now = new Date().toISOString();
+      const copy: Recipe = {
+        id: randomId(),
+        userId,
+        name: source.name,
+        visibility: 'private',
+        createdAt: now,
+        updatedAt: now,
+        ingredients: source.ingredients.map((ing) => ({ ...ing, id: randomId() })),
+      };
+      await writeJson(recipesKey, [...items, copy]);
+      return copy;
     },
     async listHabits(userId) {
       const items = await readJson<Habit>(habKey(userId));
@@ -2732,6 +2874,42 @@ function createSupabaseRepository(
         created_by: userId,
       });
       return rowToFoodItem(row);
+    },
+    async listRecipes(userId) {
+      const rows = await listRecipesDb(client, userId);
+      return Promise.all(rows.map(async (r) => rowsToRecipe(r, (await getRecipeDb(client, r.id))?.ingredients ?? [])));
+    },
+    async listCommunityRecipes(userId) {
+      const rows = await listCommunityRecipesDb(client, userId);
+      return Promise.all(rows.map(async (r) => rowsToRecipe(r, (await getRecipeDb(client, r.id))?.ingredients ?? [])));
+    },
+    async getRecipe(recipeId) {
+      const found = await getRecipeDb(client, recipeId);
+      return found ? rowsToRecipe(found.recipe, found.ingredients) : null;
+    },
+    async addRecipe(userId, input) {
+      const { recipe, ingredients } = await insertRecipeDb(
+        client,
+        { user_id: userId, name: input.name, visibility: input.visibility },
+        input.ingredients.map((ing, i) => ingredientInputToInsertRow(ing, i)),
+      );
+      return rowsToRecipe(recipe, ingredients);
+    },
+    async updateRecipe(_userId, recipeId, input) {
+      const { recipe, ingredients } = await updateRecipeDb(
+        client,
+        recipeId,
+        { name: input.name, visibility: input.visibility },
+        input.ingredients.map((ing, i) => ingredientInputToInsertRow(ing, i)),
+      );
+      return rowsToRecipe(recipe, ingredients);
+    },
+    async deleteRecipe(_userId, recipeId) {
+      await deleteRecipeDb(client, recipeId);
+    },
+    async copyRecipe(userId, sourceRecipeId) {
+      const { recipe, ingredients } = await copyRecipeDb(client, userId, sourceRecipeId);
+      return rowsToRecipe(recipe, ingredients);
     },
     async listHabits(userId) {
       return (await listHabitsDb(client, userId)).map(rowToHabit);

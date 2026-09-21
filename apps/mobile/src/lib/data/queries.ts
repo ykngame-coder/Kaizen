@@ -24,7 +24,7 @@ import type {
   ImportedWorkout,
 } from '@supotsu/connectors';
 import { useAuth } from '@/features/auth/AuthProvider';
-import { createDataRepository, type CustomFoodInput, type HealthMetricInput, type NewCircuitBlockInput, type NewCircuitWorkout, type NewRunnerSet, type NewSleepSession, type NewWorkout, type PlannedInput, type ReplaceWindow, type SetLogInput } from './repository';
+import { createDataRepository, type CustomFoodInput, type HealthMetricInput, type NewCircuitBlockInput, type NewCircuitWorkout, type NewRunnerSet, type NewSleepSession, type NewWorkout, type PlannedInput, type RecipeInput, type ReplaceWindow, type SetLogInput } from './repository';
 import { isHealthKitConnected } from '@/features/connectors/useHealthKitAutoSync';
 import { queryHeartRateSummary, saveActivityToHealthKit, saveNutritionToHealthKit, saveWorkoutToHealthKit } from '@/features/connectors/healthKitClient';
 import { periodToDays, type DailyScoreColumn, type LeaderboardCategory, type LeaderboardPeriod } from '@/features/community/leaderboardHelpers';
@@ -227,6 +227,85 @@ export function useAddCustomFood() {
   const repo = useRepository();
   return useMutation({
     mutationFn: (input: CustomFoodInput) => repo.addCustomFood(user!.id, input),
+  });
+}
+
+export function useRecipes() {
+  const { user } = useAuth();
+  const repo = useRepository();
+  return useQuery({
+    queryKey: ['recipes', user?.id],
+    enabled: !!user,
+    queryFn: () => repo.listRecipes(user!.id),
+  });
+}
+
+export function useCommunityRecipes() {
+  const { user } = useAuth();
+  const repo = useRepository();
+  return useQuery({
+    queryKey: ['communityRecipes', user?.id],
+    enabled: !!user,
+    queryFn: () => repo.listCommunityRecipes(user!.id),
+  });
+}
+
+/** `recipeId` peut être absent (écran de création) — la requête reste alors désactivée. */
+export function useRecipe(recipeId: string | undefined) {
+  const repo = useRepository();
+  return useQuery({
+    queryKey: ['recipe', recipeId],
+    enabled: !!recipeId,
+    queryFn: () => repo.getRecipe(recipeId!),
+  });
+}
+
+export function useAddRecipe() {
+  const { user } = useAuth();
+  const repo = useRepository();
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (input: RecipeInput) => repo.addRecipe(user!.id, input),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['recipes', user?.id] });
+    },
+  });
+}
+
+export function useUpdateRecipe() {
+  const { user } = useAuth();
+  const repo = useRepository();
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (args: { recipeId: string; input: RecipeInput }) => repo.updateRecipe(user!.id, args.recipeId, args.input),
+    onSuccess: (data) => {
+      qc.invalidateQueries({ queryKey: ['recipes', user?.id] });
+      qc.invalidateQueries({ queryKey: ['recipe', data.id] });
+    },
+  });
+}
+
+export function useDeleteRecipe() {
+  const { user } = useAuth();
+  const repo = useRepository();
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (recipeId: string) => repo.deleteRecipe(user!.id, recipeId),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['recipes', user?.id] });
+    },
+  });
+}
+
+export function useCopyRecipe() {
+  const { user } = useAuth();
+  const repo = useRepository();
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (sourceRecipeId: string) => repo.copyRecipe(user!.id, sourceRecipeId),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['recipes', user?.id] });
+    },
   });
 }
 
