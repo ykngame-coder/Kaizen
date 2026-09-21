@@ -2294,6 +2294,34 @@
     "saveFailed": "Impossible d'ajouter ce produit."
    }
   },
+  "recipes": {
+   "newTitle": "Nouvelle recette",
+   "editTitle": "Modifier la recette",
+   "nameLabel": "Nom de la recette",
+   "ingredientsTitle": "Ingrédients",
+   "emptyIngredients": "Aucun ingrédient pour l'instant.",
+   "ingredientQuantity": "{{grams}} g",
+   "removeIngredientA11y": "Retirer {{name}}",
+   "addIngredientButton": "Ajouter un ingrédient",
+   "quantityUsedLabel": "Quantité utilisée dans la recette (g)",
+   "confirmIngredientButton": "Ajouter à la recette",
+   "previewTitle": "Valeur nutritionnelle (calculée, pour 100 g)",
+   "visibility": {
+    "label": "Visibilité",
+    "private": "Privée",
+    "public": "Publique",
+    "privateHint": "Visible seulement par toi.",
+    "publicHint": "D'autres utilisateurs pourront la voir et la copier depuis Communauté."
+   },
+   "saveButton": "Enregistrer",
+   "deleteButton": "Supprimer la recette",
+   "errors": {
+    "nameRequired": "Donne un nom à la recette.",
+    "noIngredients": "Ajoute au moins un ingrédient.",
+    "saveFailed": "Enregistrement impossible.",
+    "deleteFailed": "Suppression impossible."
+   }
+  },
   "calorieCalculator": {
    "toggleTitle": "Calculateur de calories détaillé",
    "toggleSubtitle": "Âge, taille, activité… une estimation plus poussée que le calcul auto",

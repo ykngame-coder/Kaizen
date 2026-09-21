@@ -2294,6 +2294,34 @@
     "saveFailed": "Produkt konnte nicht hinzugefügt werden."
    }
   },
+  "recipes": {
+   "newTitle": "Neues Rezept",
+   "editTitle": "Rezept bearbeiten",
+   "nameLabel": "Name des Rezepts",
+   "ingredientsTitle": "Zutaten",
+   "emptyIngredients": "Noch keine Zutaten.",
+   "ingredientQuantity": "{{grams}} g",
+   "removeIngredientA11y": "{{name}} entfernen",
+   "addIngredientButton": "Zutat hinzufügen",
+   "quantityUsedLabel": "Im Rezept verwendete Menge (g)",
+   "confirmIngredientButton": "Zum Rezept hinzufügen",
+   "previewTitle": "Nährwerte (berechnet, pro 100 g)",
+   "visibility": {
+    "label": "Sichtbarkeit",
+    "private": "Privat",
+    "public": "Öffentlich",
+    "privateHint": "Nur für dich sichtbar.",
+    "publicHint": "Andere Nutzer können es über Community sehen und kopieren."
+   },
+   "saveButton": "Speichern",
+   "deleteButton": "Rezept löschen",
+   "errors": {
+    "nameRequired": "Gib dem Rezept einen Namen.",
+    "noIngredients": "Füge mindestens eine Zutat hinzu.",
+    "saveFailed": "Speichern nicht möglich.",
+    "deleteFailed": "Löschen nicht möglich."
+   }
+  },
   "calorieCalculator": {
    "toggleTitle": "Detaillierter Kalorienrechner",
    "toggleSubtitle": "Alter, Größe, Aktivität… eine genauere Schätzung als die automatische Berechnung",
