@@ -27,6 +27,7 @@ export function CommunityRecipesScreen(): React.JSX.Element {
 
   const copy = async (): Promise<void> => {
     if (!selected) return;
+    setError(null);
     try {
       await copyRecipe.mutateAsync(selected.id);
       setSelected(null);
@@ -52,7 +53,10 @@ export function CommunityRecipesScreen(): React.JSX.Element {
             return (
               <Pressable
                 key={r.id}
-                onPress={() => setSelected(r)}
+                onPress={() => {
+                  setSelected(r);
+                  setError(null);
+                }}
                 style={{ padding: spacing[3], borderRadius: radii.md, backgroundColor: colors.surface, borderWidth: 1, borderColor: selected?.id === r.id ? colors.primary : colors.border }}
               >
                 <Text variant="body">{r.name}</Text>
