@@ -23,6 +23,7 @@ export function MyRecipesScreen(): React.JSX.Element {
     setError(null);
     try {
       await deleteRecipe.mutateAsync(id);
+      if (logging?.id === id) setLogging(null);
     } catch {
       setError(t('nutrition.recipes.errors.deleteFailed'));
     }
@@ -52,7 +53,10 @@ export function MyRecipesScreen(): React.JSX.Element {
             return (
               <Pressable
                 key={r.id}
-                onPress={() => setLogging(r)}
+                onPress={() => {
+                  setLogging(r);
+                  setError(null);
+                }}
                 style={{ padding: spacing[3], borderRadius: radii.md, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border }}
               >
                 <View style={{ flexDirection: 'row', alignItems: 'center' }}>

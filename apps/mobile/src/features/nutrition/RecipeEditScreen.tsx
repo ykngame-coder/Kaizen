@@ -16,7 +16,7 @@ export function RecipeEditScreen(): React.JSX.Element {
   const { t } = useTranslation();
   const router = useRouter();
   const { colors } = useTheme();
-  const params = useLocalSearchParams<{ id?: string; barcode?: string }>();
+  const params = useLocalSearchParams<{ id?: string }>();
   const { data: existing } = useRecipe(params.id);
   const addRecipe = useAddRecipe();
   const updateRecipe = useUpdateRecipe();
@@ -39,13 +39,6 @@ export function RecipeEditScreen(): React.JSX.Element {
       setIngredients(existing.ingredients);
     }
   }, [existing]);
-
-  // Retour du scanner avec un code-barres : rouvre le sélecteur pour le relancer.
-  useEffect(() => {
-    if (params.barcode) setPickerVisible(true);
-  }, [params.barcode]);
-
-  const scanReturnPath = params.id ? `/nutrition/recipes/${params.id}` : '/nutrition/recipes/new';
 
   const onPickFood = (food: FoodItem): void => {
     setPickerVisible(false);
@@ -121,6 +114,7 @@ export function RecipeEditScreen(): React.JSX.Element {
 
   const remove = async (): Promise<void> => {
     if (!params.id) return;
+    setError(null);
     try {
       await deleteRecipe.mutateAsync(params.id);
       router.back();
@@ -175,7 +169,7 @@ export function RecipeEditScreen(): React.JSX.Element {
 
       {pickerVisible ? (
         <Card>
-          <FoodPickerSheet visible scanReturnPath={scanReturnPath} initialBarcode={params.barcode} onPick={onPickFood} />
+          <FoodPickerSheet visible onPick={onPickFood} />
           <Button label={t('common.cancel')} variant="secondary" onPress={() => setPickerVisible(false)} />
         </Card>
       ) : null}

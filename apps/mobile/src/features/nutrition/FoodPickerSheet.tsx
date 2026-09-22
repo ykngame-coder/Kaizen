@@ -1,19 +1,16 @@
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useState } from 'react';
 import { Pressable, View } from 'react-native';
-import { useRouter } from 'expo-router';
+import { useFocusEffect, useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { Badge, Button, Card, Input, Text, useTheme } from '@supotsu/ui';
 import { radii, spacing } from '@supotsu/design-system';
 import type { FoodItem } from '@supotsu/core';
 import { useAddCustomFood, useCustomFoodLookup } from '@/lib/data/queries';
 import { getFoodByBarcode, searchFoods } from './foodSearch';
+import { takePendingBarcode } from './barcodeHandoff';
 
 export interface FoodPickerSheetProps {
   visible: boolean;
-  /** Route vers laquelle le scanner doit revenir avec le code-barres — l'écran de recherche par défaut si absent. */
-  scanReturnPath?: string;
-  /** Un code-barres arrivé par la navigation (retour du scanner) — relance automatiquement sa recherche une fois. */
-  initialBarcode?: string;
   onPick: (food: FoodItem) => void;
   /** L'aliment déjà choisi (géré par le parent) — sert uniquement à surligner la bonne carte dans les résultats. */
   selected?: FoodItem | null;
@@ -22,7 +19,7 @@ export interface FoodPickerSheetProps {
 }
 
 /** Recherche un aliment (nom, code-barres, scan) avec repli en saisie manuelle si introuvable — extrait de FoodSearchScreen pour être réutilisé par l'écran de recette. */
-export function FoodPickerSheet({ visible, scanReturnPath, initialBarcode, onPick, selected, onSearchStart }: FoodPickerSheetProps): React.JSX.Element | null {
+export function FoodPickerSheet({ visible, onPick, selected, onSearchStart }: FoodPickerSheetProps): React.JSX.Element | null {
   const { t } = useTranslation();
   const router = useRouter();
   const { colors } = useTheme();
@@ -114,12 +111,15 @@ export function FoodPickerSheet({ visible, scanReturnPath, initialBarcode, onPic
     }
   };
 
-  useEffect(() => {
-    if (initialBarcode) {
-      setBarcode(initialBarcode);
-      void lookupBarcode(initialBarcode);
-    }
-  }, [initialBarcode]);
+  useFocusEffect(
+    useCallback(() => {
+      const code = takePendingBarcode();
+      if (code) {
+        setBarcode(code);
+        void lookupBarcode(code);
+      }
+    }, []),
+  );
 
   if (!visible) return null;
 
@@ -141,7 +141,7 @@ export function FoodPickerSheet({ visible, scanReturnPath, initialBarcode, onPic
 
       <Button
         label={t('nutrition.foodSearch.scanButton')}
-        onPress={() => router.push({ pathname: '/nutrition/food/scan', params: scanReturnPath ? { returnTo: scanReturnPath } : undefined })}
+        onPress={() => router.push('/nutrition/food/scan')}
         fullWidth
       />
 

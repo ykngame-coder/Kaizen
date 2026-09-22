@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { Button, Screen, Text } from '@supotsu/ui';
 import type { FoodItem } from '@supotsu/core';
@@ -10,7 +10,6 @@ import { FoodLogCard } from './FoodLogCard';
 export function FoodSearchScreen(): React.JSX.Element {
   const { t } = useTranslation();
   const router = useRouter();
-  const params = useLocalSearchParams<{ barcode?: string }>();
   const [selected, setSelected] = useState<FoodItem | null>(null);
 
   return (
@@ -22,7 +21,6 @@ export function FoodSearchScreen(): React.JSX.Element {
 
       <FoodPickerSheet
         visible
-        initialBarcode={params.barcode}
         selected={selected}
         onSearchStart={() => setSelected(null)}
         onPick={setSelected}

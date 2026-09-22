@@ -30,7 +30,6 @@ import type {
   DataSource,
   Intensity,
   Recipe,
-  RecipeIngredient,
 } from '@supotsu/core';
 import type {
   ActivityInput,

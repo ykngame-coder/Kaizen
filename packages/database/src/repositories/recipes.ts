@@ -84,7 +84,11 @@ export async function deleteRecipe(client: SupotsuClient, recipeId: string): Pro
  *
  * Remplacement, pas fusion — même choix qu'`updateUserSession` : l'écran
  * d'édition renvoie la liste complète, la réconcilier ligne par ligne
- * n'apporterait rien. Pas de transaction entre la suppression et la
+ * n'apporterait rien. Les ingrédients sont traités EN PREMIER et la ligne
+ * `recipes` en DERNIER : tant que la réinsertion n'a pas réussi, le nom et la
+ * visibilité restent inchangés, pour qu'un échec ne rende jamais une recette
+ * publique par accident (contradiction silencieuse avec le message d'erreur
+ * affiché à l'utilisateur). Pas de transaction entre la suppression et la
  * réinsertion, donc les anciens ingrédients sont relus avant d'être effacés
  * et restaurés si l'insertion des nouveaux échoue en cours de route — une
  * édition ratée doit laisser la recette intacte, jamais vidée.
@@ -96,6 +100,18 @@ export async function updateRecipe(
   ingredients: Omit<RecipeIngredientInsertRow, 'recipe_id'>[],
 ): Promise<RecipeWithIngredients> {
   const previous = await listIngredients(client, recipeId);
+  const { error: deleteError } = await client.from('recipe_ingredients').delete().eq('recipe_id', recipeId);
+  if (deleteError) throw deleteError;
+  let inserted: RecipeIngredientRow[];
+  try {
+    inserted = await insertIngredients(client, recipeId, ingredients);
+  } catch (e) {
+    if (previous.length > 0) {
+      const { error: restoreError } = await client.from('recipe_ingredients').insert(previous.map(({ id, ...rest }) => rest));
+      if (restoreError) throw restoreError;
+    }
+    throw e;
+  }
   const { data: recipe, error } = await client
     .from('recipes')
     .update({ name: patch.name, visibility: patch.visibility })
@@ -103,17 +119,7 @@ export async function updateRecipe(
     .select('*')
     .single();
   if (error) throw error;
-  const { error: deleteError } = await client.from('recipe_ingredients').delete().eq('recipe_id', recipeId);
-  if (deleteError) throw deleteError;
-  try {
-    const inserted = await insertIngredients(client, recipeId, ingredients);
-    return { recipe, ingredients: inserted };
-  } catch (e) {
-    if (previous.length > 0) {
-      await client.from('recipe_ingredients').insert(previous.map(({ id, ...rest }) => rest));
-    }
-    throw e;
-  }
+  return { recipe, ingredients: inserted };
 }
 
 /** Duplique une recette (typiquement celle d'un autre) dans les recettes du copieur, privée par défaut. */
