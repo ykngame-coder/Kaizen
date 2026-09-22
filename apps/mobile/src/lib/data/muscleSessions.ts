@@ -1,19 +1,5 @@
 import type { Activity, Workout } from '@supotsu/core';
-import { activityMuscleLoad, profileFor, type HeartRateContext, type MuscleSession } from '@supotsu/engines';
-import { localDateKey } from '../../features/community/leaderboardHelpers';
-
-/**
- * Same "does this activity already have a matched structured workout" check
- * ActivityDetailScreen uses to decide whether to show its own exercise
- * breakdown — reused here so a tagged activity is never double-counted
- * against the workout that already feeds buildMuscleSessions (in
- * repository.ts) with real exercise-level muscle data.
- */
-function hasMatchedWorkout(activity: Activity, workouts: Workout[]): boolean {
-  if (activity.type !== 'strength') return false;
-  const key = localDateKey(new Date(activity.startedAt));
-  return workouts.some((w) => w.status === 'completed' && w.completedAt && localDateKey(new Date(w.completedAt)) === key);
-}
+import { activityMuscleLoad, matchSessions, profileFor, type HeartRateContext, type MuscleSession, type SessionLink } from '@supotsu/engines';
 
 /**
  * One MuscleSession per activity that isn't already covered by a matched
@@ -31,10 +17,21 @@ function hasMatchedWorkout(activity: Activity, workouts: Workout[]): boolean {
  * structured mobility exercises already get (see buildMuscleSessions'
  * isMobility handling in repository.ts).
  */
-export function buildActivityMuscleSessions(activities: Activity[], workouts: Workout[], hr: HeartRateContext = {}): MuscleSession[] {
+export function buildActivityMuscleSessions(
+  activities: Activity[],
+  workouts: Workout[],
+  hr: HeartRateContext = {},
+  links: SessionLink[] = [],
+): MuscleSession[] {
+  // Une activité que la montre a enregistrée pendant une séance jouée dans
+  // l'app décrit le même effort : la compter en plus doublerait la fatigue.
+  // L'ancienne règle ne regardait que les séances de musculation, et se
+  // contentait du même jour — un cross-training passait au travers.
+  const { unmatchedActivityIds } = matchSessions(workouts, activities, links);
+  const standalone = new Set(unmatchedActivityIds);
   const out: MuscleSession[] = [];
   for (const a of activities) {
-    if (hasMatchedWorkout(a, workouts)) continue;
+    if (!standalone.has(a.id)) continue;
     const tagged = a.muscles && a.muscles.length > 0 ? a.muscles : null;
     const profile = tagged ? null : profileFor(a);
     if (!tagged && !profile) continue;

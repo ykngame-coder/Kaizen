@@ -902,7 +902,9 @@
     "duration": "Duración",
     "rpe": "RPE",
     "status": "Estado",
-    "avgHeartRate": "FC media"
+    "avgHeartRate": "FC media",
+    "maxHeartRate": "FC máx",
+    "calories": "Calorías"
    },
    "notesTitle": "Notas",
    "exercisesTitle": "Ejercicios",
@@ -924,7 +926,9 @@
    },
    "superset": {
     "badge": "Superserie"
-   }
+   },
+   "mergedFrom": "Mediciones de {{source}} (reloj), misma sesión",
+   "notSameSession": "No es la misma sesión"
   },
   "newWorkout": {
    "title": "Nueva sesión",

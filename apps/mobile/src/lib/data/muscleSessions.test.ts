@@ -79,22 +79,27 @@ describe('buildActivityMuscleSessions', () => {
     expect(out).toEqual([]);
   });
 
-  it('skips a strength activity that already has a matched completed workout the same day', () => {
-    const activity: Activity = { ...baseActivity, type: 'strength', startedAt: '2026-08-30T09:00:00.000Z', muscles: ['back'] };
-    const out = buildActivityMuscleSessions([activity], [baseWorkout]);
-    expect(out).toEqual([]);
+  // L'appariement se fait sur le temps réellement partagé, plus sur le seul
+  // jour civil : deux efforts du même jour restent deux efforts, et une montre
+  // qui a enregistré la séance qu'on jouait décrit le même.
+  it('écarte l activité qui recouvre une séance jouée dans l app', () => {
+    const activity: Activity = { ...baseActivity, type: 'strength', startedAt: '2026-08-30T17:20:00.000Z', durationSec: 40 * 60, muscles: ['back'] };
+    expect(buildActivityMuscleSessions([activity], [{ ...baseWorkout, durationSec: 40 * 60 }])).toEqual([]);
   });
 
-  it('does not skip a strength activity when the matched workout is a different day', () => {
-    const activity: Activity = { ...baseActivity, type: 'strength', startedAt: '2026-08-29T09:00:00.000Z', muscles: ['back'] };
-    const out = buildActivityMuscleSessions([activity], [baseWorkout]);
-    expect(out).toHaveLength(1);
+  it('écarte aussi un cross-training, pas seulement la musculation', () => {
+    const activity: Activity = { ...baseActivity, type: 'cross_training', startedAt: '2026-08-30T17:20:00.000Z', durationSec: 40 * 60, muscles: ['back'] };
+    expect(buildActivityMuscleSessions([activity], [{ ...baseWorkout, durationSec: 40 * 60 }])).toEqual([]);
   });
 
-  it('does not skip a non-strength activity even with a same-day completed workout', () => {
-    const activity: Activity = { ...baseActivity, type: 'cross_training', startedAt: '2026-08-30T09:00:00.000Z', muscles: ['back'] };
-    const out = buildActivityMuscleSessions([activity], [baseWorkout]);
-    expect(out).toHaveLength(1);
+  it('garde deux efforts distincts du même jour', () => {
+    const matin: Activity = { ...baseActivity, type: 'strength', startedAt: '2026-08-30T09:00:00.000Z', durationSec: 40 * 60, muscles: ['back'] };
+    expect(buildActivityMuscleSessions([matin], [{ ...baseWorkout, durationSec: 40 * 60 }])).toHaveLength(1);
+  });
+
+  it('garde une activité de la veille', () => {
+    const activity: Activity = { ...baseActivity, type: 'strength', startedAt: '2026-08-29T17:20:00.000Z', durationSec: 40 * 60, muscles: ['back'] };
+    expect(buildActivityMuscleSessions([activity], [{ ...baseWorkout, durationSec: 40 * 60 }])).toHaveLength(1);
   });
 
   it('marks mobility/yoga activities as recovery sessions', () => {

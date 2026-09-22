@@ -563,6 +563,25 @@ export interface Database {
         Update: Partial<Database['public']['Tables']['programs']['Insert']>;
         Relationships: [];
       };
+      session_links: {
+        Row: {
+          id: string;
+          user_id: string;
+          workout_id: string;
+          activity_id: string;
+          mode: 'linked' | 'separate';
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          workout_id: string;
+          activity_id: string;
+          mode: 'linked' | 'separate';
+        };
+        Update: Partial<Database['public']['Tables']['session_links']['Insert']>;
+        Relationships: [];
+      };
       program_sessions: {
         Row: {
           id: string;

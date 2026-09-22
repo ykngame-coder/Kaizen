@@ -3,13 +3,20 @@ import { Pressable, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Button, Card, EmptyState, Icon, KPICard, Screen, Text } from '@supotsu/ui';
 import { spacing } from '@supotsu/design-system';
-import { useActivities } from '@/lib/data/queries';
+import { useSessionMatching, useActivities } from '@/lib/data/queries';
 import { activityTitle, formatDate, formatDistance, formatDuration } from '@/lib/format';
 
 /** Activities history + weekly stats (Master Prompt P3, MVP P20.3). */
 export function ActivitiesScreen(): React.JSX.Element {
   const router = useRouter();
-  const { data: activities = [], isLoading } = useActivities();
+  const { data: allActivities = [], isLoading } = useActivities();
+  // Une activité qui double une séance jouée dans l'app n'apparaît pas ici :
+  // c'est le même effort, et la séance le raconte mieux.
+  const { standaloneActivityIds } = useSessionMatching();
+  const activities = useMemo(
+    () => allActivities.filter((a) => standaloneActivityIds.has(a.id)),
+    [allActivities, standaloneActivityIds],
+  );
 
   const weekly = useMemo(() => {
     const weekAgo = Date.now() - 7 * 86_400_000;

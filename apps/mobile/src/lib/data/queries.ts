@@ -16,6 +16,7 @@ import type {
 } from '@supotsu/shared';
 import type { Challenge, GoalType, MealType, MuscleGroup, SetEntry, UserSessionBlock, UserSessionExercise, Visibility, Workout } from '@supotsu/core';
 import { dedupActivities, estimateActivityHeartRateWindow, estimateWorkoutHeartRateWindow } from '@supotsu/connectors';
+import { matchSessions, type SessionLinkMode } from '@supotsu/engines';
 import type {
   ImportedActivity,
   ImportedHealthMetric,
@@ -595,6 +596,60 @@ export function useLeaderboard(category: LeaderboardCategory, period: Leaderboar
     queryKey: ['generalLeaderboard', category, period, user?.id],
     enabled: !!user,
     queryFn: () => repo.getLeaderboard(user!.id, category, periodToDays(period)),
+  });
+}
+
+/**
+ * Séances et activités appariées : une séance jouée dans l'app et l'activité
+ * que la montre en a gardée sont le même effort, et ne doivent s'afficher
+ * qu'une fois. Les décisions manuelles de l'utilisateur l'emportent.
+ */
+export function useSessionMatching() {
+  const { user } = useAuth();
+  const repo = useRepository();
+  const { data: workouts = [] } = useWorkouts();
+  const { data: activities = [] } = useActivities();
+  const { data: links = [] } = useQuery({
+    queryKey: ['sessionLinks', user?.id],
+    enabled: !!user,
+    queryFn: () => repo.listSessionLinks(user!.id),
+  });
+
+  return useMemo(() => {
+    const { pairs, unmatchedActivityIds } = matchSessions(
+      workouts.map((w) => ({ id: w.id, completedAt: w.completedAt, durationSec: w.durationSec })),
+      activities.map((a) => ({ id: a.id, type: a.type, startedAt: a.startedAt, durationSec: a.durationSec })),
+      links,
+    );
+    const byWorkout = new Map(pairs.map((p) => [p.workoutId, p]));
+    const byActivity = new Map(pairs.map((p) => [p.activityId, p]));
+    return {
+      pairs,
+      standaloneActivityIds: new Set(unmatchedActivityIds),
+      /** L'activité qui double une séance — ses mesures viennent de la montre. */
+      activityForWorkout: (workoutId: string) => {
+        const pair = byWorkout.get(workoutId);
+        return pair ? activities.find((a) => a.id === pair.activityId) : undefined;
+      },
+      workoutForActivity: (activityId: string) => {
+        const pair = byActivity.get(activityId);
+        return pair ? workouts.find((w) => w.id === pair.workoutId) : undefined;
+      },
+    };
+  }, [workouts, activities, links]);
+}
+
+export function useSetSessionLink() {
+  const { user } = useAuth();
+  const repo = useRepository();
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (input: { workoutId: string; activityId: string; mode: SessionLinkMode }) =>
+      repo.setSessionLink(user!.id, input.workoutId, input.activityId, input.mode),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['sessionLinks', user?.id] });
+      qc.invalidateQueries({ queryKey: ['muscleSessions', user?.id] });
+    },
   });
 }
 

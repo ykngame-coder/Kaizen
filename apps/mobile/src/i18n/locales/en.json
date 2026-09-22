@@ -902,7 +902,9 @@
     "duration": "Duration",
     "rpe": "RPE",
     "status": "Status",
-    "avgHeartRate": "Avg heart rate"
+    "avgHeartRate": "Avg heart rate",
+    "maxHeartRate": "Max HR",
+    "calories": "Calories"
    },
    "notesTitle": "Notes",
    "exercisesTitle": "Exercises",
@@ -924,7 +926,9 @@
    },
    "superset": {
     "badge": "Superset"
-   }
+   },
+   "mergedFrom": "Measurements from {{source}} (watch), same session",
+   "notSameSession": "Not the same session"
   },
   "newWorkout": {
    "title": "New workout",

@@ -902,7 +902,9 @@
     "duration": "Dauer",
     "rpe": "RPE",
     "status": "Status",
-    "avgHeartRate": "Ø Herzfrequenz"
+    "avgHeartRate": "Ø Herzfrequenz",
+    "maxHeartRate": "Max. HF",
+    "calories": "Kalorien"
    },
    "notesTitle": "Notizen",
    "exercisesTitle": "Übungen",
@@ -924,7 +926,9 @@
    },
    "superset": {
     "badge": "Superset"
-   }
+   },
+   "mergedFrom": "Messwerte von {{source}} (Uhr), dieselbe Einheit",
+   "notSameSession": "Nicht dieselbe Einheit"
   },
   "newWorkout": {
    "title": "Neues Training",

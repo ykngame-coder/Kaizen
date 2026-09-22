@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from 'react';
-import { View } from 'react-native';
+import { Pressable, View } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import type { TFunction } from 'i18next';
@@ -10,8 +10,8 @@ import { computePlanAdherence } from '@supotsu/engines';
 import { EXERCISE_LIBRARY } from '@supotsu/shared';
 import { EXERCISES } from '@/features/exercises/catalog';
 import { BackButton } from '@/features/navigation/BackButton';
-import { useBlockSets, useCustomExercises, useDeletePlannedWorkout, useWorkoutBlocks, useWorkoutSets, useWorkouts } from '@/lib/data/queries';
-import { formatDate } from '@/lib/format';
+import { useBlockSets, useCustomExercises, useDeletePlannedWorkout, useSessionMatching, useSetSessionLink, useWorkoutBlocks, useWorkoutSets, useWorkouts } from '@/lib/data/queries';
+import { activityTitle, formatDate } from '@/lib/format';
 import { supersetPartners } from './blockRunnerEngine';
 import { adherenceTone } from './runnerState';
 
@@ -69,6 +69,8 @@ export function WorkoutDetailScreen(): React.JSX.Element {
   const { data: blocks = [] } = useWorkoutBlocks(id);
   const { data: customExercises = [] } = useCustomExercises();
   const deleteWorkout = useDeletePlannedWorkout();
+  const { activityForWorkout } = useSessionMatching();
+  const setSessionLink = useSetSessionLink();
   const [confirmingDelete, setConfirmingDelete] = useState(false);
   const workout = useMemo(() => workouts.find((w) => w.id === id), [workouts, id]);
 
@@ -113,6 +115,7 @@ export function WorkoutDetailScreen(): React.JSX.Element {
   }
 
   const status = { label: statusLabel(workout.status, t), tone: STATUS_TONE[workout.status] };
+  const watch = activityForWorkout(workout.id);
 
   const onDelete = async (): Promise<void> => {
     await deleteWorkout.mutateAsync(workout.id);
@@ -137,10 +140,31 @@ export function WorkoutDetailScreen(): React.JSX.Element {
         <Stat label={t('sport.workoutDetail.stats.duration')} value={workout.durationSec ? fmtDur(workout.durationSec, t) : '—'} />
         <Stat label={t('sport.workoutDetail.stats.rpe')} value={workout.rpe != null ? `${workout.rpe}/10` : '—'} />
         <Stat label={t('sport.workoutDetail.stats.status')} value={status.label} />
-        {workout.avgHeartRate != null ? (
-          <Stat label={t('sport.workoutDetail.stats.avgHeartRate')} value={`${workout.avgHeartRate} bpm`} />
+        {workout.avgHeartRate ?? watch?.avgHeartRate ? (
+          <Stat label={t('sport.workoutDetail.stats.avgHeartRate')} value={`${workout.avgHeartRate ?? watch?.avgHeartRate} bpm`} />
+        ) : null}
+        {watch?.maxHeartRate != null ? (
+          <Stat label={t('sport.workoutDetail.stats.maxHeartRate')} value={`${watch.maxHeartRate} bpm`} />
+        ) : null}
+        {watch?.calories != null ? (
+          <Stat label={t('sport.workoutDetail.stats.calories')} value={`${Math.round(watch.calories)} kcal`} />
         ) : null}
       </View>
+
+      {/* La montre a enregistré le même effort : une seule séance, mesurée. */}
+      {watch ? (
+        <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: spacing[2] }}>
+          <Text variant="caption" color="textSubtle" style={{ flex: 1 }}>
+            {t('sport.workoutDetail.mergedFrom', { source: activityTitle(watch.type, watch.notes) })}
+          </Text>
+          <Pressable
+            onPress={() => setSessionLink.mutate({ workoutId: workout.id, activityId: watch.id, mode: 'separate' })}
+            hitSlop={8}
+          >
+            <Text variant="caption" color="primary">{t('sport.workoutDetail.notSameSession')}</Text>
+          </Pressable>
+        </View>
+      ) : null}
 
       {adherence ? (
         <View style={{ alignItems: 'flex-start' }}>

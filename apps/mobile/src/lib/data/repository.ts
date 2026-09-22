@@ -55,7 +55,7 @@ import type {
   ImportedSleepSession,
   ImportedWorkout,
 } from '@supotsu/connectors';
-import type { MuscleSession } from '@supotsu/engines';
+import type { MuscleSession, SessionLink, SessionLinkMode } from '@supotsu/engines';
 import { EXERCISE_LIBRARY } from '@supotsu/shared';
 import { EXERCISES as FULL_EXERCISE_CATALOG } from '@/features/exercises/catalog';
 import { categoryToColumn, defaultDisplayName, localDateKey, type DailyScoreColumn, type LeaderboardCategory } from '@/features/community/leaderboardHelpers';
@@ -139,6 +139,8 @@ import {
   fetchLeaderboard,
   listPrograms as listProgramsDb,
   listCatalogSessions,
+  listSessionLinks as listSessionLinksDb,
+  setSessionLink as setSessionLinkDb,
   listEnrollments as listEnrollmentsDb,
   enrollInProgram,
   listUserSessions as listUserSessionsDb,
@@ -476,6 +478,9 @@ export interface DataRepository {
   /** Ranked, averaged standings for one category over the last `days` days. */
   getLeaderboard(userId: string, category: LeaderboardCategory, days: number): Promise<GeneralLeaderboardEntry[]>;
   listPrograms(): Promise<Program[]>;
+  /** Rapprochements séance ↔ activité décidés à la main. */
+  listSessionLinks(userId: string): Promise<SessionLink[]>;
+  setSessionLink(userId: string, workoutId: string, activityId: string, mode: SessionLinkMode): Promise<void>;
   listEnrolledProgramIds(userId: string): Promise<string[]>;
   enrollProgram(userId: string, programId: string): Promise<void>;
 
@@ -1184,6 +1189,7 @@ const chJoinKey = (u: string): string => `supotsu.challengejoins.${u}`;
 const lbPrefsKey = (u: string): string => `supotsu.leaderboardprefs.${u}`;
 const dailyScoreKey = (u: string): string => `supotsu.dailyscores.${u}`;
 const enrollKey = (u: string): string => `supotsu.enrollments.${u}`;
+const linkKey = (u: string): string => `supotsu.sessionLinks.${u}`;
 // Demo mode is single-user (see listChallenges) — all user-created sessions/
 // programs live under one shared local list, same as challenges.
 const usKey = (): string => 'supotsu.usersessions.all';
@@ -1708,7 +1714,7 @@ function createDemoRepository(): DataRepository {
         maxHr: estimateMaxHeartRate({ birthDate: profile?.birthDate, observed: observedMaxHeartRates(activities, workouts), asOf: new Date().toISOString() }),
       };
       const customExercises = await readJson<Exercise>(customExKey(userId));
-      return [...buildMuscleSessions(dates, rows, customExercises), ...buildActivityMuscleSessions(activities, workouts, hr)];
+      return [...buildMuscleSessions(dates, rows, customExercises), ...buildActivityMuscleSessions(activities, workouts, hr, await this.listSessionLinks(userId))];
     },
     async listMuscleWork(userId) {
       const rows = await readJson<LoggedSetRow & { date: string }>(setKey(userId));
@@ -2125,6 +2131,15 @@ function createDemoRepository(): DataRepository {
     },
     async listPrograms() {
       return PROGRAM_CATALOG;
+    },
+    async listSessionLinks(userId) {
+      return readJson<SessionLink>(linkKey(userId));
+    },
+    async setSessionLink(userId, workoutId, activityId, mode) {
+      const items = (await readJson<SessionLink>(linkKey(userId))).filter(
+        (l) => !(l.workoutId === workoutId && l.activityId === activityId),
+      );
+      await writeJson(linkKey(userId), [{ workoutId, activityId, mode }, ...items]);
     },
     async listEnrolledProgramIds(userId) {
       return readJson<string>(enrollKey(userId));
@@ -2703,7 +2718,7 @@ function createSupabaseRepository(
         maxHr: estimateMaxHeartRate({ birthDate: profileRow?.birth_date ?? undefined, observed: observedMaxHeartRates(activities, workouts), asOf: new Date().toISOString() }),
       };
       const customExercises = (await listCustomExercisesDb(client, userId)).map(rowToExercise);
-      return [...buildMuscleSessions(dates, sets, customExercises), ...buildActivityMuscleSessions(activities, workouts, hr)];
+      return [...buildMuscleSessions(dates, sets, customExercises), ...buildActivityMuscleSessions(activities, workouts, hr, await this.listSessionLinks(userId))];
     },
     async listMuscleWork(userId) {
       const workouts = await listWorkoutsDb(client, userId);
@@ -3044,6 +3059,16 @@ function createSupabaseRepository(
           })),
         };
       });
+    },
+    async listSessionLinks(userId) {
+      return (await listSessionLinksDb(client, userId)).map((l) => ({
+        workoutId: l.workout_id,
+        activityId: l.activity_id,
+        mode: l.mode,
+      }));
+    },
+    async setSessionLink(userId, workoutId, activityId, mode) {
+      await setSessionLinkDb(client, userId, workoutId, activityId, mode);
     },
     async listEnrolledProgramIds(userId) {
       return (await listEnrollmentsDb(client, userId)).map((e) => e.program_id);
