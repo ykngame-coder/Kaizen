@@ -20,6 +20,7 @@ export function MyRecipesScreen(): React.JSX.Element {
   const [error, setError] = useState<string | null>(null);
 
   const remove = async (id: string): Promise<void> => {
+    setError(null);
     try {
       await deleteRecipe.mutateAsync(id);
     } catch {
