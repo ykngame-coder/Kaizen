@@ -2329,6 +2329,13 @@
     "empty": "Aún no hay recetas.",
     "editA11y": "Editar {{name}}",
     "deleteA11y": "Eliminar {{name}}"
+   },
+   "community": {
+    "title": "Recetas de la comunidad",
+    "searchLabel": "Buscar una receta",
+    "empty": "Todavía no se ha compartido ninguna receta pública.",
+    "copyButton": "Copiar a mis recetas",
+    "copyFailed": "No se pudo copiar esta receta."
    }
   },
   "calorieCalculator": {

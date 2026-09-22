@@ -2329,6 +2329,13 @@
     "empty": "No recipes yet.",
     "editA11y": "Edit {{name}}",
     "deleteA11y": "Delete {{name}}"
+   },
+   "community": {
+    "title": "Community recipes",
+    "searchLabel": "Search for a recipe",
+    "empty": "No public recipes shared yet.",
+    "copyButton": "Copy to my recipes",
+    "copyFailed": "Couldn't copy this recipe."
    }
   },
   "calorieCalculator": {
