@@ -1603,6 +1603,14 @@
     "estimated": "Aus der Aktivitätsart geschätzt und bereits in deiner Erholung berücksichtigt. Bei Bedarf anpassen und speichern.",
     "estimatedSecondary": "Sekundär (zählt halb): {{muscles}}",
     "backToEstimate": "Zurück zur Schätzung"
+   },
+   "link": {
+    "heading": "Passende Einheit",
+    "linkedTo": "Dieselbe Anstrengung wie „{{name}}“: die Messwerte der Uhr erscheinen dort, und die Ermüdung zählt nur einmal.",
+    "separate": "Nicht dieselbe Einheit",
+    "attach": "Mit einer Einheit verknüpfen",
+    "pick": "Zu welcher Einheit gehört diese Aktivität?",
+    "noCandidate": "An diesem Tag wurde keine Einheit abgeschlossen. Nichts zu verknüpfen."
    }
   },
   "customize": {

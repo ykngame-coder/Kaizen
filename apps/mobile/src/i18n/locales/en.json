@@ -1603,6 +1603,14 @@
     "estimated": "Estimated from the activity type, and already counted in your recovery. Adjust if needed, then save.",
     "estimatedSecondary": "Secondary (counts half): {{muscles}}",
     "backToEstimate": "Back to the estimate"
+   },
+   "link": {
+    "heading": "Matching session",
+    "linkedTo": "Same effort as “{{name}}”: the watch measurements appear there, and fatigue counts only once.",
+    "separate": "Not the same session",
+    "attach": "Link to a session",
+    "pick": "Which session does this activity match?",
+    "noCandidate": "No session completed that day. Nothing to link."
    }
   },
   "customize": {

@@ -10,7 +10,7 @@ import { profileFor } from '@supotsu/engines';
 import { EXERCISES, MUSCLE_LABEL } from '@/features/exercises/catalog';
 import { BackButton } from '@/features/navigation/BackButton';
 import { sourceName } from '@/features/connectors/sourceLabel';
-import { useActivities, useCustomExercises, useDeleteActivity, useUpdateActivityMuscles, useWorkoutBlocks, useWorkoutSets, useWorkouts } from '@/lib/data/queries';
+import { useActivities, useCustomExercises, useDeleteActivity, useSessionMatching, useSetSessionLink, useUpdateActivityMuscles, useWorkoutBlocks, useWorkoutSets, useWorkouts } from '@/lib/data/queries';
 import { activityTitle, formatDate, formatDistance, formatDuration } from '@/lib/format';
 import { BlockSummaryCard } from '@/features/training/WorkoutDetailScreen';
 
@@ -63,6 +63,9 @@ export function ActivityDetailScreen(): React.JSX.Element {
   const { data: workouts = [] } = useWorkouts();
   const { data: customExercises = [] } = useCustomExercises();
   const deleteActivity = useDeleteActivity();
+  const { workoutForActivity } = useSessionMatching();
+  const setSessionLink = useSetSessionLink();
+  const [linking, setLinking] = useState(false);
   const [confirmingDelete, setConfirmingDelete] = useState(false);
   const updateActivityMuscles = useUpdateActivityMuscles();
   const [selectedMuscles, setSelectedMuscles] = useState<MuscleGroup[] | null>(null);
@@ -78,10 +81,16 @@ export function ActivityDetailScreen(): React.JSX.Element {
   const musclesValue = selectedMuscles ?? (tagged ? activity!.muscles! : profile ? [...profile.primary, ...profile.secondary] : []);
   const canReturnToEstimate = tagged && activity != null && profileFor({ type: activity.type, notes: activity.notes }) !== null;
 
-  const matchedWorkout = useMemo(() => {
-    if (!activity || activity.type !== 'strength') return undefined;
+  // Même appariement que partout ailleurs (temps réellement partagé, décisions
+  // manuelles comprises) : cet écran avait sa propre règle « musculation, même
+  // jour », qui ratait un cross-training et confondait matin et soir.
+  const matchedWorkout = activity ? workoutForActivity(activity.id) : undefined;
+
+  /** Les séances terminées du jour, à proposer quand le calcul n'a rien vu. */
+  const sameDayWorkouts = useMemo(() => {
+    if (!activity) return [];
     const key = dayKey(activity.startedAt);
-    return workouts.find((w) => w.status === 'completed' && w.completedAt && dayKey(w.completedAt) === key);
+    return workouts.filter((w) => w.status === 'completed' && w.completedAt && dayKey(w.completedAt) === key);
   }, [activity, workouts]);
 
   const { data: sets = [] } = useWorkoutSets(matchedWorkout?.id);
@@ -181,6 +190,54 @@ export function ActivityDetailScreen(): React.JSX.Element {
           </Text>
         </Card>
       ) : null}
+
+      {/* Même effort vu deux fois : la séance de l'app et ce que la montre en a
+          gardé. On le dit, et on laisse défaire — ou rattacher à la main. */}
+      <Card>
+        <Text variant="heading">{t('sport.activityDetail.link.heading')}</Text>
+        {matchedWorkout ? (
+          <>
+            <Text variant="body" color="textMuted" style={{ marginTop: spacing[1] }}>
+              {t('sport.activityDetail.link.linkedTo', { name: matchedWorkout.name })}
+            </Text>
+            <View style={{ alignItems: 'flex-start', marginTop: spacing[2] }}>
+              <Button
+                label={t('sport.activityDetail.link.separate')}
+                variant="secondary"
+                onPress={() => setSessionLink.mutate({ workoutId: matchedWorkout.id, activityId: activity.id, mode: 'separate' })}
+              />
+            </View>
+          </>
+        ) : sameDayWorkouts.length === 0 ? (
+          <Text variant="caption" color="textMuted" style={{ marginTop: spacing[1] }}>
+            {t('sport.activityDetail.link.noCandidate')}
+          </Text>
+        ) : linking ? (
+          <View style={{ gap: spacing[2], marginTop: spacing[2] }}>
+            <Text variant="caption" color="textMuted">{t('sport.activityDetail.link.pick')}</Text>
+            {sameDayWorkouts.map((w) => (
+              <Pressable
+                key={w.id}
+                onPress={() => {
+                  setSessionLink.mutate({ workoutId: w.id, activityId: activity.id, mode: 'linked' });
+                  setLinking(false);
+                }}
+                style={{ borderWidth: 1, borderColor: colors.border, borderRadius: radii.md, padding: spacing[3] }}
+              >
+                <Text variant="body">{w.name}</Text>
+                <Text variant="caption" color="textSubtle">{formatDate(w.completedAt ?? w.createdAt)}</Text>
+              </Pressable>
+            ))}
+            <View style={{ alignItems: 'flex-start' }}>
+              <Button label={t('common.cancel')} variant="secondary" onPress={() => setLinking(false)} />
+            </View>
+          </View>
+        ) : (
+          <View style={{ alignItems: 'flex-start', marginTop: spacing[2] }}>
+            <Button label={t('sport.activityDetail.link.attach')} variant="secondary" onPress={() => setLinking(true)} />
+          </View>
+        )}
+      </Card>
 
       {!matchedWorkout ? (
         <Card>

@@ -1603,6 +1603,14 @@
     "estimated": "Estimado según el tipo de actividad y ya contado en tu recuperación. Ajústalo si hace falta y guarda.",
     "estimatedSecondary": "Secundarios (cuentan la mitad): {{muscles}}",
     "backToEstimate": "Volver a la estimación"
+   },
+   "link": {
+    "heading": "Sesión correspondiente",
+    "linkedTo": "Mismo esfuerzo que «{{name}}»: las mediciones del reloj se muestran allí y la fatiga cuenta una sola vez.",
+    "separate": "No es la misma sesión",
+    "attach": "Vincular a una sesión",
+    "pick": "¿A qué sesión corresponde esta actividad?",
+    "noCandidate": "Ninguna sesión terminada ese día. Nada que vincular."
    }
   },
   "customize": {

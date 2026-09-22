@@ -1603,6 +1603,14 @@
     "estimated": "Estimé d'après le type d'activité, et déjà pris en compte dans ta récupération. Modifie si besoin, puis enregistre.",
     "estimatedSecondary": "En secondaire (compte moitié) : {{muscles}}",
     "backToEstimate": "Revenir à l'estimation"
+   },
+   "link": {
+    "heading": "Séance correspondante",
+    "linkedTo": "Même effort que « {{name}} » : les mesures de la montre y sont affichées, et la fatigue n’est comptée qu’une fois.",
+    "separate": "Pas la même séance",
+    "attach": "Rattacher à une séance",
+    "pick": "À quelle séance correspond cette activité ?",
+    "noCandidate": "Aucune séance terminée ce jour-là. Rien à rattacher."
    }
   },
   "customize": {
