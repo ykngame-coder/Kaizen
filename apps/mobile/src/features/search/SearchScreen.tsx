@@ -46,7 +46,7 @@ const PAGES: Omit<Item, 'category' | 'icon'>[] = [
   { title: 'Journal alimentaire', subtitle: 'Nutrition', path: '/nutrition/journal', keywords: ['journal', 'repas'] },
   { title: 'Poids & composition', subtitle: 'Nutrition', path: '/nutrition/weight', keywords: ['pesée', 'poids', 'masse grasse'] },
   { title: 'Rechercher un aliment', subtitle: 'Nutrition', path: '/nutrition/food/search' },
-  { title: 'Scanner un code-barres', subtitle: 'Nutrition', path: '/nutrition/food/scan', keywords: ['scan', 'code-barres'] },
+  { title: 'Scanner un code-barres', subtitle: 'Nutrition', path: '/nutrition/food/search', keywords: ['scan', 'code-barres'] },
   { title: 'Objectifs & habitudes', subtitle: 'Profil', path: '/profile/habits', keywords: ['objectif', 'but', 'cible', 'habitude', 'discipline', 'série', 'streak'] },
   { title: 'Programmes', subtitle: 'Programmes', path: '/marketplace', keywords: ['catalogue', 'communauté', 'créations', 'marketplace'] },
   { title: 'Réglages', subtitle: 'Profil', path: '/profile/settings', keywords: ['paramètres', 'préférences'] },
