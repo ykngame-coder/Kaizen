@@ -63,7 +63,7 @@ with
   ),
   s1_exercises as (
     insert into public.user_session_exercises (session_id, block_id, exercise_id, "order", reps, distance_m, duration_sec, weight_kg)
-select s1_session.id, b.id, sp.exercise_id, sp.ord, sp.reps, sp.distance_m, sp.duration_sec, sp.weight_kg
+select s1_session.id, b.id, sp.exercise_id, sp.ord, sp.reps::smallint, sp.distance_m::numeric, sp.duration_sec::integer, sp.weight_kg::numeric(6,2)
 from s1_spec sp
 join s1_blocks b on b."order" = sp.block_ord
 cross join s1_session
@@ -109,7 +109,7 @@ cross join s1_session
   ),
   s2_exercises as (
     insert into public.user_session_exercises (session_id, block_id, exercise_id, "order", reps, distance_m, duration_sec, weight_kg)
-select s2_session.id, b.id, sp.exercise_id, sp.ord, sp.reps, sp.distance_m, sp.duration_sec, sp.weight_kg
+select s2_session.id, b.id, sp.exercise_id, sp.ord, sp.reps::smallint, sp.distance_m::numeric, sp.duration_sec::integer, sp.weight_kg::numeric(6,2)
 from s2_spec sp
 join s2_blocks b on b."order" = sp.block_ord
 cross join s2_session
@@ -153,7 +153,7 @@ cross join s2_session
   ),
   s3_exercises as (
     insert into public.user_session_exercises (session_id, block_id, exercise_id, "order", reps, distance_m, duration_sec, weight_kg)
-select s3_session.id, b.id, sp.exercise_id, sp.ord, sp.reps, sp.distance_m, sp.duration_sec, sp.weight_kg
+select s3_session.id, b.id, sp.exercise_id, sp.ord, sp.reps::smallint, sp.distance_m::numeric, sp.duration_sec::integer, sp.weight_kg::numeric(6,2)
 from s3_spec sp
 join s3_blocks b on b."order" = sp.block_ord
 cross join s3_session
@@ -190,7 +190,7 @@ cross join s3_session
   ),
   s4_exercises as (
     insert into public.user_session_exercises (session_id, block_id, exercise_id, "order", reps, distance_m, duration_sec, weight_kg)
-select s4_session.id, b.id, sp.exercise_id, sp.ord, sp.reps, sp.distance_m, sp.duration_sec, sp.weight_kg
+select s4_session.id, b.id, sp.exercise_id, sp.ord, sp.reps::smallint, sp.distance_m::numeric, sp.duration_sec::integer, sp.weight_kg::numeric(6,2)
 from s4_spec sp
 join s4_blocks b on b."order" = sp.block_ord
 cross join s4_session
@@ -230,7 +230,7 @@ cross join s4_session
   ),
   s5_exercises as (
     insert into public.user_session_exercises (session_id, block_id, exercise_id, "order", reps, distance_m, duration_sec, weight_kg)
-select s5_session.id, b.id, sp.exercise_id, sp.ord, sp.reps, sp.distance_m, sp.duration_sec, sp.weight_kg
+select s5_session.id, b.id, sp.exercise_id, sp.ord, sp.reps::smallint, sp.distance_m::numeric, sp.duration_sec::integer, sp.weight_kg::numeric(6,2)
 from s5_spec sp
 join s5_blocks b on b."order" = sp.block_ord
 cross join s5_session
@@ -271,7 +271,7 @@ cross join s5_session
   ),
   s6_exercises as (
     insert into public.user_session_exercises (session_id, block_id, exercise_id, "order", reps, distance_m, duration_sec, weight_kg)
-select s6_session.id, b.id, sp.exercise_id, sp.ord, sp.reps, sp.distance_m, sp.duration_sec, sp.weight_kg
+select s6_session.id, b.id, sp.exercise_id, sp.ord, sp.reps::smallint, sp.distance_m::numeric, sp.duration_sec::integer, sp.weight_kg::numeric(6,2)
 from s6_spec sp
 join s6_blocks b on b."order" = sp.block_ord
 cross join s6_session
@@ -322,7 +322,7 @@ cross join s6_session
   ),
   s7_exercises as (
     insert into public.user_session_exercises (session_id, block_id, exercise_id, "order", reps, distance_m, duration_sec, weight_kg)
-select s7_session.id, b.id, sp.exercise_id, sp.ord, sp.reps, sp.distance_m, sp.duration_sec, sp.weight_kg
+select s7_session.id, b.id, sp.exercise_id, sp.ord, sp.reps::smallint, sp.distance_m::numeric, sp.duration_sec::integer, sp.weight_kg::numeric(6,2)
 from s7_spec sp
 join s7_blocks b on b."order" = sp.block_ord
 cross join s7_session
@@ -372,7 +372,7 @@ cross join s7_session
   ),
   s8_exercises as (
     insert into public.user_session_exercises (session_id, block_id, exercise_id, "order", reps, distance_m, duration_sec, weight_kg)
-select s8_session.id, b.id, sp.exercise_id, sp.ord, sp.reps, sp.distance_m, sp.duration_sec, sp.weight_kg
+select s8_session.id, b.id, sp.exercise_id, sp.ord, sp.reps::smallint, sp.distance_m::numeric, sp.duration_sec::integer, sp.weight_kg::numeric(6,2)
 from s8_spec sp
 join s8_blocks b on b."order" = sp.block_ord
 cross join s8_session
@@ -412,7 +412,7 @@ cross join s8_session
   ),
   s9_exercises as (
     insert into public.user_session_exercises (session_id, block_id, exercise_id, "order", reps, distance_m, duration_sec, weight_kg)
-select s9_session.id, b.id, sp.exercise_id, sp.ord, sp.reps, sp.distance_m, sp.duration_sec, sp.weight_kg
+select s9_session.id, b.id, sp.exercise_id, sp.ord, sp.reps::smallint, sp.distance_m::numeric, sp.duration_sec::integer, sp.weight_kg::numeric(6,2)
 from s9_spec sp
 join s9_blocks b on b."order" = sp.block_ord
 cross join s9_session
@@ -454,7 +454,7 @@ cross join s9_session
   ),
   s10_exercises as (
     insert into public.user_session_exercises (session_id, block_id, exercise_id, "order", reps, distance_m, duration_sec, weight_kg)
-select s10_session.id, b.id, sp.exercise_id, sp.ord, sp.reps, sp.distance_m, sp.duration_sec, sp.weight_kg
+select s10_session.id, b.id, sp.exercise_id, sp.ord, sp.reps::smallint, sp.distance_m::numeric, sp.duration_sec::integer, sp.weight_kg::numeric(6,2)
 from s10_spec sp
 join s10_blocks b on b."order" = sp.block_ord
 cross join s10_session
