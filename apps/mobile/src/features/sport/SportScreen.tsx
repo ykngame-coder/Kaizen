@@ -15,6 +15,7 @@ import {
   useMuscleSessions,
   usePlannedWorkouts,
   useRecordDailyScore,
+  useSessionMatching,
   useWorkouts,
 } from '@/lib/data/queries';
 import { activityTitle, formatDate, splitDuration } from '@/lib/format';
@@ -107,6 +108,7 @@ export function SportScreen(): React.JSX.Element {
   const { colors } = useTheme();
   const { data: workouts = [], isLoading } = useWorkouts();
   const { data: activities = [] } = useActivities();
+  const { standaloneActivityIds } = useSessionMatching();
   const { data: health = [] } = useHealthMetrics();
   const { data: muscleSessions = [] } = useMuscleSessions();
   const { data: planned = [] } = usePlannedWorkouts();
@@ -214,9 +216,13 @@ export function SportScreen(): React.JSX.Element {
       .map((x) => ({ kind: 'workout' as const, id: x.id, date: x.completedAt!, name: x.name, durationSec: x.durationSec, rpe: x.rpe, status: x.status }));
     // activityTitle, pas x.type : une activité importée est de type `other`
     // et porte son vrai nom dans les notes — le hub affichait « other » brut.
-    const a = activities.map((x) => ({ kind: 'activity' as const, id: x.id, date: x.startedAt, name: activityTitle(x.type, x.notes), durationSec: x.durationSec, rpe: undefined, status: undefined }));
+    // standaloneActivityIds : une activité liée à une séance jouée dans
+    // l'app ne s'ajoute pas en double ici — la séance suffit à la raconter.
+    const a = activities
+      .filter((x) => standaloneActivityIds.has(x.id))
+      .map((x) => ({ kind: 'activity' as const, id: x.id, date: x.startedAt, name: activityTitle(x.type, x.notes), durationSec: x.durationSec, rpe: undefined, status: undefined }));
     return [...w, ...a].sort((x, y) => y.date.localeCompare(x.date)).slice(0, 3);
-  }, [workouts, activities]);
+  }, [workouts, activities, standaloneActivityIds]);
 
   const cardNodes: Record<string, React.ReactNode> = {
     recent: (

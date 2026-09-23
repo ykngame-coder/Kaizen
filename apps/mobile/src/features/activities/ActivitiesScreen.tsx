@@ -1,7 +1,7 @@
 import React, { useMemo } from 'react';
 import { Pressable, View } from 'react-native';
 import { useRouter } from 'expo-router';
-import { Button, Card, EmptyState, Icon, KPICard, Screen, Text } from '@supotsu/ui';
+import { Badge, Button, Card, EmptyState, Icon, KPICard, Screen, Text } from '@supotsu/ui';
 import { spacing } from '@supotsu/design-system';
 import { useSessionMatching, useActivities } from '@/lib/data/queries';
 import { activityTitle, formatDate, formatDistance, formatDuration } from '@/lib/format';
@@ -9,14 +9,11 @@ import { activityTitle, formatDate, formatDistance, formatDuration } from '@/lib
 /** Activities history + weekly stats (Master Prompt P3, MVP P20.3). */
 export function ActivitiesScreen(): React.JSX.Element {
   const router = useRouter();
-  const { data: allActivities = [], isLoading } = useActivities();
-  // Une activité qui double une séance jouée dans l'app n'apparaît pas ici :
-  // c'est le même effort, et la séance le raconte mieux.
-  const { standaloneActivityIds } = useSessionMatching();
-  const activities = useMemo(
-    () => allActivities.filter((a) => standaloneActivityIds.has(a.id)),
-    [allActivities, standaloneActivityIds],
-  );
+  const { data: activities = [], isLoading } = useActivities();
+  // Une activité liée à une séance jouée dans l'app reste visible ici — juste
+  // marquée (badge) : c'était auparavant masquée en pariant sur une liste
+  // "Séances" dédiée pour la montrer à la place, qui n'existe pas.
+  const { workoutForActivity } = useSessionMatching();
 
   const weekly = useMemo(() => {
     const weekAgo = Date.now() - 7 * 86_400_000;
@@ -62,6 +59,7 @@ export function ActivitiesScreen(): React.JSX.Element {
         <View style={{ gap: spacing[2] }}>
           {activities.map((a) => {
             const distance = formatDistance(a.distanceM);
+            const linkedWorkout = workoutForActivity(a.id);
             return (
               <Pressable key={a.id} onPress={() => router.push({ pathname: '/sport/activity/[id]', params: { id: a.id } })}>
                 {({ pressed }) => (
@@ -74,7 +72,10 @@ export function ActivitiesScreen(): React.JSX.Element {
                           alignItems: 'center',
                         }}
                       >
-                        <Text variant="subtitle">{activityTitle(a.type, a.notes)}</Text>
+                        <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing[2], flex: 1 }}>
+                          <Text variant="subtitle">{activityTitle(a.type, a.notes)}</Text>
+                          {linkedWorkout ? <Badge label="Séance" tone="neutral" /> : null}
+                        </View>
                         <Text variant="caption" color="textMuted">
                           {formatDate(a.startedAt)}
                         </Text>
