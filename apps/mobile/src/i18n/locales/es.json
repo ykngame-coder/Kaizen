@@ -1610,7 +1610,10 @@
     "separate": "No es la misma sesión",
     "attach": "Vincular a una sesión",
     "pick": "¿A qué sesión corresponde esta actividad?",
-    "noCandidate": "Ninguna sesión terminada ese día. Nada que vincular."
+    "noCandidate": "Ninguna sesión terminada ese día. Nada que vincular.",
+    "linkedConfirm": "Vinculado ✓ — ambos cuentan como un solo esfuerzo.",
+    "separatedConfirm": "Separados ✓ — cada uno vuelve a contar por sí mismo.",
+    "failed": "No se pudo guardar: {{error}}"
    }
   },
   "customize": {

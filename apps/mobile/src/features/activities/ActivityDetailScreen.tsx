@@ -66,6 +66,8 @@ export function ActivityDetailScreen(): React.JSX.Element {
   const { workoutForActivity } = useSessionMatching();
   const setSessionLink = useSetSessionLink();
   const [linking, setLinking] = useState(false);
+  // Un rattachement qui ne dit rien laisse croire qu'il n'a pas pris.
+  const [linkFeedback, setLinkFeedback] = useState<'linked' | 'separated' | string | null>(null);
   const [confirmingDelete, setConfirmingDelete] = useState(false);
   const updateActivityMuscles = useUpdateActivityMuscles();
   const [selectedMuscles, setSelectedMuscles] = useState<MuscleGroup[] | null>(null);
@@ -202,9 +204,18 @@ export function ActivityDetailScreen(): React.JSX.Element {
             </Text>
             <View style={{ alignItems: 'flex-start', marginTop: spacing[2] }}>
               <Button
-                label={t('sport.activityDetail.link.separate')}
+                label={setSessionLink.isPending ? '…' : t('sport.activityDetail.link.separate')}
                 variant="secondary"
-                onPress={() => setSessionLink.mutate({ workoutId: matchedWorkout.id, activityId: activity.id, mode: 'separate' })}
+                disabled={setSessionLink.isPending}
+                onPress={() =>
+                  setSessionLink.mutate(
+                    { workoutId: matchedWorkout.id, activityId: activity.id, mode: 'separate' },
+                    {
+                      onSuccess: () => setLinkFeedback('separated'),
+                      onError: (e) => setLinkFeedback(e instanceof Error ? e.message : 'erreur'),
+                    },
+                  )
+                }
               />
             </View>
           </>
@@ -219,7 +230,13 @@ export function ActivityDetailScreen(): React.JSX.Element {
               <Pressable
                 key={w.id}
                 onPress={() => {
-                  setSessionLink.mutate({ workoutId: w.id, activityId: activity.id, mode: 'linked' });
+                  setSessionLink.mutate(
+                    { workoutId: w.id, activityId: activity.id, mode: 'linked' },
+                    {
+                      onSuccess: () => setLinkFeedback('linked'),
+                      onError: (e) => setLinkFeedback(e instanceof Error ? e.message : 'erreur'),
+                    },
+                  );
                   setLinking(false);
                 }}
                 style={{ borderWidth: 1, borderColor: colors.border, borderRadius: radii.md, padding: spacing[3] }}
@@ -237,6 +254,19 @@ export function ActivityDetailScreen(): React.JSX.Element {
             <Button label={t('sport.activityDetail.link.attach')} variant="secondary" onPress={() => setLinking(true)} />
           </View>
         )}
+        {linkFeedback ? (
+          <Text
+            variant="caption"
+            color={linkFeedback === 'linked' || linkFeedback === 'separated' ? 'accentData' : 'error'}
+            style={{ marginTop: spacing[2] }}
+          >
+            {linkFeedback === 'linked'
+              ? t('sport.activityDetail.link.linkedConfirm')
+              : linkFeedback === 'separated'
+                ? t('sport.activityDetail.link.separatedConfirm')
+                : t('sport.activityDetail.link.failed', { error: linkFeedback })}
+          </Text>
+        ) : null}
       </Card>
 
       {!matchedWorkout ? (

@@ -1610,7 +1610,10 @@
     "separate": "Nicht dieselbe Einheit",
     "attach": "Mit einer Einheit verknüpfen",
     "pick": "Zu welcher Einheit gehört diese Aktivität?",
-    "noCandidate": "An diesem Tag wurde keine Einheit abgeschlossen. Nichts zu verknüpfen."
+    "noCandidate": "An diesem Tag wurde keine Einheit abgeschlossen. Nichts zu verknüpfen.",
+    "linkedConfirm": "Verknüpft ✓ — beide zählen nur noch als eine Anstrengung.",
+    "separatedConfirm": "Getrennt ✓ — jedes zählt wieder für sich.",
+    "failed": "Speichern nicht möglich: {{error}}"
    }
   },
   "customize": {

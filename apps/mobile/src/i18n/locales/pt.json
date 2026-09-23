@@ -1610,7 +1610,10 @@
     "separate": "Não é a mesma sessão",
     "attach": "Ligar a uma sessão",
     "pick": "A que sessão corresponde esta atividade?",
-    "noCandidate": "Nenhuma sessão terminada nesse dia. Nada para ligar."
+    "noCandidate": "Nenhuma sessão terminada nesse dia. Nada para ligar.",
+    "linkedConfirm": "Ligado ✓ — ambos contam como um só esforço.",
+    "separatedConfirm": "Separados ✓ — cada um volta a contar por si.",
+    "failed": "Não foi possível guardar: {{error}}"
    }
   },
   "customize": {

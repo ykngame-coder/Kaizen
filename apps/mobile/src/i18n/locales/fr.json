@@ -1610,7 +1610,10 @@
     "separate": "Pas la même séance",
     "attach": "Rattacher à une séance",
     "pick": "À quelle séance correspond cette activité ?",
-    "noCandidate": "Aucune séance terminée ce jour-là. Rien à rattacher."
+    "noCandidate": "Aucune séance terminée ce jour-là. Rien à rattacher.",
+    "linkedConfirm": "Rattaché ✓ — les deux ne comptent plus que pour un effort.",
+    "separatedConfirm": "Séparés ✓ — chacun compte à nouveau pour lui-même.",
+    "failed": "Impossible d’enregistrer : {{error}}"
    }
   },
   "customize": {

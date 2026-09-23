@@ -3,10 +3,17 @@ import type { Database } from '../generated/database.types';
 
 export type SessionLinkRow = Database['public']['Tables']['session_links']['Row'];
 
-/** Les rapprochements (ou séparations) décidés à la main par l'utilisateur. */
+/**
+ * Les rapprochements (ou séparations) décidés à la main par l'utilisateur.
+ *
+ * Une erreur ne remonte pas : ces corrections sont un confort, et le calcul
+ * qui s'en sert — la récupération musculaire — doit marcher sans elles. Tant
+ * que la migration 0042 n'est pas passée, la table n'existe pas et toute la
+ * page des muscles tombait avec la requête.
+ */
 export async function listSessionLinks(client: SupotsuClient, userId: string): Promise<SessionLinkRow[]> {
   const { data, error } = await client.from('session_links').select('*').eq('user_id', userId);
-  if (error) throw error;
+  if (error) return [];
   return data ?? [];
 }
 
