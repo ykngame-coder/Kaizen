@@ -201,13 +201,15 @@ export function SportScreen(): React.JSX.Element {
   const week = useMemo(() => {
     const since = new Date(asOf).getTime() - 7 * DAY_MS;
     const wk = workouts.filter((w) => w.status === 'completed' && w.completedAt && new Date(w.completedAt).getTime() >= since);
-    const acts = activities.filter((a) => new Date(a.startedAt).getTime() >= since);
+    // standaloneActivityIds : une activité liée à une séance ne s'ajoute pas
+    // en double au temps/nombre de séances de la semaine — même effort.
+    const acts = activities.filter((a) => standaloneActivityIds.has(a.id) && new Date(a.startedAt).getTime() >= since);
     const totalSec = wk.reduce((s, w) => s + (w.durationSec ?? 0), 0) + acts.reduce((s, a) => s + a.durationSec, 0);
     const cals = acts.reduce((s, a) => s + (a.calories ?? 0), 0);
     const rpes = wk.map((w) => w.rpe).filter((r): r is number => r != null);
     const rpe = rpes.length ? rpes.reduce((s, r) => s + r, 0) / rpes.length : null;
     return { sessions: wk.length + acts.length, totalSec, cals, rpe };
-  }, [workouts, activities, asOf]);
+  }, [workouts, activities, standaloneActivityIds, asOf]);
 
   /** 3 most recent activities — workouts and raw activities merged, most recent first. */
   const recent = useMemo(() => {
