@@ -4,12 +4,15 @@
 -- À exécuter UNE SEULE FOIS dans l'éditeur SQL Supabase (projet vocumsjilhdmzilokhlq).
 
 -- ---------------------------------------------------------------------------
--- 0. Trois mouvements absents de public.exercises (vérifié : Burpee Broad Jump
---    existe côté app dans hyroxSupplement.ts mais jamais semé côté serveur ;
---    High Knees et un KB Deadlift bilatéral propre n'existent nulle part).
+-- 0. Mouvements absents de public.exercises (vérifié colonne par colonne
+--    contre la vraie table, pas seulement le catalogue local de l'app, qui
+--    a divergé : 977 lignes en base contre 876 dans exercises.data.json).
+--    'Burpees' existe dans le bundle app mais pas en base ; Burpee Broad
+--    Jump/High Knees/un KB Deadlift bilatéral propre n'existent nulle part.
 -- ---------------------------------------------------------------------------
 insert into public.exercises (id, name, category, primary_muscles, secondary_muscles, equipment, level)
 values
+  ('Burpees', 'Burpees', 'functional', '{full_body}', '{chest,quads,shoulders}', '{}', 'beginner'),
   ('Burpee Broad Jump', 'Burpee Broad Jump', 'functional', '{full_body}', '{quads,shoulders}', '{}', 'intermediate'),
   ('High Knees', 'High Knees', 'functional', '{quads}', '{core}', '{}', 'beginner'),
   ('Kettlebell Deadlift', 'Kettlebell Deadlift', 'functional', '{back,hamstrings,glutes}', '{core}', '{kettlebell}', 'beginner')
