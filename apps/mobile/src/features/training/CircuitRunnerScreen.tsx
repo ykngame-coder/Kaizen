@@ -326,15 +326,15 @@ export function CircuitRunnerScreen(): React.JSX.Element {
           </View>
         )
       ) : active.format === 'amrap' ? (
-        <AmrapRunner block={active} sets={sets} onFinished={(r) => void finishTimedBlock(r)} />
+        <AmrapRunner key={active.id} block={active} sets={sets} onFinished={(r) => void finishTimedBlock(r)} />
       ) : active.format === 'emom' ? (
-        <EmomRunner block={active} sets={sets} onFinished={(r) => void finishTimedBlock(r)} />
+        <EmomRunner key={active.id} block={active} sets={sets} onFinished={(r) => void finishTimedBlock(r)} />
       ) : active.format === 'tabata' ? (
-        <TabataRunner block={active} sets={sets} onFinished={(r) => void finishTimedBlock(r)} />
+        <TabataRunner key={active.id} block={active} sets={sets} onFinished={(r) => void finishTimedBlock(r)} />
       ) : active.format === 'hyrox' ? (
-        <HyroxRunner block={active} sets={sets} onFinished={(r, e) => void finishTimedBlock(r, e)} />
+        <HyroxRunner key={active.id} block={active} sets={sets} onFinished={(r, e) => void finishTimedBlock(r, e)} />
       ) : (
-        <ForTimeRunner block={active} sets={sets} onFinished={(r, e) => void finishTimedBlock(r, e)} />
+        <ForTimeRunner key={active.id} block={active} sets={sets} onFinished={(r, e) => void finishTimedBlock(r, e)} />
       )}
       <FinishSessionSheet
         visible={finishOpen}

@@ -54,8 +54,21 @@ export function HyroxRunner({ block, sets, onFinished }: TimedRunnerProps): Reac
   }, [state?.isFinished, phase]);
 
   useEffect(() => {
-    if (!activeSet && ordered.length > 0) onFinished(ordered.length, totalSec);
-  }, [activeSet]);
+    // La clé du parent remonte ce lecteur à chaque bloc ; cette garde tient
+    // même sans elle. Sans les deux, un bloc plus court que le précédent
+    // héritait d'un index hors liste et se déclarait terminé sans avoir
+    // commencé — puis le suivant, et ainsi de suite.
+    if (!activeSet && ordered.length > 0 && activeIndex >= ordered.length) {
+      onFinished(ordered.length, totalSec);
+    }
+  }, [activeSet, activeIndex, ordered.length]);
+
+  // Changement de bloc sans remontage : on repart de sa première station.
+  useEffect(() => {
+    setActiveIndex(0);
+    setPhase('work');
+    setTotalSec(0);
+  }, [block.id]);
 
   const exerciseName = useMemo(() => {
     const map = new Map<string, string>();
