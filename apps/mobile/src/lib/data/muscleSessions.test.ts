@@ -97,6 +97,15 @@ describe('buildActivityMuscleSessions', () => {
     expect(buildActivityMuscleSessions([matin], [{ ...baseWorkout, durationSec: 40 * 60 }])).toHaveLength(1);
   });
 
+  it('garde l activité quand la séance ne porte aucun muscle', () => {
+    // Le repository ne passe ici que les séances dont les exercices disent
+    // quels muscles ont travaillé. Une séance de course et de gainage n'en
+    // fait pas partie : elle ne doit pas faire taire l'activité que la montre
+    // a enregistrée au même moment, seule à porter des muscles.
+    const activity: Activity = { ...baseActivity, type: 'cross_training', startedAt: '2026-08-30T17:20:00.000Z', durationSec: 40 * 60, muscles: ['back'] };
+    expect(buildActivityMuscleSessions([activity], [])).toHaveLength(1);
+  });
+
   it('garde une activité de la veille', () => {
     const activity: Activity = { ...baseActivity, type: 'strength', startedAt: '2026-08-29T17:20:00.000Z', durationSec: 40 * 60, muscles: ['back'] };
     expect(buildActivityMuscleSessions([activity], [{ ...baseWorkout, durationSec: 40 * 60 }])).toHaveLength(1);

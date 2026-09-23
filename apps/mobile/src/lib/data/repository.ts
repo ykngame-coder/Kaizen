@@ -986,10 +986,15 @@ function buildMuscleSessions(
   workoutDate: Map<string, string>,
   sets: { workoutId: string; exerciseId: string }[],
   customExercises: Exercise[] = [],
-): MuscleSession[] {
+): { sessions: MuscleSession[]; covered: Set<string> } {
   const byId = exerciseLookup(customExercises);
   const seen = new Set<string>();
   const out: MuscleSession[] = [];
+  // Les séances qui disent vraiment quels muscles ont travaillé. Une séance de
+  // course et de gainage n'en fait pas partie : elle ne doit donc pas faire
+  // taire l'activité que la montre a enregistrée au même moment, seule à
+  // porter des muscles.
+  const covered = new Set<string>();
   for (const s of sets) {
     const key = `${s.workoutId}|${s.exerciseId}`;
     if (seen.has(key)) continue;
@@ -997,6 +1002,7 @@ function buildMuscleSessions(
     const exercise = byId.get(s.exerciseId);
     const trainedAt = workoutDate.get(s.workoutId);
     if (!exercise || !trainedAt) continue;
+    covered.add(s.workoutId);
     out.push({
       trainedAt,
       primaryMuscles: exercise.primaryMuscles,
@@ -1004,7 +1010,7 @@ function buildMuscleSessions(
       recovery: exercise.isMobility,
     });
   }
-  return out;
+  return { sessions: out, covered };
 }
 
 /** One muscle's training work from a single logged set (for real progression). */
@@ -1714,7 +1720,18 @@ function createDemoRepository(): DataRepository {
         maxHr: estimateMaxHeartRate({ birthDate: profile?.birthDate, observed: observedMaxHeartRates(activities, workouts), asOf: new Date().toISOString() }),
       };
       const customExercises = await readJson<Exercise>(customExKey(userId));
-      return [...buildMuscleSessions(dates, rows, customExercises), ...buildActivityMuscleSessions(activities, workouts, hr, await this.listSessionLinks(userId))];
+      const structured = buildMuscleSessions(dates, rows, customExercises);
+      return [
+        ...structured.sessions,
+        // Seules les séances qui portent des muscles peuvent en remplacer une
+        // activité : sinon on effacerait la seule source d'information.
+        ...buildActivityMuscleSessions(
+          activities,
+          workouts.filter((w) => structured.covered.has(w.id)),
+          hr,
+          await this.listSessionLinks(userId),
+        ),
+      ];
     },
     async listMuscleWork(userId) {
       const rows = await readJson<LoggedSetRow & { date: string }>(setKey(userId));
@@ -2718,7 +2735,18 @@ function createSupabaseRepository(
         maxHr: estimateMaxHeartRate({ birthDate: profileRow?.birth_date ?? undefined, observed: observedMaxHeartRates(activities, workouts), asOf: new Date().toISOString() }),
       };
       const customExercises = (await listCustomExercisesDb(client, userId)).map(rowToExercise);
-      return [...buildMuscleSessions(dates, sets, customExercises), ...buildActivityMuscleSessions(activities, workouts, hr, await this.listSessionLinks(userId))];
+      const structured = buildMuscleSessions(dates, sets, customExercises);
+      return [
+        ...structured.sessions,
+        // Seules les séances qui portent des muscles peuvent en remplacer une
+        // activité : sinon on effacerait la seule source d'information.
+        ...buildActivityMuscleSessions(
+          activities,
+          workouts.filter((w) => structured.covered.has(w.id)),
+          hr,
+          await this.listSessionLinks(userId),
+        ),
+      ];
     },
     async listMuscleWork(userId) {
       const workouts = await listWorkoutsDb(client, userId);
