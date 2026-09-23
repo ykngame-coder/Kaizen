@@ -6,6 +6,6 @@
 -- published defaults to false, same as every other program today.
 insert into public.programs (id, title, author, focus, level, weeks, sessions_per_week, description, price_cents)
 values
-  ('prog-ppl', 'Push Pull Legs', 'Coach Léa', 'strength', 'intermediate', 8, 3,
+  ('prog-ppl', 'Push Pull Legs', 'Coach Supotsu', 'strength', 'intermediate', 8, 3,
     'Split Push/Pull/Legs à la barre et aux haltères — un cycle complet par semaine.', 0)
 on conflict (id) do nothing;
