@@ -39,3 +39,19 @@ export const LINKED_LABEL: Record<LinkedKind, string> = {
   workout: 'tes séances (Sport, y compris import Apple Santé/Garmin)',
   weight: 'tes pesées (Nutrition / Apple Santé)',
 };
+
+/**
+ * Faut-il proposer de régler la cible d'une habitude ?
+ *
+ * Une habitude à suivi automatique cachait toujours sa cible, au motif que
+ * « la vraie valeur vit ailleurs ». C'est vrai du seuil quotidien (2,5 L
+ * d'eau, 10 000 pas, réglés dans Nutrition ou les Réglages), pas du NOMBRE de
+ * fois : « 3 séances par semaine » n'est défini nulle part ailleurs, et c'est
+ * lui qui décide quand l'habitude est due et quand elle est tenue.
+ */
+export function showsTargetPicker(linked: LinkedKind | null, cadence: 'daily' | 'weekly'): boolean {
+  if (!linked) return true;
+  // Seuil quotidien réglé ailleurs : la cible ne peut être que « une fois ».
+  const hasExternalDailyGoal = linked === 'hydration' || linked === 'steps';
+  return !(hasExternalDailyGoal && cadence === 'daily');
+}

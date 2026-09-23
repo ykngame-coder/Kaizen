@@ -8,7 +8,7 @@ import { spacing } from '@supotsu/design-system';
 import { habitInputSchema } from '@supotsu/shared';
 import { BackButton } from '@/features/navigation/BackButton';
 import { useArchiveHabit, useHabits, useUpdateHabit } from '@/lib/data/queries';
-import { linkedKindFor, LINKED_LABEL, type LinkedKind } from './linkedHabits';
+import { linkedKindFor, LINKED_LABEL, showsTargetPicker, type LinkedKind } from './linkedHabits';
 
 type PillarOption = 'habits' | 'nutrition' | 'recovery' | 'sleep' | 'performance';
 
@@ -162,7 +162,7 @@ export function EditHabitScreen(): React.JSX.Element {
         <SegmentedControl options={CADENCE} value={cadence} onChange={setCadence} />
       </View>
 
-      {!linked && (
+      {showsTargetPicker(linked, cadence) && (
         <View style={{ gap: spacing[2] }}>
           <Text variant="label" color="textMuted">
             {cadence === 'daily' ? t('sport.gamification.addHabit.targetPerDay') : t('sport.gamification.addHabit.targetPerWeek')}

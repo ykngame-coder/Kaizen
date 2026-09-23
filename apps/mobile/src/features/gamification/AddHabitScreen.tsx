@@ -7,7 +7,7 @@ import { Badge, Button, Card, Input, Screen, SegmentedControl, Text, useTheme } 
 import { spacing } from '@supotsu/design-system';
 import { habitInputSchema, type HabitInput } from '@supotsu/shared';
 import { useAddHabit } from '@/lib/data/queries';
-import { linkedKindFor, LINKED_LABEL } from './linkedHabits';
+import { linkedKindFor, LINKED_LABEL, showsTargetPicker } from './linkedHabits';
 
 function pillarOptions(t: TFunction) {
   return [
@@ -151,7 +151,7 @@ export function AddHabitScreen(): React.JSX.Element {
         <SegmentedControl options={CADENCE} value={cadence} onChange={setCadence} />
       </View>
 
-      {!linked && (
+      {showsTargetPicker(linked, cadence) && (
         <View style={{ gap: spacing[2] }}>
           <Text variant="label" color="textMuted">
             {cadence === 'daily' ? t('sport.gamification.addHabit.targetPerDay') : t('sport.gamification.addHabit.targetPerWeek')}
