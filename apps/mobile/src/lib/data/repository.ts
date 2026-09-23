@@ -482,7 +482,7 @@ export interface DataRepository {
   listSessionLinks(userId: string): Promise<SessionLink[]>;
   setSessionLink(userId: string, workoutId: string, activityId: string, mode: SessionLinkMode): Promise<void>;
   listEnrolledProgramIds(userId: string): Promise<string[]>;
-  enrollProgram(userId: string, programId: string): Promise<void>;
+  enrollProgram(userId: string, programId: string, startDate?: Date): Promise<void>;
 
   // --- user-created séances & programmes (docs/superpowers/specs/2026-08-11-user-programs-design.md) ---
   /** The caller's own reusable session library. */
@@ -2161,7 +2161,7 @@ function createDemoRepository(): DataRepository {
     async listEnrolledProgramIds(userId) {
       return readJson<string>(enrollKey(userId));
     },
-    async enrollProgram(userId, programId) {
+    async enrollProgram(userId, programId, startDate) {
       const ids = await readJson<string>(enrollKey(userId));
       if (ids.includes(programId)) return; // already enrolled — don't regenerate the schedule
       await writeJson(enrollKey(userId), [programId, ...ids]);
@@ -2169,7 +2169,7 @@ function createDemoRepository(): DataRepository {
       const program = PROGRAM_CATALOG.find((p) => p.id === programId);
       if (!program) return;
       const now = new Date().toISOString();
-      const schedule = generateProgramSchedule(program);
+      const schedule = generateProgramSchedule(program, startDate);
       const workouts = await readJson<Workout>(wkKey(userId));
       const setsStore = await readJson<LoggedSetRow & { date: string }>(setKey(userId));
       const newWorkouts: Workout[] = [];
@@ -3101,10 +3101,10 @@ function createSupabaseRepository(
     async listEnrolledProgramIds(userId) {
       return (await listEnrollmentsDb(client, userId)).map((e) => e.program_id);
     },
-    async enrollProgram(userId, programId) {
+    async enrollProgram(userId, programId, startDate) {
       const existing = await listEnrollmentsDb(client, userId);
       const alreadyEnrolled = existing.some((e) => e.program_id === programId);
-      await enrollInProgram(client, userId, programId);
+      await enrollInProgram(client, userId, programId, startDate);
       if (alreadyEnrolled) return; // don't regenerate the schedule on a re-enroll
 
       const links = (await listCatalogSessions(client)).filter((l) => l.program_id === programId);
@@ -3113,6 +3113,7 @@ function createSupabaseRepository(
         // charges, distances — et datée selon sa semaine.
         for (const s of programSessionDates(
           links.map((l) => ({ sessionId: l.session_id, weekNumber: l.week_number, order: l.order })),
+          startDate,
         )) {
           const session = await getUserSessionDb(client, s.sessionId);
           if (!session) continue;
@@ -3137,7 +3138,7 @@ function createSupabaseRepository(
       // Repli : les programmes d'origine, dont le contenu est encore bundlé.
       const program = PROGRAM_CATALOG.find((p) => p.id === programId);
       if (!program) return;
-      const schedule = generateProgramSchedule(program);
+      const schedule = generateProgramSchedule(program, startDate);
       for (const s of schedule) {
         await insertWorkout(
           client,

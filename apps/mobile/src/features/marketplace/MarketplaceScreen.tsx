@@ -221,7 +221,7 @@ export function MarketplaceScreen(): React.JSX.Element {
                         label={enrolled ? 'Inscrit ✓' : enroll.isPending ? '…' : "S'inscrire"}
                         variant={enrolled ? 'secondary' : 'primary'}
                         disabled={enrolled || enroll.isPending}
-                        onPress={() => enroll.mutate(p.id)}
+                        onPress={() => enroll.mutate({ programId: p.id })}
                       />
                     </View>
                   </Card>

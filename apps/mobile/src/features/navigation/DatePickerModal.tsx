@@ -23,6 +23,8 @@ export interface DatePickerModalProps {
   onClose: () => void;
   /** Same planning horizon as DayNav — dates past it are shown but disabled. */
   maxDaysFuture?: number;
+  /** Unset by default (every existing caller browses past days freely). Set to 0 to disable every day before today — e.g. picking when a program starts. */
+  minDaysPast?: number;
 }
 
 /**
@@ -36,12 +38,14 @@ export function DatePickerModal({
   onSelect,
   onClose,
   maxDaysFuture = 7,
+  minDaysPast,
 }: DatePickerModalProps): React.JSX.Element {
   const { colors } = useTheme();
   const now = useMemo(() => new Date(), [visible]);
   const selectedKey = dayKey(new Date(value));
   const [monthOffset, setMonthOffset] = useState(0);
   const maxKey = dayKey(new Date(now.getTime() + maxDaysFuture * DAY_MS));
+  const minKey = minDaysPast != null ? dayKey(new Date(now.getTime() - minDaysPast * DAY_MS)) : null;
 
   const grid = useMemo(() => {
     const base = new Date(now.getFullYear(), now.getMonth() + monthOffset, 1);
@@ -98,7 +102,7 @@ export function DatePickerModal({
               if (!cell) return <View key={i} style={{ width: `${100 / 7}%`, aspectRatio: 1 }} />;
               const isToday = cell.key === dayKey(now);
               const isSelected = cell.key === selectedKey;
-              const disabled = cell.key > maxKey;
+              const disabled = cell.key > maxKey || (minKey != null && cell.key < minKey);
               return (
                 <Pressable
                   key={i}

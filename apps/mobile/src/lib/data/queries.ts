@@ -678,7 +678,7 @@ export function useEnrollProgram() {
   const repo = useRepository();
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (programId: string) => repo.enrollProgram(user!.id, programId),
+    mutationFn: (input: { programId: string; startDate?: Date }) => repo.enrollProgram(user!.id, input.programId, input.startDate),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['enrollments', user?.id] });
     },

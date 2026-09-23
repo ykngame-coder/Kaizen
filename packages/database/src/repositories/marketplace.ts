@@ -45,11 +45,17 @@ export async function enrollInProgram(
   client: SupotsuClient,
   userId: string,
   programId: string,
+  startDate?: Date,
 ): Promise<void> {
   const { error } = await client
     .from('program_enrollments')
     .upsert(
-      { user_id: userId, program_id: programId, status: 'active' },
+      {
+        user_id: userId,
+        program_id: programId,
+        status: 'active',
+        ...(startDate ? { started_at: startDate.toISOString() } : {}),
+      },
       { onConflict: 'user_id,program_id', ignoreDuplicates: true },
     );
   if (error) throw error;

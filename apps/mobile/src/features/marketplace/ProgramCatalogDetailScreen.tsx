@@ -1,12 +1,13 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import { View } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Badge, Button, Card, EmptyState, Icon, Screen, Text } from '@supotsu/ui';
 import { spacing } from '@supotsu/design-system';
-import type { ProgramFocus } from '@supotsu/core';
+import type { ProgramFocus, ISODateString } from '@supotsu/core';
 import { PICKABLE_EXERCISES } from '@supotsu/shared';
 import { EXERCISES } from '@/features/exercises/catalog';
 import { BackButton } from '@/features/navigation/BackButton';
+import { DatePickerModal } from '@/features/navigation/DatePickerModal';
 import { withStandardSledWeights } from '@supotsu/engines';
 import { useAthleteProfile, useEnrolledProgramIds, useEnrollProgram, useProgramSessionsContent, usePrograms } from '@/lib/data/queries';
 import { describeBlock, describeSet } from '@/features/training/setGoal';
@@ -34,6 +35,8 @@ export function ProgramCatalogDetailScreen(): React.JSX.Element {
   const { data: programs = [], isLoading } = usePrograms();
   const { data: enrolledIds = [] } = useEnrolledProgramIds();
   const enroll = useEnrollProgram();
+  const [pickingStartDate, setPickingStartDate] = useState(false);
+  const [startDate, setStartDate] = useState<ISODateString>(() => new Date().toISOString());
 
   const program = useMemo(() => programs.find((p) => p.id === id), [programs, id]);
   const enrolled = enrolledIds.includes(id ?? '');
@@ -170,17 +173,37 @@ export function ProgramCatalogDetailScreen(): React.JSX.Element {
       </View>
 
       <Text variant="caption" color="textSubtle" style={{ marginTop: spacing[2] }}>
-        En t'inscrivant, {program.sessions?.length ?? program.sessionTemplates.length} séances sont automatiquement ajoutées à ta Planification, à leur date.
+        En t'inscrivant, {program.sessions?.length ?? program.sessionTemplates.length} séances sont automatiquement ajoutées à ta Planification, à partir de la date que tu choisis.
       </Text>
 
-      <View style={{ alignItems: 'flex-start', marginTop: spacing[3] }}>
+      <View style={{ alignItems: 'flex-start', marginTop: spacing[3], gap: spacing[2] }}>
+        {!enrolled ? (
+          <Text variant="caption" color="textSubtle">
+            Départ : {new Date(startDate).toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' })}
+          </Text>
+        ) : null}
         <Button
           label={enrolled ? 'Inscrit ✓' : enroll.isPending ? '…' : "S'inscrire"}
           variant={enrolled ? 'secondary' : 'primary'}
           disabled={enrolled || enroll.isPending}
-          onPress={() => enroll.mutate(program.id, { onSuccess: () => router.push('/sport/planning') })}
+          onPress={() => setPickingStartDate(true)}
         />
       </View>
+
+      <DatePickerModal
+        visible={pickingStartDate}
+        value={startDate}
+        minDaysPast={0}
+        maxDaysFuture={180}
+        onClose={() => setPickingStartDate(false)}
+        onSelect={(value) => {
+          setStartDate(value);
+          enroll.mutate(
+            { programId: program.id, startDate: new Date(value) },
+            { onSuccess: () => router.push('/sport/planning') },
+          );
+        }}
+      />
     </Screen>
   );
 }

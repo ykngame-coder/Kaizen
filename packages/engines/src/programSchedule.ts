@@ -39,10 +39,16 @@ const WEEKDAYS: Record<number, number[]> = {
 const dayKey = (d: Date): string =>
   `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 
-/** Le lundi qui suit — jamais le jour même : s'inscrire un mardi ne doit pas réclamer une séance dans l'heure. */
-function nextMonday(from: Date): Date {
+/**
+ * Le lundi de la semaine de `from` — `from` lui-même s'il est déjà lundi,
+ * jamais celui d'après. `startFrom` est maintenant une date choisie à la main
+ * (écran d'inscription) : la respecter au plus près prime sur l'ancienne
+ * protection « jamais le jour même », qui n'avait de sens que pour un départ
+ * implicite sur « maintenant ».
+ */
+function mondayOfWeek(from: Date): Date {
   const dow = (from.getDay() + 6) % 7; // lundi = 0
-  return new Date(from.getFullYear(), from.getMonth(), from.getDate() + (7 - dow));
+  return new Date(from.getFullYear(), from.getMonth(), from.getDate() - dow);
 }
 
 export function programSessionDates(
@@ -51,7 +57,7 @@ export function programSessionDates(
 ): ScheduledProgramSession[] {
   if (links.length === 0) return [];
   const sorted = [...links].sort((a, b) => a.weekNumber - b.weekNumber || a.order - b.order);
-  const start = nextMonday(startFrom);
+  const start = mondayOfWeek(startFrom);
 
   const perWeek = new Map<number, ProgramSessionLink[]>();
   for (const l of sorted) {
