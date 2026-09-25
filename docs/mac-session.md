@@ -92,7 +92,11 @@ Suivre, dans l'ordre :
 - `docs/testflight.md` — build & envoi TestFlight pas à pas
 - `docs/test-checklist.md` — checklist testeurs
 - `docs/app-store-listing.md` — textes de la fiche App Store (promo, description, mots-clés, confidentialité)
-- `docs/prompts/` — prompts prêts à exécuter (scores sport/nutrition/sommeil, carrousel peek, import OCR, Apple Watch niveau 1)
+- `docs/prompts/` — prompts prêts à exécuter (voir `docs/prompts/README.md` pour
+  l'état réel). **Prioritaires** : `fix-audits-1-2.md` (sommeil aberrant en base)
+  et `corriger-programme-luc-leger.md` (programme « Test Luc Léger » de
+  l'utilisateur mal retranscrit : course/endurance saisie en force/Hyrox — le
+  prompt contient le contenu réel du PDF + la structure cible exacte)
 - `docs/health-auto-export.md` — import santé (HRV, sommeil, activités)
 - `docs/apple-health-build.md` — lecture HealthKit native (à venir)
 - `docs/architecture.md` — vue d'ensemble, principes, mapping du cahier des charges
