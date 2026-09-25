@@ -16,6 +16,8 @@ export interface ReminderDiagnostic {
   wanted?: number;
   result?: SyncResult;
   error?: string;
+  /** Combien de rappels calculés par type, et le prochain horaire de chacun — pour voir si un type est calculé à zéro plutôt que juste pas encore sonné. */
+  byKind?: Record<string, { count: number; next: string | null }>;
 }
 
 let current: ReminderDiagnostic | null = null;
@@ -51,7 +53,13 @@ export function describeDiagnostic(d: ReminderDiagnostic): string {
       return `${time} · aucun rappel activé, ou autorisation absente`;
     case 'error':
       return `${time} · erreur : ${d.error ?? '?'}`;
-    default:
-      return `${time} · ${d.wanted ?? 0} calculés → ${d.result?.scheduled ?? 0} programmés, ${d.result?.kept ?? 0} conservés, ${d.result?.failed ?? 0} échecs`;
+    default: {
+      const base = `${time} · ${d.wanted ?? 0} calculés → ${d.result?.scheduled ?? 0} programmés, ${d.result?.kept ?? 0} conservés, ${d.result?.failed ?? 0} échecs`;
+      if (!d.byKind) return base;
+      const detail = Object.entries(d.byKind)
+        .map(([kind, { count, next }]) => `${kind}: ${count}${next ? ` (prochain ${new Date(next).toLocaleString(undefined, { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })})` : ''}`)
+        .join(', ');
+      return `${base}\n${detail}`;
+    }
   }
 }

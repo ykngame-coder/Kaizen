@@ -90,7 +90,14 @@ export function useReminderScheduler(): void {
           now,
         );
         const result = await syncReminders(notificationHost, wanted, textFor);
-        reminderDiagnostics.set({ at, outcome: 'scheduled', wanted: wanted.length, result });
+        const byKind: Record<string, { count: number; next: string | null }> = {};
+        for (const r of wanted) {
+          const bucket = byKind[r.kind] ?? { count: 0, next: null };
+          bucket.count += 1;
+          if (!bucket.next || r.at < bucket.next) bucket.next = r.at;
+          byKind[r.kind] = bucket;
+        }
+        reminderDiagnostics.set({ at, outcome: 'scheduled', wanted: wanted.length, result, byKind });
       } catch (e) {
         reminderDiagnostics.set({ at, outcome: 'error', error: e instanceof Error ? e.message : String(e) });
       }
