@@ -1,5 +1,16 @@
 # Prompt — Corriger la transcription du programme « Test Luc Léger »
 
+> **Cible visuelle** (maquette d'intention à reproduire) :
+> `docs/prompts/assets/corriger-programme-luc-leger.png` — les 6 séances telles
+> qu'elles doivent s'afficher après correction (Phase 1 à gauche, Phase 2 à
+> droite : échauffements visibles, blocs `tabata` pour les intervalles, footing
+> extérieur, navettes 20 m, circuit pliométrie ×4, récup entre séries). Ouvre
+> cette image avant de commencer : elle fixe la structure attendue. Reproduis
+> l'esprit avec les composants/tokens réels de l'app, pas au pixel. Le libellé
+> « Tabata » vient du **format de bloc** (intervalles travail/repos) — c'est le
+> bon format technique ; si un wording « Fractionné » est préféré à l'écran pour
+> une séance de course, c'est un simple choix de libellé i18n.
+
 > L'utilisateur a créé un programme (PDF ci-dessous) qui a été **mal retranscrit**
 > dans l'app (données `user_programs` / `user_sessions` de SON compte, pas du code).
 > C'est un programme de **course / endurance** (VMA, footing, navettes, test Luc
