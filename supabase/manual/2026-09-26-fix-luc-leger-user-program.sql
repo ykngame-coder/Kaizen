@@ -10,19 +10,14 @@
 --
 -- Le script REMPLACE le contenu (blocs + exercices) des 6 séances existantes
 -- du programme, sans créer de doublons ni toucher au planning
--- (user_program_sessions), et sans jamais lire/écrire les données d'un autre
--- utilisateur : tout est résolu par email → user_id → program_id →
--- session_id, avec un contrôle strict (RAISE EXCEPTION) à chaque étape si la
--- résolution ne tombe pas exactement sur ce qui est attendu. Tout est dans
--- une seule transaction : un échec à n'importe quelle étape annule tout
+-- (user_program_sessions). Résolu par titre de programme SEUL — pas d'email
+-- ni d'id utilisateur en dur dans ce fichier : ce projet Supabase n'a qu'une
+-- poignée de comptes, donc matcher sur le titre distinctif "Luc Léger" suffit,
+-- avec un contrôle strict (RAISE EXCEPTION) qui arrête tout si ça ne tombe pas
+-- sur exactement 1 programme et exactement 1 séance par nom attendu — au cas
+-- où un autre compte (test/dev) aurait un programme au nom proche. Tout est
+-- dans une seule transaction : un échec à n'importe quelle étape annule tout
 -- (ROLLBACK), les séances ne restent jamais vidées à mi-chemin.
-
--- ---------------------------------------------------------------------------
--- ⚠️ Remplace TON_EMAIL@exemple.com par ton adresse de connexion à l'app,
--- aux DEUX endroits marqués ci-dessous (vérification + correction), avant
--- d'exécuter quoi que ce soit. Volontairement pas pré-rempli : ce fichier est
--- committé dans le dépôt, autant ne pas y laisser une adresse en clair.
--- ---------------------------------------------------------------------------
 
 -- ---------------------------------------------------------------------------
 -- ÉTAPE 0 (facultatif, recommandé) — vérifier l'état actuel AVANT de corriger.
@@ -36,8 +31,7 @@
 -- join public.user_programs up on up.id = ups.program_id
 -- left join public.user_session_blocks usb on usb.session_id = us.id
 -- left join public.user_session_exercises use on use.block_id = usb.id
--- where up.user_id = (select id from auth.users where email = 'TON_EMAIL@exemple.com')  -- ⚠️ remplace ici
---   and up.title ilike '%luc%l%ger%'
+-- where up.title ilike '%luc%l%ger%'
 -- order by us.name, usb."order", use."order";
 
 -- ---------------------------------------------------------------------------
@@ -55,7 +49,6 @@ on conflict (id) do nothing;
 
 do $$
 declare
-  v_user_id uuid;
   v_program_id uuid;
   v_vma uuid;
   v_specifique uuid;
@@ -66,16 +59,11 @@ declare
   v_count int;
   v_session_ids uuid[];
 begin
-  select id into v_user_id from auth.users where email = 'TON_EMAIL@exemple.com'; -- ⚠️ remplace ici aussi
-  if v_user_id is null then
-    raise exception 'Aucun compte trouvé pour cette adresse — as-tu bien remplacé TON_EMAIL@exemple.com par ta vraie adresse ?';
-  end if;
-
   select count(*), min(id) into v_count, v_program_id
   from public.user_programs
-  where user_id = v_user_id and title ilike '%luc%l%ger%';
+  where title ilike '%luc%l%ger%';
   if v_count <> 1 then
-    raise exception 'Attendu exactement 1 programme "Luc Léger" pour cet utilisateur, trouvé %.', v_count;
+    raise exception 'Attendu exactement 1 programme "Luc Léger" tous comptes confondus, trouvé %. Précise le filtre (par ex. sur user_id) si plusieurs comptes en ont un.', v_count;
   end if;
 
   -- Résout chaque séance par son nom, restreint aux séances DE CE PROGRAMME
