@@ -1,23 +1,28 @@
--- Corrige la transcription du programme personnel "Test Luc Léger" de
--- l'utilisateur, dans SES données (user_programs / user_program_sessions /
--- user_sessions), pas dans le catalogue public ni le code. Le programme
--- avait été mappé à tort sur des exercices/format
--- force-Hyrox (Tabata isolé, tags Hyrox, tapis, "×3" au lieu de "3 séries de
--- 6") au lieu du programme course/VMA réel (voir le PDF fourni).
+-- Corrige le CONTENU (blocs + exercices) des 6 séances du programme
+-- CATALOGUE "Prépa Test Luc Léger" (public.programs id 'prog-luc-leger-supotsu',
+-- créé par 2026-09-23-luc-leger-program-content.sql) — un programme public
+-- comme Prépa Hyrox / Home Prépa Hyrox, PAS un programme personnel
+-- (user_programs). Rien à voir avec les données d'un utilisateur particulier.
+--
+-- Ce que ce script corrige, constaté à l'écran :
+--   - "Spécifique Luc Léger" et "Endurance de Base" utilisaient le format de
+--     bloc 'hyrox' (d'où le tag "Hyrox" affiché) au lieu d'un format course.
+--   - "Endurance de Base" utilisait Running_Treadmill (tapis) au lieu d'un
+--     footing extérieur (Trail_Running_Walking).
+--   - "Spécifique Luc Léger" empilait 3 répétitions du même exercice dans UN
+--     seul bloc hyrox (affiché "×3") au lieu de 3 séries (blocs) distinctes
+--     avec repos entre elles.
+--   - Aucune des 6 séances n'avait de bloc d'échauffement visible (seulement
+--     une phrase dans les notes).
+-- Les notes de séance, déjà correctes, ne sont pas touchées.
 --
 -- À exécuter dans le SQL Editor de Supabase (projet vocumsjilhdmzilokhlq),
 -- connecté en admin — PAS avec la clé service_role depuis un script/API.
---
--- Le script REMPLACE le contenu (blocs + exercices) des 6 séances existantes
--- du programme, sans créer de doublons ni toucher au planning
--- (user_program_sessions). Résolu par titre de programme SEUL — pas d'email
--- ni d'id utilisateur en dur dans ce fichier : ce projet Supabase n'a qu'une
--- poignée de comptes, donc matcher sur le titre distinctif "Luc Léger" suffit,
--- avec un contrôle strict (RAISE EXCEPTION) qui arrête tout si ça ne tombe pas
--- sur exactement 1 programme et exactement 1 séance par nom attendu — au cas
--- où un autre compte (test/dev) aurait un programme au nom proche. Tout est
--- dans une seule transaction : un échec à n'importe quelle étape annule tout
--- (ROLLBACK), les séances ne restent jamais vidées à mi-chemin.
+-- Résolu par id de programme (littéral, déjà connu, pas une donnée
+-- personnelle) puis par nom de séance au sein de CE programme, avec un
+-- contrôle strict (RAISE EXCEPTION) qui arrête tout si ça ne tombe pas
+-- exactement sur ce qui est attendu. Une seule transaction : un échec à
+-- n'importe quelle étape annule tout (ROLLBACK).
 
 -- ---------------------------------------------------------------------------
 -- ÉTAPE 0 (facultatif, recommandé) — vérifier l'état actuel AVANT de corriger.
@@ -27,11 +32,10 @@
 --        usb.rest_sec as bloc_rest_sec, usb.target_rounds,
 --        use.exercise_id, use.reps, use.distance_m, use.duration_sec
 -- from public.user_sessions us
--- join public.user_program_sessions ups on ups.session_id = us.id
--- join public.user_programs up on up.id = ups.program_id
+-- join public.program_sessions ps on ps.session_id = us.id
 -- left join public.user_session_blocks usb on usb.session_id = us.id
 -- left join public.user_session_exercises use on use.block_id = usb.id
--- where up.title ilike '%luc%l%ger%'
+-- where ps.program_id = 'prog-luc-leger-supotsu'
 -- order by us.name, usb."order", use."order";
 
 -- ---------------------------------------------------------------------------
@@ -39,9 +43,8 @@
 -- ---------------------------------------------------------------------------
 begin;
 
--- Le test lui-même n'est pas un exercice de musculation, donc absent de
--- free-exercise-db — idempotent, sans effet si déjà présent (déjà inséré par
--- 2026-09-23-luc-leger-program-content.sql pour le catalogue public).
+-- Idempotent — déjà inséré par 2026-09-23-luc-leger-program-content.sql,
+-- sans effet si déjà présent.
 insert into public.exercises (id, name, category, primary_muscles, secondary_muscles, equipment, level)
 values
   ('Test Luc Léger', 'Test Luc Léger', 'sport_specific', '{full_body}', '{quads,calves}', '{}', 'intermediate')
@@ -49,7 +52,7 @@ on conflict (id) do nothing;
 
 do $$
 declare
-  v_program_id uuid;
+  v_program_id text := 'prog-luc-leger-supotsu';
   v_vma uuid;
   v_specifique uuid;
   v_endurance_base uuid;
@@ -59,51 +62,50 @@ declare
   v_count int;
   v_session_ids uuid[];
 begin
-  select count(*), min(id) into v_count, v_program_id
-  from public.user_programs
-  where title ilike '%luc%l%ger%';
+  select count(*) into v_count from public.programs where id = v_program_id;
   if v_count <> 1 then
-    raise exception 'Attendu exactement 1 programme "Luc Léger" tous comptes confondus, trouvé %. Précise le filtre (par ex. sur user_id) si plusieurs comptes en ont un.', v_count;
+    raise exception 'Programme catalogue % introuvable — a-t-il été renommé ou pas encore créé ?', v_program_id;
   end if;
 
   -- Résout chaque séance par son nom, restreint aux séances DE CE PROGRAMME
   -- (pas une recherche globale) : si le nom ne correspond pas exactement, le
   -- script s'arrête ici plutôt que de deviner ou de toucher autre chose.
   select count(*), min(us.id) into v_count, v_vma
-  from public.user_sessions us join public.user_program_sessions ups on ups.session_id = us.id
-  where ups.program_id = v_program_id and us.name = 'VMA Courte';
+  from public.user_sessions us join public.program_sessions ps on ps.session_id = us.id
+  where ps.program_id = v_program_id and us.name = 'VMA Courte';
   if v_count <> 1 then raise exception 'Séance "VMA Courte" : attendu 1 correspondance, trouvé %.', v_count; end if;
 
   select count(*), min(us.id) into v_count, v_specifique
-  from public.user_sessions us join public.user_program_sessions ups on ups.session_id = us.id
-  where ups.program_id = v_program_id and us.name = 'Spécifique Luc Léger';
+  from public.user_sessions us join public.program_sessions ps on ps.session_id = us.id
+  where ps.program_id = v_program_id and us.name = 'Spécifique Luc Léger';
   if v_count <> 1 then raise exception 'Séance "Spécifique Luc Léger" : attendu 1 correspondance, trouvé %.', v_count; end if;
 
   select count(*), min(us.id) into v_count, v_endurance_base
-  from public.user_sessions us join public.user_program_sessions ups on ups.session_id = us.id
-  where ups.program_id = v_program_id and us.name = 'Endurance de Base';
+  from public.user_sessions us join public.program_sessions ps on ps.session_id = us.id
+  where ps.program_id = v_program_id and us.name = 'Endurance de Base';
   if v_count <> 1 then raise exception 'Séance "Endurance de Base" : attendu 1 correspondance, trouvé %.', v_count; end if;
 
   select count(*), min(us.id) into v_count, v_fractionne
-  from public.user_sessions us join public.user_program_sessions ups on ups.session_id = us.id
-  where ups.program_id = v_program_id and us.name = 'Fractionné 15/15';
+  from public.user_sessions us join public.program_sessions ps on ps.session_id = us.id
+  where ps.program_id = v_program_id and us.name = 'Fractionné 15/15';
   if v_count <> 1 then raise exception 'Séance "Fractionné 15/15" : attendu 1 correspondance, trouvé %.', v_count; end if;
 
   select count(*), min(us.id) into v_count, v_test_blanc
-  from public.user_sessions us join public.user_program_sessions ups on ups.session_id = us.id
-  where ups.program_id = v_program_id and us.name = 'Test à Blanc';
+  from public.user_sessions us join public.program_sessions ps on ps.session_id = us.id
+  where ps.program_id = v_program_id and us.name = 'Test à Blanc';
   if v_count <> 1 then raise exception 'Séance "Test à Blanc" : attendu 1 correspondance, trouvé %.', v_count; end if;
 
   select count(*), min(us.id) into v_count, v_endurance_plio
-  from public.user_sessions us join public.user_program_sessions ups on ups.session_id = us.id
-  where ups.program_id = v_program_id and us.name = 'Endurance + Pliométrie';
+  from public.user_sessions us join public.program_sessions ps on ps.session_id = us.id
+  where ps.program_id = v_program_id and us.name = 'Endurance + Pliométrie';
   if v_count <> 1 then raise exception 'Séance "Endurance + Pliométrie" : attendu 1 correspondance, trouvé %.', v_count; end if;
 
   v_session_ids := array[v_vma, v_specifique, v_endurance_base, v_fractionne, v_test_blanc, v_endurance_plio];
 
   -- ---------------------------------------------------------------------
   -- Vide le contenu des 6 séances (exercices puis blocs) avant de le
-  -- reconstruire. Les séances elles-mêmes (id, planning) restent intactes.
+  -- reconstruire. Les séances elles-mêmes (id, lien programme) restent
+  -- intactes ; les notes existantes ne sont pas touchées.
   -- ---------------------------------------------------------------------
   delete from public.user_session_exercises where session_id = any (v_session_ids);
   delete from public.user_session_blocks where session_id = any (v_session_ids);
@@ -111,12 +113,8 @@ begin
   -- ---------------------------------------------------------------------
   -- A1 — VMA Courte : échauffement 10 min + 2 séries de (8×30s effort/30s
   -- repos). Le format tabata porte le repos INTRA-série (30s) ; la pause de
-  -- 3 min ENTRE les deux séries est documentée en note (pas de champ dédié).
+  -- 3 min ENTRE les deux séries reste documentée dans les notes existantes.
   -- ---------------------------------------------------------------------
-  update public.user_sessions set
-    notes = '10 min d''échauffement avant de commencer. 3 min de récupération entre les 2 séries de 8×30s/30s.'
-  where id = v_vma;
-
   with b as (
     insert into public.user_session_blocks (session_id, "order", format, time_cap_sec, rest_sec, target_rounds)
     values
@@ -134,10 +132,6 @@ begin
   -- A2 — Spécifique Luc Léger : échauffement 10 min + 3 séries de 6
   -- allers-retours de 20 m, 2 min de récupération entre les séries.
   -- ---------------------------------------------------------------------
-  update public.user_sessions set
-    notes = '10 min d''échauffement avant de commencer. Technique du demi-tour : ne ralentis pas trop tôt, franchis la ligne d''un seul pied, pivote sur le bassin et relance immédiatement — alterne la jambe de pivot à chaque aller-retour. 2 min de récupération entre les séries.'
-  where id = v_specifique;
-
   with b as (
     insert into public.user_session_blocks (session_id, "order", format, rest_sec)
     values
@@ -153,12 +147,9 @@ begin
   select v_specifique, b.id, 'Wind_Sprints', 0, null, 6, 20 from b where b."order" in (1, 2, 3);
 
   -- ---------------------------------------------------------------------
-  -- A3 — Endurance de Base : 40 à 45 min de footing continu.
+  -- A3 — Endurance de Base : 40 à 45 min de footing continu EXTÉRIEUR
+  -- (Trail_Running_Walking, pas Running_Treadmill / tapis).
   -- ---------------------------------------------------------------------
-  update public.user_sessions set
-    notes = 'Footing continu à aisance respiratoire — tu dois pouvoir tenir une conversation.'
-  where id = v_endurance_base;
-
   with b as (
     insert into public.user_session_blocks (session_id, "order", format)
     values (v_endurance_base, 0, 'strength')
@@ -169,12 +160,8 @@ begin
 
   -- ---------------------------------------------------------------------
   -- B1 — Fractionné 15/15 : échauffement 10 min + 2 séries de (10×15s
-  -- sprint/15s repos), 3 min de récupération entre les séries.
+  -- sprint/15s repos), 3 min de récupération entre les séries (en notes).
   -- ---------------------------------------------------------------------
-  update public.user_sessions set
-    notes = '10 min d''échauffement avant de commencer. 3 min de récupération entre les 2 séries de 10×15s/15s.'
-  where id = v_fractionne;
-
   with b as (
     insert into public.user_session_blocks (session_id, "order", format, time_cap_sec, rest_sec, target_rounds)
     values
@@ -192,10 +179,6 @@ begin
   -- B2 — Test à Blanc : échauffement complet + Test Luc Léger en conditions
   -- réelles (pas de reps/durée fixe : effort jusqu'au palier atteint).
   -- ---------------------------------------------------------------------
-  update public.user_sessions set
-    notes = 'Gestion de l''allure : économise-toi sur les 4 premiers paliers. Cale ta foulée exactement sur le bip sonore sans anticiper ni partir trop vite. Jour du test : 15 min d''échauffement spécifique (montées de genoux, pas chassés, mobilité des chevilles) ; chaussures de course légères à bonne adhérence pour les demi-tours.'
-  where id = v_test_blanc;
-
   with b as (
     insert into public.user_session_blocks (session_id, "order", format)
     values
@@ -212,10 +195,6 @@ begin
   -- B3 — Endurance + Pliométrie : 30 min de footing + 4 séries de (10
   -- fentes sautées + 10 squats sautés).
   -- ---------------------------------------------------------------------
-  update public.user_sessions set
-    notes = '30 min de footing avant le circuit pliométrique.'
-  where id = v_endurance_plio;
-
   with b as (
     insert into public.user_session_blocks (session_id, "order", format, target_rounds)
     values
@@ -229,17 +208,6 @@ begin
   select v_endurance_plio, b.id, 'Split_Jump', 0, null, 10 from b where b."order" = 1
   union all
   select v_endurance_plio, b.id, 'Freehand_Jump_Squat', 1, null, 10 from b where b."order" = 1;
-
-  -- ---------------------------------------------------------------------
-  -- Programme : focus endurance (pas hyrox), 4 semaines, description
-  -- résumée + consignes tactiques générales. `level` n'est PAS touché : il
-  -- reste celui choisi par l'utilisateur.
-  -- ---------------------------------------------------------------------
-  update public.user_programs set
-    focus = 'endurance',
-    weeks = 4,
-    description = 'Préparation au test Luc Léger (VMA navette) sur 4 semaines, 3 séances par semaine. Phase 1 (semaines 1-2) : développement de la VMA et de la technique de demi-tour, endurance de base. Phase 2 (semaines 3-4) : intensification et gestion des paliers, avec un test à blanc en conditions réelles. Sur le demi-tour : ne pas ralentir trop tôt, franchir la ligne d''un seul pied et relancer immédiatement en alternant la jambe de pivot. Sur les paliers : s''économiser sur les 4 premiers, caler sa foulée sur le bip sans anticiper. Le jour du test : 15 min d''échauffement spécifique, chaussures légères à bonne adhérence.'
-  where id = v_program_id;
 
   raise notice 'OK — programme % corrigé : 6 séances reconstruites (VMA %, Spécifique %, Endurance base %, Fractionné %, Test à blanc %, Endurance+plio %).',
     v_program_id, v_vma, v_specifique, v_endurance_base, v_fractionne, v_test_blanc, v_endurance_plio;
