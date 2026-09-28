@@ -143,6 +143,7 @@ import {
   setSessionLink as setSessionLinkDb,
   listEnrollments as listEnrollmentsDb,
   enrollInProgram,
+  unenrollFromProgram,
   listUserSessions as listUserSessionsDb,
   listCommunitySessions as listCommunitySessionsDb,
   getUserSession as getUserSessionDb,
@@ -483,6 +484,7 @@ export interface DataRepository {
   setSessionLink(userId: string, workoutId: string, activityId: string, mode: SessionLinkMode): Promise<void>;
   listEnrolledProgramIds(userId: string): Promise<string[]>;
   enrollProgram(userId: string, programId: string, startDate?: Date): Promise<void>;
+  unenrollProgram(userId: string, programId: string): Promise<void>;
 
   // --- user-created séances & programmes (docs/superpowers/specs/2026-08-11-user-programs-design.md) ---
   /** The caller's own reusable session library. */
@@ -2161,6 +2163,10 @@ function createDemoRepository(): DataRepository {
     async listEnrolledProgramIds(userId) {
       return readJson<string>(enrollKey(userId));
     },
+    async unenrollProgram(userId, programId) {
+      const ids = await readJson<string>(enrollKey(userId));
+      await writeJson(enrollKey(userId), ids.filter((id) => id !== programId));
+    },
     async enrollProgram(userId, programId, startDate) {
       const ids = await readJson<string>(enrollKey(userId));
       if (ids.includes(programId)) return; // already enrolled — don't regenerate the schedule
@@ -3099,13 +3105,20 @@ function createSupabaseRepository(
       await setSessionLinkDb(client, userId, workoutId, activityId, mode);
     },
     async listEnrolledProgramIds(userId) {
-      return (await listEnrollmentsDb(client, userId)).map((e) => e.program_id);
+      return (await listEnrollmentsDb(client, userId)).filter((e) => e.status === 'active').map((e) => e.program_id);
+    },
+    async unenrollProgram(userId, programId) {
+      await unenrollFromProgram(client, userId, programId);
     },
     async enrollProgram(userId, programId, startDate) {
       const existing = await listEnrollmentsDb(client, userId);
-      const alreadyEnrolled = existing.some((e) => e.program_id === programId);
+      // Un abandon reste sur la même ligne (contrainte unique user+programme) :
+      // seule une inscription déjà ACTIVE doit être traitée comme un doublon.
+      // Revenir après un abandon doit régénérer la planification, comme une
+      // première inscription.
+      const activeAlready = existing.some((e) => e.program_id === programId && e.status === 'active');
       await enrollInProgram(client, userId, programId, startDate);
-      if (alreadyEnrolled) return; // don't regenerate the schedule on a re-enroll
+      if (activeAlready) return; // don't regenerate the schedule on a re-enroll
 
       const links = (await listCatalogSessions(client)).filter((l) => l.program_id === programId);
       if (links.length > 0) {

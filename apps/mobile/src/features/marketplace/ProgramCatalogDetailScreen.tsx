@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from 'react';
-import { View } from 'react-native';
+import { Alert, Pressable, View } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Badge, Button, Card, EmptyState, Icon, Screen, Text } from '@supotsu/ui';
 import { spacing } from '@supotsu/design-system';
@@ -9,7 +9,7 @@ import { EXERCISES } from '@/features/exercises/catalog';
 import { BackButton } from '@/features/navigation/BackButton';
 import { DatePickerModal } from '@/features/navigation/DatePickerModal';
 import { withStandardSledWeights } from '@supotsu/engines';
-import { useAthleteProfile, useEnrolledProgramIds, useEnrollProgram, useProgramSessionsContent, usePrograms } from '@/lib/data/queries';
+import { useAthleteProfile, useEnrolledProgramIds, useEnrollProgram, useProgramSessionsContent, usePrograms, useUnenrollProgram } from '@/lib/data/queries';
 import { describeBlock, describeSet } from '@/features/training/setGoal';
 
 const FOCUS_LABEL: Record<ProgramFocus, string> = {
@@ -35,6 +35,7 @@ export function ProgramCatalogDetailScreen(): React.JSX.Element {
   const { data: programs = [], isLoading } = usePrograms();
   const { data: enrolledIds = [] } = useEnrolledProgramIds();
   const enroll = useEnrollProgram();
+  const unenroll = useUnenrollProgram();
   const [pickingStartDate, setPickingStartDate] = useState(false);
   const [startDate, setStartDate] = useState<ISODateString>(() => new Date().toISOString());
 
@@ -188,6 +189,24 @@ export function ProgramCatalogDetailScreen(): React.JSX.Element {
           disabled={enrolled || enroll.isPending}
           onPress={() => setPickingStartDate(true)}
         />
+        {enrolled ? (
+          <Pressable
+            hitSlop={8}
+            disabled={unenroll.isPending}
+            onPress={() =>
+              Alert.alert('Se désinscrire de ce programme ?', 'Les séances déjà ajoutées à ta Planification restent en place — seule l’inscription est retirée.', [
+                { text: 'Annuler', style: 'cancel' },
+                {
+                  text: unenroll.isPending ? '…' : 'Se désinscrire',
+                  style: 'destructive',
+                  onPress: () => unenroll.mutate(program.id),
+                },
+              ])
+            }
+          >
+            <Text variant="caption" color="textSubtle">Se désinscrire</Text>
+          </Pressable>
+        ) : null}
       </View>
 
       <DatePickerModal

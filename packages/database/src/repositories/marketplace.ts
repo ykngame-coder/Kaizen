@@ -40,7 +40,12 @@ export async function listEnrollments(
   return data ?? [];
 }
 
-/** Enroll in a program (idempotent via the unique (user, program) constraint). */
+/**
+ * Enroll in a program. A conflict on (user, program) UPDATEs rather than being
+ * ignored — otherwise re-enrolling after `unenrollFromProgram` (status stays
+ * 'abandoned' on the same row, the unique constraint forbids a second one)
+ * would silently do nothing.
+ */
 export async function enrollInProgram(
   client: SupotsuClient,
   userId: string,
@@ -56,7 +61,25 @@ export async function enrollInProgram(
         status: 'active',
         ...(startDate ? { started_at: startDate.toISOString() } : {}),
       },
-      { onConflict: 'user_id,program_id', ignoreDuplicates: true },
+      { onConflict: 'user_id,program_id' },
     );
+  if (error) throw error;
+}
+
+/**
+ * Leave a program. Marks the enrollment 'abandoned' rather than deleting it —
+ * the sessions already copied into the user's own Planification when they
+ * enrolled are theirs now, independent of this row, and stay untouched.
+ */
+export async function unenrollFromProgram(
+  client: SupotsuClient,
+  userId: string,
+  programId: string,
+): Promise<void> {
+  const { error } = await client
+    .from('program_enrollments')
+    .update({ status: 'abandoned' })
+    .eq('user_id', userId)
+    .eq('program_id', programId);
   if (error) throw error;
 }

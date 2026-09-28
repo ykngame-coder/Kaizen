@@ -685,6 +685,18 @@ export function useEnrollProgram() {
   });
 }
 
+export function useUnenrollProgram() {
+  const { user } = useAuth();
+  const repo = useRepository();
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (programId: string) => repo.unenrollProgram(user!.id, programId),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['enrollments', user?.id] });
+    },
+  });
+}
+
 // --- user-created séances & programmes -------------------------------------
 export function useUserSessions() {
   const { user } = useAuth();
