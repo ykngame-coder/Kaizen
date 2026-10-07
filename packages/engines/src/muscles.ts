@@ -18,6 +18,15 @@ import type { ISODateString, MuscleGroup } from '@supotsu/core';
 export const FATIGUE_HALF_LIFE_DAYS = 1.5;
 /** Au-delà, une séance ne compte plus. */
 export const FATIGUE_WINDOW_DAYS = 7;
+/**
+ * Ce qu'UNE séance peut peser sur UN muscle, au plus — l'équivalent d'un seul
+ * exercice fait en primaire pur. Sans ce plafond, un circuit varié de quelques
+ * exercices polyvalents (ex. kettlebell) peut cumuler primaire + plusieurs
+ * petits secondaires sur un même muscle et l'épuiser en une seule séance,
+ * alors qu'aucun exercice ne le ciblait vraiment lourdement. L'accumulation
+ * sur plusieurs jours (semaine chargée), elle, n'est pas plafonnée.
+ */
+export const MAX_SESSION_MUSCLE_WEIGHT = 1.0;
 
 const DAY_MS = 86_400_000;
 const clamp = (n: number, min = 0, max = 100): number => Math.max(min, Math.min(max, n));
@@ -65,42 +74,74 @@ function stateFor(freshness: number): MuscleState {
   return 'fatigued';
 }
 
+/** Minuit local du jour de `d` — pour compter des jours calendaires, pas des tranches de 24h glissantes. */
+const dayStart = (d: Date): number => new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime();
+
 /**
  * Per-muscle status as of `asOf`. Sessions in the last 7 days contribute
  * fatigue weighted by role (primary 1.0, secondary 0.5, full_body 0.5 to all),
- * by the session's `load`, and by recency (half-life 36 h).
+ * capped per session per muscle at `MAX_SESSION_MUSCLE_WEIGHT`, by the
+ * session's `load`, and by recency (half-life 36 h).
  */
 export function computeMuscleStates(sessions: MuscleSession[], asOf: ISODateString): MuscleStatus[] {
-  const now = new Date(asOf).getTime();
+  const now = new Date(asOf);
+  const nowMs = now.getTime();
   const fatigue = new Map<MuscleGroup, number>();
   const lastAgo = new Map<MuscleGroup, number>();
+  const lastTrainedAt = new Map<MuscleGroup, ISODateString>();
 
-  const hit = (muscle: MuscleGroup, weight: number, daysAgo: number, isLoad: boolean): void => {
-    const decay = daysAgo <= FATIGUE_WINDOW_DAYS ? Math.pow(0.5, daysAgo / FATIGUE_HALF_LIFE_DAYS) : 0;
-    if (decay > 0) fatigue.set(muscle, (fatigue.get(muscle) ?? 0) + weight * decay);
-    if (isLoad) {
-      const prev = lastAgo.get(muscle);
-      if (prev === undefined || daysAgo < prev) lastAgo.set(muscle, daysAgo);
-    }
-  };
-
+  // Regroupe par séance réelle (même `trainedAt` = même entraînement, un
+  // exercice par entrée en amont) : le plafond porte sur ce que TOUTE la
+  // séance pèse sur un muscle, pas sur chaque exercice isolément — un
+  // exercice seul ne dépasse jamais 1.0 (primaire) de toute façon, donc
+  // plafonner exercice par exercice ne changerait rien.
+  const byTrainedAt = new Map<ISODateString, MuscleSession[]>();
   for (const s of sessions) {
-    const daysAgo = (now - new Date(s.trainedAt).getTime()) / DAY_MS;
-    if (daysAgo < 0 || daysAgo > FATIGUE_WINDOW_DAYS) continue;
-    // Recovery (mobility/stretching) sessions ease fatigue at half the rate a
-    // real session would add it — a gentle nudge toward freshness, not a
-    // substitute for rest.
-    const sign = (s.recovery ? -0.5 : 1) * (s.load ?? 1);
-    const apply = (muscles: MuscleGroup[], weight: number): void => {
-      for (const m of muscles) {
-        if (m === 'full_body') for (const bm of BODY_MUSCLES) hit(bm, weight * 0.5 * sign, daysAgo, !s.recovery);
-        else hit(m, weight * sign, daysAgo, !s.recovery);
-      }
-    };
-    apply(s.primaryMuscles, 1.0);
-    apply(s.secondaryMuscles, 0.5);
+    const list = byTrainedAt.get(s.trainedAt) ?? [];
+    list.push(s);
+    byTrainedAt.set(s.trainedAt, list);
   }
 
+  for (const [trainedAt, group] of byTrainedAt) {
+    const daysAgo = (nowMs - new Date(trainedAt).getTime()) / DAY_MS;
+    if (daysAgo < 0 || daysAgo > FATIGUE_WINDOW_DAYS) continue;
+    const decay = Math.pow(0.5, daysAgo / FATIGUE_HALF_LIFE_DAYS);
+
+    // Poids brut (avant plafond), côté entraînement réel et côté récupération
+    // séparément — une même séance peut mélanger un exercice normal et un
+    // geste de mobilité, et les deux ne jouent pas dans le même sens.
+    const load = new Map<MuscleGroup, number>();
+    const recovery = new Map<MuscleGroup, number>();
+    const addWeight = (bucket: Map<MuscleGroup, number>, muscles: MuscleGroup[], weight: number, factor: number): void => {
+      for (const m of muscles) {
+        if (m === 'full_body') for (const bm of BODY_MUSCLES) bucket.set(bm, (bucket.get(bm) ?? 0) + weight * 0.5 * factor);
+        else bucket.set(m, (bucket.get(m) ?? 0) + weight * factor);
+      }
+    };
+    for (const s of group) {
+      const bucket = s.recovery ? recovery : load;
+      const factor = s.load ?? 1;
+      addWeight(bucket, s.primaryMuscles, 1.0, factor);
+      addWeight(bucket, s.secondaryMuscles, 0.5, factor);
+    }
+
+    for (const muscle of new Set([...load.keys(), ...recovery.keys()])) {
+      const cappedLoad = Math.min(load.get(muscle) ?? 0, MAX_SESSION_MUSCLE_WEIGHT);
+      // Récupération : plafonnée comme le reste, puis appliquée à moitié du
+      // taux d'un vrai entraînement (déjà le comportement avant ce correctif).
+      const cappedRecovery = Math.min(recovery.get(muscle) ?? 0, MAX_SESSION_MUSCLE_WEIGHT) * 0.5;
+      fatigue.set(muscle, (fatigue.get(muscle) ?? 0) + (cappedLoad - cappedRecovery) * decay);
+      if (load.has(muscle)) {
+        const prev = lastAgo.get(muscle);
+        if (prev === undefined || daysAgo < prev) {
+          lastAgo.set(muscle, daysAgo);
+          lastTrainedAt.set(muscle, trainedAt);
+        }
+      }
+    }
+  }
+
+  const today = dayStart(now);
   return BODY_MUSCLES.map((muscle) => {
     // Clamped only here (not per-hit) so accumulation stays order-independent
     // — a recovery session can't "bank" fatigue relief past what real load
@@ -108,11 +149,14 @@ export function computeMuscleStates(sessions: MuscleSession[], asOf: ISODateStri
     // it happened to be processed before a real session in the input array.
     const netFatigue = Math.max(0, fatigue.get(muscle) ?? 0);
     const freshness = clamp(Math.round(100 - netFatigue * 50));
-    const ago = lastAgo.get(muscle);
+    const trainedAt = lastTrainedAt.get(muscle);
     return {
       muscle,
       freshness,
-      lastTrainedDaysAgo: ago === undefined ? null : Math.floor(ago),
+      // Différence de JOURS CALENDAIRES (minuit à minuit), pas de tranches de
+      // 24h glissantes — sinon une séance d'hier soir dit encore
+      // « aujourd'hui » tant que 24h pleines ne se sont pas écoulées.
+      lastTrainedDaysAgo: trainedAt === undefined ? null : Math.round((today - dayStart(new Date(trainedAt))) / DAY_MS),
       state: stateFor(freshness),
     };
   });

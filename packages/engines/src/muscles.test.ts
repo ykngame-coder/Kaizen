@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { BODY_MUSCLES, computeMuscleStates, overallReadiness, suggestNextMuscles } from './muscles';
 
 const ASOF = '2026-07-20T12:00:00.000Z';
@@ -97,6 +97,58 @@ describe('computeMuscleStates', () => {
       ASOF,
     );
     expect(out.find((m) => m.muscle === 'glutes')!.lastTrainedDaysAgo).toBeNull();
+  });
+
+  it('plafonne la fatigue d une séance : plusieurs exercices sur le même muscle ne l épuisent pas complètement', () => {
+    const sameSession = daysAgo(0);
+    const out = computeMuscleStates(
+      [
+        // Un circuit varié : 3 exercices différents touchent tous les quads
+        // (1 en primaire, 2 en secondaire) — brut 1.0 + 0.5 + 0.5 = 2.0.
+        { trainedAt: sameSession, primaryMuscles: ['quads'], secondaryMuscles: [] },
+        { trainedAt: sameSession, primaryMuscles: ['shoulders'], secondaryMuscles: ['quads'] },
+        { trainedAt: sameSession, primaryMuscles: ['hamstrings'], secondaryMuscles: ['quads'] },
+      ],
+      ASOF,
+    );
+    const quads = out.find((m) => m.muscle === 'quads')!;
+    // Plafonné à 1.0 (l'équivalent d'un seul exercice en primaire) → 50, pas 0.
+    expect(quads.freshness).toBe(50);
+    expect(quads.state).not.toBe('fatigued');
+  });
+
+  it('le plafond par séance n empêche pas l accumulation sur plusieurs jours', () => {
+    // Même chose que le test ci-dessus, mais réparti sur 2 jours distincts :
+    // chaque jour est plafonné séparément, donc la fatigue s'additionne quand
+    // même entre les deux séances.
+    const out = computeMuscleStates(
+      [
+        { trainedAt: daysAgo(0), primaryMuscles: ['quads'], secondaryMuscles: [] },
+        { trainedAt: daysAgo(1), primaryMuscles: ['quads'], secondaryMuscles: [] },
+      ],
+      ASOF,
+    );
+    const single = computeMuscleStates([{ trainedAt: daysAgo(0), primaryMuscles: ['quads'], secondaryMuscles: [] }], ASOF);
+    expect(out.find((m) => m.muscle === 'quads')!.freshness).toBeLessThan(single.find((m) => m.muscle === 'quads')!.freshness);
+  });
+
+  describe('lastTrainedDaysAgo compte des jours calendaires, pas des tranches de 24h glissantes', () => {
+    const originalTz = process.env.TZ;
+    beforeAll(() => {
+      process.env.TZ = 'Europe/Paris';
+    });
+    afterAll(() => {
+      process.env.TZ = originalTz;
+    });
+
+    it('une séance d hier soir dit déjà « hier », même si moins de 24h se sont écoulées', () => {
+      // 14 janvier 23h locale (UTC+1, hors DST) ; vérifié le 15 janvier 1h30
+      // locale — ~2h30 d'écart réel, mais un jour calendaire déjà passé.
+      const yesterdayEvening = '2026-01-14T22:00:00.000Z';
+      const nowEarlyMorning = '2026-01-15T00:30:00.000Z';
+      const out = computeMuscleStates([{ trainedAt: yesterdayEvening, primaryMuscles: ['back'], secondaryMuscles: [] }], nowEarlyMorning);
+      expect(out.find((m) => m.muscle === 'back')!.lastTrainedDaysAgo).toBe(1);
+    });
   });
 });
 
