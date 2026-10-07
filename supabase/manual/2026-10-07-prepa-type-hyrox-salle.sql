@@ -85,23 +85,23 @@ with
     cross join s1_session
     returning 1
   ),
-  s1_main_spec (block_ord, ord, exercise_id, duration_sec, reps, distance_m, weight_kg) as (
+  s1_main_spec (block_ord, ord, exercise_id, duration_sec, weight_kg) as (
     values
-      (1, 0, 'Burpee Broad Jump', 120, null, null, null),
-      (1, 1, 'Running_Treadmill', 120, null, null, null),
-      (2, 0, 'Farmers_Walk', 120, null, null, 30),
-      (2, 1, 'Running_Treadmill', 120, null, null, null),
-      (3, 0, 'Fente Marchée Lestée', 120, null, null, 30),
-      (3, 1, 'Running_Treadmill', 120, null, null, null),
-      (4, 0, 'Wall Ball Shots', 120, null, null, 9),
-      (4, 1, 'Running_Treadmill', 120, null, null, null),
-      (5, 0, 'Gainage Chaise', 60, null, null, null),
-      (5, 1, 'Plank', 60, null, null, null),
-      (5, 2, 'Running_Treadmill', 120, null, null, null)
+      (1, 0, 'Burpee Broad Jump', 120, null),
+      (1, 1, 'Running_Treadmill', 120, null),
+      (2, 0, 'Farmers_Walk', 120, 30),
+      (2, 1, 'Running_Treadmill', 120, null),
+      (3, 0, 'Fente Marchée Lestée', 120, 30),
+      (3, 1, 'Running_Treadmill', 120, null),
+      (4, 0, 'Wall Ball Shots', 120, 9),
+      (4, 1, 'Running_Treadmill', 120, null),
+      (5, 0, 'Gainage Chaise', 60, null),
+      (5, 1, 'Plank', 60, null),
+      (5, 2, 'Running_Treadmill', 120, null)
   ),
   s1_main_exercises as (
-    insert into public.user_session_exercises (session_id, block_id, exercise_id, "order", duration_sec, reps, distance_m, weight_kg)
-    select s1_session.id, b.id, sp.exercise_id, sp.ord, sp.duration_sec, sp.reps, sp.distance_m, sp.weight_kg
+    insert into public.user_session_exercises (session_id, block_id, exercise_id, "order", duration_sec, weight_kg)
+    select s1_session.id, b.id, sp.exercise_id, sp.ord, sp.duration_sec, sp.weight_kg
     from s1_main_spec sp
     join s1_blocks b on b."order" = sp.block_ord
     cross join s1_session
