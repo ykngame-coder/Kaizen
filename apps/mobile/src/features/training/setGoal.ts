@@ -48,8 +48,11 @@ const FORMAT_LABEL: Record<BlockFormat, string> = {
 
 export function describeBlock(block: PreviewBlock): string {
   const label = FORMAT_LABEL[block.format];
-  if (block.format === 'strength') {
-    return block.targetRounds && block.targetRounds > 1 ? `${block.targetRounds} tours` : '';
-  }
-  return block.timeCapSec != null ? `${label} ${minutes(block.timeCapSec)}`.trim() : label;
+  const rounds = block.targetRounds && block.targetRounds > 1 ? `${block.targetRounds} tours` : '';
+  if (block.format === 'strength') return rounds;
+  const base = block.timeCapSec != null ? `${label} ${minutes(block.timeCapSec)}`.trim() : label;
+  // Un tabata/EMOM/hyrox à plusieurs tours taisait son nombre de tours — un
+  // bloc « 8×30s/30s » s'affichait comme un simple « Tabata 0 min 30 s »,
+  // indiscernable d'un bloc à un seul tour.
+  return rounds ? `${base} · ${rounds}` : base;
 }

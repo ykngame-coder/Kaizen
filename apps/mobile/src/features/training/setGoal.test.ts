@@ -43,4 +43,11 @@ describe('describeBlock', () => {
     expect(describeBlock({ format: 'for_time', sets: [] })).toBe('Pour le temps');
     expect(describeBlock({ format: 'hyrox', sets: [] })).toBe('Hyrox');
   });
+
+  it('dit aussi le nombre de tours sur un format chronométré, pas seulement en strength', () => {
+    // Un tabata 8×30s/30s ne doit pas ressembler à un tabata à un seul tour.
+    expect(describeBlock({ format: 'tabata', timeCapSec: 30, targetRounds: 8, sets: [] })).toBe('Tabata 0 min 30 s · 8 tours');
+    expect(describeBlock({ format: 'tabata', timeCapSec: 30, targetRounds: 1, sets: [] })).toBe('Tabata 0 min 30 s');
+    expect(describeBlock({ format: 'amrap', timeCapSec: 120, targetRounds: 3, sets: [] })).toBe('AMRAP 2 min · 3 tours');
+  });
 });
