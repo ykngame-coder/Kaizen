@@ -29,6 +29,10 @@ function minutes(sec: number): string {
 export function describeSet(set: PreviewSet): string {
   const parts: string[] = [];
   if (set.durationSec != null) parts.push(mmss(set.durationSec));
+  // Les deux ensemble disent « N allers-retours de M mètres » (navettes,
+  // portées) — un else if aurait affiché la distance seule et fait
+  // disparaître le nombre de répétitions.
+  else if (set.reps != null && set.distanceM != null) parts.push(`${set.reps} × ${set.distanceM} m`);
   else if (set.distanceM != null) parts.push(`${set.distanceM} m`);
   else if (set.reps != null) parts.push(`${set.reps} rép.`);
   if (set.weightKg != null) parts.push(`${set.weightKg} kg`);

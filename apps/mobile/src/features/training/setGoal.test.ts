@@ -20,6 +20,10 @@ describe('describeSet', () => {
   it('ne laisse pas une étape libre sans indication', () => {
     expect(describeSet({ exerciseId: 'x', order: 0 })).toBe('libre');
   });
+
+  it('dit les répétitions ET la distance pour une navette, pas la distance seule', () => {
+    expect(describeSet({ exerciseId: 'x', order: 0, reps: 6, distanceM: 20 })).toBe('6 × 20 m');
+  });
 });
 
 describe('describeBlock', () => {
