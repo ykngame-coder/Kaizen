@@ -64,16 +64,21 @@ with
     returning id
   ),
   a2_blocks as (
-    insert into public.user_session_blocks (session_id, "order", format, rest_sec)
-    select id, b.ord, b.fmt, b.rest
-    from a2_session, (values (0, 'strength', null::int), (1, 'for_time', 120), (2, 'for_time', 120), (3, 'for_time', null::int)) as b(ord, fmt, rest)
+    insert into public.user_session_blocks (session_id, "order", format)
+    select id, b.ord, b.fmt
+    from a2_session, (values (0, 'strength'), (1, 'for_time'), (2, 'for_time'), (3, 'for_time')) as b(ord, fmt)
     returning id, "order"
   ),
+  -- Repos entre séries : porté par le dernier exercice de chaque bloc (ce que
+  -- lit le lecteur de séance), pas par le bloc lui-même — rest_sec sur
+  -- user_session_blocks est réservé au repos intra-tabata. Pas de repos après
+  -- la 3e série, il n'y a rien après.
   a2_exercises as (
-    insert into public.user_session_exercises (session_id, block_id, exercise_id, "order", duration_sec, reps, distance_m)
-    select a2_session.id, b.id, 'Trail_Running_Walking', 0, 600, null, null from a2_blocks b cross join a2_session where b."order" = 0
+    insert into public.user_session_exercises (session_id, block_id, exercise_id, "order", duration_sec, reps, distance_m, rest_sec)
+    select a2_session.id, b.id, 'Trail_Running_Walking', 0, 600, null, null, null from a2_blocks b cross join a2_session where b."order" = 0
     union all
-    select a2_session.id, b.id, 'Wind_Sprints', 0, null, 6, 20 from a2_blocks b cross join a2_session where b."order" in (1, 2, 3)
+    select a2_session.id, b.id, 'Wind_Sprints', 0, null, 6, 20, case when b."order" in (1, 2) then 120 else null end
+    from a2_blocks b cross join a2_session where b."order" in (1, 2, 3)
     returning 1
   ),
 

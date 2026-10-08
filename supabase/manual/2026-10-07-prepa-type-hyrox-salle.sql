@@ -117,37 +117,40 @@ with
     returning id
   ),
   s2_blocks as (
-    insert into public.user_session_blocks (session_id, "order", format, time_cap_sec, rest_sec)
-    select id, b.ord, b.fmt, b.cap, b.rest
+    insert into public.user_session_blocks (session_id, "order", format, time_cap_sec)
+    select id, b.ord, b.fmt, b.cap
     from s2_session, (values
-      (0, 'strength', null::int, 30),
-      (1, 'strength', null::int, null::int),
-      (2, 'amrap', 120, 20),
-      (3, 'strength', null::int, null::int),
-      (4, 'amrap', 120, 20),
-      (5, 'hyrox', null::int, null::int)
-    ) as b(ord, fmt, cap, rest)
+      (0, 'strength', null::int),
+      (1, 'strength', null::int),
+      (2, 'amrap', 120),
+      (3, 'strength', null::int),
+      (4, 'amrap', 120),
+      (5, 'hyrox', null::int)
+    ) as b(ord, fmt, cap)
     returning id, "order"
   ),
-  s2_spec (block_ord, ord, exercise_id, duration_sec, reps, weight_kg) as (
+  -- Repos entre blocs : porté par le dernier exercice de chaque bloc (ce que
+  -- lit le lecteur de séance), pas par le bloc — rest_sec sur
+  -- user_session_blocks est réservé au repos intra-tabata.
+  s2_spec (block_ord, ord, exercise_id, duration_sec, reps, weight_kg, rest_sec) as (
     values
-      (0, 0, 'Running_Treadmill', 120, null, null),
-      (0, 1, 'Front_Plate_Raise', 30, null, null),
-      (0, 2, 'Fentes Alternées', 30, null, null),
-      (0, 3, 'Front_Plate_Raise', 30, null, null),
-      (0, 4, 'Fentes Alternées', 30, null, null),
-      (1, 0, 'Running_Treadmill', 300, null, null),
-      (2, 0, 'Burpees', null, 5, null),
-      (2, 1, 'Wall Ball Shots', null, 5, null),
-      (3, 0, 'Running_Treadmill', 300, null, null),
-      (4, 0, 'Farmers_Walk', null, 20, 24),
-      (4, 1, 'Fentes Alternées', null, 10, 30),
-      (5, 0, 'Running_Treadmill', 300, null, null),
-      (5, 1, 'SkiErg', 120, null, null)
+      (0, 0, 'Running_Treadmill', 120, null, null, null),
+      (0, 1, 'Front_Plate_Raise', 30, null, null, null),
+      (0, 2, 'Fentes Alternées', 30, null, null, null),
+      (0, 3, 'Front_Plate_Raise', 30, null, null, null),
+      (0, 4, 'Fentes Alternées', 30, null, null, 30),
+      (1, 0, 'Running_Treadmill', 300, null, null, null),
+      (2, 0, 'Burpees', null, 5, null, null),
+      (2, 1, 'Wall Ball Shots', null, 5, null, 20),
+      (3, 0, 'Running_Treadmill', 300, null, null, null),
+      (4, 0, 'Farmers_Walk', null, 20, 24, null),
+      (4, 1, 'Fentes Alternées', null, 10, 30, 20),
+      (5, 0, 'Running_Treadmill', 300, null, null, null),
+      (5, 1, 'SkiErg', 120, null, null, null)
   ),
   s2_exercises as (
-    insert into public.user_session_exercises (session_id, block_id, exercise_id, "order", duration_sec, reps, weight_kg)
-    select s2_session.id, b.id, sp.exercise_id, sp.ord, sp.duration_sec, sp.reps, sp.weight_kg
+    insert into public.user_session_exercises (session_id, block_id, exercise_id, "order", duration_sec, reps, weight_kg, rest_sec)
+    select s2_session.id, b.id, sp.exercise_id, sp.ord, sp.duration_sec, sp.reps, sp.weight_kg, sp.rest_sec
     from s2_spec sp
     join s2_blocks b on b."order" = sp.block_ord
     cross join s2_session
@@ -322,13 +325,12 @@ with
     returning id
   ),
   s7_blocks as (
-    insert into public.user_session_blocks (session_id, "order", format, rest_sec)
-    select id, b.ord, b.fmt, b.rest
+    insert into public.user_session_blocks (session_id, "order", format)
+    select id, b.ord, b.fmt
     from s7_session, (values
-      (0, 'strength', null::int),
-      (1, 'hyrox', 30), (2, 'hyrox', 30), (3, 'hyrox', 30), (4, 'hyrox', 30),
-      (5, 'hyrox', 30), (6, 'hyrox', 30), (7, 'hyrox', 30), (8, 'hyrox', 30)
-    ) as b(ord, fmt, rest)
+      (0, 'strength'), (1, 'hyrox'), (2, 'hyrox'), (3, 'hyrox'), (4, 'hyrox'),
+      (5, 'hyrox'), (6, 'hyrox'), (7, 'hyrox'), (8, 'hyrox')
+    ) as b(ord, fmt)
     returning id, "order"
   ),
   s7_warmup_spec (ord, exercise_id, duration_sec) as (
@@ -366,9 +368,11 @@ with
     cross join s7_session
     returning 1
   ),
+  -- Repos 30s après chaque bloc, porté par le dernier exercice (la course)
+  -- — rest_sec sur user_session_blocks est réservé au repos intra-tabata.
   s7_run_exercises as (
-    insert into public.user_session_exercises (session_id, block_id, exercise_id, "order", duration_sec)
-    select s7_session.id, b.id, 'Running_Treadmill', 1, 60
+    insert into public.user_session_exercises (session_id, block_id, exercise_id, "order", duration_sec, rest_sec)
+    select s7_session.id, b.id, 'Running_Treadmill', 1, 60, 30
     from s7_blocks b
     cross join s7_session
     where b."order" between 1 and 8
@@ -384,31 +388,34 @@ with
     returning id
   ),
   s8_blocks as (
-    insert into public.user_session_blocks (session_id, "order", format, time_cap_sec, rest_sec)
-    select id, b.ord, b.fmt, b.cap, b.rest
+    insert into public.user_session_blocks (session_id, "order", format, time_cap_sec)
+    select id, b.ord, b.fmt, b.cap
     from s8_session, (values
-      (0, 'strength', null::int, 30),
-      (1, 'amrap', 481, 140),
-      (2, 'amrap', 481, null::int)
-    ) as b(ord, fmt, cap, rest)
+      (0, 'strength', null::int),
+      (1, 'amrap', 481),
+      (2, 'amrap', 481)
+    ) as b(ord, fmt, cap)
     returning id, "order"
   ),
-  s8_spec (block_ord, ord, exercise_id, duration_sec, distance_m, weight_kg) as (
+  -- Repos entre blocs : porté par le dernier exercice de chaque bloc, pas
+  -- par le bloc — rest_sec sur user_session_blocks est réservé au repos
+  -- intra-tabata.
+  s8_spec (block_ord, ord, exercise_id, duration_sec, distance_m, weight_kg, rest_sec) as (
     values
-      (0, 0, 'Rowing_Stationary', 120, null, null),
-      (0, 1, 'Extension de la Hanche', 30, null, null),
-      (0, 2, 'Fentes Alternées', 30, null, null),
-      (0, 3, 'High Knees', 30, null, null),
-      (0, 4, 'Bodyweight_Squat', 30, null, null),
-      (0, 5, 'Running_Treadmill', 60, null, null),
-      (1, 0, 'Sled_Push', null, 10, 150),
-      (1, 1, 'Running_Treadmill', null, 250, null),
-      (2, 0, 'Tirage de Traîneau', null, 10, 100),
-      (2, 1, 'Running_Treadmill', null, 250, null)
+      (0, 0, 'Rowing_Stationary', 120, null, null, null),
+      (0, 1, 'Extension de la Hanche', 30, null, null, null),
+      (0, 2, 'Fentes Alternées', 30, null, null, null),
+      (0, 3, 'High Knees', 30, null, null, null),
+      (0, 4, 'Bodyweight_Squat', 30, null, null, null),
+      (0, 5, 'Running_Treadmill', 60, null, null, 30),
+      (1, 0, 'Sled_Push', null, 10, 150, null),
+      (1, 1, 'Running_Treadmill', null, 250, null, 140),
+      (2, 0, 'Tirage de Traîneau', null, 10, 100, null),
+      (2, 1, 'Running_Treadmill', null, 250, null, null)
   ),
   s8_exercises as (
-    insert into public.user_session_exercises (session_id, block_id, exercise_id, "order", duration_sec, distance_m, weight_kg)
-    select s8_session.id, b.id, sp.exercise_id, sp.ord, sp.duration_sec, sp.distance_m, sp.weight_kg
+    insert into public.user_session_exercises (session_id, block_id, exercise_id, "order", duration_sec, distance_m, weight_kg, rest_sec)
+    select s8_session.id, b.id, sp.exercise_id, sp.ord, sp.duration_sec, sp.distance_m, sp.weight_kg, sp.rest_sec
     from s8_spec sp
     join s8_blocks b on b."order" = sp.block_ord
     cross join s8_session
@@ -424,9 +431,9 @@ with
     returning id
   ),
   s9_blocks as (
-    insert into public.user_session_blocks (session_id, "order", format, rest_sec)
-    select id, b.ord, 'hyrox', b.rest
-    from s9_session, (values (0, null::int), (1, null::int), (2, null::int), (3, 60), (4, null::int)) as b(ord, rest)
+    insert into public.user_session_blocks (session_id, "order", format)
+    select id, b.ord, 'hyrox'
+    from s9_session, (values (0), (1), (2), (3), (4)) as b(ord)
     returning id, "order"
   ),
   s9_warmup_spec (ord, exercise_id, duration_sec) as (
@@ -447,24 +454,26 @@ with
     cross join s9_session
     returning 1
   ),
-  s9_main_spec (block_ord, ord, exercise_id, duration_sec, weight_kg) as (
+  -- Repos 1 min après le bloc 3 seulement, porté par son dernier exercice —
+  -- rest_sec sur user_session_blocks est réservé au repos intra-tabata.
+  s9_main_spec (block_ord, ord, exercise_id, duration_sec, weight_kg, rest_sec) as (
     values
-      (1, 0, 'Dumbbell_Bench_Press', 30, null),
-      (1, 1, 'Extension de Triceps', 30, null),
-      (1, 2, 'Sit-Up', 30, null),
-      (1, 3, 'Burpee Broad Jump', 150, null),
-      (2, 0, 'Barbell_Shrug', 30, null),
-      (2, 1, 'Barbell_Curl', 30, null),
-      (2, 2, 'Farmers_Walk', 180, 24),
-      (3, 0, 'Gainage Chaise', 120, null),
-      (3, 1, 'Fente Marchée Lestée', 120, null),
-      (4, 0, 'Standing_Dumbbell_Press', 30, null),
-      (4, 1, 'Front_Barbell_Squat', 45, null),
-      (4, 2, 'Wall Ball Shots', 165, 9)
+      (1, 0, 'Dumbbell_Bench_Press', 30, null, null),
+      (1, 1, 'Extension de Triceps', 30, null, null),
+      (1, 2, 'Sit-Up', 30, null, null),
+      (1, 3, 'Burpee Broad Jump', 150, null, null),
+      (2, 0, 'Barbell_Shrug', 30, null, null),
+      (2, 1, 'Barbell_Curl', 30, null, null),
+      (2, 2, 'Farmers_Walk', 180, 24, null),
+      (3, 0, 'Gainage Chaise', 120, null, null),
+      (3, 1, 'Fente Marchée Lestée', 120, null, 60),
+      (4, 0, 'Standing_Dumbbell_Press', 30, null, null),
+      (4, 1, 'Front_Barbell_Squat', 45, null, null),
+      (4, 2, 'Wall Ball Shots', 165, 9, null)
   ),
   s9_main_exercises as (
-    insert into public.user_session_exercises (session_id, block_id, exercise_id, "order", duration_sec, weight_kg)
-    select s9_session.id, b.id, sp.exercise_id, sp.ord, sp.duration_sec, sp.weight_kg
+    insert into public.user_session_exercises (session_id, block_id, exercise_id, "order", duration_sec, weight_kg, rest_sec)
+    select s9_session.id, b.id, sp.exercise_id, sp.ord, sp.duration_sec, sp.weight_kg, sp.rest_sec
     from s9_main_spec sp
     join s9_blocks b on b."order" = sp.block_ord
     cross join s9_session
@@ -520,40 +529,42 @@ with
     returning id
   ),
   s11_blocks as (
-    insert into public.user_session_blocks (session_id, "order", format, time_cap_sec, rest_sec)
-    select id, b.ord, b.fmt, b.cap, b.rest
+    insert into public.user_session_blocks (session_id, "order", format, time_cap_sec)
+    select id, b.ord, b.fmt, b.cap
     from s11_session, (values
-      (0, 'strength', null::int, 30),
-      (1, 'amrap', 841, null::int),
-      (2, 'hyrox', null::int, null::int)
-    ) as b(ord, fmt, cap, rest)
+      (0, 'strength', null::int),
+      (1, 'amrap', 841),
+      (2, 'hyrox', null::int)
+    ) as b(ord, fmt, cap)
     returning id, "order"
   ),
-  s11_spec (block_ord, ord, exercise_id, duration_sec, distance_m, reps, weight_kg) as (
+  -- Repos 30s après l'échauffement seulement, porté par son dernier exercice
+  -- — rest_sec sur user_session_blocks est réservé au repos intra-tabata.
+  s11_spec (block_ord, ord, exercise_id, duration_sec, distance_m, reps, weight_kg, rest_sec) as (
     values
-      (0, 0, 'Running_Treadmill', 120, null, null, null),
-      (0, 1, 'Fentes Alternées', 30, null, null, null),
-      (0, 2, 'Bodyweight_Squat', 30, null, null, null),
-      (0, 3, 'Rowing_Stationary', 90, null, null, null),
-      (0, 4, 'Planche Touché Épaules', 30, null, null, null),
-      (0, 5, 'Front_Plate_Raise', 30, null, null, null),
-      (0, 6, 'SkiErg', 60, null, null, null),
-      (1, 0, 'SkiErg', null, 500, null, null),
-      (1, 1, 'Running_Treadmill', null, 150, null, null),
-      (1, 2, 'Burpee Broad Jump', null, 15, null, null),
-      (1, 3, 'Running_Treadmill', null, 150, null, null),
-      (1, 4, 'Rowing_Stationary', null, 450, null, null),
-      (1, 5, 'Running_Treadmill', null, 150, null, null),
-      (1, 6, 'Fente Marchée Lestée', null, 30, null, 30),
-      (1, 7, 'Running_Treadmill', null, 150, null, null),
-      (1, 8, 'Wall Ball Shots', null, null, 15, 9),
-      (1, 9, 'Running_Treadmill', null, 150, null, null),
-      (2, 0, 'Tirage de Traîneau', 180, null, null, null),
-      (2, 1, 'Sled_Push', 180, null, null, null)
+      (0, 0, 'Running_Treadmill', 120, null, null, null, null),
+      (0, 1, 'Fentes Alternées', 30, null, null, null, null),
+      (0, 2, 'Bodyweight_Squat', 30, null, null, null, null),
+      (0, 3, 'Rowing_Stationary', 90, null, null, null, null),
+      (0, 4, 'Planche Touché Épaules', 30, null, null, null, null),
+      (0, 5, 'Front_Plate_Raise', 30, null, null, null, null),
+      (0, 6, 'SkiErg', 60, null, null, null, 30),
+      (1, 0, 'SkiErg', null, 500, null, null, null),
+      (1, 1, 'Running_Treadmill', null, 150, null, null, null),
+      (1, 2, 'Burpee Broad Jump', null, 15, null, null, null),
+      (1, 3, 'Running_Treadmill', null, 150, null, null, null),
+      (1, 4, 'Rowing_Stationary', null, 450, null, null, null),
+      (1, 5, 'Running_Treadmill', null, 150, null, null, null),
+      (1, 6, 'Fente Marchée Lestée', null, 30, null, 30, null),
+      (1, 7, 'Running_Treadmill', null, 150, null, null, null),
+      (1, 8, 'Wall Ball Shots', null, null, 15, 9, null),
+      (1, 9, 'Running_Treadmill', null, 150, null, null, null),
+      (2, 0, 'Tirage de Traîneau', 180, null, null, null, null),
+      (2, 1, 'Sled_Push', 180, null, null, null, null)
   ),
   s11_exercises as (
-    insert into public.user_session_exercises (session_id, block_id, exercise_id, "order", duration_sec, distance_m, reps, weight_kg)
-    select s11_session.id, b.id, sp.exercise_id, sp.ord, sp.duration_sec, sp.distance_m, sp.reps, sp.weight_kg
+    insert into public.user_session_exercises (session_id, block_id, exercise_id, "order", duration_sec, distance_m, reps, weight_kg, rest_sec)
+    select s11_session.id, b.id, sp.exercise_id, sp.ord, sp.duration_sec, sp.distance_m, sp.reps, sp.weight_kg, sp.rest_sec
     from s11_spec sp
     join s11_blocks b on b."order" = sp.block_ord
     cross join s11_session
