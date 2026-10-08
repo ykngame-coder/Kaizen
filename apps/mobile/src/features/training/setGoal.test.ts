@@ -24,6 +24,11 @@ describe('describeSet', () => {
   it('dit les répétitions ET la distance pour une navette, pas la distance seule', () => {
     expect(describeSet({ exerciseId: 'x', order: 0, reps: 6, distanceM: 20 })).toBe('6 × 20 m');
   });
+
+  it('dit le repos entre blocs, porté par le dernier exercice du bloc', () => {
+    expect(describeSet({ exerciseId: 'x', order: 0, reps: 6, distanceM: 20, restSec: 120 })).toBe('6 × 20 m · repos 2:00');
+    expect(describeSet({ exerciseId: 'x', order: 0, restSec: 60 })).toBe('repos 1:00');
+  });
 });
 
 describe('describeBlock', () => {
@@ -49,9 +54,14 @@ describe('describeBlock', () => {
   });
 
   it('dit aussi le nombre de tours sur un format chronométré, pas seulement en strength', () => {
-    // Un tabata 8×30s/30s ne doit pas ressembler à un tabata à un seul tour.
-    expect(describeBlock({ format: 'tabata', timeCapSec: 30, targetRounds: 8, sets: [] })).toBe('Tabata 0 min 30 s · 8 tours');
-    expect(describeBlock({ format: 'tabata', timeCapSec: 30, targetRounds: 1, sets: [] })).toBe('Tabata 0 min 30 s');
+    // Un amrap/hyrox sans restSec (pas tabata) garde l'affichage en minutes.
     expect(describeBlock({ format: 'amrap', timeCapSec: 120, targetRounds: 3, sets: [] })).toBe('AMRAP 2 min · 3 tours');
+  });
+
+  it('dit travail/repos pour un tabata, pas que le temps de travail', () => {
+    expect(describeBlock({ format: 'tabata', timeCapSec: 30, restSec: 30, targetRounds: 8, sets: [] })).toBe('Tabata 30/30 s · 8 tours');
+    expect(describeBlock({ format: 'tabata', timeCapSec: 30, restSec: 30, targetRounds: 1, sets: [] })).toBe('Tabata 30/30 s');
+    // Sans restSec connu, on retombe sur le temps de travail seul.
+    expect(describeBlock({ format: 'tabata', timeCapSec: 30, sets: [] })).toBe('Tabata 0 min 30 s');
   });
 });

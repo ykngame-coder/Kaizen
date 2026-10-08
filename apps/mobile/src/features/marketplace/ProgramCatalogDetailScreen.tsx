@@ -113,7 +113,7 @@ export function ProgramCatalogDetailScreen(): React.JSX.Element {
                   <Card key={s.sessionId}>
                     <Text variant="subtitle">{s.title}</Text>
                     {(detail?.blocks ?? []).map((b) => {
-                      const label = describeBlock({ format: b.format, timeCapSec: b.timeCapSec, targetRounds: b.targetRounds, sets: [] });
+                      const label = describeBlock({ format: b.format, timeCapSec: b.timeCapSec, targetRounds: b.targetRounds, restSec: b.restSec, sets: [] });
                       const sets = withStandardSledWeights(
                         (detail?.exercises ?? []).filter((e) => e.blockId === b.id),
                         athlete?.sex,
