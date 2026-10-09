@@ -225,7 +225,7 @@ export function WorkoutDetailScreen(): React.JSX.Element {
         </Card>
       )}
 
-      {!confirmingDelete && (workout.status === 'planned' || workout.status === 'in_progress') && blocks.length > 0 ? (
+      {!confirmingDelete && !choosingLocation && (workout.status === 'planned' || workout.status === 'in_progress') && blocks.length > 0 ? (
         <View style={{ alignItems: 'flex-start' }}>
           <Button
             label={workout.status === 'in_progress' ? t('sport.runner.resume') : t('sport.workoutDetail.actions.start')}
@@ -244,6 +244,7 @@ export function WorkoutDetailScreen(): React.JSX.Element {
             {t('sport.workoutDetail.locationChoice.subtitle')}
           </Text>
           <View style={{ flexDirection: 'row', gap: spacing[2], marginTop: spacing[3] }}>
+            <Button label={t('common.cancel')} variant="secondary" onPress={() => setChoosingLocation(false)} />
             <Button
               label={t('sport.workoutDetail.locationChoice.gym')}
               variant="secondary"
