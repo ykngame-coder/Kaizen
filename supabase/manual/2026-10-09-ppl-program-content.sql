@@ -11,6 +11,14 @@
 -- contrairement à Hyrox).
 --
 -- À exécuter UNE SEULE FOIS dans l'éditeur SQL Supabase (projet vocumsjilhdmzilokhlq).
+--
+-- Si « prog-ppl-supotsu » existe déjà en base (un script antérieur du
+-- 22/09 a créé ce même id) : relancer d'abord
+-- 2026-10-07-reset-program-catalog.sql, ou supprimer cette ligne de
+-- public.programs — sinon l'insertion du programme échoue sur un conflit
+-- de clé primaire (les 11 exercices personnalisés du bloc 0, eux, auront
+-- déjà été insérés avec succès avant cet échec : pas de rollback entre les
+-- deux instructions).
 
 -- ---------------------------------------------------------------------------
 -- 0. Mouvements absents de public.exercises — alternatives poids du corps

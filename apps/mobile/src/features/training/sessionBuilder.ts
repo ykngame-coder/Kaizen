@@ -18,6 +18,8 @@ export interface SetDraft {
   hyroxMode?: 'distance' | 'time';
   /** Warm-up slot: kept out of volume and records. Set by the runner's auto-ramp (lot 2) or by hand. */
   isWarmup?: boolean;
+  /** Alternative maison déjà présente sur le set d'origine — jamais éditée depuis ce formulaire (pas d'UI pour la définir), seulement reportée au round-trip pour ne pas l'effacer en enregistrant. */
+  homeAlternativeExerciseId?: string;
 }
 
 export interface BlockDraft {
@@ -384,6 +386,7 @@ export function blocksToSessionInput(blocks: BlockDraft[]): SessionBlockInput[] 
         restSec: block.format === 'strength' && draft.rest ? Number(draft.rest) : undefined,
         distanceM: block.format === 'hyrox' && !isHyroxTime && draft.distance ? Number(draft.distance) : undefined,
         durationSec: isHyroxTime && draft.duration ? Number(draft.duration) : undefined,
+        homeAlternativeExerciseId: draft.homeAlternativeExerciseId,
       });
     }
     if (exercises.length === 0) continue;

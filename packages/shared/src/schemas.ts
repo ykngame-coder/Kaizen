@@ -189,6 +189,8 @@ export const sessionExerciseInputSchema = z.object({
   restSec: z.number().int().nonnegative().max(3600).optional(),
   /** Hyrox station distance target/result, in meters. */
   distanceM: z.number().positive().max(100000).optional(),
+  /** Alternative maison, portée par le set — jamais définie via cette UI, seulement préservée au round-trip (voir sessionBuilder.ts). */
+  homeAlternativeExerciseId: z.string().optional(),
 });
 export type SessionExerciseInput = z.infer<typeof sessionExerciseInputSchema>;
 

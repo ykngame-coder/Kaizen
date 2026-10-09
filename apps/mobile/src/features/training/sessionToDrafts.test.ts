@@ -143,6 +143,15 @@ describe('sessionToBlockDrafts', () => {
     expect(exerciseOrder(drafts[0]!)).toEqual(['squat']);
   });
 
+  it('reporte l alternative maison déjà présente sur l exercice stocké, sans UI pour la définir', () => {
+    const drafts = sessionToBlockDrafts(
+      [block({ id: 'b1', order: 0 })],
+      [ex({ id: 'e1', order: 0, exerciseId: 'bench', blockId: 'b1', homeAlternativeExerciseId: 'push-up' })],
+    );
+    const slot = drafts[0]!.selected[drafts[0]!.order[0]!]!;
+    expect(slot.homeAlternativeExerciseId).toBe('push-up');
+  });
+
   it('restitue le mode et la valeur d une station hyrox', () => {
     const drafts = sessionToBlockDrafts(
       [block({ id: 'b1', order: 0, format: 'hyrox' })],

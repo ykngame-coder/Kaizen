@@ -35,6 +35,7 @@ function draftFor(block: UserSessionBlock | null, exercises: UserSessionExercise
       distance: str(e.distanceM),
       duration: str(e.durationSec),
       hyroxMode: e.durationSec != null ? 'time' : 'distance',
+      homeAlternativeExerciseId: e.homeAlternativeExerciseId,
     };
   }
   return {

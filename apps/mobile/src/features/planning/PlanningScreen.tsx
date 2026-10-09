@@ -24,6 +24,7 @@ import {
   useWorkouts,
 } from '@/lib/data/queries';
 import { EXERCISES, toCatalogExercise } from '@/features/exercises/catalog';
+import { LaunchSessionButton } from '@/features/training/LaunchSessionButton';
 import { DatePickerModal } from '@/features/navigation/DatePickerModal';
 
 const BUILT_IN_EXERCISE_NAME: Record<string, string> = Object.fromEntries(EXERCISES.map((e) => [e.id, e.name]));
@@ -578,7 +579,6 @@ export function PlanningScreen(): React.JSX.Element {
               onDelete={() => removePlanned.mutate(w.id)}
               onReprogram={() => setReprogramTarget(w)}
               onOpen={() => router.push({ pathname: '/sport/workout/[id]', params: { id: w.id } })}
-              onLaunch={() => router.push({ pathname: '/sport/workout/[id]/run', params: { id: w.id } })}
             />
           ))}
         </View>
@@ -652,7 +652,6 @@ function SessionCard({
   onDelete,
   onReprogram,
   onOpen,
-  onLaunch,
 }: {
   workout: Workout;
   sessions: Parameters<typeof computeMuscleStates>[0];
@@ -661,7 +660,6 @@ function SessionCard({
   onDelete: () => void;
   onReprogram: () => void;
   onOpen: () => void;
-  onLaunch: () => void;
 }): React.JSX.Element {
   const { t } = useTranslation();
   const { colors } = useTheme();
@@ -740,9 +738,11 @@ function SessionCard({
         {/* Lançable seulement tant qu'elle n'est pas déjà terminée ou passée. */}
         {workout.status === 'planned' || workout.status === 'in_progress' ? (
           <View style={{ marginTop: spacing[3] }}>
-            <Button
-              label={workout.status === 'in_progress' ? t('sport.runner.resume') : t('sport.planning.sessionCard.launch')}
-              onPress={onLaunch}
+            <LaunchSessionButton
+              workoutId={workout.id}
+              sets={sets}
+              resume={workout.status === 'in_progress'}
+              startLabel={t('sport.planning.sessionCard.launch')}
               fullWidth
             />
           </View>

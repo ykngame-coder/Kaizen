@@ -102,6 +102,15 @@ describe('blocksToSessionInput', () => {
     expect(blocksToSessionInput([forTime])[0]?.timeCapSec).toBeUndefined();
   });
 
+  it('reporte l alternative maison déjà présente sur le set, sans UI pour la définir', () => {
+    const b = block({
+      order: ['slot1'],
+      selected: { slot1: { exerciseId: 'bench', reps: '8', weight: '40', rest: '60', homeAlternativeExerciseId: 'push-up' } },
+    });
+    const out = blocksToSessionInput([b]);
+    expect(out[0]?.exercises[0]?.homeAlternativeExerciseId).toBe('push-up');
+  });
+
   it('mappe la distance et la durée d un bloc hyrox', () => {
     const b = block({
       format: 'hyrox',

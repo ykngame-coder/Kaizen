@@ -815,6 +815,7 @@ function toSessionBlocksWrite(input: UserSessionInput) {
       duration_sec: e.durationSec ?? null,
       distance_m: e.distanceM ?? null,
       rest_sec: e.restSec ?? null,
+      home_alternative_exercise_id: e.homeAlternativeExerciseId ?? null,
     })),
   }));
 }
@@ -3224,6 +3225,7 @@ function createSupabaseRepository(
                 weight_kg: e.weight_kg,
                 duration_sec: e.duration_sec,
                 rest_sec: e.rest_sec,
+                home_alternative_exercise_id: e.home_alternative_exercise_id,
               })),
           }))
         : [
@@ -3236,6 +3238,7 @@ function createSupabaseRepository(
                 weight_kg: e.weight_kg,
                 duration_sec: e.duration_sec,
                 rest_sec: e.rest_sec,
+                home_alternative_exercise_id: e.home_alternative_exercise_id,
               })),
             },
           ];
@@ -3335,6 +3338,7 @@ function createSupabaseRepository(
                   weight_kg: e.weight_kg,
                   duration_sec: e.duration_sec,
                   rest_sec: e.rest_sec,
+                  home_alternative_exercise_id: e.home_alternative_exercise_id,
                 })),
             }))
           : [
@@ -3347,6 +3351,7 @@ function createSupabaseRepository(
                   weight_kg: e.weight_kg,
                   duration_sec: e.duration_sec,
                   rest_sec: e.rest_sec,
+                  home_alternative_exercise_id: e.home_alternative_exercise_id,
                 })),
               },
             ];
