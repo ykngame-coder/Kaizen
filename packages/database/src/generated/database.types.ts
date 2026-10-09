@@ -198,6 +198,7 @@ export interface Database {
           rir: number | null;
           is_warmup: boolean;
           completed_at: string | null;
+          home_alternative_exercise_id: string | null;
         };
         Insert: {
           workout_id: string;
@@ -218,6 +219,7 @@ export interface Database {
           rir?: number | null;
           is_warmup?: boolean;
           completed_at?: string | null;
+          home_alternative_exercise_id?: string | null;
         };
         Update: Partial<Database['public']['Tables']['workout_sets']['Insert']>;
         Relationships: [];
@@ -700,6 +702,7 @@ export interface Database {
           rest_sec: number | null;
           distance_m: number | null;
           is_warmup: boolean;
+          home_alternative_exercise_id: string | null;
         };
         Insert: {
           session_id: string;
@@ -712,6 +715,7 @@ export interface Database {
           rest_sec?: number | null;
           distance_m?: number | null;
           is_warmup?: boolean;
+          home_alternative_exercise_id?: string | null;
         };
         Update: Partial<Database['public']['Tables']['user_session_exercises']['Insert']>;
         Relationships: [];
