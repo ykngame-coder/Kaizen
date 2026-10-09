@@ -91,6 +91,8 @@ export interface SetEntry {
   /** Hyrox station target or result, in meters — whichever of this and `durationSec` is set at creation is the station's fixed target; the runner fills in the other one once the station is done. Unused by every other format. */
   distanceM?: number;
   restSec?: number;
+  /** Exercice de repli si l'utilisateur choisit "Maison" au lancement de la séance. */
+  homeAlternativeExerciseId?: string;
   /** Set-level RPE. */
   rpe?: number;
   /** Sets sharing this number, within the same block and adjacent in order, form one superset — alternated live, no rest between members. */

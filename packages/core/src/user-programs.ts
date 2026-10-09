@@ -29,6 +29,8 @@ export interface UserSessionExercise {
   /** Mirrors SetEntry.distanceM — see its doc comment. */
   distanceM?: number;
   restSec?: number;
+  /** Exercice de repli si l'utilisateur choisit "Maison" au lancement de la séance. */
+  homeAlternativeExerciseId?: string;
 }
 
 /** One block within a user-created session template (mirrors WorkoutBlock). */
