@@ -72,6 +72,8 @@ export function WorkoutDetailScreen(): React.JSX.Element {
   const { activityForWorkout } = useSessionMatching();
   const setSessionLink = useSetSessionLink();
   const [confirmingDelete, setConfirmingDelete] = useState(false);
+  const [choosingLocation, setChoosingLocation] = useState(false);
+  const hasAlternatives = sets.some((s) => s.homeAlternativeExerciseId != null);
   const workout = useMemo(() => workouts.find((w) => w.id === id), [workouts, id]);
 
   const exerciseName = useMemo(() => {
@@ -227,9 +229,32 @@ export function WorkoutDetailScreen(): React.JSX.Element {
         <View style={{ alignItems: 'flex-start' }}>
           <Button
             label={workout.status === 'in_progress' ? t('sport.runner.resume') : t('sport.workoutDetail.actions.start')}
-            onPress={() => router.push({ pathname: '/sport/workout/[id]/run', params: { id: workout.id } })}
+            onPress={() => {
+              if (hasAlternatives) setChoosingLocation(true);
+              else router.push({ pathname: '/sport/workout/[id]/run', params: { id: workout.id } });
+            }}
           />
         </View>
+      ) : null}
+
+      {choosingLocation ? (
+        <Card>
+          <Text variant="subtitle">{t('sport.workoutDetail.locationChoice.title')}</Text>
+          <Text variant="body" color="textMuted" style={{ marginTop: spacing[1] }}>
+            {t('sport.workoutDetail.locationChoice.subtitle')}
+          </Text>
+          <View style={{ flexDirection: 'row', gap: spacing[2], marginTop: spacing[3] }}>
+            <Button
+              label={t('sport.workoutDetail.locationChoice.gym')}
+              variant="secondary"
+              onPress={() => router.push({ pathname: '/sport/workout/[id]/run', params: { id: workout.id } })}
+            />
+            <Button
+              label={t('sport.workoutDetail.locationChoice.home')}
+              onPress={() => router.push({ pathname: '/sport/workout/[id]/run', params: { id: workout.id, mode: 'home' } })}
+            />
+          </View>
+        </Card>
       ) : null}
 
       {confirmingDelete ? (
