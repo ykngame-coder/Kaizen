@@ -888,6 +888,12 @@
     "title": "Treino não encontrado",
     "message": "Este treino não existe mais ou ainda não foi sincronizado."
    },
+   "locationChoice": {
+    "title": "Academia ou casa?",
+    "subtitle": "Alguns exercícios desta sessão têm uma alternativa em casa.",
+    "gym": "Academia",
+    "home": "Casa"
+   },
    "status": {
     "planned": "Planejado",
     "inProgress": "Em andamento",

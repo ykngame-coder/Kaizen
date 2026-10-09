@@ -888,6 +888,12 @@
     "title": "Workout not found",
     "message": "This workout no longer exists or hasn't synced yet."
    },
+   "locationChoice": {
+    "title": "Gym or home?",
+    "subtitle": "Some exercises in this session have a home alternative.",
+    "gym": "Gym",
+    "home": "Home"
+   },
    "status": {
     "planned": "Planned",
     "inProgress": "In progress",

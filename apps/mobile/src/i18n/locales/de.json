@@ -888,6 +888,12 @@
     "title": "Training nicht gefunden",
     "message": "Dieses Training existiert nicht mehr oder wurde noch nicht synchronisiert."
    },
+   "locationChoice": {
+    "title": "Fitnessstudio oder zu Hause?",
+    "subtitle": "Einige Übungen dieser Einheit haben eine Alternative für zu Hause.",
+    "gym": "Studio",
+    "home": "Zuhause"
+   },
    "status": {
     "planned": "Geplant",
     "inProgress": "Läuft",

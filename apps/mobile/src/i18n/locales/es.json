@@ -888,6 +888,12 @@
     "title": "Sesión no encontrada",
     "message": "Esta sesión ya no existe o aún no se ha sincronizado."
    },
+   "locationChoice": {
+    "title": "¿Gimnasio o casa?",
+    "subtitle": "Algunos ejercicios de esta sesión tienen una alternativa en casa.",
+    "gym": "Gimnasio",
+    "home": "Casa"
+   },
    "status": {
     "planned": "Planificada",
     "inProgress": "En curso",

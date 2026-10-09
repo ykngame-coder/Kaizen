@@ -888,6 +888,12 @@
     "title": "Séance introuvable",
     "message": "Cette séance n'existe plus ou n'a pas encore été synchronisée."
    },
+   "locationChoice": {
+    "title": "Salle ou maison ?",
+    "subtitle": "Certains exercices de cette séance ont une alternative à la maison.",
+    "gym": "Salle",
+    "home": "Maison"
+   },
    "status": {
     "planned": "Planifiée",
     "inProgress": "En cours",
