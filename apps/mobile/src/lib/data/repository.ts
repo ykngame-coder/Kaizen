@@ -831,6 +831,7 @@ function rowToUserSessionExercise(r: UserSessionExerciseRow): UserSessionExercis
     durationSec: r.duration_sec ?? undefined,
     distanceM: r.distance_m ?? undefined,
     restSec: r.rest_sec ?? undefined,
+    homeAlternativeExerciseId: r.home_alternative_exercise_id ?? undefined,
   };
 }
 
@@ -3609,6 +3610,7 @@ function createSupabaseRepository(
         rir: r.rir ?? undefined,
         isWarmup: r.is_warmup ?? undefined,
         completedAt: r.completed_at ?? undefined,
+        homeAlternativeExerciseId: r.home_alternative_exercise_id ?? undefined,
       }));
     },
     async addCircuitWorkout(userId, workout) {
@@ -3663,6 +3665,7 @@ function createSupabaseRepository(
         rir: r.rir ?? undefined,
         isWarmup: r.is_warmup ?? undefined,
         completedAt: r.completed_at ?? undefined,
+        homeAlternativeExerciseId: r.home_alternative_exercise_id ?? undefined,
       }));
     },
     async logSet(_userId, setId, done) {
