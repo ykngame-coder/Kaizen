@@ -47,4 +47,17 @@ describe('sessionToWorkoutBlocks', () => {
     );
     expect(out[1]!.sets).toEqual([]);
   });
+
+  it('copie l alternative maison, pour qu elle survive à l inscription à un programme', () => {
+    const out = sessionToWorkoutBlocks(
+      [block('b1', 0)],
+      [exercise({ exerciseId: 'Barbell_Bench_Press_-_Medium_Grip', blockId: 'b1', order: 0, homeAlternativeExerciseId: 'Dips_-_Chest_Version' })],
+    );
+    expect(out[0]!.sets[0]!.homeAlternativeExerciseId).toBe('Dips_-_Chest_Version');
+  });
+
+  it('laisse homeAlternativeExerciseId absent quand aucune alternative n est définie', () => {
+    const out = sessionToWorkoutBlocks([block('b1', 0)], [exercise({ exerciseId: 'Barbell_Squat', blockId: 'b1', order: 0 })]);
+    expect(out[0]!.sets[0]!.homeAlternativeExerciseId).toBeUndefined();
+  });
 });

@@ -34,6 +34,7 @@ export function sessionToWorkoutBlocks(
     durationSec: e.durationSec,
     distanceM: e.distanceM,
     restSec: e.restSec,
+    homeAlternativeExerciseId: e.homeAlternativeExerciseId,
   });
 
   if (blocks.length === 0) {

@@ -3545,6 +3545,7 @@ function createSupabaseRepository(
                 planned_reps: s.reps ?? null,
                 planned_weight_kg: s.weightKg ?? null,
                 is_warmup: s.isWarmup ?? false,
+                home_alternative_exercise_id: s.homeAlternativeExerciseId ?? null,
               })),
             })),
           )
