@@ -18,6 +18,7 @@ import { FinishSessionSheet } from './FinishSessionSheet';
 import { ForTimeRunner } from './ForTimeRunner';
 import { HyroxRunner } from './HyroxRunner';
 import { BlockTimeline } from './BlockTimeline';
+import { substituteForLocation } from './circuitRunnerSubstitution';
 
 const FORMAT_COLOR_KEY: Record<string, 'accentStrength' | 'accentEndurance' | 'accentLime'> = {
   amrap: 'accentStrength',
@@ -40,7 +41,7 @@ export function CircuitRunnerScreen(): React.JSX.Element {
     tabata: t('sport.circuitRunner.format.tabata'),
     hyrox: t('sport.circuitRunner.format.hyrox'),
   };
-  const { id } = useLocalSearchParams<{ id: string }>();
+  const { id, mode } = useLocalSearchParams<{ id: string; mode?: string }>();
   const { data: blocks = [], isLoading } = useWorkoutBlocks(id);
   const { data: customExercises = [] } = useCustomExercises();
   const completeBlock = useCompleteBlock();
@@ -95,7 +96,8 @@ export function CircuitRunnerScreen(): React.JSX.Element {
   const tick = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const active = blocks[activeIndex];
-  const { data: sets = [] } = useBlockSets(active?.id);
+  const { data: rawSets = [] } = useBlockSets(active?.id);
+  const sets = useMemo(() => substituteForLocation(rawSets, mode === 'home' ? 'home' : 'gym'), [rawSets, mode]);
 
   useEffect(() => {
     setRoundsCompleted(0);
